@@ -573,11 +573,7 @@ fn compute_inertia(
     partials.iter().sum()
 }
 
-fn squared_distance_pair(a: &[f64], b: &[f64], c: &[f64]) -> (f64, f64) {
-    if has_avx2_fma() {
-        // SAFETY: `has_avx2_fma` checks the CPU features before the intrinsic path.
-        return unsafe { squared_distance_pair_avx2(a, b, c) };
-    }
+fn squared_distance_pair_scalar(a: &[f64], b: &[f64], c: &[f64]) -> (f64, f64) {
     let mut left = 0.0f64;
     let mut right = 0.0f64;
     for index in 0..a.len() {
@@ -587,6 +583,23 @@ fn squared_distance_pair(a: &[f64], b: &[f64], c: &[f64]) -> (f64, f64) {
         right = delta_right.mul_add(delta_right, right);
     }
     (left, right)
+}
+
+// Two definitions instead of one: `squared_distance_pair_avx2` only exists on
+// x86_64, so naming it at all breaks the aarch64 build (E0425).  `has_avx2_fma()`
+// returning false there is not enough -- the reference itself has to disappear.
+#[cfg(target_arch = "x86_64")]
+fn squared_distance_pair(a: &[f64], b: &[f64], c: &[f64]) -> (f64, f64) {
+    if has_avx2_fma() {
+        // SAFETY: `has_avx2_fma` checks the CPU features before the intrinsic path.
+        return unsafe { squared_distance_pair_avx2(a, b, c) };
+    }
+    squared_distance_pair_scalar(a, b, c)
+}
+
+#[cfg(not(target_arch = "x86_64"))]
+fn squared_distance_pair(a: &[f64], b: &[f64], c: &[f64]) -> (f64, f64) {
+    squared_distance_pair_scalar(a, b, c)
 }
 
 #[cfg(target_arch = "x86_64")]
@@ -622,17 +635,27 @@ unsafe fn squared_distance_pair_avx2(a: &[f64], b: &[f64], c: &[f64]) -> (f64, f
     (left, right)
 }
 
-fn squared_distance(a: &[f64], b: &[f64]) -> f64 {
-    if has_avx2_fma() {
-        // SAFETY: `has_avx2_fma` checks the CPU features before the intrinsic path.
-        return unsafe { squared_distance_avx2(a, b) };
-    }
+fn squared_distance_scalar(a: &[f64], b: &[f64]) -> f64 {
     let mut sum = 0.0f64;
     for index in 0..a.len() {
         let delta = a[index] - b[index];
         sum = delta.mul_add(delta, sum);
     }
     sum
+}
+
+#[cfg(target_arch = "x86_64")]
+fn squared_distance(a: &[f64], b: &[f64]) -> f64 {
+    if has_avx2_fma() {
+        // SAFETY: `has_avx2_fma` checks the CPU features before the intrinsic path.
+        return unsafe { squared_distance_avx2(a, b) };
+    }
+    squared_distance_scalar(a, b)
+}
+
+#[cfg(not(target_arch = "x86_64"))]
+fn squared_distance(a: &[f64], b: &[f64]) -> f64 {
+    squared_distance_scalar(a, b)
 }
 
 #[cfg(target_arch = "x86_64")]
