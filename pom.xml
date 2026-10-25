@@ -75,8 +75,16 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
                 <configuration>
-                    <argLine>--add-modules jdk.incubator.vector -Xmx2g</argLine>
+                    <!-- 768m is ample for these tests (largest fixture is a 256x256 GEMM);
+                         -Xmx2g used to fail on a 16 GB host with ~2 GB free, and the JVM
+                         died before printing anything useful. -->
+                    <argLine>--add-modules jdk.incubator.vector -Xmx768m -XX:MaxMetaspaceSize=256m</argLine>
                     <useModulePath>false</useModulePath>
+                    <!-- <tempDir> cannot relocate the drive: surefire derives the fork
+                         directory name from it under java.io.tmpdir. The "'other' has
+                         different root" line is only a relativisation warning when
+                         %TEMP% lives on another drive. -->
+                    <forkedProcessExitTimeoutInSeconds>120</forkedProcessExitTimeoutInSeconds>
                 </configuration>
             </plugin>
 

@@ -20,3 +20,7 @@ Thumbs.db
 
 # ── WorkBuddy project data (not part of the source release) ─
 .workbuddy-ai/
+
+# JVM crash dumps
+hs_err_pid*.log
+replay_pid*.log
