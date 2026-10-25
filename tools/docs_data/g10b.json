@@ -1,0 +1,1819 @@
+{
+  "group": "g10b",
+  "title": "eager 张量：模块与 Transformer",
+  "modules": [
+    {
+      "name": "jsl.torch",
+      "intro": [
+        "本组类型构成 jsl.torch 的模块层：每个模块持有一组张量参数，forward 用公开的张量算子拼出前向计算，parameters() 暴露可训练参数供优化器使用。模块本身不缓存激活值，反向传播沿计算图中的节点完成。",
+        "train() 与 eval() 只切换模块自身及其递归子模块的训练标志；BatchNorm2d 与 Dropout 依据该标志改变数值行为，其余模块的前向结果与标志无关。布局标签由泛型参数携带，在 Sequential 串接时由编译器检查。"
+      ],
+      "types": [
+        {
+          "qualified": "jsl.torch.Activation",
+          "simple_qualified": "Activation",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "<L extends Layout>",
+          "extends": "Module<L, L>",
+          "implements": [],
+          "file": "jsl/torch/Activation.java",
+          "line": 7,
+          "nested": [
+            "Kind"
+          ],
+          "doc": {
+            "summary": "逐元素激活函数模块，保持输入布局",
+            "body": [
+              "forward 按 kind 分派到 Tensor 上同名的一元算子：RELU、GELU、SILU、SIGMOID、TANH。输出与输入同形状，不做任何维度变换，也不改变布局标签。",
+              "模块不持有参数，parameters() 恒返回空列表，因此不会进入优化器的参数集；类型参数 L 的作用是让激活在 Sequential 中保持前后布局一致。"
+            ],
+            "notes": [
+              "kind 不做 null 校验，构造时传入 null 会在 forward 的 switch 分派处抛 NullPointerException。",
+              "激活由原生内核逐元素计算，输出是新分配的张量，梯度按元素导数回传。"
+            ],
+            "see": [
+              "jsl.torch.Module",
+              "jsl.torch.Sequential",
+              "jsl.torch.Activation.Kind"
+            ]
+          },
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "Activation(Kind)",
+              "signature": "Activation(Kind kind)",
+              "params": [
+                {
+                  "type": "Kind",
+                  "name": "kind"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "按激活种类构造无参模块",
+                "params": {
+                  "kind": "激活种类，取值来自 Activation.Kind；不做 null 校验"
+                },
+                "notes": [
+                  "构造器只保存枚举值，不分配任何张量。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "对输入逐元素应用激活",
+                "params": {
+                  "input": "任意秩、任意布局的张量；形状与元素个数不被改变"
+                },
+                "returns": "与 input 同形状的新张量",
+                "notes": [
+                  "训练与推理行为相同，切换 train()/eval() 不影响结果。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回空参数列表",
+                "returns": "恒为空的不可变列表"
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.torch.BatchNorm2d",
+          "simple_qualified": "BatchNorm2d",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "Module<BCHW, BCHW>",
+          "implements": [],
+          "file": "jsl/torch/BatchNorm2d.java",
+          "line": 10,
+          "nested": [],
+          "doc": {
+            "summary": "NCHW 上的批归一化，含滑动统计量",
+            "body": [
+              "训练模式下按通道统计 N×H×W 上的均值与方差，用批内方差归一化后做仿射变换，同时按 running = (1 - momentum)·running + momentum·batch 的方向更新滑动均值与滑动方差，即 momentum 是新批统计量的权重。",
+              "推理模式不再统计批内数据，直接用滑动均值与滑动方差归一化。写入滑动方差的是无偏估计（spatial 大于 1 时乘 spatial / (spatial - 1)），而归一化本身使用有偏方差。",
+              "gamma 初始化为 1、beta 初始化为 0，两者是可训练参数；running_mean 初始化为 0、running_var 初始化为 1，它们是不可训练状态，仅在训练前向中被原地改写。"
+            ],
+            "notes": [
+              "默认 epsilon 为 1e-5、momentum 为 0.1，来自单参构造器；构造器不校验这两个值的范围。",
+              "滑动统计量是模块状态而非参数：parameters() 只返回 gamma 与 beta，namedParameters() 额外给出 running_mean 与 running_var。",
+              "在从未训练过的模块上直接 eval()，归一化使用均值 0、方差 1，输出近似为 gamma·x + beta。"
+            ],
+            "see": [
+              "jsl.torch.LayerNorm",
+              "jsl.torch.Module#train()",
+              "jsl.torch.Tensor#batchNorm2d"
+            ]
+          },
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "BatchNorm2d(NativeContext, int)",
+              "signature": "BatchNorm2d(NativeContext context, int channels)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "channels"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "以 epsilon=1e-5、momentum=0.1 构造",
+                "params": {
+                  "context": "持有原生上下文，参数与状态张量都在其中分配",
+                  "channels": "通道数 C，即 gamma、beta 与滑动统计量的长度，必须为正"
+                },
+                "throws": {
+                  "IllegalArgumentException": "channels 小于等于 0"
+                },
+                "notes": [
+                  "等价于调用四参构造器并传入 1e-5f 与 0.1f。"
+                ]
+              }
+            },
+            {
+              "kind": "constructor",
+              "key": "BatchNorm2d(NativeContext, int, float, float)",
+              "signature": "BatchNorm2d(NativeContext context, int channels, float epsilon, float momentum)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "channels"
+                },
+                {
+                  "type": "float",
+                  "name": "epsilon"
+                },
+                {
+                  "type": "float",
+                  "name": "momentum"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "显式指定数值稳定项与滑动动量",
+                "params": {
+                  "context": "持有原生上下文，参数与状态张量都在其中分配",
+                  "channels": "通道数 C，必须为正",
+                  "epsilon": "加在方差上的数值稳定项，避免除零；不校验正负",
+                  "momentum": "滑动统计量更新时新批统计量的权重，取 0 到 1 时表现为指数滑动平均；不校验范围"
+                },
+                "throws": {
+                  "IllegalArgumentException": "channels 小于等于 0"
+                },
+                "notes": [
+                  "momentum 越界不会报错，但会让滑动统计量发散或完全停滞。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "按当前训练或推理模式做批归一化",
+                "params": {
+                  "input": "形状 [N, C, H, W] 的张量，C 需与构造时的 channels 一致"
+                },
+                "returns": "[N, C, H, W]，与输入同形状的新张量",
+                "throws": {
+                  "IllegalArgumentException": "输入不是四维张量"
+                },
+                "notes": [
+                  "训练模式会原地改写 running_mean 与 running_var；推理模式只读。",
+                  "批内统计覆盖整个 N×H×W，batch 为 1 时方差可能接近 0，此时 epsilon 决定数值稳定性。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回可训练的 gamma 与 beta",
+                "returns": "长度为 2 的列表，顺序为 gamma、beta"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "namedParameters()",
+              "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回含滑动统计量的命名状态",
+                "returns": "gamma、beta、running_mean、running_var 四项，顺序固定",
+                "notes": [
+                  "stateDict 因此包含推理所需的统计量，loadStateDict 可完整恢复 eval 行为。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "close()",
+              "signature": "void close()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "释放参数与统计量张量",
+                "notes": [
+                  "关闭后模块不可再用；四个张量均由本模块独占。"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.torch.Conv2d",
+          "simple_qualified": "Conv2d",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "Module<BCHW, BCHW>",
+          "implements": [],
+          "file": "jsl/torch/Conv2d.java",
+          "line": 10,
+          "nested": [],
+          "doc": {
+            "summary": "NCHW 上的二维卷积，可选偏置",
+            "body": [
+              "权重形状为 [outputChannels, inputChannels, kernelHeight, kernelWidth]（OIHW），按 Glorot 均匀分布初始化，范围为 ±sqrt(6 / (fanIn + fanOut))，其中 fanIn = inputChannels·kH·kW、fanOut = outputChannels·kH·kW；实际种子为 seed + 31·inputChannels + outputChannels。",
+              "偏置形状为 [1, outputChannels, 1, 1]，初始化为 0，在卷积结果上按通道广播相加；useBias 为 false 时不创建偏置，parameters() 与 namedParameters() 相应少一项。",
+              "输出空间尺寸为 (H + 2·paddingHeight − kernelHeight) / strideHeight + 1，除法向下取整，宽度同理；结果任一维非正时拒绝执行。实现只提供单组卷积，没有 groups 与 dilation 参数。"
+            ],
+            "notes": [
+              "构造器只校验通道数与卷积核尺寸为正，不校验 stride 与 padding；stride 传 0 会在原生内核中除零。",
+              "输入通道数必须等于权重的第二维，否则 Tensor.conv2d 抛 IllegalArgumentException。",
+              "偏置通过广播相加实现，会额外产生一个计算图节点；不需要偏置时置 useBias=false 可省去该节点。"
+            ],
+            "example": "try (JSL jsl = JSL.create()) {\n    Conv2d conv = new Conv2d(jsl.context(), 3, 16, 3, 3, 1, 1, 1, 1, true, 42L);\n    Tensor input = jsl.randn(4, 3, 32, 32);\n    Tensor output = conv.forward(input);\n    // output 形状为 [4, 16, 32, 32]\n    conv.close();\n}",
+            "see": [
+              "jsl.torch.MaxPool2d",
+              "jsl.torch.Flatten",
+              "jsl.torch.Tensor#conv2d"
+            ]
+          },
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "Conv2d(NativeContext, int, int, int, int)",
+              "signature": "Conv2d(NativeContext context, int inputChannels, int outputChannels, int kernelHeight, int kernelWidth)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "inputChannels"
+                },
+                {
+                  "type": "int",
+                  "name": "outputChannels"
+                },
+                {
+                  "type": "int",
+                  "name": "kernelHeight"
+                },
+                {
+                  "type": "int",
+                  "name": "kernelWidth"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "默认 stride=1、padding=0、带偏置",
+                "params": {
+                  "context": "持有原生上下文，权重与偏置在其中分配",
+                  "inputChannels": "输入通道数，必须为正",
+                  "outputChannels": "输出通道数，即卷积核个数，必须为正",
+                  "kernelHeight": "卷积核高度，必须为正",
+                  "kernelWidth": "卷积核宽度，必须为正"
+                },
+                "throws": {
+                  "IllegalArgumentException": "任一通道数或卷积核尺寸小于等于 0"
+                },
+                "notes": [
+                  "等价于 stride 1×1、padding 0×0、useBias=true、seed=0 的完整构造器。"
+                ]
+              }
+            },
+            {
+              "kind": "constructor",
+              "key": "Conv2d(NativeContext, int, int, int, int, int, int, int, int, boolean, long)",
+              "signature": "Conv2d(NativeContext context, int inputChannels, int outputChannels, int kernelHeight, int kernelWidth, int strideHeight, int strideWidth, int paddingHeight, int paddingWidth, boolean useBias, long seed)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "inputChannels"
+                },
+                {
+                  "type": "int",
+                  "name": "outputChannels"
+                },
+                {
+                  "type": "int",
+                  "name": "kernelHeight"
+                },
+                {
+                  "type": "int",
+                  "name": "kernelWidth"
+                },
+                {
+                  "type": "int",
+                  "name": "strideHeight"
+                },
+                {
+                  "type": "int",
+                  "name": "strideWidth"
+                },
+                {
+                  "type": "int",
+                  "name": "paddingHeight"
+                },
+                {
+                  "type": "int",
+                  "name": "paddingWidth"
+                },
+                {
+                  "type": "boolean",
+                  "name": "useBias"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "完整指定步长、填充、偏置与种子",
+                "params": {
+                  "context": "持有原生上下文，权重与偏置在其中分配",
+                  "inputChannels": "输入通道数，必须为正",
+                  "outputChannels": "输出通道数，必须为正",
+                  "kernelHeight": "卷积核高度，必须为正",
+                  "kernelWidth": "卷积核宽度，必须为正",
+                  "strideHeight": "垂直步长，1 表示逐行滑动；构造器不校验取值",
+                  "strideWidth": "水平步长；构造器不校验取值",
+                  "paddingHeight": "上下各补的零行数，参与输出尺寸计算；不校验取值",
+                  "paddingWidth": "左右各补的零列数；不校验取值",
+                  "useBias": "是否创建 [1, outputChannels, 1, 1] 的偏置张量",
+                  "seed": "初始化种子基数，实际种子还会混入 inputChannels 与 outputChannels"
+                },
+                "throws": {
+                  "IllegalArgumentException": "任一通道数或卷积核尺寸小于等于 0"
+                },
+                "notes": [
+                  "权重由 Tensor.random 以均匀分布生成，requiresGrad 为 true；偏置初值为 0。",
+                  "padding 大于核尺寸时输出可能变大，不会被拒绝。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "对 NCHW 输入做卷积并叠加偏置",
+                "params": {
+                  "input": "形状 [N, C, H, W]，C 必须等于 inputChannels"
+                },
+                "returns": "[N, outputChannels, Hout, Wout] 的新张量",
+                "throws": {
+                  "IllegalArgumentException": "输入非四维、输入通道与权重不匹配，或输出空间尺寸非正"
+                },
+                "notes": [
+                  "偏置按通道广播，输出形状不因偏置改变。",
+                  "训练与推理行为相同，切换 train()/eval() 不影响结果。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回权重与可选的偏置",
+                "returns": "weight 在前；存在偏置时 bias 在后，否则长度为 1"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "namedParameters()",
+              "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回 weight 与 bias 命名状态",
+                "returns": "名称依次为 weight、bias；无偏置时只含 weight"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "weight()",
+              "signature": "Tensor weight()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回卷积核张量",
+                "returns": "[outputChannels, inputChannels, kernelHeight, kernelWidth] 的可训练张量"
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.torch.Dropout",
+          "simple_qualified": "Dropout",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "<L extends Layout>",
+          "extends": "Module<L, L>",
+          "implements": [],
+          "file": "jsl/torch/Dropout.java",
+          "line": 7,
+          "nested": [],
+          "doc": {
+            "summary": "倒置 dropout，推理期为恒等映射",
+            "body": [
+              "训练模式下按概率 probability 把元素置零，并把保留的元素乘以 1 / (1 - probability)，使前向期望保持不变；probability 为 0 时直接返回输入的副本。",
+              "推理模式或 probability 为 0 时掩码全为 1，输出等于输入，因此同一模块可以在训练与推理之间反复切换而不改变调用方式。",
+              "掩码由原生内核用 xorshift64 从 seed 生成，给定种子完全确定；模块在每次 forward 之后把内部 seed 加一，所以连续调用得到不同掩码，而整条序列可复现。"
+            ],
+            "notes": [
+              "构造器校验 probability 落在 [0, 1)，越界抛 IllegalArgumentException；单参构造器的默认种子为 0x9E3779B97F4A7C15。",
+              "掩码按元素个数生成，与形状无关；同一次前向与对应反向使用同一掩码。",
+              "内部 seed 可变，同一实例不宜跨线程并发调用 forward。"
+            ],
+            "see": [
+              "jsl.torch.Module#train()",
+              "jsl.torch.Tensor#dropout"
+            ]
+          },
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "Dropout(float)",
+              "signature": "Dropout(float probability)",
+              "params": [
+                {
+                  "type": "float",
+                  "name": "probability"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "以默认种子构造 dropout",
+                "params": {
+                  "probability": "置零概率，取值 [0, 1)；0 表示恒等"
+                },
+                "throws": {
+                  "IllegalArgumentException": "probability 不在 [0, 1) 内，含 NaN"
+                }
+              }
+            },
+            {
+              "kind": "constructor",
+              "key": "Dropout(float, long)",
+              "signature": "Dropout(float probability, long seed)",
+              "params": [
+                {
+                  "type": "float",
+                  "name": "probability"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "指定掩码种子构造 dropout",
+                "params": {
+                  "probability": "置零概率，取值 [0, 1)",
+                  "seed": "掩码生成种子，每次 forward 后自增"
+                },
+                "throws": {
+                  "IllegalArgumentException": "probability 不在 [0, 1) 内，含 NaN"
+                },
+                "notes": [
+                  "种子为 0 时原生侧会先与 1 按位或，实际状态序列与传 1 相同。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "训练时随机置零并缩放，推理时恒等",
+                "params": {
+                  "input": "任意形状的张量，掩码按元素个数生成"
+                },
+                "returns": "与输入同形状的新张量",
+                "notes": [
+                  "每次调用都会推进内部种子，因此同一输入连续两次前向的结果不同。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回空参数列表",
+                "returns": "恒为空的不可变列表"
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.torch.Embedding",
+          "simple_qualified": "Embedding",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "Module<BC, BSF>",
+          "implements": [],
+          "file": "jsl/torch/Embedding.java",
+          "line": 10,
+          "nested": [],
+          "doc": {
+            "summary": "词表查找表，索引以 f32 存整数",
+            "body": [
+              "权重形状为 [vocabularySize, dimension]，按 ±1/sqrt(dimension) 的均匀分布初始化，实际种子为 seed + 41·vocabularySize + dimension。",
+              "forward 把输入中的每个元素当作行号，取出对应的 dimension 维向量，输出形状为输入形状末尾追加一维 dimension；输入可以是任意秩，不限于 [batch, sequence]。",
+              "索引以 f32 存储，原生内核校验其有限且落在 [0, vocabularySize) 内，随后截断为整数行号再拷贝整行权重。"
+            ],
+            "notes": [
+              "索引应为整数值的浮点数；带小数部分时会被截断取整，不报错。",
+              "vocabularySize 与 dimension 必须为正，否则张量分配阶段抛 IllegalArgumentException。",
+              "反向传播按索引做散射累加，同一索引在输入中出现多次时梯度相加。"
+            ],
+            "see": [
+              "jsl.torch.Linear",
+              "jsl.torch.Tensor#embedding"
+            ]
+          },
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "Embedding(NativeContext, int, int)",
+              "signature": "Embedding(NativeContext context, int vocabularySize, int dimension)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "vocabularySize"
+                },
+                {
+                  "type": "int",
+                  "name": "dimension"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "以 seed=0 构造查找表",
+                "params": {
+                  "context": "持有原生上下文，权重在其中分配",
+                  "vocabularySize": "词表大小，即权重行数，必须为正",
+                  "dimension": "每个索引对应的向量维度，必须为正"
+                },
+                "notes": [
+                  "等价于四参构造器传入 seed=0。"
+                ]
+              }
+            },
+            {
+              "kind": "constructor",
+              "key": "Embedding(NativeContext, int, int, long)",
+              "signature": "Embedding(NativeContext context, int vocabularySize, int dimension, long seed)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "vocabularySize"
+                },
+                {
+                  "type": "int",
+                  "name": "dimension"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "指定初始化种子构造查找表",
+                "params": {
+                  "context": "持有原生上下文，权重在其中分配",
+                  "vocabularySize": "词表大小，必须为正",
+                  "dimension": "向量维度，必须为正",
+                  "seed": "初始化种子基数，实际种子混入 vocabularySize 与 dimension"
+                },
+                "notes": [
+                  "初始化幅度随 dimension 增大而收缩，dimension=1 时为 ±1。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "按索引查表，输出追加一维",
+                "params": {
+                  "input": "元素为整数值的浮点张量，任意秩，每个元素是一个行号"
+                },
+                "returns": "形状为 input.shape() 末尾追加 dimension 的新张量",
+                "throws": {
+                  "JSLRuntimeException": "索引非有限，或落在 [0, vocabularySize) 之外（由原生内核校验）"
+                },
+                "notes": [
+                  "输出不复制权重之外的数据，行内容与权重对应行逐元素相同。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回权重张量",
+                "returns": "只含 weight 的单元素列表"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "namedParameters()",
+              "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回名为 weight 的状态项",
+                "returns": "只含 weight 的单元素列表"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "weight()",
+              "signature": "Tensor weight()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回查找表权重",
+                "returns": "[vocabularySize, dimension] 的可训练张量"
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.torch.Flatten",
+          "simple_qualified": "Flatten",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "Module<BCHW, BC>",
+          "implements": [],
+          "file": "jsl/torch/Flatten.java",
+          "line": 8,
+          "nested": [],
+          "doc": {
+            "summary": "把 NCHW 展平为 [batch, C·H·W]",
+            "body": [
+              "forward 读取输入形状，要求秩为 4，然后返回 reshape(shape[0], shape[1] * shape[2] * shape[3]) 的结果；通道、高度、宽度按行主序依次拼接，不做转置。",
+              "模块没有参数，类型上把 BCHW 布局转换为 BC 布局，因此在 Sequential 中只有展平之后才允许接 Linear 这类二维模块。"
+            ],
+            "notes": [
+              "输入秩不为 4 时抛 IllegalArgumentException，不接受已经展平的二维输入。",
+              "reshape 会新分配张量并登记一个计算图节点，反向时按逆映射回传梯度，输出与输入不共享存储。"
+            ],
+            "see": [
+              "jsl.torch.Sequential",
+              "jsl.torch.Linear",
+              "jsl.torch.Tensor#reshape"
+            ]
+          },
+          "members": [
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "把四维输入展平为二维",
+                "params": {
+                  "input": "形状 [N, C, H, W] 的张量"
+                },
+                "returns": "[N, C·H·W] 的新张量",
+                "throws": {
+                  "IllegalArgumentException": "输入秩不为 4"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回空参数列表",
+                "returns": "恒为空的不可变列表"
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.torch.LayerNorm",
+          "simple_qualified": "LayerNorm",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "<L extends Layout>",
+          "extends": "Module<L, L>",
+          "implements": [],
+          "file": "jsl/torch/LayerNorm.java",
+          "line": 10,
+          "nested": [],
+          "doc": {
+            "summary": "沿最后一维做层归一化",
+            "body": [
+              "forward 在最后一维上计算均值与方差，加 epsilon 后开方做归一化，再逐元素乘以 gamma、加上 beta；其余维度各自视为独立样本，不参与统计。",
+              "gamma 与 beta 的形状取自 normalizedShape，分别初始化为 1 与 0。Tensor.layerNorm 只要求两者的元素个数等于输入最后一维，因此通常传单个维度值即可。"
+            ],
+            "notes": [
+              "构造器校验 normalizedShape 非空；维度必须为正，否则张量分配阶段抛 IllegalArgumentException。",
+              "层归一化与批量无关，没有滑动统计量，训练与推理行为完全相同。",
+              "gamma 与 beta 的元素个数和输入最后一维不一致时，forward 抛 IllegalArgumentException。"
+            ],
+            "see": [
+              "jsl.torch.BatchNorm2d",
+              "jsl.torch.Tensor#layerNorm"
+            ]
+          },
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "LayerNorm(NativeContext, int...)",
+              "signature": "LayerNorm(NativeContext context, int... normalizedShape)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int...",
+                  "name": "normalizedShape"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "以 epsilon=1e-5 构造层归一化",
+                "params": {
+                  "context": "持有原生上下文，gamma 与 beta 在其中分配",
+                  "normalizedShape": "被归一化的维度尺寸，通常只传最后一维长度；不得为空"
+                },
+                "throws": {
+                  "IllegalArgumentException": "normalizedShape 为空"
+                },
+                "notes": [
+                  "等价于传入 1e-5f 的三参构造器。"
+                ]
+              }
+            },
+            {
+              "kind": "constructor",
+              "key": "LayerNorm(NativeContext, float, int...)",
+              "signature": "LayerNorm(NativeContext context, float epsilon, int... normalizedShape)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "float",
+                  "name": "epsilon"
+                },
+                {
+                  "type": "int...",
+                  "name": "normalizedShape"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "显式指定数值稳定项",
+                "params": {
+                  "context": "持有原生上下文，gamma 与 beta 在其中分配",
+                  "epsilon": "加在方差上的稳定项，避免除零；不校验正负",
+                  "normalizedShape": "gamma 与 beta 的形状，元素个数需等于输入的最后一维"
+                },
+                "throws": {
+                  "IllegalArgumentException": "normalizedShape 为空"
+                },
+                "notes": [
+                  "epsilon 为负且方差接近 0 时可能得到非有限值，构造阶段不会拦截。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "沿最后一维归一化并仿射",
+                "params": {
+                  "input": "任意秩张量，最后一维长度需等于 gamma 的元素个数"
+                },
+                "returns": "与输入同形状的新张量",
+                "throws": {
+                  "IllegalArgumentException": "gamma 或 beta 的元素个数与输入最后一维不一致"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回 gamma 与 beta",
+                "returns": "长度为 2 的列表，顺序为 gamma、beta"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "namedParameters()",
+              "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回名为 gamma、beta 的状态项",
+                "returns": "顺序固定为 gamma、beta"
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.torch.Linear",
+          "simple_qualified": "Linear",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "Module<BC, BC>",
+          "implements": [],
+          "file": "jsl/torch/Linear.java",
+          "line": 10,
+          "nested": [],
+          "doc": {
+            "summary": "全连接层 y = xW + b，只投影最后一维",
+            "body": [
+              "权重形状为 [inputSize, outputSize]，按 ±sqrt(6 / (inputSize + outputSize)) 的均匀分布初始化，实际种子为 seed + 17·inputSize + outputSize；偏置形状为 [1, outputSize]，初始化为 0。",
+              "forward 只要求输入的最后一维等于 inputSize：秩为 2 时直接做二维矩阵乘；秩大于 2 或秩为 1 时先把前置维度合并成行，乘完再恢复原形状，仅把最后一维替换为 outputSize。",
+              "因此 [batch, time, channels] 这类输入会被逐位置投影，前置维度保持不变，与 PyTorch 的 Linear 语义一致。"
+            ],
+            "notes": [
+              "构造器不校验 inputSize、outputSize 的取值，非正尺寸在张量分配阶段抛 IllegalArgumentException。",
+              "useBias 为 false 时 bias() 返回 null，parameters() 与 namedParameters() 只含 weight。",
+              "形状检查发生在前向，最后一维不匹配时异常信息包含期望值与实际值。"
+            ],
+            "see": [
+              "jsl.torch.LayerNorm",
+              "jsl.torch.Sequential",
+              "jsl.torch.Tensor#matMul"
+            ]
+          },
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "Linear(NativeContext, int, int)",
+              "signature": "Linear(NativeContext context, int inputSize, int outputSize)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "inputSize"
+                },
+                {
+                  "type": "int",
+                  "name": "outputSize"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "默认带偏置、seed=0 构造",
+                "params": {
+                  "context": "持有原生上下文，权重与偏置在其中分配",
+                  "inputSize": "输入特征数，即输入最后一维的长度，必须为正",
+                  "outputSize": "输出特征数，必须为正"
+                },
+                "notes": [
+                  "等价于五参构造器传入 useBias=true、seed=0。"
+                ]
+              }
+            },
+            {
+              "kind": "constructor",
+              "key": "Linear(NativeContext, int, int, boolean, long)",
+              "signature": "Linear(NativeContext context, int inputSize, int outputSize, boolean useBias, long seed)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "inputSize"
+                },
+                {
+                  "type": "int",
+                  "name": "outputSize"
+                },
+                {
+                  "type": "boolean",
+                  "name": "useBias"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "指定偏置开关与初始化种子",
+                "params": {
+                  "context": "持有原生上下文，权重与偏置在其中分配",
+                  "inputSize": "输入特征数，必须为正",
+                  "outputSize": "输出特征数，必须为正",
+                  "useBias": "是否创建 [1, outputSize] 的偏置张量",
+                  "seed": "初始化种子基数，实际种子混入 inputSize 与 outputSize"
+                },
+                "notes": [
+                  "权重由 Tensor.random 以均匀分布生成，requiresGrad 为 true；偏置初值为 0。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "沿最后一维做仿射变换",
+                "params": {
+                  "input": "最后一维需等于 inputSize 的张量，秩不限"
+                },
+                "returns": "形状与输入相同，仅最后一维替换为 outputSize",
+                "throws": {
+                  "IllegalArgumentException": "输入的最后一维不等于 inputSize"
+                },
+                "notes": [
+                  "秩大于 2 时前置维度被合并成行，输出仍保留这些维度。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回权重与可选的偏置",
+                "returns": "weight 在前；存在偏置时 bias 在后，否则长度为 1"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "namedParameters()",
+              "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回 weight 与 bias 命名状态",
+                "returns": "名称依次为 weight、bias；无偏置时只含 weight"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "weight()",
+              "signature": "Tensor weight()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回权重张量",
+                "returns": "[inputSize, outputSize] 的可训练张量"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "bias()",
+              "signature": "Tensor bias()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回偏置张量",
+                "returns": "[1, outputSize] 的可训练张量；构造时 useBias 为 false 则返回 null"
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.torch.MaxPool2d",
+          "simple_qualified": "MaxPool2d",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "Module<BCHW, BCHW>",
+          "implements": [],
+          "file": "jsl/torch/MaxPool2d.java",
+          "line": 7,
+          "nested": [],
+          "doc": {
+            "summary": "NCHW 上的最大池化，不支持填充",
+            "body": [
+              "forward 调用 Tensor.maxPool2d，输出尺寸为 (H − kernelHeight) / strideHeight + 1，除法向下取整，宽度同理；窗口内取最大值，反向时梯度只回传到每个窗口最大值所在的位置。",
+              "模块没有 padding 参数，实现也不做隐式填充，边缘不足一个完整窗口的位置会被丢弃；单参构造器令 stride 等于 kernel，得到互不重叠的窗口。"
+            ],
+            "notes": [
+              "构造器不校验 kernel 与 stride 的取值；stride 传 0 会在原生内核中除零。",
+              "输入秩不为 4，或任一输出维非正时抛 IllegalArgumentException。",
+              "模块无参数，parameters() 恒为空列表。"
+            ],
+            "see": [
+              "jsl.torch.Conv2d",
+              "jsl.torch.Tensor#maxPool2d"
+            ]
+          },
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "MaxPool2d(int)",
+              "signature": "MaxPool2d(int kernelSize)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "kernelSize"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "方形核且步长等于核尺寸",
+                "params": {
+                  "kernelSize": "窗口边长，同时用作垂直与水平步长"
+                },
+                "notes": [
+                  "等价于四参构造器传入四个相同的值。"
+                ]
+              }
+            },
+            {
+              "kind": "constructor",
+              "key": "MaxPool2d(int, int, int, int)",
+              "signature": "MaxPool2d(int kernelHeight, int kernelWidth, int strideHeight, int strideWidth)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "kernelHeight"
+                },
+                {
+                  "type": "int",
+                  "name": "kernelWidth"
+                },
+                {
+                  "type": "int",
+                  "name": "strideHeight"
+                },
+                {
+                  "type": "int",
+                  "name": "strideWidth"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "分别指定核尺寸与步长",
+                "params": {
+                  "kernelHeight": "窗口高度，必须为正才会得到有效输出",
+                  "kernelWidth": "窗口宽度，必须为正才会得到有效输出",
+                  "strideHeight": "垂直步长，不校验取值",
+                  "strideWidth": "水平步长，不校验取值"
+                },
+                "notes": [
+                  "stride 小于 kernel 时窗口重叠，大于 kernel 时跳过部分位置。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "对 NCHW 输入做最大池化",
+                "params": {
+                  "input": "形状 [N, C, H, W] 的张量"
+                },
+                "returns": "[N, C, Hout, Wout] 的新张量",
+                "throws": {
+                  "IllegalArgumentException": "输入非四维，或任一输出维非正"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回空参数列表",
+                "returns": "恒为空的不可变列表"
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.torch.MultiheadAttention",
+          "simple_qualified": "MultiheadAttention",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "Module<BSF, BSF>",
+          "implements": [],
+          "file": "jsl/torch/MultiheadAttention.java",
+          "line": 14,
+          "nested": [],
+          "doc": {
+            "summary": "多头自注意力，输入 [batch, time, channels]",
+            "body": [
+              "构造时创建 query、key、value、output 四个 dimension 到 dimension 的 Linear，均带偏置，并创建作用于注意力权重的 Dropout；缩放系数是值为 1/sqrt(dimension / heads) 的标量张量。",
+              "forward 先把每个投影结果 reshape 成 [B, T, H, dh]：Q 与 V 经 permute(0, 2, 1, 3) 变为 [B·H, T, dh]，K 经 permute(0, 2, 3, 1) 变为 [B·H, dh, T]，再做批量矩阵乘得到 [B·H, T, T] 的分数。",
+              "分数乘缩放系数，causal 为真时把 column > row 的位置加上 -1e9，随后沿最后一维 softmax、过 dropout，再与 V 相乘得 [B·H, T, dh]，reshape 成 [B, H, T, dh] 并 permute(0, 2, 1, 3) 还原为 [B, T, C]，最后经输出投影。"
+            ],
+            "notes": [
+              "dimension 必须能被 heads 整除，否则构造与前向都抛 IllegalArgumentException；heads 本身不做正值校验。",
+              "因果掩码只屏蔽未来位置（严格上三角），每次前向都按 time×time 新建一个掩码张量。",
+              "train()/eval() 会同步切换内部 dropout；parameters() 只含四个投影的权重与偏置，不含缩放常量。",
+              "namedParameters 的名称前缀为 query.、key.、value.、output.。"
+            ],
+            "example": "try (JSL jsl = JSL.create()) {\n    MultiheadAttention attention =\n            new MultiheadAttention(jsl.context(), 64, 8, true, 0.1f, 7L);\n    Tensor input = jsl.randn(2, 16, 64);\n    attention.train();\n    Tensor output = attention.forward(input);\n    // output 形状为 [2, 16, 64]\n    attention.eval();\n    attention.close();\n}",
+            "see": [
+              "jsl.torch.SelfAttention",
+              "jsl.torch.TransformerBlock",
+              "jsl.torch.Linear"
+            ]
+          },
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "MultiheadAttention(NativeContext, int, int, boolean, float, long)",
+              "signature": "MultiheadAttention(NativeContext context, int dimension, int heads, boolean causal, float dropoutProbability, long seed)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "dimension"
+                },
+                {
+                  "type": "int",
+                  "name": "heads"
+                },
+                {
+                  "type": "boolean",
+                  "name": "causal"
+                },
+                {
+                  "type": "float",
+                  "name": "dropoutProbability"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "构造多头注意力与四个投影",
+                "params": {
+                  "context": "持有原生上下文，四个投影、缩放张量与 dropout 都在其中",
+                  "dimension": "模型维度，同时是输入最后一维与各投影的输入输出尺寸",
+                  "heads": "注意力头数，dimension 必须能被其整除",
+                  "causal": "是否加因果掩码，为 true 时位置 t 只能看到不晚于 t 的位置",
+                  "dropoutProbability": "注意力权重上的置零概率，取值 [0, 1)",
+                  "seed": "种子基数，四个投影分别偏移 101、211、307、401，dropout 偏移 503"
+                },
+                "throws": {
+                  "IllegalArgumentException": "dimension 不能被 heads 整除"
+                },
+                "notes": [
+                  "每个投影都是带偏置的方阵 Linear，因此参数总量为 4·(dimension² + dimension)。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "计算多头自注意力输出",
+                "params": {
+                  "input": "形状 [batch, time, channels]，channels 需能被 heads 整除"
+                },
+                "returns": "[batch, time, channels]，最后一维与输入相同",
+                "throws": {
+                  "IllegalArgumentException": "输入不是三维，或通道数不能被 heads 整除"
+                },
+                "notes": [
+                  "Q、K、V 都来自同一输入，属于自注意力，不提供分离的 key/value 输入。",
+                  "注意力权重在 softmax 之后、与 V 相乘之前经过 dropout。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回四个投影的参数",
+                "returns": "query、key、value、output 的权重与偏置依次拼接"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "namedParameters()",
+              "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回带模块前缀的命名参数",
+                "returns": "名称形如 query.weight、query.bias、key.weight 等"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "train()",
+              "signature": "void train()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "切换到训练模式并同步 dropout",
+                "notes": [
+                  "置位自身标志后调用内部 dropout 的 train()，其余投影没有模式相关行为。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "eval()",
+              "signature": "void eval()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "切换到推理模式并同步 dropout",
+                "notes": [
+                  "推理时 dropout 为恒等映射，注意力权重不再被置零。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "close()",
+              "signature": "void close()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "释放子模块与缩放张量",
+                "notes": [
+                  "四个投影、dropout 与缩放张量都由本模块持有并一并释放。"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.torch.SelfAttention",
+          "simple_qualified": "SelfAttention",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "Module<BSF, BSF>",
+          "implements": [],
+          "file": "jsl/torch/SelfAttention.java",
+          "line": 16,
+          "nested": [],
+          "doc": {
+            "summary": "单头自注意力，输入 [batch, time, channels]",
+            "body": [
+              "构造四个 dimension 到 dimension 的 Linear（Q、K、V 与输出投影，均带偏置），缩放系数是值为 1/sqrt(dimension) 的标量张量；不拆分注意力头。",
+              "forward 计算 scores = Q · Kᵀ · scale，形状 [B, T, T]；causal 为真时把 column > row 的位置加上 -1e9，再沿最后一维 softmax，与 V 相乘后经输出投影返回 [B, T, C]。"
+            ],
+            "notes": [
+              "输入必须是三维，否则抛 IllegalArgumentException；dimension 不要求能被任何数整除。",
+              "因果掩码每次前向按 time×time 重新构造；模块内没有 dropout，因此没有 train()/eval() 重写。",
+              "namedParameters 的名称前缀为 query.、key.、value.、output.。"
+            ],
+            "see": [
+              "jsl.torch.MultiheadAttention",
+              "jsl.torch.TransformerBlock"
+            ]
+          },
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "SelfAttention(NativeContext, int, boolean, long)",
+              "signature": "SelfAttention(NativeContext context, int dimension, boolean causal, long seed)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "dimension"
+                },
+                {
+                  "type": "boolean",
+                  "name": "causal"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "构造单头自注意力",
+                "params": {
+                  "context": "持有原生上下文，四个投影与缩放张量都在其中",
+                  "dimension": "模型维度，也是输入最后一维与各投影的尺寸",
+                  "causal": "是否屏蔽未来位置，为 true 时位置 t 只能看到不晚于 t 的位置",
+                  "seed": "种子基数，四个投影分别偏移 101、211、307、401"
+                },
+                "notes": [
+                  "参数总量为 4·(dimension² + dimension)，无位置编码。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "计算单头自注意力输出",
+                "params": {
+                  "input": "形状 [batch, time, channels]，channels 需等于 dimension"
+                },
+                "returns": "[batch, time, channels] 的新张量",
+                "throws": {
+                  "IllegalArgumentException": "输入不是三维张量"
+                },
+                "notes": [
+                  "通道数与 dimension 不一致时，在 Q 投影的 Linear 内因最后一维不匹配而抛 IllegalArgumentException。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回四个投影的参数",
+                "returns": "query、key、value、output 的权重与偏置依次拼接"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "namedParameters()",
+              "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回带模块前缀的命名参数",
+                "returns": "名称形如 query.weight、key.bias、output.weight 等"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "close()",
+              "signature": "void close()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "释放子模块与缩放张量",
+                "notes": [
+                  "四个投影与缩放张量都由本模块持有并一并释放。"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.torch.TransformerBlock",
+          "simple_qualified": "TransformerBlock",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "Module<BSF, BSF>",
+          "implements": [],
+          "file": "jsl/torch/TransformerBlock.java",
+          "line": 10,
+          "nested": [],
+          "doc": {
+            "summary": "pre-norm 结构的 Transformer 块",
+            "body": [
+              "前向为 pre-norm 顺序：先对输入做 LayerNorm 再进多头注意力，注意力输出过 dropout 后与输入相加；所得残差再做 LayerNorm、升维 Linear、GELU、降维 Linear，过 dropout 后与残差相加。",
+              "两个 LayerNorm 的 epsilon 固定为 1e-5；FFN 隐藏维由 hiddenSize 指定，激活固定为 GELU；注意力输出与 FFN 输出各过一次 dropout，两者共用同一个 Dropout 实例。",
+              "六参构造器把 heads 固定为 1，等价于单头注意力；七参构造器可显式指定头数。"
+            ],
+            "notes": [
+              "dimension 必须能被 heads 整除，否则构造时由 MultiheadAttention 抛 IllegalArgumentException。",
+              "共用 dropout 实例意味着两次 dropout 使用相邻但不同的种子，掩码互不相同。",
+              "train()/eval() 递归切换 norm1、attention、norm2、两个 Linear 与 dropout；parameters() 不含 dropout 与激活，因为它们没有参数。",
+              "namedParameters 的名称前缀为 norm1.、attention.、norm2.、ffn1.、ffn2.。"
+            ],
+            "see": [
+              "jsl.torch.MultiheadAttention",
+              "jsl.torch.LayerNorm",
+              "jsl.torch.Activation"
+            ]
+          },
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "TransformerBlock(NativeContext, int, int, boolean, float, long)",
+              "signature": "TransformerBlock(NativeContext context, int dimension, int hiddenSize, boolean causal, float dropoutProbability, long seed)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "dimension"
+                },
+                {
+                  "type": "int",
+                  "name": "hiddenSize"
+                },
+                {
+                  "type": "boolean",
+                  "name": "causal"
+                },
+                {
+                  "type": "float",
+                  "name": "dropoutProbability"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "构造单头注意力的 Transformer 块",
+                "params": {
+                  "context": "持有原生上下文，全部子模块都在其中分配",
+                  "dimension": "模型维度，也是输入与输出的最后一维",
+                  "hiddenSize": "FFN 中间层宽度，通常取 dimension 的若干倍",
+                  "causal": "是否在注意力中使用因果掩码",
+                  "dropoutProbability": "注意力权重与两处残差前的置零概率，取值 [0, 1)",
+                  "seed": "种子基数，注意力偏移 11、两个 Linear 偏移 23 与 37、dropout 偏移 41"
+                },
+                "notes": [
+                  "等价于 heads=1 的七参构造器。"
+                ]
+              }
+            },
+            {
+              "kind": "constructor",
+              "key": "TransformerBlock(NativeContext, int, int, int, boolean, float, long)",
+              "signature": "TransformerBlock(NativeContext context, int dimension, int hiddenSize, int heads, boolean causal, float dropoutProbability, long seed)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "dimension"
+                },
+                {
+                  "type": "int",
+                  "name": "hiddenSize"
+                },
+                {
+                  "type": "int",
+                  "name": "heads"
+                },
+                {
+                  "type": "boolean",
+                  "name": "causal"
+                },
+                {
+                  "type": "float",
+                  "name": "dropoutProbability"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "构造可指定头数的 Transformer 块",
+                "params": {
+                  "context": "持有原生上下文，全部子模块都在其中分配",
+                  "dimension": "模型维度，必须能被 heads 整除",
+                  "hiddenSize": "FFN 中间层宽度",
+                  "heads": "多头注意力的头数",
+                  "causal": "是否在注意力中使用因果掩码",
+                  "dropoutProbability": "注意力权重与两处残差前的置零概率，取值 [0, 1)",
+                  "seed": "种子基数，各子模块按固定偏移派生"
+                },
+                "throws": {
+                  "IllegalArgumentException": "dimension 不能被 heads 整除"
+                },
+                "notes": [
+                  "两个 LayerNorm 使用 1e-5 作为 epsilon，FFN 激活固定为 GELU，不可配置。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "执行注意力残差与 FFN 残差",
+                "params": {
+                  "input": "形状 [batch, time, channels]，channels 等于 dimension"
+                },
+                "returns": "[batch, time, channels] 的新张量",
+                "throws": {
+                  "IllegalArgumentException": "输入不是三维，或通道数与 dimension 不一致"
+                },
+                "notes": [
+                  "两处残差都加在未归一化的主干上，归一化只作用于子层输入，因此主干数值随层数累积。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回全部子模块的可训练参数",
+                "returns": "依次为 norm1、attention、norm2、ffn1、ffn2 的参数"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "namedParameters()",
+              "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "返回带层级前缀的命名参数",
+                "returns": "名称形如 norm1.gamma、attention.query.weight、ffn1.weight 等"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "train()",
+              "signature": "void train()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "递归切换到训练模式",
+                "notes": [
+                  "逐个调用 norm1、attention、norm2、两个 Linear 与 dropout 的 train()。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "eval()",
+              "signature": "void eval()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "递归切换到推理模式",
+                "notes": [
+                  "推理时两处 dropout 均为恒等映射，注意力内部的 dropout 也一并关闭。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "close()",
+              "signature": "void close()",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "释放全部子模块",
+                "notes": [
+                  "关闭后整个块不可再用；子模块由本块独占。"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.torch.Activation.Kind",
+          "simple_qualified": "Activation.Kind",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/torch/Activation.java",
+          "line": 8,
+          "nested": [],
+          "doc": {
+            "summary": "Activation 支持的激活函数种类",
+            "body": [
+              "枚举常量共五个：RELU、GELU、SILU、SIGMOID、TANH，与 Tensor 上同名的一元算子一一对应。",
+              "枚举只作为 Activation 构造器的分派键，不含字段与方法；取值在 forward 中被 switch 穷举，因此新增常量需要同步修改分派逻辑。"
+            ],
+            "notes": [
+              "softmax 不在本枚举内；需要 softmax 时直接调用 Tensor.softmax(int)。"
+            ],
+            "see": [
+              "jsl.torch.Activation",
+              "jsl.torch.Tensor#gelu()"
+            ]
+          },
+          "members": []
+        }
+      ]
+    }
+  ]
+}

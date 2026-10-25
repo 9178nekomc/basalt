@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>模块索引 — JSL 2.4.0 文档</title>
+<meta name="generator" content="tools/build_api_docs.py" />
+<link rel="stylesheet" href="../_static/style.css" />
+</head>
+<body>
+<header class="topbar">
+<div class="crumbs"><a href="../index.html">JSL</a><span class="sep">»</span><span class="cur">2.4.0</span><span class="sep">»</span><span class="cur">模块索引</span></div>
+<div class="topbar-tools">
+  <label>主题 <select id="theme-select" class="theme-select" aria-label="主题">
+    <option value="auto">自动</option><option value="light">浅色</option><option value="dark">深色</option>
+  </select></label>
+  <button id="search-trigger" class="tool-btn" type="button">快速搜索 <kbd>Ctrl</kbd><kbd>K</kbd></button>
+  <a class="tool-btn" href="../api/index.html">模块</a>
+  <a class="tool-btn" href="../genindex.html">索引</a>
+  <a class="tool-btn" href="https://github.com/9178nekomc/java-scikit-learn" rel="noopener">GitHub</a>
+</div>
+</header>
+<div class="shell">
+<aside class="sidebar"><div class="sidebar-head">下载</div><ul><li><a href="../../target/jsl-runtime-2.4.0-all.jar">jsl-runtime-2.4.0-all.jar</a></li><li><a href="../../target/jsl-runtime-2.4.0.jar">jsl-runtime-2.4.0.jar</a></li><li><a href="../../target/jsl-runtime-2.4.0-sources.jar">jsl-runtime-2.4.0-sources.jar</a></li><li><a href="../../build/native/jsl_native.dll">jsl_native.dll（Windows x86_64）</a></li></ul><div class="sidebar-head">各版文档</div><ul><li><a href="../index.html">JSL 2.4.0 (stable)</a></li><li class="active"><a href="../api/index.html">模块索引</a></li><li><a href="../genindex.html">总索引</a></li></ul><div class="sidebar-head">Other resources</div><ul><li><a href="../../README.md">README</a></li><li><a href="../../report/JSL_ARCHITECTURE_AND_BENCHMARK.html">架构与基准报告</a></li><li><a href="../../report/JSL_VS_SKLEARN.html">与 scikit-learn 对比</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn">GitHub 仓库</a></li></ul></aside>
+<main><article>
+<h1>模块索引</h1>
+<p class="welcome">JSL 按包组织 API。每个模块一页，页内按类型分组，类型下依次列出构造器、方法与字段。</p>
+<table><thead><tr><th>模块</th><th class="num">公开类型</th><th>职责</th></tr></thead>
+<tbody><tr><td><a href="jsl.html"><code>jsl</code></a></td><td class="num">2</td><td>统一门面：一次创建上下文，取张量、模块、优化器，并转发经典模型入口。</td></tr><tr><td><a href="jsl_core.html"><code>jsl.core</code></a></td><td class="num">15</td><td>基础数据层：行主序矩阵、布局标记、原生经典核、模型容器读写原语。</td></tr><tr><td><a href="jsl_data.html"><code>jsl.data</code></a></td><td class="num">6</td><td>JSLD 数据管线：流式与内存映射两条读取路径、标准化参数。</td></tr><tr><td><a href="jsl_io.html"><code>jsl.io</code></a></td><td class="num">1</td><td>模型持久化：.jsl v2 容器（magic + kind + 长度 + CRC32C）。</td></tr><tr><td><a href="jsl_ml.html"><code>jsl.ml</code></a></td><td class="num">43</td><td>经典机器学习：线性模型、近邻、SVM、树、梯度提升、聚类、降维、朴素贝叶斯、指标与切分。</td></tr><tr><td><a href="jsl_nn.html"><code>jsl.nn</code></a></td><td class="num">36</td><td>手写神经网络层：Dense / Conv2D / RNN / LSTM / GRU / 注意力、序列训练与序列化。</td></tr><tr><td><a href="jsl_nativebridge.html"><code>jsl.nativebridge</code></a></td><td class="num">8</td><td>原生桥接专家层：上下文、张量句柄、128 字节指令队列、自动求导入口。</td></tr><tr><td><a href="jsl_torch.html"><code>jsl.torch</code></a></td><td class="num">24</td><td>PyTorch 风格 eager API：动态张量、Module 组合、原生 autograd、优化器与损失。</td></tr><tr><td><a href="jsl_concurrent.html"><code>jsl.concurrent</code></a></td><td class="num">1</td><td>批量推理编排：虚拟线程 + 信号量限流。</td></tr></tbody></table>
+<h2 id="order">阅读顺序建议</h2>
+<ul class="simple">
+<li><p>先读 <a href="jsl.html"><code>jsl</code></a> 门面，确认创建上下文与取模块的方式。</p></li>
+<li><p>张量训练走 <a href="jsl_torch.html"><code>jsl.torch</code></a>；经典模型走
+<a href="jsl_ml.html"><code>jsl.ml</code></a>。</p></li>
+<li><p>需要手写算子或排查生命周期时读
+<a href="jsl_nativebridge.html"><code>jsl.nativebridge</code></a>。</p></li>
+</ul>
+<div class="relbar"><a class="prev" href="../index.html">JSL 2.4.0 文档</a>
+<span class="spacer"></span><a class="next" href="jsl.html">jsl</a></div>
+</article></main>
+</div>
+<div id="search-mask" class="search-mask"></div>
+<div id="search-dialog" class="search-dialog" role="dialog" aria-label="搜索">
+  <input id="search-input" type="search" placeholder="搜索类型、方法或说明…" autocomplete="off" />
+  <div id="search-results" class="search-results"></div>
+</div>
+<script>window.__DOCS_ROOT__="../";</script>
+<script src="../_static/searchindex.js"></script>
+<script src="../_static/docs.js"></script>
+</body>
+</html>

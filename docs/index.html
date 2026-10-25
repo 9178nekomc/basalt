@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JSL 2.4.0 文档</title>
+<meta name="generator" content="tools/build_api_docs.py" />
+<link rel="stylesheet" href="_static/style.css" />
+</head>
+<body>
+<header class="topbar">
+<div class="crumbs"><a href="index.html">JSL</a><span class="sep">»</span><span class="cur">2.4.0</span><span class="sep">»</span><span class="cur">2.4.0 文档</span></div>
+<div class="topbar-tools">
+  <label>主题 <select id="theme-select" class="theme-select" aria-label="主题">
+    <option value="auto">自动</option><option value="light">浅色</option><option value="dark">深色</option>
+  </select></label>
+  <button id="search-trigger" class="tool-btn" type="button">快速搜索 <kbd>Ctrl</kbd><kbd>K</kbd></button>
+  <a class="tool-btn" href="api/index.html">模块</a>
+  <a class="tool-btn" href="genindex.html">索引</a>
+  <a class="tool-btn" href="https://github.com/9178nekomc/java-scikit-learn" rel="noopener">GitHub</a>
+</div>
+</header>
+<div class="shell">
+<aside class="sidebar"><div class="sidebar-head">下载</div><ul><li><a href="../target/jsl-runtime-2.4.0-all.jar">jsl-runtime-2.4.0-all.jar</a></li><li><a href="../target/jsl-runtime-2.4.0.jar">jsl-runtime-2.4.0.jar</a></li><li><a href="../target/jsl-runtime-2.4.0-sources.jar">jsl-runtime-2.4.0-sources.jar</a></li><li><a href="../build/native/jsl_native.dll">jsl_native.dll（Windows x86_64）</a></li></ul><div class="sidebar-head">各版文档</div><ul><li class="active"><a href="index.html">JSL 2.4.0 (stable)</a></li><li><a href="api/index.html">模块索引</a></li><li><a href="genindex.html">总索引</a></li></ul><div class="sidebar-head">Other resources</div><ul><li><a href="../README.md">README</a></li><li><a href="../report/JSL_ARCHITECTURE_AND_BENCHMARK.html">架构与基准报告</a></li><li><a href="../report/JSL_VS_SKLEARN.html">与 scikit-learn 对比</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn">GitHub 仓库</a></li></ul></aside>
+<main><article>
+<h1>JSL 2.4.0 文档</h1>
+<p class="welcome">欢迎！这里是 JSL 2.4.0 的官方文档。JSL 是一个 Java 调度、Rust 托管底层的
+机器学习运行时，覆盖 eager 张量、自动求导、原生 CNN/Transformer 算子与 scikit-learn 风格的经典估计器。</p>
+
+<h2 id="chapters">文档章节：</h2>
+<ul class="chapters"><li><p><a class="biglink" href="api/index.html">API 参考</a><span class="linkdescr">按模块组织的完整 API：类型、方法、参数、返回值与抛出条件</span></p></li><li><p><a class="biglink" href="#quickstart">快速开始</a><span class="linkdescr">十行代码完成一次前向与反向传播</span></p></li><li><p><a class="biglink" href="#install">安装</a><span class="linkdescr">Maven 坐标、运行参数与原生库加载顺序</span></p></li><li><p><a class="biglink" href="api/jsl_ml.html">经典机器学习</a><span class="linkdescr">估计器、指标、数据切分与交叉验证</span></p></li><li><p><a class="biglink" href="api/jsl_nn.html">神经网络</a><span class="linkdescr">手写层、序列模型、注意力与序列训练</span></p></li><li><p><a class="biglink" href="api/jsl_torch.html">eager 张量</a><span class="linkdescr">PyTorch 风格动态张量、Module 组合与自动求导</span></p></li><li><p><a class="biglink" href="api/jsl_nativebridge.html">原生内核</a><span class="linkdescr">指令队列、计算图、内存所有权与失败回退</span></p></li><li><p><a class="biglink" href="api/jsl_io.html">持久化</a><span class="linkdescr">.jsl v2 容器格式、CRC32C 校验与往返一致性</span></p></li></ul>
+
+<h2 id="resources">其他资源：</h2>
+<ul class="chapters"><li><p><a class="biglink" href="api/index.html">JSL 开发者指南</a><span class="linkdescr">构建、验证与基准脚本</span></p></li><li><p><a class="biglink" href="../report/JSL_ARCHITECTURE_AND_BENCHMARK.html">架构与基准报告</a><span class="linkdescr">原生 GEMM、自动求导与实测数据</span></p></li><li><p><a class="biglink" href="../report/JSL_VS_SKLEARN.html">与 scikit-learn 对比</a><span class="linkdescr">同一份 JSLD 数据下的十项对比</span></p></li><li><p><a class="biglink" href="https://github.com/9178nekomc/java-scikit-learn">GitHub 仓库</a><span class="linkdescr">源码、发布产物与问题追踪</span></p></li></ul>
+
+<h2 id="install">安装</h2>
+<pre class="code"><code>&lt;dependency&gt;
+    &lt;groupId&gt;io.github.jsl&lt;/groupId&gt;
+    &lt;artifactId&gt;jsl-runtime&lt;/artifactId&gt;
+    &lt;version&gt;<span class="tok-num">2.4</span>.<span class="tok-num">0</span>&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+<p>运行期需要开启 Vector API 孵化模块：<code>--add-modules jdk.incubator.vector</code>。
+原生库已随 <code>jsl-runtime-2.4.0-all.jar</code> 打包；加载失败时经典模型自动回退纯 Java 路径。</p>
+
+<h2 id="quickstart">快速开始</h2>
+<pre class="code"><code><span class="tok-kw">try</span> (JSL jsl = JSL.create()) {
+    Tensor x = jsl.randn(<span class="tok-num">32</span>, <span class="tok-num">8</span>);
+    Tensor y = jsl.randn(<span class="tok-num">32</span>, <span class="tok-num">1</span>);
+    Linear hidden = jsl.linear(<span class="tok-num">8</span>, <span class="tok-num">16</span>);
+    Linear output = jsl.linear(<span class="tok-num">16</span>, <span class="tok-num">1</span>);
+    Tensor loss = output.forward(hidden.forward(x).relu()).mse(y);
+    loss.backward();
+}</code></pre>
+
+<h2 id="layers">三层 API 边界</h2>
+<table><thead><tr><th>层级</th><th>入口</th><th>适用场景</th></tr></thead><tbody>
+<tr><td>整体</td><td><code>JSL</code> 门面、<code>Estimator.fit/predict</code></td>
+<td>一行完成训练、预测、交叉验证</td></tr>
+<tr><td>模块</td><td><code>RandomForest.builder()</code>、<code>HistogramGradientBoosting.builder()</code></td>
+<td>按模块调参、替换求解器、控制线程</td></tr>
+<tr><td>原子</td><td><code>NativeContext</code> + <code>CommandQueueBuilder</code></td>
+<td>手写算子序列、自定义损失与优化器</td></tr>
+</tbody></table>
+
+<h2 id="modules">模块索引</h2>
+<table><thead><tr><th>模块</th><th class="num">公开类型</th><th>职责</th></tr></thead>
+<tbody><tr><td><a href="api/jsl.html"><code>jsl</code></a></td><td class="num">2</td><td>统一门面：一次创建上下文，取张量、模块、优化器，并转发经典模型入口。</td></tr><tr><td><a href="api/jsl_core.html"><code>jsl.core</code></a></td><td class="num">15</td><td>基础数据层：行主序矩阵、布局标记、原生经典核、模型容器读写原语。</td></tr><tr><td><a href="api/jsl_data.html"><code>jsl.data</code></a></td><td class="num">6</td><td>JSLD 数据管线：流式与内存映射两条读取路径、标准化参数。</td></tr><tr><td><a href="api/jsl_io.html"><code>jsl.io</code></a></td><td class="num">1</td><td>模型持久化：.jsl v2 容器（magic + kind + 长度 + CRC32C）。</td></tr><tr><td><a href="api/jsl_ml.html"><code>jsl.ml</code></a></td><td class="num">43</td><td>经典机器学习：线性模型、近邻、SVM、树、梯度提升、聚类、降维、朴素贝叶斯、指标与切分。</td></tr><tr><td><a href="api/jsl_nn.html"><code>jsl.nn</code></a></td><td class="num">36</td><td>手写神经网络层：Dense / Conv2D / RNN / LSTM / GRU / 注意力、序列训练与序列化。</td></tr><tr><td><a href="api/jsl_nativebridge.html"><code>jsl.nativebridge</code></a></td><td class="num">8</td><td>原生桥接专家层：上下文、张量句柄、128 字节指令队列、自动求导入口。</td></tr><tr><td><a href="api/jsl_torch.html"><code>jsl.torch</code></a></td><td class="num">24</td><td>PyTorch 风格 eager API：动态张量、Module 组合、原生 autograd、优化器与损失。</td></tr><tr><td><a href="api/jsl_concurrent.html"><code>jsl.concurrent</code></a></td><td class="num">1</td><td>批量推理编排：虚拟线程 + 信号量限流。</td></tr></tbody></table>
+
+<h2 id="conventions">文档约定</h2>
+<ul class="simple">
+<li><p><strong>签名</strong>：由 <code>tools/api_dump.py</code> 扫描源码生成，与编译产物一一对应；
+<code>→</code> 之后是返回类型。</p></li>
+<li><p><strong>参数</strong>：逐个列出名称、类型与语义。标注"默认值"的，取自字段初始值而非推测。</p></li>
+<li><p><strong>抛出</strong>：只列出源码中真实存在的 <code>throw</code> 或显式校验分支。</p></li>
+<li><p><strong>包内可见类型</strong>：没有 <code>public</code> 修饰符但出现在公开签名中的类型，
+归入各模块页末尾，不作为稳定 API 承诺。</p></li>
+<li><p><strong>精度分层</strong>：原生张量引擎为 <code>f32</code>，经典估计器保持 <code>f64</code>。</p></li>
+<li><p><strong>规模</strong>：136 个公开类型、826 个公开成员，
+其中 826 个成员附有逐参数说明。</p></li>
+</ul>
+
+<h2 id="build">构建与验证</h2>
+<pre class="code"><code>mvn clean install        # 编译 + JUnit <span class="tok-num">5</span> + 标准 jar + Fat Jar + 源码包
+./verify.sh              # 编译期拒绝用例 + legacy 套件 + Rust 单元测试
+./benchmark.sh           # 基准，输出 build/bench<span class="tok-comment">/*.csv
+./native-build.sh        # 只构建 Rust 内核到 build/native/</span></code></pre>
+
+<div class="relbar"><span></span><span class="spacer"></span>
+<a class="next" href="api/index.html">API 参考</a></div>
+<footer class="doc-footer">
+<p>JSL 2.4.0 · 文档由 <code>tools/build_api_docs.py</code> 生成于 2026-10-25 14:31。
+签名来源 <code>build/api/api.json</code>，说明来源 <code>tools/docs_data/</code>。</p>
+<p><a href="https://github.com/9178nekomc/java-scikit-learn" rel="noopener">https://github.com/9178nekomc/java-scikit-learn</a></p>
+</footer>
+</article></main>
+</div>
+<div id="search-mask" class="search-mask"></div>
+<div id="search-dialog" class="search-dialog" role="dialog" aria-label="搜索">
+  <input id="search-input" type="search" placeholder="搜索类型、方法或说明…" autocomplete="off" />
+  <div id="search-results" class="search-results"></div>
+</div>
+<script>window.__DOCS_ROOT__="";</script>
+<script src="_static/searchindex.js"></script>
+<script src="_static/docs.js"></script>
+</body>
+</html>

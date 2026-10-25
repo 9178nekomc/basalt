@@ -1,0 +1,923 @@
+{
+  "group": "g06",
+  "title": "聚类 · 降维 · 朴素贝叶斯",
+  "modules": [
+    {
+      "name": "jsl.ml",
+      "intro": [
+        "jsl.ml 汇集经典估计器：聚类（KMeans、DBSCAN）、降维（PCA）与分类（GaussianNaiveBayes）。所有估计器实现 Estimator 契约，fit 返回自身以便链式调用，predict 返回 double[]。",
+        "估计器在 fit 期间可变，调用 predict 之前必须先完成拟合。KMeans、PCA 与 GaussianNaiveBayes 实现 Persistable，可写入版本化的 .jsl 二进制容器；DBSCAN 不提供序列化。"
+      ],
+      "types": [
+        {
+          "qualified": "jsl.ml.DBSCAN",
+          "doc": {
+            "summary": "按 eps 邻域与 minPoints 判定核心点的密度聚类。",
+            "body": [
+              "以 eps 为半径的邻域内样本数不少于 minPoints 的点为核心点，簇从核心点出发按广度优先扩展。边界点归入首个到达它的簇，无法从任何核心点到达的点保留噪声标签 -1。",
+              "邻域查询逐点线性扫描全部样本，整体需要 O(n²) 次距离计算，适用于中小规模数据。拟合时复制输入特征，后续 predict 与标签查询都基于这份副本。"
+            ],
+            "notes": [
+              "minPoints 统计包含点自身，因为点与自身的距离为 0 且不大于 eps",
+              "predict 在全部核心点中取 eps 内的最近邻并返回其标签，未命中时返回 -1；这是近似归属，不是密度可达判定",
+              "DBSCAN 只实现 Estimator，没有 fit(Matrix) 单参数重载，也没有 write/read"
+            ],
+            "example": "Matrix features = Matrix.fromRows(new double[][] {\n    {0.0, 0.0}, {0.3, 0.1}, {0.1, 0.4},\n    {5.0, 5.0}, {5.2, 4.8}, {4.9, 5.3},\n    {9.0, 0.5}\n});\nDBSCAN dbscan = DBSCAN.builder()\n        .eps(0.6)\n        .minPoints(3)\n        .metric(DistanceMetric.EUCLIDEAN)\n        .build()\n        .fit(features, null);\nint[] labels = dbscan.labels();\nint clusters = dbscan.clusterCount();\nint noise = dbscan.noiseCount();",
+            "see": ["jsl.ml.DistanceMetric", "jsl.ml.Estimator"]
+          },
+          "members": [
+            {
+              "key": "builder()",
+              "doc": {
+                "summary": "创建 DBSCAN 构建器。",
+                "returns": "参数取默认值的新 Builder 实例"
+              }
+            },
+            {
+              "key": "fit(Matrix, double[])",
+              "doc": {
+                "summary": "在给定特征上执行密度聚类并返回自身。",
+                "body": [
+                  "先复制特征矩阵，再把全部标签初始化为 -1，然后按样本顺序扫描：邻域样本数达到 minPoints 的点成为新簇的种子，队列向外扩展直到没有新的核心点可达。"
+                ],
+                "params": {
+                  "features": "样本矩阵，行是样本、列是特征；元素必须有限",
+                  "ignoredTargets": "占位参数；聚类为无监督任务，传 null 或任意数组都被忽略"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "features 为 null 或包含非有限值"
+                },
+                "notes": [
+                  "重复调用 fit 会丢弃上一次的标签与核心点标记"
+                ]
+              }
+            },
+            {
+              "key": "predict(Matrix)",
+              "doc": {
+                "summary": "按最近核心点的标签预测样本所属簇。",
+                "body": [
+                  "对每个待预测样本，在全部核心点中寻找 eps 邻域内距离最近的一个，返回该核心点的簇标签；邻域内不存在核心点时返回 -1。边界点不参与查询，因此结果可能比训练标签更保守。"
+                ],
+                "params": {
+                  "features": "样本矩阵，列数须与拟合时一致"
+                },
+                "returns": "长度为样本数的标签数组，噪声或未命中为 -1",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "特征列数与拟合时不一致"
+                }
+              }
+            },
+            {
+              "key": "labels()",
+              "doc": {
+                "summary": "返回训练样本的簇标签副本。",
+                "body": [
+                  "簇编号从 0 开始，按种子点的发现顺序递增；噪声点保持 -1。返回的是副本，修改它不影响模型状态；未拟合时返回 null。"
+                ],
+                "returns": "长度等于训练样本数的标签数组；未拟合时为 null"
+              }
+            },
+            {
+              "key": "clusterCount()",
+              "doc": {
+                "summary": "返回拟合得到的簇数量。",
+                "returns": "簇数，不含噪声；未拟合时为 0"
+              }
+            },
+            {
+              "key": "noiseCount()",
+              "doc": {
+                "summary": "统计标签为负的样本数量。",
+                "returns": "标签小于 0 的样本个数",
+                "notes": [
+                  "直接遍历内部标签数组，未拟合时该数组为 null，调用会抛 NullPointerException"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.ml.EigenSolver",
+          "doc": {
+            "summary": "PCA 可选的对称特征分解求解器。",
+            "body": [
+              "AUTO 依据数据形状挑选实现：特征数大于样本数时走 GRAM，否则走 JACOBI。JACOBI 直接分解 p × p 协方差矩阵，GRAM 分解 n × n Gram 矩阵再还原主方向。",
+              "显式指定的求解器不会因形状被改写；但 GRAM 需要为 n × n 矩阵分配内存，样本数超过 20000 时 fit 拒绝执行。"
+            ],
+            "notes": [
+              "AUTO 仅在特征数大于样本数且样本数不超过 20000 时选择 GRAM",
+              "两条路径输出在符号与数值误差范围内一致，符号由最大绝对值分量为正的约定固定"
+            ],
+            "see": ["jsl.ml.PCA", "jsl.ml.PCA.Builder"]
+          },
+          "members": []
+        },
+        {
+          "qualified": "jsl.ml.GaussianNaiveBayes",
+          "doc": {
+            "summary": "按类估计均值、方差与先验的高斯朴素贝叶斯分类器。",
+            "body": [
+              "拟合时按目标值升序枚举类别，逐类计算各特征均值与总体方差（除以该类样本数），先验取类频率的对数。预测在对数域累加先验与各特征的独立高斯对数似然，避免概率连乘下溢。",
+              "方差平滑沿用 scikit-learn 的尺度无关约定：epsilon 等于 varianceSmoothing 乘以全体方差最大值，再加到每个方差上；该乘积不为正时直接使用 varianceSmoothing。"
+            ],
+            "notes": [
+              "类别取值按升序排列，概率并列时 predict 返回序号最小、即取值最小的类",
+              "拟合样本数不少于 512 且原生内核可用时由原生实现计算均值、方差与先验",
+              "varianceSmoothing 不写入序列化流，read 后取 Builder 默认值；已平滑的方差本身被保存，预测不受影响"
+            ],
+            "example": "Matrix features = Matrix.fromRows(new double[][] {\n    {1.0, 2.0}, {1.2, 1.8}, {0.9, 2.1},\n    {5.0, 8.0}, {5.4, 7.6}, {4.8, 8.2}\n});\ndouble[] targets = {0.0, 0.0, 0.0, 1.0, 1.0, 1.0};\nGaussianNaiveBayes model = GaussianNaiveBayes.builder()\n        .varianceSmoothing(1e-9)\n        .build()\n        .fit(features, targets);\ndouble[] predicted = model.predict(features);\nMatrix logPosterior = model.predictLogProbability(features);\nMatrix posterior = model.predictProbability(features);",
+            "see": ["jsl.ml.Estimator", "jsl.core.Persistable"]
+          },
+          "members": [
+            {
+              "key": "builder()",
+              "doc": {
+                "summary": "创建 GaussianNaiveBayes 构建器。",
+                "returns": "参数取默认值的新 Builder 实例"
+              }
+            },
+            {
+              "key": "fit(Matrix, double[])",
+              "doc": {
+                "summary": "估计各类的均值、方差与先验。",
+                "body": [
+                  "类别集合来自目标数组的去重升序结果，随后两遍扫描：第一遍累计类内和与类计数得到均值、先验，第二遍累计离差平方得到总体方差，最后统一加上平滑项 epsilon。"
+                ],
+                "params": {
+                  "features": "训练样本矩阵，行是样本、列是特征；元素必须有限",
+                  "targets": "每行对应的类别标签，长度必须等于样本数；元素必须有限"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "features 或 targets 为 null",
+                  "IllegalArgumentException": "targets 长度与样本数不一致，或存在非有限值"
+                }
+              }
+            },
+            {
+              "key": "predictLogProbability(Matrix)",
+              "doc": {
+                "summary": "返回各类的对数联合概率矩阵。",
+                "body": [
+                  "每个元素等于 log(先验) 加上各特征对数高斯密度之和，形如 -0.5 · (log(2πσ²) + (x - μ)² / σ²) 的累加。数值上比直接乘概率稳定。"
+                ],
+                "params": {
+                  "features": "样本矩阵，列数须与拟合时一致"
+                },
+                "returns": "样本数 × 类别数 的矩阵，列顺序与 classes() 一致",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "特征列数与拟合时不一致"
+                }
+              }
+            },
+            {
+              "key": "predictProbability(Matrix)",
+              "doc": {
+                "summary": "把对数联合概率归一化为后验概率。",
+                "body": [
+                  "逐行减去最大值后取指数并归一，等价于对对数概率做 softmax，可避免上溢。若整行对数概率都不是有限值，则退化为按先验归一；先验之和也不为正时返回均匀分布。"
+                ],
+                "params": {
+                  "features": "样本矩阵，列数须与拟合时一致"
+                },
+                "returns": "样本数 × 类别数 的矩阵，每行元素和为 1",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "特征列数与拟合时不一致"
+                }
+              }
+            },
+            {
+              "key": "predict(Matrix)",
+              "doc": {
+                "summary": "返回后验概率最大的类别标签。",
+                "body": [
+                  "先计算后验概率矩阵，再逐行取最大列，映射回原始类别取值。比较使用严格大于，因此概率并列时返回序号最小、即取值最小的类。"
+                ],
+                "params": {
+                  "features": "样本矩阵，列数须与拟合时一致"
+                },
+                "returns": "长度为样本数的类别标签数组",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "特征列数与拟合时不一致"
+                }
+              }
+            },
+            {
+              "key": "classes()",
+              "doc": {
+                "summary": "返回按升序排列的类别取值。",
+                "returns": "类别数组的副本；未拟合时为 null"
+              }
+            },
+            {
+              "key": "means()",
+              "doc": {
+                "summary": "返回各类别各特征的均值矩阵。",
+                "returns": "类别数 × 特征数 的矩阵，第 i 行对应 classes()[i]",
+                "throws": {
+                  "IllegalStateException": "尚未拟合"
+                }
+              }
+            },
+            {
+              "key": "variances()",
+              "doc": {
+                "summary": "返回各类别各特征的方差矩阵。",
+                "body": [
+                  "数值为总体方差（分母是类内样本数）加平滑项 epsilon 之后的结果，因此全部为正，不会出现零方差导致除零。"
+                ],
+                "returns": "类别数 × 特征数 的矩阵，第 i 行对应 classes()[i]",
+                "throws": {
+                  "IllegalStateException": "尚未拟合"
+                }
+              }
+            },
+            {
+              "key": "logPriors()",
+              "doc": {
+                "summary": "返回各类别先验概率的自然对数。",
+                "returns": "长度等于类别数的数组副本；未拟合时为 null",
+                "notes": [
+                  "取对数而非概率，便于与对数似然直接相加"
+                ]
+              }
+            },
+            {
+              "key": "kind()",
+              "doc": {
+                "summary": "返回模型类型标识。",
+                "returns": "ModelKind.GAUSSIAN_NAIVE_BAYES"
+              }
+            },
+            {
+              "key": "write(ModelWriter)",
+              "doc": {
+                "summary": "把特征数、类别、均值、方差与对数先验写入序列化流。",
+                "params": {
+                  "writer": "目标写入器，由调用方负责容器头与关闭"
+                },
+                "throws": {
+                  "IllegalStateException": "尚未拟合"
+                },
+                "notes": [
+                  "写入顺序为特征数、类别数、类别、均值、方差、对数先验，读取端必须按同一顺序消费"
+                ]
+              }
+            },
+            {
+              "key": "read(ModelReader)",
+              "doc": {
+                "summary": "从序列化流重建 GaussianNaiveBayes 模型。",
+                "params": {
+                  "reader": "已完成容器头解析的读取器"
+                },
+                "returns": "只恢复统计量的模型实例，varianceSmoothing 取 Builder 默认值",
+                "throws": {
+                  "ModelFormatException": "特征数或类别数不为正"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.ml.KMeans",
+          "doc": {
+            "summary": "K-Means++ 播种的 Lloyd 迭代聚类，支持多次重启。",
+            "body": [
+              "分配步逐样本计算到 k 个质心的平方欧氏距离，按行区间并行执行；质心累加与求均值为串行循环，且复用预分配缓冲区。多次重启各自独立初始化，保留惯性最小的一次结果。",
+              "第 r 次重启使用 seed + 7919r 作为随机源种子。空簇修复从当前分配中挑选距离所属质心最远、且所属簇样本数大于 1 的样本，把它捐给空簇并以该样本位置作为新质心；找不到合格捐赠者时退化为全局最远样本。"
+            ],
+            "notes": [
+              "tolerance 作用于质心位移：全部质心各分量位移的平方和不超过 tolerance² 时停止迭代",
+              "inertia 在迭代结束后按最终质心重新计算，等于各样本到最近质心平方距离之和，可能与最后一轮分配时的值略有差异",
+              "样本数不少于 1024、特征数不少于 8 且原生内核可用时，整个拟合交给原生实现",
+              "特征数不少于 128 时，单轮分配步也可能切换到原生内核"
+            ],
+            "example": "Matrix features = Matrix.fromRows(new double[][] {\n    {0.0, 0.0}, {0.4, 0.2}, {0.1, 0.5},\n    {9.6, 9.8}, {10.0, 10.2}, {9.4, 9.9}\n});\nKMeans kmeans = KMeans.builder()\n        .clusters(2)\n        .restarts(4)\n        .maxIterations(200)\n        .seed(7L)\n        .build()\n        .fit(features);\ndouble[] assignment = kmeans.predict(features);\ndouble[] distance = kmeans.transform(features);\nMatrix centers = kmeans.centroids();\ndouble inertia = kmeans.inertia();",
+            "see": ["jsl.ml.Estimator", "jsl.core.Persistable"]
+          },
+          "members": [
+            {
+              "key": "builder()",
+              "doc": {
+                "summary": "创建 KMeans 构建器。",
+                "returns": "参数取默认值的新 Builder 实例"
+              }
+            },
+            {
+              "key": "fit(Matrix)",
+              "doc": {
+                "summary": "只用特征拟合，目标数组缺省为 null。",
+                "params": {
+                  "features": "训练样本矩阵，行是样本、列是特征"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "key": "fit(Matrix, double[])",
+              "doc": {
+                "summary": "执行 K-Means++ 初始化与 Lloyd 迭代。",
+                "body": [
+                  "首个质心从样本中均匀随机抽取，后续质心按到最近已有质心的平方距离加权抽取；若全部距离之和为 0，则改用簇序号对样本数取模。每次重启跑满收敛条件或 maxIterations，取惯性最小者。"
+                ],
+                "params": {
+                  "features": "训练样本矩阵，行是样本、列是特征；元素必须有限",
+                  "ignoredTargets": "占位参数；聚类忽略监督目标，可为 null"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "features 为 null 或含非有限值，或簇数大于样本数"
+                },
+                "notes": [
+                  "每次重启都新建 Random，因此同一 seed 与 restarts 组合可复现结果"
+                ]
+              }
+            },
+            {
+              "key": "predict(Matrix)",
+              "doc": {
+                "summary": "把每个样本分配给最近的质心。",
+                "params": {
+                  "features": "样本矩阵，列数须与拟合时一致"
+                },
+                "returns": "长度为样本数的簇索引，以 double 表示",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "特征列数与拟合时不一致"
+                }
+              }
+            },
+            {
+              "key": "transform(Matrix)",
+              "doc": {
+                "summary": "返回各样本到其所属质心的平方距离。",
+                "body": [
+                  "先按最近质心确定归属，再取该质心与样本的平方欧氏距离。返回一维数组，每个样本一个标量，而不是距离矩阵；需要欧氏距离时自行开方。"
+                ],
+                "params": {
+                  "features": "样本矩阵，列数须与拟合时一致"
+                },
+                "returns": "长度为样本数的平方距离数组",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "特征列数与拟合时不一致"
+                }
+              }
+            },
+            {
+              "key": "centroids()",
+              "doc": {
+                "summary": "返回最终质心矩阵。",
+                "returns": "簇数 × 特征数 的矩阵，每行一个质心",
+                "throws": {
+                  "IllegalStateException": "尚未拟合"
+                }
+              }
+            },
+            {
+              "key": "inertia()",
+              "doc": {
+                "summary": "返回最优重启的惯性值。",
+                "returns": "样本到最近质心平方距离之和；未拟合时为 0"
+              }
+            },
+            {
+              "key": "iterations()",
+              "doc": {
+                "summary": "返回最优重启实际执行的迭代轮数。",
+                "returns": "1 到 maxIterations 之间的轮数；未拟合时为 0"
+              }
+            },
+            {
+              "key": "restarts()",
+              "doc": {
+                "summary": "返回已完成的随机重启次数。",
+                "returns": "拟合后等于配置的 restarts；未拟合或由 read 重建的模型为 0"
+              }
+            },
+            {
+              "key": "kind()",
+              "doc": {
+                "summary": "返回模型类型标识。",
+                "returns": "ModelKind.KMEANS"
+              }
+            },
+            {
+              "key": "write(ModelWriter)",
+              "doc": {
+                "summary": "写入簇数、特征数、惯性、迭代轮数与质心。",
+                "params": {
+                  "writer": "目标写入器，由调用方负责容器头与关闭"
+                },
+                "throws": {
+                  "IllegalStateException": "尚未拟合"
+                },
+                "notes": [
+                  "tolerance、seed、restarts 与 threads 不写入流，read 后回到 Builder 默认值"
+                ]
+              }
+            },
+            {
+              "key": "read(ModelReader)",
+              "doc": {
+                "summary": "从序列化流重建 KMeans 模型。",
+                "params": {
+                  "reader": "已完成容器头解析的读取器"
+                },
+                "returns": "只恢复质心与统计量的模型实例，可直接用于 predict",
+                "throws": {
+                  "ModelFormatException": "簇数或特征数不为正"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.ml.PCA",
+          "doc": {
+            "summary": "中心化主成分分析，含协方差与 Gram 两条精确路径。",
+            "body": [
+              "JACOBI 路径分解 p × p 协方差矩阵，代价为 O(n p²) 的协方差累加加若干次 Jacobi 扫描，适合 n ≫ p。GRAM 路径分解 n × n Gram 矩阵，再用 v = Xᵀu / ‖Xᵀu‖ 还原主方向，代价 O(n² p)，适合 p > n 的宽表。",
+              "两条路径都输出正交归一的主方向与协方差尺度上的方差，结果在符号与数值误差范围内一致。主方向的符号按绝对值最大的分量为正固定，因此重复拟合可复现。"
+            ],
+            "notes": [
+              "AUTO 在特征数大于样本数且样本数不超过 20000 时选 GRAM，否则选 JACOBI",
+              "解释方差比的分母是全部 p 个特征方差之和，而非所选分量方差之和，因此前 k 个比值相加通常小于 1",
+              "Gram 路径需要 n × n 的双精度矩阵，20000 样本即约 3.2 GB",
+              "Jacobi 扫描以相对非对角范数判定收敛，收敛判据与矩阵整体尺度无关"
+            ],
+            "example": "Matrix features = Matrix.fromRows(new double[][] {\n    {2.5, 2.4}, {0.5, 0.7}, {2.2, 2.9},\n    {1.9, 2.2}, {3.1, 3.0}, {2.3, 2.7}\n});\nPCA pca = PCA.builder()\n        .components(1)\n        .solver(EigenSolver.AUTO)\n        .whiten(true)\n        .build()\n        .fit(features);\nMatrix projected = pca.transform(features);\nMatrix restored = pca.inverseTransform(projected);\ndouble[] ratio = pca.explainedVarianceRatio();",
+            "see": ["jsl.ml.EigenSolver", "jsl.ml.Estimator", "jsl.core.Persistable"]
+          },
+          "members": [
+            {
+              "key": "builder()",
+              "doc": {
+                "summary": "创建 PCA 构建器。",
+                "returns": "参数取默认值的新 Builder 实例"
+              }
+            },
+            {
+              "key": "fit(Matrix)",
+              "doc": {
+                "summary": "只用特征拟合，目标数组缺省为 null。",
+                "params": {
+                  "features": "训练样本矩阵，行是样本、列是特征"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "key": "fit(Matrix, double[])",
+              "doc": {
+                "summary": "中心化后做特征分解并保留前若干主成分。",
+                "body": [
+                  "先按列求均值并中心化，再按解析出的求解器计算特征分解；特征值截断为非负、按降序排序，保留前 components 个方向，总方差始终按全部特征累计。"
+                ],
+                "params": {
+                  "features": "训练样本矩阵，行是样本、列是特征；元素必须有限",
+                  "ignoredTargets": "占位参数；降维忽略监督目标，可为 null"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "features 为 null 或含非有限值；样本数小于 2；components 大于 min(样本数, 特征数)；显式选择 GRAM 而样本数超过 20000"
+                }
+              }
+            },
+            {
+              "key": "transform(Matrix)",
+              "doc": {
+                "summary": "把样本投影到主成分坐标。",
+                "body": [
+                  "逐样本减去训练均值后与各主方向做点积。whiten 为 true 时每个投影再除以其主成分标准差 sqrt(max(特征值, 1e-12))，使各分量方差为 1。"
+                ],
+                "params": {
+                  "features": "样本矩阵，列数须与拟合时一致"
+                },
+                "returns": "样本数 × components 的投影矩阵",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "特征列数与拟合时不一致"
+                }
+              }
+            },
+            {
+              "key": "inverseTransform(Matrix)",
+              "doc": {
+                "summary": "把主成分坐标重建回原始特征空间。",
+                "body": [
+                  "先按主方向加权求和，再加回均值。白化模型会先把每个坐标乘回对应标准差，因此与 transform 互为逆变换（截断维度时是到子空间的正交投影）。"
+                ],
+                "params": {
+                  "transformed": "样本数 × components 的投影矩阵，列数须等于 components"
+                },
+                "returns": "样本数 × 特征数 的重建矩阵",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "transformed 的列数不等于 components"
+                }
+              }
+            },
+            {
+              "key": "predict(Matrix)",
+              "doc": {
+                "summary": "返回投影结果的扁平数组。",
+                "body": [
+                  "等价于 transform(features).toArray()，按行优先展开，便于接入只需要 double[] 的下游流程。"
+                ],
+                "params": {
+                  "features": "样本矩阵，列数须与拟合时一致"
+                },
+                "returns": "长度为 样本数 × components 的数组",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "特征列数与拟合时不一致"
+                }
+              }
+            },
+            {
+              "key": "explainedVariance()",
+              "doc": {
+                "summary": "返回各主成分的方差。",
+                "body": [
+                  "数值为协方差矩阵的特征值，已截断为非负，按降序排列，单位是原始特征的方差单位。内部数组在 fit 阶段分配，未拟合时不可调用。"
+                ],
+                "returns": "长度等于 components 的数组副本"
+              }
+            },
+            {
+              "key": "explainedVarianceRatio()",
+              "doc": {
+                "summary": "返回各主成分方差占总方差的比例。",
+                "body": [
+                  "分母是全部 p 个特征的方差之和，与保留的分量数无关，因此前 k 个比值之和通常小于 1。总方差不为正（例如全部特征为常数）时返回全 0。"
+                ],
+                "returns": "长度等于 components 的数组"
+              }
+            },
+            {
+              "key": "components()",
+              "doc": {
+                "summary": "返回主方向矩阵。",
+                "returns": "components × 特征数 的矩阵，每行一个单位长度的主方向",
+                "throws": {
+                  "IllegalStateException": "尚未拟合"
+                },
+                "notes": [
+                  "每行已归一化为单位长度，且绝对值最大的分量被固定为正号",
+                  "特征值过小、方向无法还原时该行全为 0"
+                ]
+              }
+            },
+            {
+              "key": "means()",
+              "doc": {
+                "summary": "返回拟合时各特征的均值。",
+                "returns": "长度等于特征数的数组副本",
+                "notes": [
+                  "未拟合时内部均值为 null，调用会抛 NullPointerException"
+                ]
+              }
+            },
+            {
+              "key": "solver()",
+              "doc": {
+                "summary": "返回实际使用的求解器。",
+                "returns": "AUTO 解析后的具体求解器；未拟合时为 null，由 read 重建的模型为 JACOBI"
+              }
+            },
+            {
+              "key": "kind()",
+              "doc": {
+                "summary": "返回模型类型标识。",
+                "returns": "ModelKind.PCA"
+              }
+            },
+            {
+              "key": "write(ModelWriter)",
+              "doc": {
+                "summary": "写入分量数、特征数、白化标志、总方差、均值、特征值与主方向。",
+                "params": {
+                  "writer": "目标写入器，由调用方负责容器头与关闭"
+                },
+                "throws": {
+                  "IllegalStateException": "尚未拟合"
+                },
+                "notes": [
+                  "tolerance 与 maxIterations 不写入流，read 后回到 Builder 默认值"
+                ]
+              }
+            },
+            {
+              "key": "read(ModelReader)",
+              "doc": {
+                "summary": "从序列化流重建 PCA 模型。",
+                "params": {
+                  "reader": "已完成容器头解析的读取器"
+                },
+                "returns": "可直接用于 transform 与 inverseTransform 的模型实例",
+                "throws": {
+                  "ModelFormatException": "分量数或特征数不为正，或白化标志不是 0/1"
+                },
+                "notes": [
+                  "solver() 固定返回 JACOBI，原始求解器选择不被保留"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.ml.DBSCAN.Builder",
+          "doc": {
+            "summary": "DBSCAN 的构建器，设置邻域半径、密度阈值与距离度量。",
+            "body": [
+              "未显式设置时使用 eps = 0.5、minPoints = 5、DistanceMetric.EUCLIDEAN。各 setter 只赋值，参数校验集中在 build 中完成。"
+            ],
+            "notes": [
+              "eps 的单位与特征单位相同，特征未标准化时不同量纲的列会主导邻域判定"
+            ]
+          },
+          "members": [
+            {
+              "key": "eps(double)",
+              "doc": {
+                "summary": "设置邻域半径 eps。",
+                "params": {
+                  "eps": "邻域半径，须为正且有限；默认 0.5"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "key": "minPoints(int)",
+              "doc": {
+                "summary": "设置核心点的最小邻域样本数。",
+                "params": {
+                  "minPoints": "阈值，须为正；默认 5，统计时包含点自身"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "key": "metric(DistanceMetric)",
+              "doc": {
+                "summary": "设置邻域查询与预测所用的距离度量。",
+                "params": {
+                  "metric": "距离函数，默认 DistanceMetric.EUCLIDEAN"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "metric 为 null"
+                }
+              }
+            },
+            {
+              "key": "build()",
+              "doc": {
+                "summary": "校验参数并创建 DBSCAN 实例。",
+                "returns": "新的 DBSCAN 实例，尚未拟合",
+                "throws": {
+                  "IllegalArgumentException": "eps 非正或非有限，或 minPoints 非正"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.ml.GaussianNaiveBayes.Builder",
+          "doc": {
+            "summary": "GaussianNaiveBayes 的构建器。",
+            "body": [
+              "唯一参数是方差平滑系数，默认 1e-9，与 scikit-learn 的 var_smoothing 同名同义。build 只校验该系数为正且有限，其余统计量在 fit 阶段产生。"
+            ]
+          },
+          "members": [
+            {
+              "key": "varianceSmoothing(double)",
+              "doc": {
+                "summary": "设置方差平滑系数。",
+                "body": [
+                  "拟合时先乘以全体方差最大值得到 epsilon，再加到每个方差上，因此该系数对特征缩放不敏感；全部方差为 0 时 epsilon 直接取该系数本身。"
+                ],
+                "params": {
+                  "varianceSmoothing": "平滑系数，须为正且有限；默认 1e-9"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "key": "build()",
+              "doc": {
+                "summary": "校验参数并创建估计器。",
+                "returns": "新的 GaussianNaiveBayes 实例，尚未拟合",
+                "throws": {
+                  "IllegalArgumentException": "varianceSmoothing 非正或非有限"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.ml.KMeans.Builder",
+          "doc": {
+            "summary": "KMeans 的构建器，设置簇数、迭代上限、收敛阈值与随机种子。",
+            "body": [
+              "默认值：clusters = 8、maxIterations = 300、tolerance = 1e-6、seed = 42、restarts = 1、threads 取 CPU 核数。各 setter 只赋值，参数校验集中在 build 中完成。"
+            ],
+            "notes": [
+              "threads 只影响分配步的并行度，质心更新始终串行"
+            ]
+          },
+          "members": [
+            {
+              "key": "clusters(int)",
+              "doc": {
+                "summary": "设置簇数 k。",
+                "params": {
+                  "clusters": "簇数，须为正；默认 8，拟合时不得大于样本数"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "key": "maxIterations(int)",
+              "doc": {
+                "summary": "设置单次重启的最大迭代轮数。",
+                "params": {
+                  "maxIterations": "迭代上限，须为正；默认 300"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "key": "tolerance(double)",
+              "doc": {
+                "summary": "设置质心位移的收敛阈值。",
+                "body": [
+                  "停止条件为全部质心各分量位移的平方和不超过 tolerance²，即质心矩阵的 Frobenius 位移范数不超过 tolerance。"
+                ],
+                "params": {
+                  "tolerance": "收敛阈值，须非负且有限；默认 1e-6"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "key": "seed(long)",
+              "doc": {
+                "summary": "设置 K-Means++ 初始化的随机种子。",
+                "params": {
+                  "seed": "随机种子；默认 42，第 r 次重启实际使用 seed + 7919r"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "key": "restarts(int)",
+              "doc": {
+                "summary": "设置独立重启次数。",
+                "body": [
+                  "每次重启单独初始化并跑满迭代，最终保留惯性最小的一次，代价近似线性增长。"
+                ],
+                "params": {
+                  "restarts": "重启次数，须为正；默认 1"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "key": "threads(int)",
+              "doc": {
+                "summary": "设置分配步的并行度。",
+                "params": {
+                  "threads": "并行工作线程数，须为正；默认取可用处理器数"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "key": "build()",
+              "doc": {
+                "summary": "校验参数并创建 KMeans 实例。",
+                "returns": "新的 KMeans 实例，尚未拟合",
+                "throws": {
+                  "IllegalArgumentException": "clusters、maxIterations、restarts 或 threads 非正，或 tolerance 为负或非有限"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.ml.KMeans.Run",
+          "doc": {
+            "summary": "单次重启的结果载体，保存质心、惯性与迭代轮数。",
+            "body": [
+              "私有记录类型，仅在重启循环内部传递一次运行的结果，不对外暴露。"
+            ]
+          },
+          "members": []
+        },
+        {
+          "qualified": "jsl.ml.PCA.Builder",
+          "doc": {
+            "summary": "PCA 的构建器，设置分量数、求解器、扫描上限与白化开关。",
+            "body": [
+              "默认值：components = 2、solver = AUTO、maxIterations = 60、tolerance = 1e-12、whiten = false。各 setter 只赋值，参数校验集中在 build 中完成。"
+            ],
+            "notes": [
+              "components 的上界依赖数据形状，只能在 fit 阶段校验"
+            ]
+          },
+          "members": [
+            {
+              "key": "components(int)",
+              "doc": {
+                "summary": "设置保留的主成分个数。",
+                "params": {
+                  "components": "分量数，须为正；默认 2，拟合时不得大于 min(样本数, 特征数)"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "key": "solver(EigenSolver)",
+              "doc": {
+                "summary": "设置特征分解求解器。",
+                "params": {
+                  "solver": "求解器，默认 EigenSolver.AUTO"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "solver 为 null"
+                }
+              }
+            },
+            {
+              "key": "maxIterations(int)",
+              "doc": {
+                "summary": "设置 Jacobi 扫描的最大轮数。",
+                "params": {
+                  "maxIterations": "扫描上限，须为正；默认 60"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "key": "tolerance(double)",
+              "doc": {
+                "summary": "设置 Jacobi 扫描的收敛阈值。",
+                "body": [
+                  "收敛判据为 sqrt(Σ a_pq²) 不超过 tolerance · max(1, ‖A‖_F)，其中求和覆盖全部非对角元素。"
+                ],
+                "params": {
+                  "tolerance": "收敛阈值，须为正且有限；默认 1e-12"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "key": "whiten(boolean)",
+              "doc": {
+                "summary": "设置是否白化投影结果。",
+                "body": [
+                  "白化把每个投影除以其主成分标准差，使各分量方差为 1；逆变换会乘回同一标准差。"
+                ],
+                "params": {
+                  "whiten": "true 表示白化；默认 false"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "key": "build()",
+              "doc": {
+                "summary": "校验参数并创建 PCA 实例。",
+                "returns": "新的 PCA 实例，尚未拟合",
+                "throws": {
+                  "IllegalArgumentException": "components 或 maxIterations 非正，或 tolerance 非正或非有限"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "jsl.ml.PCA.EigenDecomposition",
+          "doc": {
+            "summary": "特征分解结果载体，保存特征值与特征向量矩阵。",
+            "body": [
+              "私有记录类型，特征值按矩阵对角元顺序存放，未排序；调用方自行按降序选取分量。"
+            ]
+          },
+          "members": []
+        }
+      ]
+    }
+  ]
+}
