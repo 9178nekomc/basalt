@@ -491,13 +491,15 @@ def sidebar_html(active: str, page_toc: list[tuple[str, str]] | None = None,
         parts.append("</ul>")
 
     parts.append('<div class="sidebar-head">下载</div><ul>')
-    # absolute URLs: the published site only ships docs/, so ../target would 404
-    raw = f"{REPO}/raw/main"
-    parts.append(item("jsl-runtime-2.4.0-all.jar", f"{raw}/target/jsl-runtime-2.4.0-all.jar"))
-    parts.append(item("jsl-runtime-2.4.0.jar", f"{raw}/target/jsl-runtime-2.4.0.jar"))
-    parts.append(item("jsl-runtime-2.4.0-sources.jar",
-                      f"{raw}/target/jsl-runtime-2.4.0-sources.jar"))
-    parts.append(item("jsl_native.dll（Windows x86_64）", f"{raw}/src/main/resources/native/windows-x86_64/jsl_native.dll"))
+    # Absolute URLs: the published site only ships docs/, so ../target would 404.
+    # Release assets are the canonical download location.
+    rel = f"{REPO}/releases/download/v{VERSION}"
+    parts.append(item(f"JSL {VERSION} 发布页（全部资产）", f"{REPO}/releases/tag/v{VERSION}"))
+    parts.append(item("jsl-runtime-2.4.0-all.jar", f"{rel}/jsl-runtime-2.4.0-all.jar"))
+    parts.append(item("jsl-runtime-2.4.0.jar", f"{rel}/jsl-runtime-2.4.0.jar"))
+    parts.append(item("jsl-runtime-2.4.0-sources.jar", f"{rel}/jsl-runtime-2.4.0-sources.jar"))
+    parts.append(item("jsl_native.dll（Windows x86_64）", f"{rel}/jsl_native.dll"))
+    parts.append(item(f"jsl-docs-{VERSION}.zip（离线文档）", f"{rel}/jsl-docs-{VERSION}.zip"))
     parts.append("</ul>")
 
     parts.append('<div class="sidebar-head">各版文档</div><ul>')

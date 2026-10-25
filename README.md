@@ -117,6 +117,20 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 
 ---
 
+## 下载
+
+发布资产见 [Releases · v2.4.0](https://github.com/9178nekomc/java-scikit-learn/releases/tag/v2.4.0)：
+
+| 文件 | 说明 |
+|---|---|
+| `jsl-runtime-2.4.0-all.jar` | Fat Jar（classifier `all`），含 Windows x86_64 原生库，可直接 `java -cp` |
+| `jsl-runtime-2.4.0.jar` | 标准 jar，原生库在 `native/windows-x86_64/` 资源目录内 |
+| `jsl-runtime-2.4.0-sources.jar` | 源码包 |
+| `jsl_native.dll` | Windows x86_64 原生库，独立分发用 |
+| `jsl-docs-2.4.0.zip` | 离线文档站（13 页 HTML + 2 个基准报告），解压后双击 `index.html` |
+
+---
+
 ## API 参考文档（HTML）
 
 完整 API 参考是一个可直接双击打开的静态站点，版式对齐 docs.python.org：
