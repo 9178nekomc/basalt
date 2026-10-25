@@ -907,7 +907,7 @@ def render_index(modules: list[dict], stats: dict) -> str:
         ("与 scikit-learn 对比", "同一份 JSLD 数据下的十项对比", "report/JSL_VS_SKLEARN.html"),
         ("GitHub 仓库", "源码、发布产物与问题追踪", REPO),
     ]
-    install = """<dependency>
+    install = f"""<dependency>
     <groupId>io.github.jsl</groupId>
     <artifactId>jsl-runtime</artifactId>
     <version>{VERSION}</version>
