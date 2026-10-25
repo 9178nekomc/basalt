@@ -138,6 +138,9 @@ html[data-theme="dark"]{color-scheme:dark;--ink:#d8dde3;--muted:#93a0ad;--line:#
 ::view-transition-old(jsl-bar){animation:none}
 ::view-transition-new(jsl-bar){animation:none}
 html[data-theme="dark"] body{background:#1a1c1f;color:#d8dde3}
+/* the report leaves <code> to inherit the surrounding colour, which turns muted
+   grey on a grey pill whenever a snippet sits inside a caption.  Pin it. */
+code{color:#374151}
 html[data-theme="dark"] code{background:#272d35;color:#dfe4ea}
 html[data-theme="dark"] pre{background:#14181d;color:#d8dde3}
 html[data-theme="dark"] pre code{background:transparent}

@@ -244,8 +244,8 @@ CSS = r"""/* JSL documentation — Sphinx / docs.python.org inspired theme */
   --sig-bg:#eef2f6; --sig-border:#d6dee7; --code-bg:#edf1f6; --code-fg:#1a1a1a;
   --shadow-soft:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -14px rgba(16,24,40,.20);
   --shadow-pop:0 16px 40px -16px rgba(16,24,40,.30), 0 2px 8px rgba(16,24,40,.06);
-  --admon-bg:#f3f7fb; --admon-border:#4a7fb5; --table-head:#f2f2f2;
-  --tok-kw:#8a2be2; --tok-str:#0a7a3d; --tok-com:#777777; --tok-num:#b45309; --tok-ann:#0f766e;
+  --admon-bg:#f3f7fb; --admon-border:#4a7fb5; --admon-ink:#2f5d8a; --table-head:#f2f2f2;
+  --tok-kw:#8a2be2; --tok-str:#0a7a3d; --tok-com:#6b6b6b; --tok-num:#92400e; --tok-ann:#0f766e;
 }
 html[data-theme="dark"]{
   color-scheme:dark;
@@ -256,8 +256,8 @@ html[data-theme="dark"]{
   --sig-bg:#22272e; --sig-border:#333b44; --code-bg:#272d35; --code-fg:#e0e0e0;
   --shadow-soft:0 1px 2px rgba(0,0,0,.30), 0 6px 20px -14px rgba(0,0,0,.60);
   --shadow-pop:0 16px 40px -16px rgba(0,0,0,.65), 0 2px 8px rgba(0,0,0,.40);
-  --admon-bg:#212a33; --admon-border:#4f86bd; --table-head:#2a2a2a;
-  --tok-kw:#c792ea; --tok-str:#8fd3a3; --tok-com:#8a8a8a; --tok-num:#e2b93d; --tok-ann:#66c2b5;
+  --admon-bg:#212a33; --admon-border:#4f86bd; --admon-ink:#8ec3ea; --table-head:#2a2a2a;
+  --tok-kw:#c792ea; --tok-str:#8fd3a3; --tok-com:#a0a8b3; --tok-num:#e2b93d; --tok-ann:#66c2b5;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);
@@ -275,6 +275,11 @@ h2{font-size:1.5rem;margin:2rem 0 .8rem}
 h3{font-size:1.2rem;margin:1.6rem 0 .6rem}
 h4{font-size:.95rem;margin:1.4rem 0 .5rem;color:var(--muted);text-transform:uppercase;
   letter-spacing:.06em;border-bottom:1px solid var(--border-soft);padding-bottom:.3rem}
+/* member group labels ("构造器"/"方法"/"字段") are rubrics, not headings: docs.python.org
+   does the same, and it keeps the outline free of h2 -> h4 jumps inside a type block. */
+.rubric{font-weight:700;font-size:.95rem;margin:1.4rem 0 .5rem;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border-soft);
+  padding-bottom:.3rem}
 
 .topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;
   gap:1rem;height:44px;padding:0 1rem;background:var(--topbar-bg);color:var(--topbar-fg);
@@ -366,7 +371,7 @@ blockquote{margin:.9rem 0;padding:.15rem 0 .15rem .85rem;
 blockquote p{margin:.35rem 0}
 .admonition{background:var(--admon-bg);border-left:3px solid var(--admon-border);
   padding:.6rem .9rem;margin:.9rem 0;border-radius:0 4px 4px 0}
-.admonition-title{font-weight:700;margin:0 0 .2rem;font-size:.8125rem;color:var(--admon-border);
+.admonition-title{font-weight:700;margin:0 0 .2rem;font-size:.8125rem;color:var(--admon-ink);
   text-transform:uppercase;letter-spacing:.05em}
 .admonition p:last-child{margin-bottom:0}
 .seealso{color:var(--muted);font-size:.875rem;margin:.5rem 0}
@@ -542,6 +547,16 @@ ul.genindex-section li:hover{background:var(--surface-2);border-radius:4px}
     transform:translateX(-102%);transition:transform .22s ease;z-index:50;
     padding-top:1rem;box-shadow:0 0 0 1px var(--border), 0 18px 44px -18px rgba(0,0,0,.45)}
   body.nav-open .sidebar{transform:none}
+  /* the drawer is used with a thumb, so give every row a real touch target */
+  .nav-toggle{min-width:38px;min-height:38px;display:inline-flex;align-items:center;
+    justify-content:center;margin-right:.2rem}
+  .topbar-tools .tool-btn{min-height:34px;display:inline-flex;align-items:center}
+  .theme-select{min-height:34px}
+  .sidebar li a{padding:.42rem .35rem}
+  .nav-modules details>summary{padding-top:.42rem;padding-bottom:.42rem}
+  .nav-modules ul a{padding:.4rem .35rem}
+  .topbar a{padding-top:.4rem;padding-bottom:.4rem}
+  .relbar a{padding:.5rem 0}
   main{padding:1rem .95rem 3rem;max-width:none}
   article{max-width:none}
   h1{font-size:1.6rem}
@@ -977,7 +992,7 @@ def render_type_block(t: dict, docs: dict, href_for) -> str:
                          (methods, "方法"), (fields, "字段")):
         if not group:
             continue
-        out.append(f'<h4>{title}</h4>')
+        out.append(f'<p class="rubric">{title}</p>')
         for m in group:
             name = m["name"]
             idx = counters.get(name, 0)
@@ -1266,6 +1281,9 @@ html[data-theme="dark"]{color-scheme:dark;--ink:#d8dde3;--muted:#93a0ad;--line:#
 ::view-transition-old(jsl-bar){animation:none}
 ::view-transition-new(jsl-bar){animation:none}
 html[data-theme="dark"] body{background:#1a1c1f;color:#d8dde3}
+/* the report leaves <code> to inherit the surrounding colour, which turns muted
+   grey on a grey pill whenever a snippet sits inside a caption.  Pin it. */
+code{color:#374151}
 html[data-theme="dark"] code{background:#272d35;color:#dfe4ea}
 html[data-theme="dark"] pre{background:#14181d;color:#d8dde3}
 html[data-theme="dark"] pre code{background:transparent}
