@@ -124,6 +124,9 @@ pre.code code{background:none;border:0;padding:0;font-size:.8125rem}
 .tok-kw{color:var(--tok-kw)} .tok-str{color:var(--tok-str)}
 .tok-com{color:var(--tok-com);font-style:italic}
 .tok-num{color:var(--tok-num)} .tok-ann{color:var(--tok-ann)}
+blockquote{margin:.9rem 0;padding:.15rem 0 .15rem .85rem;
+  border-left:3px solid var(--border);color:var(--muted)}
+blockquote p{margin:.35rem 0}
 .admonition{background:var(--admon-bg);border-left:3px solid var(--admon-border);
   padding:.6rem .9rem;margin:.9rem 0;border-radius:0 4px 4px 0}
 .admonition-title{font-weight:700;margin:0 0 .2rem;font-size:.8125rem;color:var(--admon-border);
@@ -153,6 +156,13 @@ footer.doc-footer{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--bo
   color:var(--muted);font-size:.8125rem}
 footer.doc-footer a{color:var(--muted);text-decoration:underline}
 
+.nav-toggle{display:none;background:transparent;border:1px solid #5a5a5a;color:var(--topbar-fg);
+  font-size:1rem;line-height:1;padding:.25rem .45rem;border-radius:4px;cursor:pointer;margin-right:.4rem}
+.nav-toggle:hover{border-color:#8a8a8a}
+.nav-mask{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:45;display:none}
+body.nav-open .nav-mask{display:block}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:.9rem 0}
+.table-wrap table{margin:0}
 .search-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:none}
 .search-mask.open{display:block}
 .search-dialog{position:fixed;top:12vh;left:50%;transform:translateX(-50%);width:min(720px,92vw);
@@ -169,19 +179,77 @@ footer.doc-footer a{color:var(--muted);text-decoration:underline}
 .search-results .sr-meta{display:block;color:var(--muted);font-size:.78rem;margin-top:.15rem}
 .search-empty{padding:1rem;color:var(--muted);font-size:.9rem}
 
+/* ---------- tablet ---------- */
+@media (max-width:1024px){
+  .sidebar{flex:0 0 260px;width:260px}
+  main{padding:1.2rem 1.6rem 3rem}
+}
+/* ---------- phone: drawer navigation ---------- */
 @media (max-width:900px){
-  .topbar{position:static;height:auto;padding:.5rem .8rem;flex-wrap:wrap}
+  html,body{overflow-x:hidden}
+  .topbar{height:auto;min-height:48px;padding:.4rem .7rem;flex-wrap:nowrap;gap:.4rem;
+    overflow:hidden}
+  .nav-toggle{display:inline-block;flex:0 0 auto}
+  .crumbs{font-size:.78rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+    flex:1 1 auto;min-width:0;flex-wrap:nowrap;padding-right:.5rem;
+    mask-image:linear-gradient(to right,#000 calc(100% - 12px),transparent)}
+  .crumbs>*{flex:0 0 auto}
+  .crumbs .cur:last-child{overflow:hidden;text-overflow:ellipsis}
+  .crumbs .sep{margin:0 .25rem}
+  .crumb-version,.crumb-version+.sep,
+  .crumb-mid,.crumb-mid+.sep{display:none}
+  .topbar-tools{gap:.3rem;flex:0 0 auto}
+  .topbar-tools .tool-btn{padding:.2rem .3rem;font-size:.78rem}
+  .topbar-tools kbd{display:none}
+  .topbar-tools a[href*="api/index"]{display:none}
+  .topbar-tools a[href*="genindex"]{display:none}
+  .theme-select{max-width:4.6rem;font-size:.78rem}
   .shell{display:block}
-  .sidebar{position:static;width:auto;max-height:none;border-right:0;
-    border-bottom:1px solid var(--border)}
-  main{padding:1rem 1.1rem 3rem}
-  ul.chapters{grid-template-columns:1fr}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;width:min(84vw,320px);max-height:none;
+    transform:translateX(-102%);transition:transform .22s ease;z-index:50;
+    border-right:1px solid var(--border);padding-top:1rem;box-shadow:2px 0 18px rgba(0,0,0,.25)}
+  body.nav-open .sidebar{transform:none}
+  main{padding:1rem .95rem 3rem;max-width:none}
+  article{max-width:none}
+  h1{font-size:1.6rem}
+  h2{font-size:1.22rem;margin:1.5rem 0 .6rem}
+  h3{font-size:1.05rem}
+  body{font-size:15.5px}
+  ul.chapters{grid-template-columns:1fr;gap:1rem}
+  p.biglink,ul.chapters a{font-size:1.22rem}
+  /* signatures wrap instead of scrolling sideways */
+  dl.py>dt{white-space:normal;overflow-wrap:anywhere;line-height:1.5}
+  dl.py.method>dd,dl.py.constructor>dd{padding-left:.6rem}
+  /* field lists stack */
+  dl.field-list{grid-template-columns:1fr;gap:.1rem .5rem}
+  dl.field-list>dt{padding-top:.35rem}
+  pre.code{font-size:.75rem;padding:.6rem .7rem}
+  .table-wrap table{min-width:0}
+  table{font-size:.78rem}
+  table th,table td{padding:.3rem .4rem}
+  table.autosummary td:first-child{white-space:nowrap}
+  table td code{font-size:.76rem;padding:0 .2em}
+  .relbar{flex-direction:column;align-items:stretch;gap:.5rem}
+  .relbar .spacer{display:none}
+  .relbar .next{text-align:right}
+  ul.genindex-section{grid-template-columns:1fr}
+  footer.doc-footer{padding:1rem .95rem 2.5rem}
+}
+/* ---------- small phone ---------- */
+@media (max-width:420px){
+  .crumbs{font-size:.74rem}
+  .table-wrap table{min-width:0}
+  .admonition{padding:.5rem .7rem}
+  h1{font-size:1.45rem}
+  .topbar{padding:.35rem .5rem}
 }
 </style>
 </head>
 <body>
 <header class="topbar">
-<div class="crumbs"><a href="../index.html">JSL</a><span class="sep">»</span><span class="cur">2.4.0</span><span class="sep">»</span><a href="index.html">API 参考</a><span class="sep">»</span><span class="cur">jsl.concurrent</span></div>
+<button id="nav-toggle" class="nav-toggle" type="button" aria-label="打开目录"
+        aria-controls="sidebar" aria-expanded="false">☰</button>
+<div class="crumbs"><a href="../index.html">JSL</a><span class="sep">»</span><span class="cur crumb-version">2.4.0</span><span class="sep">»</span><a href="index.html">API 参考</a><span class="sep">»</span><span class="cur">jsl.concurrent</span></div>
 <div class="topbar-tools">
   <label>主题 <select id="theme-select" class="theme-select" aria-label="主题">
     <option value="auto">自动</option><option value="light">浅色</option><option value="dark">深色</option>
@@ -195,7 +263,7 @@ footer.doc-footer a{color:var(--muted);text-decoration:underline}
 <div class="shell">
 <aside class="sidebar"><div class="sidebar-head">本页目录</div><ul><li><a href="#type-jsl.concurrent.InferenceEngine">InferenceEngine</a></li></ul><div class="sidebar-head">下载</div><ul><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/tag/v2.4.0">JSL 2.4.0 发布页（全部资产）</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v2.4.0/jsl-runtime-2.4.0-all.jar">jsl-runtime-2.4.0-all.jar</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v2.4.0/jsl-runtime-2.4.0.jar">jsl-runtime-2.4.0.jar</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v2.4.0/jsl-runtime-2.4.0-sources.jar">jsl-runtime-2.4.0-sources.jar</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v2.4.0/jsl_native.dll">jsl_native.dll（Windows x86_64）</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v2.4.0/jsl-docs-2.4.0.zip">jsl-docs-2.4.0.zip（离线文档）</a></li></ul><div class="sidebar-head">各版文档</div><ul><li><a href="../index.html">JSL 2.4.0 (stable)</a></li><li><a href="../api/index.html">模块索引</a></li><li><a href="../genindex.html">总索引</a></li></ul><div class="sidebar-head">Other resources</div><ul><li><a href="../readme.html">README</a></li><li><a href="../report/JSL_ARCHITECTURE_AND_BENCHMARK.html">架构与基准报告</a></li><li><a href="../report/JSL_VS_SKLEARN.html">与 scikit-learn 对比</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn">GitHub 仓库</a></li></ul></aside>
 <main><article>
-<h1>模块 <code>jsl.concurrent</code><a class="headerlink" href="#" title="永久链接">¶</a></h1><p class="welcome">1 个公开类型</p><p>jsl.concurrent 提供建立在虚拟线程之上的任务编排。虚拟线程的创建成本足够低，可以按请求分配一个，但 CPU 密集的原生内核仍需要按核数限流，因此该包把「限流执行」与「不限流执行」拆成两条入口。</p><p>InferenceEngine 用 Semaphore 约束并发的模型推理，同时用无许可的入口承载 I/O 等待型任务；结果列表始终按提交顺序返回，调用方无需自行重排。</p><h2 id="overview">类型概览</h2><table class="autosummary"><thead><tr><th>类型</th><th>种类</th><th>说明</th></tr></thead><tbody><tr><td><a href="#type-jsl.concurrent.InferenceEngine"><code>InferenceEngine</code></a></td><td>class</td><td>虚拟线程扇出：带许可限流的批量推理与不限流的任务编排</td></tr></tbody></table><dl class="py class" id="type-jsl.concurrent.InferenceEngine"><dt class="sig sig-object py"><span class="property">final</span> class InferenceEngine <span class="property">implements</span> AutoCloseable<a class="headerlink" href="#type-jsl.concurrent.InferenceEngine" title="永久链接">¶</a></dt><dd><p class="summary">虚拟线程扇出：带许可限流的批量推理与不限流的任务编排</p><p>每个实例持有一个 virtual-thread-per-task 执行器与一组信号量许可。predict 为每个批次提交一个任务，任务先获取许可再调用模型的 predict，从而把并发的原生/Java 内核数量压在许可数以内。</p><p>runIo 与 runAll 不消耗许可，适用于等待外部 I/O 的任务：此时虚拟线程的优势在于避免每个请求占用一个平台线程，而不是提高算力。</p><p>两条路径共用同一套提交与收集逻辑，因此异常语义、结果顺序与关闭行为完全一致。</p><div class="example"><div class="example-label">示例</div><pre class="code"><code>Matrix train = Matrix.fromRows(<span class="tok-kw">new</span> <span class="tok-kw">double</span>[][]{{<span class="tok-num">1.0</span>, <span class="tok-num">2.0</span>}, {<span class="tok-num">3.0</span>, <span class="tok-num">4.0</span>}, {<span class="tok-num">5.0</span>, <span class="tok-num">7.0</span>}});
+<h1>模块 <code>jsl.concurrent</code><a class="headerlink" href="#" title="永久链接">¶</a></h1><p class="welcome">1 个公开类型</p><p>jsl.concurrent 提供建立在虚拟线程之上的任务编排。虚拟线程的创建成本足够低，可以按请求分配一个，但 CPU 密集的原生内核仍需要按核数限流，因此该包把「限流执行」与「不限流执行」拆成两条入口。</p><p>InferenceEngine 用 Semaphore 约束并发的模型推理，同时用无许可的入口承载 I/O 等待型任务；结果列表始终按提交顺序返回，调用方无需自行重排。</p><h2 id="overview">类型概览</h2><div class="table-wrap"><table class="autosummary"><thead><tr><th>类型</th><th>种类</th><th>说明</th></tr></thead><tbody><tr><td><a href="#type-jsl.concurrent.InferenceEngine"><code>InferenceEngine</code></a></td><td>class</td><td>虚拟线程扇出：带许可限流的批量推理与不限流的任务编排</td></tr></tbody></table></div><dl class="py class" id="type-jsl.concurrent.InferenceEngine"><dt class="sig sig-object py"><span class="property">final</span> class InferenceEngine <span class="property">implements</span> AutoCloseable<a class="headerlink" href="#type-jsl.concurrent.InferenceEngine" title="永久链接">¶</a></dt><dd><p class="summary">虚拟线程扇出：带许可限流的批量推理与不限流的任务编排</p><p>每个实例持有一个 virtual-thread-per-task 执行器与一组信号量许可。predict 为每个批次提交一个任务，任务先获取许可再调用模型的 predict，从而把并发的原生/Java 内核数量压在许可数以内。</p><p>runIo 与 runAll 不消耗许可，适用于等待外部 I/O 的任务：此时虚拟线程的优势在于避免每个请求占用一个平台线程，而不是提高算力。</p><p>两条路径共用同一套提交与收集逻辑，因此异常语义、结果顺序与关闭行为完全一致。</p><div class="example"><div class="example-label">示例</div><pre class="code"><code>Matrix train = Matrix.fromRows(<span class="tok-kw">new</span> <span class="tok-kw">double</span>[][]{{<span class="tok-num">1.0</span>, <span class="tok-num">2.0</span>}, {<span class="tok-num">3.0</span>, <span class="tok-num">4.0</span>}, {<span class="tok-num">5.0</span>, <span class="tok-num">7.0</span>}});
 Estimator model = jsl.ml.JSL.fit(jsl.ml.JSL.Algorithm.RIDGE, train, <span class="tok-kw">new</span> <span class="tok-kw">double</span>[]{<span class="tok-num">1.0</span>, <span class="tok-num">2.0</span>, <span class="tok-num">3.0</span>});
 <span class="tok-kw">try</span> (InferenceEngine engine = <span class="tok-kw">new</span> InferenceEngine(<span class="tok-num">4</span>)) {
     List&lt;<span class="tok-kw">double</span>[]&gt; out = engine.predict(model, List.of(train, train));
@@ -203,6 +271,7 @@ Estimator model = jsl.ml.JSL.fit(jsl.ml.JSL.Algorithm.RIDGE, train, <span class=
 }</code></pre></div><div class="admonition note"><p class="admonition-title">注意</p><p>结果列表严格按输入列表顺序返回，与任务完成顺序无关。</p></div><div class="admonition note"><p class="admonition-title">注意</p><p>任一任务失败即抛出 IllegalStateException 并携带原始 cause，其余已提交任务不会被取消。</p></div><div class="admonition note"><p class="admonition-title">注意</p><p>closed 标志是普通 boolean 字段，关闭与并发提交之间没有额外同步，不建议跨线程关闭。</p></div><div class="admonition note"><p class="admonition-title">注意</p><p>close() 调用 ExecutorService.close()，会等待已提交任务结束。</p></div><p class="seealso">参见：<a href="jsl_ml.html#type-jsl.ml.Estimator">jsl.ml.Estimator</a>, <a href="jsl_core.html#type-jsl.core.Matrix">jsl.core.Matrix</a></p><h4>构造器</h4><dl class="py constructor" id="m-jsl.concurrent.InferenceEngine.InferenceEngine"><dt class="sig sig-object py"><span class="sig-name descname">InferenceEngine</span><span class="sig-paren">(</span><em class="sig-param">int parallelism</em><span class="sig-paren">)</span><a class="headerlink" href="#m-jsl.concurrent.InferenceEngine.InferenceEngine" title="永久链接">¶</a></dt><dd><p class="summary">按并行度创建推理引擎</p><p>parallelism 决定信号量许可总数，即同时执行的内核调用上限；执行器本身不设线程上限，每个任务各占一个虚拟线程。</p><dl class="field-list simple"><dt>参数</dt><dd><ul><li><p><span class="param-name">parallelism</span> (<span class="param-type">int</span>) – 并发许可数，必须为正，通常取 CPU 核数</p></li></ul></dd><dt>抛出</dt><dd><ul><li><p><span class="exc">IllegalArgumentException</span> – parallelism 小于等于 0</p></li></ul></dd></dl></dd></dl><h4>方法</h4><dl class="py method" id="m-jsl.concurrent.InferenceEngine.predict"><dt class="sig sig-object py"><span class="sig-name descname">predict</span><span class="sig-paren">(</span><em class="sig-param">Estimator model</em>, <em class="sig-param">List&lt;Matrix&gt; batches</em><span class="sig-paren">)</span> <span class="sig-return">→</span> <span class="sig-return-typehint">List&lt;double[]&gt;</span><a class="headerlink" href="#m-jsl.concurrent.InferenceEngine.predict" title="永久链接">¶</a></dt><dd><p class="summary">并发预测多个独立批次</p><p>每个批次包装为一个任务，任务在调用 model.predict 前后成对获取与释放许可，释放放在 finally 中以保证异常路径不泄漏许可。批次之间必须相互独立，同一模型被并发读取。</p><div class="admonition note"><p class="admonition-title">注意</p><p>许可不足时任务阻塞等待，不会拒绝提交。</p></div><dl class="field-list simple"><dt>参数</dt><dd><ul><li><p><span class="param-name">model</span> (<span class="param-type">Estimator</span>) – 已训练的估计器；其 predict 会被多个虚拟线程同时调用</p></li><li><p><span class="param-name">batches</span> (<span class="param-type">List&lt;Matrix&gt;</span>) – 待预测批次列表，每个元素对应一个结果</p></li></ul></dd><dt>返回</dt><dd><p>与 batches 等长且同序的预测结果列表</p></dd><dt>抛出</dt><dd><ul><li><p><span class="exc">IllegalStateException</span> – 引擎已关闭，或某个批次预测失败（cause 为原始异常）</p></li></ul></dd></dl></dd></dl><dl class="py method" id="m-jsl.concurrent.InferenceEngine.runIo"><dt class="sig sig-object py"><span class="pre">&lt;T&gt; </span><span class="sig-name descname">runIo</span><span class="sig-paren">(</span><em class="sig-param">List&lt;Callable&lt;T&gt;&gt; tasks</em><span class="sig-paren">)</span> <span class="sig-return">→</span> <span class="sig-return-typehint">List&lt;T&gt;</span><a class="headerlink" href="#m-jsl.concurrent.InferenceEngine.runIo" title="永久链接">¶</a></dt><dd><p class="summary">不限流地并发执行 I/O 型任务</p><p>实现上直接委托 runAll，不获取信号量许可；适用于阻塞等待网络或磁盘的场景，任务数可以远大于核数。</p><dl class="field-list simple"><dt>参数</dt><dd><ul><li><p><span class="param-name">tasks</span> (<span class="param-type">List&lt;Callable&lt;T&gt;&gt;</span>) – 待执行任务列表，每个任务一个虚拟线程</p></li></ul></dd><dt>返回</dt><dd><p>与 tasks 等长且同序的结果列表</p></dd><dt>抛出</dt><dd><ul><li><p><span class="exc">IllegalStateException</span> – 引擎已关闭，或某个任务执行失败</p></li></ul></dd></dl></dd></dl><dl class="py method" id="m-jsl.concurrent.InferenceEngine.runAll"><dt class="sig sig-object py"><span class="pre">&lt;T&gt; </span><span class="sig-name descname">runAll</span><span class="sig-paren">(</span><em class="sig-param">List&lt;Callable&lt;T&gt;&gt; tasks</em><span class="sig-paren">)</span> <span class="sig-return">→</span> <span class="sig-return-typehint">List&lt;T&gt;</span><a class="headerlink" href="#m-jsl.concurrent.InferenceEngine.runAll" title="永久链接">¶</a></dt><dd><p class="summary">提交全部任务并按提交顺序收集结果</p><p>先一次性提交所有任务，再按 futures 顺序逐个 get，因此返回顺序与输入顺序一致，但等待是串行的：前面的任务未完成时不会读取后面的结果。首个失败会立即中断收集。</p><dl class="field-list simple"><dt>参数</dt><dd><ul><li><p><span class="param-name">tasks</span> (<span class="param-type">List&lt;Callable&lt;T&gt;&gt;</span>) – 待执行任务列表</p></li></ul></dd><dt>返回</dt><dd><p>与 tasks 等长且同序的结果列表</p></dd><dt>抛出</dt><dd><ul><li><p><span class="exc">IllegalStateException</span> – 引擎已关闭；或任务抛出异常，消息为 "Inference task failed" 且 cause 为原始异常；或等待时被中断，此时中断标志已恢复</p></li></ul></dd></dl></dd></dl><dl class="py method" id="m-jsl.concurrent.InferenceEngine.close"><dt class="sig sig-object py"><span class="sig-name descname">close</span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#m-jsl.concurrent.InferenceEngine.close" title="永久链接">¶</a></dt><dd><p class="summary">关闭执行器并等待任务结束</p><p>首次调用把 closed 置为 true 并关闭执行器，后续调用无副作用。关闭后提交任务会抛出 IllegalStateException。</p><div class="admonition note"><p class="admonition-title">注意</p><p>ExecutorService.close() 会阻塞至已提交任务全部完成，长任务会延长关闭时间。</p></div></dd></dl></dd></dl><div class="relbar"><a class="prev" href="jsl_torch.html">jsl.torch</a><span class="spacer"></span><a class="next" href="index.html">模块索引</a></div>
 </article></main>
 </div>
+<div id="nav-mask" class="nav-mask"></div>
 <div id="search-mask" class="search-mask"></div>
 <div id="search-dialog" class="search-dialog" role="dialog" aria-label="搜索">
   <input id="search-input" type="search" placeholder="搜索类型、方法或说明…" autocomplete="off" />
@@ -231,6 +300,28 @@ Estimator model = jsl.ml.JSL.fit(jsl.ml.JSL.Algorithm.RIDGE, train, <span class=
   if(media&&media.addEventListener){media.addEventListener('change',function(){
     if((root.getAttribute('data-theme-pref')||'auto')==='auto'){apply('auto');}
   });}
+
+  // ---- mobile drawer ----
+  var navToggle=document.getElementById('nav-toggle');
+  var navMask=document.getElementById('nav-mask');
+  function setNav(open){
+    document.body.classList.toggle('nav-open',open);
+    if(navToggle){navToggle.setAttribute('aria-expanded',open?'true':'false');}
+  }
+  if(navToggle){navToggle.addEventListener('click',function(){
+    setNav(!document.body.classList.contains('nav-open'));
+  });}
+  if(navMask){navMask.addEventListener('click',function(){setNav(false);});}
+  document.addEventListener('click',function(e){
+    var a=e.target.closest?e.target.closest('.sidebar a'):null;
+    if(a&&window.innerWidth<=900){setNav(false);}
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){setNav(false);}
+  });
+  window.addEventListener('resize',function(){
+    if(window.innerWidth>900){setNav(false);}
+  });
 
   var mask=document.getElementById('search-mask');
   var dlg=document.getElementById('search-dialog');

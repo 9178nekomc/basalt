@@ -124,6 +124,9 @@ pre.code code{background:none;border:0;padding:0;font-size:.8125rem}
 .tok-kw{color:var(--tok-kw)} .tok-str{color:var(--tok-str)}
 .tok-com{color:var(--tok-com);font-style:italic}
 .tok-num{color:var(--tok-num)} .tok-ann{color:var(--tok-ann)}
+blockquote{margin:.9rem 0;padding:.15rem 0 .15rem .85rem;
+  border-left:3px solid var(--border);color:var(--muted)}
+blockquote p{margin:.35rem 0}
 .admonition{background:var(--admon-bg);border-left:3px solid var(--admon-border);
   padding:.6rem .9rem;margin:.9rem 0;border-radius:0 4px 4px 0}
 .admonition-title{font-weight:700;margin:0 0 .2rem;font-size:.8125rem;color:var(--admon-border);
@@ -153,6 +156,13 @@ footer.doc-footer{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--bo
   color:var(--muted);font-size:.8125rem}
 footer.doc-footer a{color:var(--muted);text-decoration:underline}
 
+.nav-toggle{display:none;background:transparent;border:1px solid #5a5a5a;color:var(--topbar-fg);
+  font-size:1rem;line-height:1;padding:.25rem .45rem;border-radius:4px;cursor:pointer;margin-right:.4rem}
+.nav-toggle:hover{border-color:#8a8a8a}
+.nav-mask{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:45;display:none}
+body.nav-open .nav-mask{display:block}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:.9rem 0}
+.table-wrap table{margin:0}
 .search-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:none}
 .search-mask.open{display:block}
 .search-dialog{position:fixed;top:12vh;left:50%;transform:translateX(-50%);width:min(720px,92vw);
@@ -169,19 +179,77 @@ footer.doc-footer a{color:var(--muted);text-decoration:underline}
 .search-results .sr-meta{display:block;color:var(--muted);font-size:.78rem;margin-top:.15rem}
 .search-empty{padding:1rem;color:var(--muted);font-size:.9rem}
 
+/* ---------- tablet ---------- */
+@media (max-width:1024px){
+  .sidebar{flex:0 0 260px;width:260px}
+  main{padding:1.2rem 1.6rem 3rem}
+}
+/* ---------- phone: drawer navigation ---------- */
 @media (max-width:900px){
-  .topbar{position:static;height:auto;padding:.5rem .8rem;flex-wrap:wrap}
+  html,body{overflow-x:hidden}
+  .topbar{height:auto;min-height:48px;padding:.4rem .7rem;flex-wrap:nowrap;gap:.4rem;
+    overflow:hidden}
+  .nav-toggle{display:inline-block;flex:0 0 auto}
+  .crumbs{font-size:.78rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+    flex:1 1 auto;min-width:0;flex-wrap:nowrap;padding-right:.5rem;
+    mask-image:linear-gradient(to right,#000 calc(100% - 12px),transparent)}
+  .crumbs>*{flex:0 0 auto}
+  .crumbs .cur:last-child{overflow:hidden;text-overflow:ellipsis}
+  .crumbs .sep{margin:0 .25rem}
+  .crumb-version,.crumb-version+.sep,
+  .crumb-mid,.crumb-mid+.sep{display:none}
+  .topbar-tools{gap:.3rem;flex:0 0 auto}
+  .topbar-tools .tool-btn{padding:.2rem .3rem;font-size:.78rem}
+  .topbar-tools kbd{display:none}
+  .topbar-tools a[href*="api/index"]{display:none}
+  .topbar-tools a[href*="genindex"]{display:none}
+  .theme-select{max-width:4.6rem;font-size:.78rem}
   .shell{display:block}
-  .sidebar{position:static;width:auto;max-height:none;border-right:0;
-    border-bottom:1px solid var(--border)}
-  main{padding:1rem 1.1rem 3rem}
-  ul.chapters{grid-template-columns:1fr}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;width:min(84vw,320px);max-height:none;
+    transform:translateX(-102%);transition:transform .22s ease;z-index:50;
+    border-right:1px solid var(--border);padding-top:1rem;box-shadow:2px 0 18px rgba(0,0,0,.25)}
+  body.nav-open .sidebar{transform:none}
+  main{padding:1rem .95rem 3rem;max-width:none}
+  article{max-width:none}
+  h1{font-size:1.6rem}
+  h2{font-size:1.22rem;margin:1.5rem 0 .6rem}
+  h3{font-size:1.05rem}
+  body{font-size:15.5px}
+  ul.chapters{grid-template-columns:1fr;gap:1rem}
+  p.biglink,ul.chapters a{font-size:1.22rem}
+  /* signatures wrap instead of scrolling sideways */
+  dl.py>dt{white-space:normal;overflow-wrap:anywhere;line-height:1.5}
+  dl.py.method>dd,dl.py.constructor>dd{padding-left:.6rem}
+  /* field lists stack */
+  dl.field-list{grid-template-columns:1fr;gap:.1rem .5rem}
+  dl.field-list>dt{padding-top:.35rem}
+  pre.code{font-size:.75rem;padding:.6rem .7rem}
+  .table-wrap table{min-width:0}
+  table{font-size:.78rem}
+  table th,table td{padding:.3rem .4rem}
+  table.autosummary td:first-child{white-space:nowrap}
+  table td code{font-size:.76rem;padding:0 .2em}
+  .relbar{flex-direction:column;align-items:stretch;gap:.5rem}
+  .relbar .spacer{display:none}
+  .relbar .next{text-align:right}
+  ul.genindex-section{grid-template-columns:1fr}
+  footer.doc-footer{padding:1rem .95rem 2.5rem}
+}
+/* ---------- small phone ---------- */
+@media (max-width:420px){
+  .crumbs{font-size:.74rem}
+  .table-wrap table{min-width:0}
+  .admonition{padding:.5rem .7rem}
+  h1{font-size:1.45rem}
+  .topbar{padding:.35rem .5rem}
 }
 </style>
 </head>
 <body>
 <header class="topbar">
-<div class="crumbs"><a href="../index.html">JSL</a><span class="sep">»</span><span class="cur">2.4.0</span><span class="sep">»</span><a href="index.html">API 参考</a><span class="sep">»</span><span class="cur">jsl.data</span></div>
+<button id="nav-toggle" class="nav-toggle" type="button" aria-label="打开目录"
+        aria-controls="sidebar" aria-expanded="false">☰</button>
+<div class="crumbs"><a href="../index.html">JSL</a><span class="sep">»</span><span class="cur crumb-version">2.4.0</span><span class="sep">»</span><a href="index.html">API 参考</a><span class="sep">»</span><span class="cur">jsl.data</span></div>
 <div class="topbar-tools">
   <label>主题 <select id="theme-select" class="theme-select" aria-label="主题">
     <option value="auto">自动</option><option value="light">浅色</option><option value="dark">深色</option>
@@ -195,7 +263,7 @@ footer.doc-footer a{color:var(--muted);text-decoration:underline}
 <div class="shell">
 <aside class="sidebar"><div class="sidebar-head">本页目录</div><ul><li><a href="#type-jsl.data.DataLoader">DataLoader</a></li><li><a href="#type-jsl.data.Normalization">Normalization</a></li><li><a href="#type-jsl.data.DataLoader.Batch">DataLoader.Batch</a></li><li><a href="#type-jsl.data.DataLoader.BatchStream">DataLoader.BatchStream</a></li><li><a href="#type-jsl.data.DataLoader.Builder">DataLoader.Builder</a></li><li><a href="#type-jsl.data.DataLoader.MappedBatchStream">DataLoader.MappedBatchStream</a></li></ul><div class="sidebar-head">下载</div><ul><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/tag/v2.4.0">JSL 2.4.0 发布页（全部资产）</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v2.4.0/jsl-runtime-2.4.0-all.jar">jsl-runtime-2.4.0-all.jar</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v2.4.0/jsl-runtime-2.4.0.jar">jsl-runtime-2.4.0.jar</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v2.4.0/jsl-runtime-2.4.0-sources.jar">jsl-runtime-2.4.0-sources.jar</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v2.4.0/jsl_native.dll">jsl_native.dll（Windows x86_64）</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v2.4.0/jsl-docs-2.4.0.zip">jsl-docs-2.4.0.zip（离线文档）</a></li></ul><div class="sidebar-head">各版文档</div><ul><li><a href="../index.html">JSL 2.4.0 (stable)</a></li><li><a href="../api/index.html">模块索引</a></li><li><a href="../genindex.html">总索引</a></li></ul><div class="sidebar-head">Other resources</div><ul><li><a href="../readme.html">README</a></li><li><a href="../report/JSL_ARCHITECTURE_AND_BENCHMARK.html">架构与基准报告</a></li><li><a href="../report/JSL_VS_SKLEARN.html">与 scikit-learn 对比</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn">GitHub 仓库</a></li></ul></aside>
 <main><article>
-<h1>模块 <code>jsl.data</code><a class="headerlink" href="#" title="永久链接">¶</a></h1><p class="welcome">6 个公开类型</p><p>JSLD 是定长二进制记录格式：16 字节文件头之后，每条记录为 featureCount 个 double 特征紧跟一个 double 标签，按 ByteBuffer 默认的大端序存放。</p><p>本模块提供顺序读取器、内存映射读取器、可复用批次视图，以及标准化参数的估计与应用；写入端只负责把矩阵与标签落成 JSLD。</p><h2 id="overview">类型概览</h2><table class="autosummary"><thead><tr><th>类型</th><th>种类</th><th>说明</th></tr></thead><tbody><tr><td><a href="#type-jsl.data.DataLoader"><code>DataLoader</code></a></td><td>class</td><td>JSLD 记录的批式读取入口，附带统计与写盘工具。</td></tr><tr><td><a href="#type-jsl.data.Normalization"><code>Normalization</code></a></td><td>class</td><td>不可变的标准化参数，应用时零分配。</td></tr><tr><td><a href="#type-jsl.data.DataLoader.Batch"><code>DataLoader.Batch</code></a></td><td>class</td><td>单批数据的可复用视图，随读取器推进被覆盖。</td></tr><tr><td><a href="#type-jsl.data.DataLoader.BatchStream"><code>DataLoader.BatchStream</code></a></td><td>class</td><td>顺序分批读取 JSLD，可回绕重读。</td></tr><tr><td><a href="#type-jsl.data.DataLoader.Builder"><code>DataLoader.Builder</code></a></td><td>class</td><td>两个读取器共享的配置构建器。</td></tr><tr><td><a href="#type-jsl.data.DataLoader.MappedBatchStream"><code>DataLoader.MappedBatchStream</code></a></td><td>class</td><td>内存映射读取器，按 epoch 打乱且不重复分配。</td></tr></tbody></table><dl class="py class" id="type-jsl.data.DataLoader"><dt class="sig sig-object py"><span class="property">final</span> class DataLoader<a class="headerlink" href="#type-jsl.data.DataLoader" title="永久链接">¶</a></dt><dd><p class="summary">JSLD 记录的批式读取入口，附带统计与写盘工具。</p><p>文件头固定 16 字节：magic 0x4A534C44（"JSLD"）、version 1、featureCount 与保留位（写入为 0，读取要求为 0）。其后每条记录为 featureCount 个 double 特征加一个 double 标签，记录宽度 (featureCount + 1) * 8 字节。</p><p>两个读取器共享同一 Batch 契约。BatchStream 顺序读入按批大小分配的直接缓冲区，再用 DoubleBuffer 视图解码；MappedBatchStream 映射整个文件，以绝对批量读取汇集行，映射之后一个 epoch 内无系统调用。批次、特征数组、标签数组与字节缓冲只在构造期分配一次。</p><p>除读取器外，类还提供三个静态工具：write 生成 JSLD 文件，estimateNormalization 单遍统计均值与样本标准差，rowCount 由文件大小推算记录数。</p><div class="example"><div class="example-label">示例</div><pre class="code"><code>Path file = Path.of(<span class="tok-string">"dataset.jsld"</span>);
+<h1>模块 <code>jsl.data</code><a class="headerlink" href="#" title="永久链接">¶</a></h1><p class="welcome">6 个公开类型</p><p>JSLD 是定长二进制记录格式：16 字节文件头之后，每条记录为 featureCount 个 double 特征紧跟一个 double 标签，按 ByteBuffer 默认的大端序存放。</p><p>本模块提供顺序读取器、内存映射读取器、可复用批次视图，以及标准化参数的估计与应用；写入端只负责把矩阵与标签落成 JSLD。</p><h2 id="overview">类型概览</h2><div class="table-wrap"><table class="autosummary"><thead><tr><th>类型</th><th>种类</th><th>说明</th></tr></thead><tbody><tr><td><a href="#type-jsl.data.DataLoader"><code>DataLoader</code></a></td><td>class</td><td>JSLD 记录的批式读取入口，附带统计与写盘工具。</td></tr><tr><td><a href="#type-jsl.data.Normalization"><code>Normalization</code></a></td><td>class</td><td>不可变的标准化参数，应用时零分配。</td></tr><tr><td><a href="#type-jsl.data.DataLoader.Batch"><code>DataLoader.Batch</code></a></td><td>class</td><td>单批数据的可复用视图，随读取器推进被覆盖。</td></tr><tr><td><a href="#type-jsl.data.DataLoader.BatchStream"><code>DataLoader.BatchStream</code></a></td><td>class</td><td>顺序分批读取 JSLD，可回绕重读。</td></tr><tr><td><a href="#type-jsl.data.DataLoader.Builder"><code>DataLoader.Builder</code></a></td><td>class</td><td>两个读取器共享的配置构建器。</td></tr><tr><td><a href="#type-jsl.data.DataLoader.MappedBatchStream"><code>DataLoader.MappedBatchStream</code></a></td><td>class</td><td>内存映射读取器，按 epoch 打乱且不重复分配。</td></tr></tbody></table></div><dl class="py class" id="type-jsl.data.DataLoader"><dt class="sig sig-object py"><span class="property">final</span> class DataLoader<a class="headerlink" href="#type-jsl.data.DataLoader" title="永久链接">¶</a></dt><dd><p class="summary">JSLD 记录的批式读取入口，附带统计与写盘工具。</p><p>文件头固定 16 字节：magic 0x4A534C44（"JSLD"）、version 1、featureCount 与保留位（写入为 0，读取要求为 0）。其后每条记录为 featureCount 个 double 特征加一个 double 标签，记录宽度 (featureCount + 1) * 8 字节。</p><p>两个读取器共享同一 Batch 契约。BatchStream 顺序读入按批大小分配的直接缓冲区，再用 DoubleBuffer 视图解码；MappedBatchStream 映射整个文件，以绝对批量读取汇集行，映射之后一个 epoch 内无系统调用。批次、特征数组、标签数组与字节缓冲只在构造期分配一次。</p><p>除读取器外，类还提供三个静态工具：write 生成 JSLD 文件，estimateNormalization 单遍统计均值与样本标准差，rowCount 由文件大小推算记录数。</p><div class="example"><div class="example-label">示例</div><pre class="code"><code>Path file = Path.of(<span class="tok-string">"dataset.jsld"</span>);
 Matrix features = Matrix.fromRows(<span class="tok-kw">new</span> <span class="tok-kw">double</span>[][]{
         {<span class="tok-num">1.0</span>, <span class="tok-num">2.0</span>}, {<span class="tok-num">3.0</span>, <span class="tok-num">4.0</span>}, {<span class="tok-num">5.0</span>, <span class="tok-num">7.0</span>}, {<span class="tok-num">2.0</span>, <span class="tok-num">1.0</span>}});
 DataLoader.write(file, features, <span class="tok-kw">new</span> <span class="tok-kw">double</span>[]{<span class="tok-num">0.0</span>, <span class="tok-num">1.0</span>, <span class="tok-num">1.0</span>, <span class="tok-num">0.0</span>});
@@ -268,6 +336,7 @@ Normalization normalization = DataLoader.estimateNormalization(file, <span class
 }</code></pre></div><div class="admonition note"><p class="admonition-title">注意</p><p>批次、特征数组与标签数组各分配一次，之后只改写内容。</p></div><div class="admonition note"><p class="admonition-title">注意</p><p>打乱作用于索引数组，映射区中的原始顺序不变。</p></div><div class="admonition note"><p class="admonition-title">注意</p><p>close() 只置关闭标志，不显式解除映射；关闭后 next()/rewind() 抛 IllegalStateException（与 BatchStream 的 IOException 不同）。</p></div><div class="admonition note"><p class="admonition-title">注意</p><p>总行数受 int 索引限制，超过 Integer.MAX_VALUE 的文件在 openMapped() 阶段即被拒绝。</p></div><p class="seealso">参见：<code>jsl.data.DataLoader.Builder.openMapped()</code>, <a href="jsl_data.html#type-jsl.data.DataLoader.BatchStream">jsl.data.DataLoader.BatchStream</a></p><h4>方法</h4><dl class="py method" id="m-jsl.data.DataLoader.MappedBatchStream.next"><dt class="sig sig-object py"><span class="sig-name descname">next</span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return">→</span> <span class="sig-return-typehint">boolean</span><a class="headerlink" href="#m-jsl.data.DataLoader.MappedBatchStream.next" title="永久链接">¶</a></dt><dd><p class="summary">汇集下一批，耗尽返回 false。</p><p>取 min(batchSize, totalRows - cursor) 行，按索引数组找到源记录，把特征段批量复制进批次数组并逐行取标签，配置了归一化时就地标准化。行数为 0 时返回 false 并把批次行数置 0。</p><p>本方法不声明受检异常；流已关闭时抛 IllegalStateException。</p><div class="admonition note"><p class="admonition-title">注意</p><p>不抛出 IOException：映射建立后读取只触及已映射内存</p></div><dl class="field-list simple"><dt>返回</dt><dd><p>是否读到至少一行</p></dd></dl></dd></dl><dl class="py method" id="m-jsl.data.DataLoader.MappedBatchStream.batch"><dt class="sig sig-object py"><span class="sig-name descname">batch</span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return">→</span> <span class="sig-return-typehint">Batch</span><a class="headerlink" href="#m-jsl.data.DataLoader.MappedBatchStream.batch" title="永久链接">¶</a></dt><dd><p class="summary">返回与流绑定的批次视图。</p><div class="admonition note"><p class="admonition-title">注意</p><p>内容在每次 next() 后被覆盖</p></div><dl class="field-list simple"><dt>返回</dt><dd><p>构造时创建并持续复用的 Batch，永不为 null</p></dd></dl></dd></dl><dl class="py method" id="m-jsl.data.DataLoader.MappedBatchStream.rewind"><dt class="sig sig-object py"><span class="sig-name descname">rewind</span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#m-jsl.data.DataLoader.MappedBatchStream.rewind" title="永久链接">¶</a></dt><dd><p class="summary">开始新 epoch，必要时重新打乱。</p><p>游标归零、epoch 加一；shuffle 为 true 时用 seed + epoch * 1000003 新建 Random 并再次做 Fisher-Yates 置换，因此相邻 epoch 的顺序不同，而相同 epoch 号在相同 seed 下可复现。shuffle 为 false 时只重置游标。</p><p>不重新映射文件，也不重新读取文件头；流已关闭时抛 IllegalStateException。</p><div class="admonition note"><p class="admonition-title">注意</p><p>epoch 从 0 开始，首次 rewind() 后为 1</p></div><div class="admonition note"><p class="admonition-title">注意</p><p>置换就地复用同一 int 数组，不产生分配</p></div></dd></dl><dl class="py method" id="m-jsl.data.DataLoader.MappedBatchStream.totalRows"><dt class="sig sig-object py"><span class="sig-name descname">totalRows</span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return">→</span> <span class="sig-return-typehint">int</span><a class="headerlink" href="#m-jsl.data.DataLoader.MappedBatchStream.totalRows" title="永久链接">¶</a></dt><dd><p class="summary">映射到的总记录数。</p><div class="admonition note"><p class="admonition-title">注意</p><p>与 epoch 无关，整个生命周期内不变</p></div><dl class="field-list simple"><dt>返回</dt><dd><p>由 (文件大小 - 16) / 记录宽度 推出的行数</p></dd></dl></dd></dl><dl class="py method" id="m-jsl.data.DataLoader.MappedBatchStream.epoch"><dt class="sig sig-object py"><span class="sig-name descname">epoch</span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return">→</span> <span class="sig-return-typehint">int</span><a class="headerlink" href="#m-jsl.data.DataLoader.MappedBatchStream.epoch" title="永久链接">¶</a></dt><dd><p class="summary">已开始的 epoch 计数。</p><div class="admonition note"><p class="admonition-title">注意</p><p>该值同时参与下一轮置换种子的计算</p></div><dl class="field-list simple"><dt>返回</dt><dd><p>初始为 0，每次 rewind() 加一</p></dd></dl></dd></dl><dl class="py method" id="m-jsl.data.DataLoader.MappedBatchStream.close"><dt class="sig sig-object py"><span class="sig-name descname">close</span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#m-jsl.data.DataLoader.MappedBatchStream.close" title="永久链接">¶</a></dt><dd><p class="summary">置关闭标志并停止后续读取。</p><p>只把内部标志设为已关闭，不关闭通道、不解除映射；映射区在缓冲区不可达后由 GC 回收。重复调用无副作用，关闭后再调用 next() 或 rewind() 抛 IllegalStateException。</p><div class="admonition note"><p class="admonition-title">注意</p><p>不声明受检异常，适合放在 try-with-resources 中使用</p></div></dd></dl></dd></dl><div class="relbar"><a class="prev" href="jsl_core.html">jsl.core</a><span class="spacer"></span><a class="next" href="jsl_io.html">jsl.io</a></div>
 </article></main>
 </div>
+<div id="nav-mask" class="nav-mask"></div>
 <div id="search-mask" class="search-mask"></div>
 <div id="search-dialog" class="search-dialog" role="dialog" aria-label="搜索">
   <input id="search-input" type="search" placeholder="搜索类型、方法或说明…" autocomplete="off" />
@@ -296,6 +365,28 @@ Normalization normalization = DataLoader.estimateNormalization(file, <span class
   if(media&&media.addEventListener){media.addEventListener('change',function(){
     if((root.getAttribute('data-theme-pref')||'auto')==='auto'){apply('auto');}
   });}
+
+  // ---- mobile drawer ----
+  var navToggle=document.getElementById('nav-toggle');
+  var navMask=document.getElementById('nav-mask');
+  function setNav(open){
+    document.body.classList.toggle('nav-open',open);
+    if(navToggle){navToggle.setAttribute('aria-expanded',open?'true':'false');}
+  }
+  if(navToggle){navToggle.addEventListener('click',function(){
+    setNav(!document.body.classList.contains('nav-open'));
+  });}
+  if(navMask){navMask.addEventListener('click',function(){setNav(false);});}
+  document.addEventListener('click',function(e){
+    var a=e.target.closest?e.target.closest('.sidebar a'):null;
+    if(a&&window.innerWidth<=900){setNav(false);}
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){setNav(false);}
+  });
+  window.addEventListener('resize',function(){
+    if(window.innerWidth>900){setNav(false);}
+  });
 
   var mask=document.getElementById('search-mask');
   var dlg=document.getElementById('search-dialog');

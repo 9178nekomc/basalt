@@ -124,6 +124,9 @@ pre.code code{background:none;border:0;padding:0;font-size:.8125rem}
 .tok-kw{color:var(--tok-kw)} .tok-str{color:var(--tok-str)}
 .tok-com{color:var(--tok-com);font-style:italic}
 .tok-num{color:var(--tok-num)} .tok-ann{color:var(--tok-ann)}
+blockquote{margin:.9rem 0;padding:.15rem 0 .15rem .85rem;
+  border-left:3px solid var(--border);color:var(--muted)}
+blockquote p{margin:.35rem 0}
 .admonition{background:var(--admon-bg);border-left:3px solid var(--admon-border);
   padding:.6rem .9rem;margin:.9rem 0;border-radius:0 4px 4px 0}
 .admonition-title{font-weight:700;margin:0 0 .2rem;font-size:.8125rem;color:var(--admon-border);
@@ -153,6 +156,13 @@ footer.doc-footer{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--bo
   color:var(--muted);font-size:.8125rem}
 footer.doc-footer a{color:var(--muted);text-decoration:underline}
 
+.nav-toggle{display:none;background:transparent;border:1px solid #5a5a5a;color:var(--topbar-fg);
+  font-size:1rem;line-height:1;padding:.25rem .45rem;border-radius:4px;cursor:pointer;margin-right:.4rem}
+.nav-toggle:hover{border-color:#8a8a8a}
+.nav-mask{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:45;display:none}
+body.nav-open .nav-mask{display:block}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:.9rem 0}
+.table-wrap table{margin:0}
 .search-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:none}
 .search-mask.open{display:block}
 .search-dialog{position:fixed;top:12vh;left:50%;transform:translateX(-50%);width:min(720px,92vw);
@@ -169,19 +179,77 @@ footer.doc-footer a{color:var(--muted);text-decoration:underline}
 .search-results .sr-meta{display:block;color:var(--muted);font-size:.78rem;margin-top:.15rem}
 .search-empty{padding:1rem;color:var(--muted);font-size:.9rem}
 
+/* ---------- tablet ---------- */
+@media (max-width:1024px){
+  .sidebar{flex:0 0 260px;width:260px}
+  main{padding:1.2rem 1.6rem 3rem}
+}
+/* ---------- phone: drawer navigation ---------- */
 @media (max-width:900px){
-  .topbar{position:static;height:auto;padding:.5rem .8rem;flex-wrap:wrap}
+  html,body{overflow-x:hidden}
+  .topbar{height:auto;min-height:48px;padding:.4rem .7rem;flex-wrap:nowrap;gap:.4rem;
+    overflow:hidden}
+  .nav-toggle{display:inline-block;flex:0 0 auto}
+  .crumbs{font-size:.78rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+    flex:1 1 auto;min-width:0;flex-wrap:nowrap;padding-right:.5rem;
+    mask-image:linear-gradient(to right,#000 calc(100% - 12px),transparent)}
+  .crumbs>*{flex:0 0 auto}
+  .crumbs .cur:last-child{overflow:hidden;text-overflow:ellipsis}
+  .crumbs .sep{margin:0 .25rem}
+  .crumb-version,.crumb-version+.sep,
+  .crumb-mid,.crumb-mid+.sep{display:none}
+  .topbar-tools{gap:.3rem;flex:0 0 auto}
+  .topbar-tools .tool-btn{padding:.2rem .3rem;font-size:.78rem}
+  .topbar-tools kbd{display:none}
+  .topbar-tools a[href*="api/index"]{display:none}
+  .topbar-tools a[href*="genindex"]{display:none}
+  .theme-select{max-width:4.6rem;font-size:.78rem}
   .shell{display:block}
-  .sidebar{position:static;width:auto;max-height:none;border-right:0;
-    border-bottom:1px solid var(--border)}
-  main{padding:1rem 1.1rem 3rem}
-  ul.chapters{grid-template-columns:1fr}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;width:min(84vw,320px);max-height:none;
+    transform:translateX(-102%);transition:transform .22s ease;z-index:50;
+    border-right:1px solid var(--border);padding-top:1rem;box-shadow:2px 0 18px rgba(0,0,0,.25)}
+  body.nav-open .sidebar{transform:none}
+  main{padding:1rem .95rem 3rem;max-width:none}
+  article{max-width:none}
+  h1{font-size:1.6rem}
+  h2{font-size:1.22rem;margin:1.5rem 0 .6rem}
+  h3{font-size:1.05rem}
+  body{font-size:15.5px}
+  ul.chapters{grid-template-columns:1fr;gap:1rem}
+  p.biglink,ul.chapters a{font-size:1.22rem}
+  /* signatures wrap instead of scrolling sideways */
+  dl.py>dt{white-space:normal;overflow-wrap:anywhere;line-height:1.5}
+  dl.py.method>dd,dl.py.constructor>dd{padding-left:.6rem}
+  /* field lists stack */
+  dl.field-list{grid-template-columns:1fr;gap:.1rem .5rem}
+  dl.field-list>dt{padding-top:.35rem}
+  pre.code{font-size:.75rem;padding:.6rem .7rem}
+  .table-wrap table{min-width:0}
+  table{font-size:.78rem}
+  table th,table td{padding:.3rem .4rem}
+  table.autosummary td:first-child{white-space:nowrap}
+  table td code{font-size:.76rem;padding:0 .2em}
+  .relbar{flex-direction:column;align-items:stretch;gap:.5rem}
+  .relbar .spacer{display:none}
+  .relbar .next{text-align:right}
+  ul.genindex-section{grid-template-columns:1fr}
+  footer.doc-footer{padding:1rem .95rem 2.5rem}
+}
+/* ---------- small phone ---------- */
+@media (max-width:420px){
+  .crumbs{font-size:.74rem}
+  .table-wrap table{min-width:0}
+  .admonition{padding:.5rem .7rem}
+  h1{font-size:1.45rem}
+  .topbar{padding:.35rem .5rem}
 }
 </style>
 </head>
 <body>
 <header class="topbar">
-<div class="crumbs"><a href="../index.html">JSL</a><span class="sep">»</span><span class="cur">2.4.0</span><span class="sep">»</span><a href="index.html">API 参考</a><span class="sep">»</span><span class="cur">jsl.io</span></div>
+<button id="nav-toggle" class="nav-toggle" type="button" aria-label="打开目录"
+        aria-controls="sidebar" aria-expanded="false">☰</button>
+<div class="crumbs"><a href="../index.html">JSL</a><span class="sep">»</span><span class="cur crumb-version">2.4.0</span><span class="sep">»</span><a href="index.html">API 参考</a><span class="sep">»</span><span class="cur">jsl.io</span></div>
 <div class="topbar-tools">
   <label>主题 <select id="theme-select" class="theme-select" aria-label="主题">
     <option value="auto">自动</option><option value="light">浅色</option><option value="dark">深色</option>
@@ -195,7 +263,7 @@ footer.doc-footer a{color:var(--muted);text-decoration:underline}
 <div class="shell">
 <aside class="sidebar"><div class="sidebar-head">本页目录</div><ul><li><a href="#type-jsl.io.ModelCodec">ModelCodec</a></li></ul><div class="sidebar-head">下载</div><ul><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/tag/v2.4.0">JSL 2.4.0 发布页（全部资产）</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v2.4.0/jsl-runtime-2.4.0-all.jar">jsl-runtime-2.4.0-all.jar</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v2.4.0/jsl-runtime-2.4.0.jar">jsl-runtime-2.4.0.jar</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v2.4.0/jsl-runtime-2.4.0-sources.jar">jsl-runtime-2.4.0-sources.jar</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v2.4.0/jsl_native.dll">jsl_native.dll（Windows x86_64）</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v2.4.0/jsl-docs-2.4.0.zip">jsl-docs-2.4.0.zip（离线文档）</a></li></ul><div class="sidebar-head">各版文档</div><ul><li><a href="../index.html">JSL 2.4.0 (stable)</a></li><li><a href="../api/index.html">模块索引</a></li><li><a href="../genindex.html">总索引</a></li></ul><div class="sidebar-head">Other resources</div><ul><li><a href="../readme.html">README</a></li><li><a href="../report/JSL_ARCHITECTURE_AND_BENCHMARK.html">架构与基准报告</a></li><li><a href="../report/JSL_VS_SKLEARN.html">与 scikit-learn 对比</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn">GitHub 仓库</a></li></ul></aside>
 <main><article>
-<h1>模块 <code>jsl.io</code><a class="headerlink" href="#" title="永久链接">¶</a></h1><p class="welcome">1 个公开类型</p><p>模型持久化使用自描述的 .jsl 容器：固定 24 字节头携带 magic、版本、模型种类编码、载荷长度与 CRC32C。</p><p>容器与模型解耦，载荷格式由各模型自己的 write/read 定义，本模块只负责分帧、校验与类型分发。</p><h2 id="overview">类型概览</h2><table class="autosummary"><thead><tr><th>类型</th><th>种类</th><th>说明</th></tr></thead><tbody><tr><td><a href="#type-jsl.io.ModelCodec"><code>ModelCodec</code></a></td><td>class</td><td>带版本与 CRC32C 校验的 .jsl 模型容器读写器。</td></tr></tbody></table><dl class="py class" id="type-jsl.io.ModelCodec"><dt class="sig sig-object py"><span class="property">final</span> class ModelCodec<a class="headerlink" href="#type-jsl.io.ModelCodec" title="永久链接">¶</a></dt><dd><p class="summary">带版本与 CRC32C 校验的 .jsl 模型容器读写器。</p><p>容器由 24 字节头与载荷组成，字段依次为 int magic = 0x4A534C4D（"JSLM"）、int version = 2、int kind（ModelKind 编码）、int length（载荷字节数）、long crc32c，随后是 length 字节的模型载荷，均按大端序。</p><p>save() 让模型把状态写进内存 ModelWriter，再分配整文件缓冲、填头并循环写出；load() 只读映射整个文件，依次比对 magic、version、长度与文件大小，再在映射区原地计算 CRC32C，通过后把偏移 24 起的零拷贝切片交给按 ModelKind 分发的读取器。</p><p>载荷解码完成后要求被完整消费，残留字节视为格式错误。所有失败以未检查异常抛出：结构性问题用 ModelFormatException，I/O 问题包装为 UncheckedIOException。</p><div class="example"><div class="example-label">示例</div><pre class="code"><code>Matrix features = Matrix.fromRows(<span class="tok-kw">new</span> <span class="tok-kw">double</span>[][]{
+<h1>模块 <code>jsl.io</code><a class="headerlink" href="#" title="永久链接">¶</a></h1><p class="welcome">1 个公开类型</p><p>模型持久化使用自描述的 .jsl 容器：固定 24 字节头携带 magic、版本、模型种类编码、载荷长度与 CRC32C。</p><p>容器与模型解耦，载荷格式由各模型自己的 write/read 定义，本模块只负责分帧、校验与类型分发。</p><h2 id="overview">类型概览</h2><div class="table-wrap"><table class="autosummary"><thead><tr><th>类型</th><th>种类</th><th>说明</th></tr></thead><tbody><tr><td><a href="#type-jsl.io.ModelCodec"><code>ModelCodec</code></a></td><td>class</td><td>带版本与 CRC32C 校验的 .jsl 模型容器读写器。</td></tr></tbody></table></div><dl class="py class" id="type-jsl.io.ModelCodec"><dt class="sig sig-object py"><span class="property">final</span> class ModelCodec<a class="headerlink" href="#type-jsl.io.ModelCodec" title="永久链接">¶</a></dt><dd><p class="summary">带版本与 CRC32C 校验的 .jsl 模型容器读写器。</p><p>容器由 24 字节头与载荷组成，字段依次为 int magic = 0x4A534C4D（"JSLM"）、int version = 2、int kind（ModelKind 编码）、int length（载荷字节数）、long crc32c，随后是 length 字节的模型载荷，均按大端序。</p><p>save() 让模型把状态写进内存 ModelWriter，再分配整文件缓冲、填头并循环写出；load() 只读映射整个文件，依次比对 magic、version、长度与文件大小，再在映射区原地计算 CRC32C，通过后把偏移 24 起的零拷贝切片交给按 ModelKind 分发的读取器。</p><p>载荷解码完成后要求被完整消费，残留字节视为格式错误。所有失败以未检查异常抛出：结构性问题用 ModelFormatException，I/O 问题包装为 UncheckedIOException。</p><div class="example"><div class="example-label">示例</div><pre class="code"><code>Matrix features = Matrix.fromRows(<span class="tok-kw">new</span> <span class="tok-kw">double</span>[][]{
         {<span class="tok-num">0.0</span>, <span class="tok-num">1.0</span>}, {<span class="tok-num">1.0</span>, <span class="tok-num">1.5</span>}, {<span class="tok-num">9.0</span>, <span class="tok-num">8.5</span>}, {<span class="tok-num">8.5</span>, <span class="tok-num">9.0</span>}});
 KMeans model = KMeans.builder().clusters(<span class="tok-num">2</span>).build().fit(features);
 
@@ -205,6 +273,7 @@ KMeans restored = ModelCodec.load(file, KMeans.<span class="tok-kw">class</span>
 <span class="tok-kw">long</span> bytes = ModelCodec.fileSize(file);</code></pre></div><div class="admonition note"><p class="admonition-title">注意</p><p>save 会截断已存在的目标文件，且不写临时文件，写入中途失败会留下不完整文件。</p></div><div class="admonition note"><p class="admonition-title">注意</p><p>load 依赖内存映射，解码期间文件须保持不变；文件被替换或截断时映射区内容不再可信。</p></div><div class="admonition note"><p class="admonition-title">注意</p><p>版本不匹配直接拒绝，不做向后兼容解析；ModelFormatException 为 RuntimeException。</p></div><div class="admonition note"><p class="admonition-title">注意</p><p>类为静态工具，无实例（构造器私有），无可变状态，可并发调用。</p></div><p class="seealso">参见：<a href="jsl_core.html#type-jsl.core.Persistable">jsl.core.Persistable</a>, <a href="jsl_core.html#type-jsl.core.ModelKind">jsl.core.ModelKind</a>, <a href="jsl_core.html#type-jsl.core.ModelFormatException">jsl.core.ModelFormatException</a></p><h4>方法</h4><dl class="py method" id="m-jsl.io.ModelCodec.save"><dt class="sig sig-object py"><span class="sig-name descname">save</span><span class="sig-paren">(</span><em class="sig-param">Path target</em>, <em class="sig-param">Persistable model</em><span class="sig-paren">)</span><span class="py-flag">static</span><a class="headerlink" href="#m-jsl.io.ModelCodec.save" title="永久链接">¶</a></dt><dd><p class="summary">把模型序列化为 .jsl 文件。</p><p>先创建初始容量 4096 的 ModelWriter，调用 model.write 得到载荷字节，据此计算 CRC32C，再组装 24 字节头与载荷，以 CREATE、WRITE、TRUNCATE_EXISTING 打开通道循环写出。</p><p>target 或 model 为 null 时抛 NullPointerException；载荷长度超过 Integer.MAX_VALUE - 24 时抛 ModelFormatException；打开或写入失败抛 UncheckedIOException。模型的 write 实现自身抛出的异常会原样传播。</p><div class="admonition note"><p class="admonition-title">注意</p><p>载荷完整驻留内存，大模型峰值内存约为文件大小的两倍</p></div><div class="admonition note"><p class="admonition-title">注意</p><p>校验和在写入前一次算完，写出过程不再重新计算</p></div><dl class="field-list simple"><dt>参数</dt><dd><ul><li><p><span class="param-name">target</span> (<span class="param-type">Path</span>) – 输出路径，父目录须已存在，已存在文件会被截断</p></li><li><p><span class="param-name">model</span> (<span class="param-type">Persistable</span>) – 待保存的模型，提供 kind() 与 write(ModelWriter)</p></li></ul></dd></dl></dd></dl><dl class="py method" id="m-jsl.io.ModelCodec.load"><dt class="sig sig-object py"><span class="sig-name descname">load</span><span class="sig-paren">(</span><em class="sig-param">Path source</em><span class="sig-paren">)</span> <span class="sig-return">→</span> <span class="sig-return-typehint">Persistable</span><span class="py-flag">static</span><a class="headerlink" href="#m-jsl.io.ModelCodec.load" title="永久链接">¶</a></dt><dd><p class="summary">读取并校验 .jsl 文件，返回模型。</p><p>映射文件后依次校验：长度不小于 24 字节、magic 匹配、version 为 2、kind 编码可识别、声明长度等于文件大小减 24、CRC32C 与头部记录一致；随后按 ModelKind 分发到对应模型的 read 方法，并要求载荷被完整消费。</p><p>任一校验失败抛 ModelFormatException（截断、魔数错误、版本不支持、长度不符、校验和不匹配、载荷有残留字节）；文件打开或映射失败抛 UncheckedIOException。</p><div class="admonition note"><p class="admonition-title">注意</p><p>校验在映射区上原地进行，不复制载荷</p></div><div class="admonition note"><p class="admonition-title">注意</p><p>返回类型取决于文件内容，需要具体类型时用 load(Path, Class)</p></div><dl class="field-list simple"><dt>参数</dt><dd><ul><li><p><span class="param-name">source</span> (<span class="param-type">Path</span>) – 输入路径，须为 save 写出的 .jsl 文件</p></li></ul></dd><dt>返回</dt><dd><p>按文件内 kind 构造的模型实例，静态类型为 Persistable</p></dd></dl></dd></dl><dl class="py method" id="m-jsl.io.ModelCodec.load-1"><dt class="sig sig-object py"><span class="pre">&lt;T extends Persistable&gt; </span><span class="sig-name descname">load</span><span class="sig-paren">(</span><em class="sig-param">Path source</em>, <em class="sig-param">Class&lt;T&gt; type</em><span class="sig-paren">)</span> <span class="sig-return">→</span> <span class="sig-return-typehint">T</span><span class="py-flag">static</span><a class="headerlink" href="#m-jsl.io.ModelCodec.load-1" title="永久链接">¶</a></dt><dd><p class="summary">读取并校验类型后返回模型。</p><p>委托 load(Path) 完成全部结构校验与解码，再用 type.isInstance 检查结果；不匹配时抛 ModelFormatException，信息中同时给出期望类型与文件中实际的 ModelKind。</p><div class="admonition note"><p class="admonition-title">注意</p><p>类型不符时载荷已被解码，异常前不会泄漏句柄，但已付出解码开销</p></div><dl class="field-list simple"><dt>参数</dt><dd><ul><li><p><span class="param-name">source</span> (<span class="param-type">Path</span>) – 输入路径</p></li><li><p><span class="param-name">type</span> (<span class="param-type">Class&lt;T&gt;</span>) – 期望的模型类型，例如 KMeans.class</p></li></ul></dd><dt>返回</dt><dd><p>已转换为 T 的实例，可直接使用具体类型的访问器</p></dd></dl></dd></dl><dl class="py method" id="m-jsl.io.ModelCodec.peekKind"><dt class="sig sig-object py"><span class="sig-name descname">peekKind</span><span class="sig-paren">(</span><em class="sig-param">Path source</em><span class="sig-paren">)</span> <span class="sig-return">→</span> <span class="sig-return-typehint">ModelKind</span><span class="py-flag">static</span><a class="headerlink" href="#m-jsl.io.ModelCodec.peekKind" title="永久链接">¶</a></dt><dd><p class="summary">只读文件头，返回模型种类。</p><p>打开通道读取前 12 字节，校验 magic 与 version 后用第三个 int 调 ModelKind.fromCode。头部截断、魔数或版本不符、编码未知时抛 ModelFormatException；打开或读取失败抛 UncheckedIOException。</p><p>不映射载荷，也不校验长度与 CRC32C，因此开销恒定且与文件大小无关。</p><div class="admonition note"><p class="admonition-title">注意</p><p>适合在加载前按种类分派或做工具统计，结果不代表载荷完整</p></div><dl class="field-list simple"><dt>参数</dt><dd><ul><li><p><span class="param-name">source</span> (<span class="param-type">Path</span>) – 输入路径</p></li></ul></dd><dt>返回</dt><dd><p>文件头 kind 字段对应的 ModelKind 常量</p></dd></dl></dd></dl><dl class="py method" id="m-jsl.io.ModelCodec.fileSize"><dt class="sig sig-object py"><span class="sig-name descname">fileSize</span><span class="sig-paren">(</span><em class="sig-param">Path source</em><span class="sig-paren">)</span> <span class="sig-return">→</span> <span class="sig-return-typehint">long</span><span class="py-flag">static</span><a class="headerlink" href="#m-jsl.io.ModelCodec.fileSize" title="永久链接">¶</a></dt><dd><p class="summary">返回 .jsl 文件的总字节数。</p><p>直接委托 Files.size，不解析头部也不校验内容；文件不存在、不可读或路径指向目录时抛 UncheckedIOException。</p><div class="admonition note"><p class="admonition-title">注意</p><p>载荷大小等于返回值减 24</p></div><div class="admonition note"><p class="admonition-title">注意</p><p>可对任意文件使用，不要求是 .jsl 容器</p></div><dl class="field-list simple"><dt>参数</dt><dd><ul><li><p><span class="param-name">source</span> (<span class="param-type">Path</span>) – 输入路径</p></li></ul></dd><dt>返回</dt><dd><p>文件长度（字节），包含 24 字节头</p></dd></dl></dd></dl><h4>字段</h4><dl class="py field" id="m-jsl.io.ModelCodec.0x4A534C4D"><dt class="sig sig-object py"><span class="sig-name descname">0x4A534C4D</span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="py-flag">static</span><a class="headerlink" href="#m-jsl.io.ModelCodec.0x4A534C4D" title="永久链接">¶</a></dt><dd><p class="summary">容器魔数 0x4A534C4D，即 ASCII "JSLM"。</p><p>位于文件前 4 字节，save 写入，load 与 peekKind 校验；不匹配时抛 ModelFormatException（"Invalid .jsl magic"）。</p><div class="admonition note"><p class="admonition-title">注意</p><p>注意与 JSLD 数据格式的魔数 0x4A534C44 不同</p></div></dd></dl><dl class="py field" id="m-jsl.io.ModelCodec.2"><dt class="sig sig-object py"><span class="sig-name descname">2</span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="py-flag">static</span><a class="headerlink" href="#m-jsl.io.ModelCodec.2" title="永久链接">¶</a></dt><dd><p class="summary">当前容器版本号，值为 2。</p><p>紧随 magic 之后写入。load 与 peekKind 要求完全相等，其他版本一律抛 ModelFormatException（"Unsupported .jsl version"），不尝试降级解析。</p><div class="admonition note"><p class="admonition-title">注意</p><p>版本只描述容器布局，载荷格式由各模型自行定义</p></div></dd></dl></dd></dl><div class="relbar"><a class="prev" href="jsl_data.html">jsl.data</a><span class="spacer"></span><a class="next" href="jsl_ml.html">jsl.ml</a></div>
 </article></main>
 </div>
+<div id="nav-mask" class="nav-mask"></div>
 <div id="search-mask" class="search-mask"></div>
 <div id="search-dialog" class="search-dialog" role="dialog" aria-label="搜索">
   <input id="search-input" type="search" placeholder="搜索类型、方法或说明…" autocomplete="off" />
@@ -233,6 +302,28 @@ KMeans restored = ModelCodec.load(file, KMeans.<span class="tok-kw">class</span>
   if(media&&media.addEventListener){media.addEventListener('change',function(){
     if((root.getAttribute('data-theme-pref')||'auto')==='auto'){apply('auto');}
   });}
+
+  // ---- mobile drawer ----
+  var navToggle=document.getElementById('nav-toggle');
+  var navMask=document.getElementById('nav-mask');
+  function setNav(open){
+    document.body.classList.toggle('nav-open',open);
+    if(navToggle){navToggle.setAttribute('aria-expanded',open?'true':'false');}
+  }
+  if(navToggle){navToggle.addEventListener('click',function(){
+    setNav(!document.body.classList.contains('nav-open'));
+  });}
+  if(navMask){navMask.addEventListener('click',function(){setNav(false);});}
+  document.addEventListener('click',function(e){
+    var a=e.target.closest?e.target.closest('.sidebar a'):null;
+    if(a&&window.innerWidth<=900){setNav(false);}
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){setNav(false);}
+  });
+  window.addEventListener('resize',function(){
+    if(window.innerWidth>900){setNav(false);}
+  });
 
   var mask=document.getElementById('search-mask');
   var dlg=document.getElementById('search-dialog');

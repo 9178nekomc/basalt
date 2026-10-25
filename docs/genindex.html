@@ -124,6 +124,9 @@ pre.code code{background:none;border:0;padding:0;font-size:.8125rem}
 .tok-kw{color:var(--tok-kw)} .tok-str{color:var(--tok-str)}
 .tok-com{color:var(--tok-com);font-style:italic}
 .tok-num{color:var(--tok-num)} .tok-ann{color:var(--tok-ann)}
+blockquote{margin:.9rem 0;padding:.15rem 0 .15rem .85rem;
+  border-left:3px solid var(--border);color:var(--muted)}
+blockquote p{margin:.35rem 0}
 .admonition{background:var(--admon-bg);border-left:3px solid var(--admon-border);
   padding:.6rem .9rem;margin:.9rem 0;border-radius:0 4px 4px 0}
 .admonition-title{font-weight:700;margin:0 0 .2rem;font-size:.8125rem;color:var(--admon-border);
@@ -153,6 +156,13 @@ footer.doc-footer{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--bo
   color:var(--muted);font-size:.8125rem}
 footer.doc-footer a{color:var(--muted);text-decoration:underline}
 
+.nav-toggle{display:none;background:transparent;border:1px solid #5a5a5a;color:var(--topbar-fg);
+  font-size:1rem;line-height:1;padding:.25rem .45rem;border-radius:4px;cursor:pointer;margin-right:.4rem}
+.nav-toggle:hover{border-color:#8a8a8a}
+.nav-mask{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:45;display:none}
+body.nav-open .nav-mask{display:block}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:.9rem 0}
+.table-wrap table{margin:0}
 .search-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:none}
 .search-mask.open{display:block}
 .search-dialog{position:fixed;top:12vh;left:50%;transform:translateX(-50%);width:min(720px,92vw);
@@ -169,19 +179,77 @@ footer.doc-footer a{color:var(--muted);text-decoration:underline}
 .search-results .sr-meta{display:block;color:var(--muted);font-size:.78rem;margin-top:.15rem}
 .search-empty{padding:1rem;color:var(--muted);font-size:.9rem}
 
+/* ---------- tablet ---------- */
+@media (max-width:1024px){
+  .sidebar{flex:0 0 260px;width:260px}
+  main{padding:1.2rem 1.6rem 3rem}
+}
+/* ---------- phone: drawer navigation ---------- */
 @media (max-width:900px){
-  .topbar{position:static;height:auto;padding:.5rem .8rem;flex-wrap:wrap}
+  html,body{overflow-x:hidden}
+  .topbar{height:auto;min-height:48px;padding:.4rem .7rem;flex-wrap:nowrap;gap:.4rem;
+    overflow:hidden}
+  .nav-toggle{display:inline-block;flex:0 0 auto}
+  .crumbs{font-size:.78rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+    flex:1 1 auto;min-width:0;flex-wrap:nowrap;padding-right:.5rem;
+    mask-image:linear-gradient(to right,#000 calc(100% - 12px),transparent)}
+  .crumbs>*{flex:0 0 auto}
+  .crumbs .cur:last-child{overflow:hidden;text-overflow:ellipsis}
+  .crumbs .sep{margin:0 .25rem}
+  .crumb-version,.crumb-version+.sep,
+  .crumb-mid,.crumb-mid+.sep{display:none}
+  .topbar-tools{gap:.3rem;flex:0 0 auto}
+  .topbar-tools .tool-btn{padding:.2rem .3rem;font-size:.78rem}
+  .topbar-tools kbd{display:none}
+  .topbar-tools a[href*="api/index"]{display:none}
+  .topbar-tools a[href*="genindex"]{display:none}
+  .theme-select{max-width:4.6rem;font-size:.78rem}
   .shell{display:block}
-  .sidebar{position:static;width:auto;max-height:none;border-right:0;
-    border-bottom:1px solid var(--border)}
-  main{padding:1rem 1.1rem 3rem}
-  ul.chapters{grid-template-columns:1fr}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;width:min(84vw,320px);max-height:none;
+    transform:translateX(-102%);transition:transform .22s ease;z-index:50;
+    border-right:1px solid var(--border);padding-top:1rem;box-shadow:2px 0 18px rgba(0,0,0,.25)}
+  body.nav-open .sidebar{transform:none}
+  main{padding:1rem .95rem 3rem;max-width:none}
+  article{max-width:none}
+  h1{font-size:1.6rem}
+  h2{font-size:1.22rem;margin:1.5rem 0 .6rem}
+  h3{font-size:1.05rem}
+  body{font-size:15.5px}
+  ul.chapters{grid-template-columns:1fr;gap:1rem}
+  p.biglink,ul.chapters a{font-size:1.22rem}
+  /* signatures wrap instead of scrolling sideways */
+  dl.py>dt{white-space:normal;overflow-wrap:anywhere;line-height:1.5}
+  dl.py.method>dd,dl.py.constructor>dd{padding-left:.6rem}
+  /* field lists stack */
+  dl.field-list{grid-template-columns:1fr;gap:.1rem .5rem}
+  dl.field-list>dt{padding-top:.35rem}
+  pre.code{font-size:.75rem;padding:.6rem .7rem}
+  .table-wrap table{min-width:0}
+  table{font-size:.78rem}
+  table th,table td{padding:.3rem .4rem}
+  table.autosummary td:first-child{white-space:nowrap}
+  table td code{font-size:.76rem;padding:0 .2em}
+  .relbar{flex-direction:column;align-items:stretch;gap:.5rem}
+  .relbar .spacer{display:none}
+  .relbar .next{text-align:right}
+  ul.genindex-section{grid-template-columns:1fr}
+  footer.doc-footer{padding:1rem .95rem 2.5rem}
+}
+/* ---------- small phone ---------- */
+@media (max-width:420px){
+  .crumbs{font-size:.74rem}
+  .table-wrap table{min-width:0}
+  .admonition{padding:.5rem .7rem}
+  h1{font-size:1.45rem}
+  .topbar{padding:.35rem .5rem}
 }
 </style>
 </head>
 <body>
 <header class="topbar">
-<div class="crumbs"><a href="index.html">JSL</a><span class="sep">»</span><span class="cur">2.4.0</span><span class="sep">»</span><span class="cur">总索引</span></div>
+<button id="nav-toggle" class="nav-toggle" type="button" aria-label="打开目录"
+        aria-controls="sidebar" aria-expanded="false">☰</button>
+<div class="crumbs"><a href="index.html">JSL</a><span class="sep">»</span><span class="cur crumb-version">2.4.0</span><span class="sep">»</span><span class="cur">总索引</span></div>
 <div class="topbar-tools">
   <label>主题 <select id="theme-select" class="theme-select" aria-label="主题">
     <option value="auto">自动</option><option value="light">浅色</option><option value="dark">深色</option>
@@ -198,6 +266,7 @@ footer.doc-footer a{color:var(--muted);text-decoration:underline}
 <h1>总索引</h1><p class="welcome">按类型名首字母排列，共 136 个公开类型。方法请在各模块页内查找，或用顶部快速搜索（Ctrl+K）。</p><div class="genindex-jumpbox">跳转：<a href="#A">A</a> <a href="#B">B</a> <a href="#C">C</a> <a href="#D">D</a> <a href="#E">E</a> <a href="#F">F</a> <a href="#G">G</a> <a href="#H">H</a> <a href="#I">I</a> <a href="#J">J</a> <a href="#K">K</a> <a href="#L">L</a> <a href="#M">M</a> <a href="#N">N</a> <a href="#O">O</a> <a href="#P">P</a> <a href="#R">R</a> <a href="#S">S</a> <a href="#T">T</a> <a href="#V">V</a></div><h2 id="A">A</h2><ul class="genindex-section"><li><a href="api/jsl_nn.html#type-jsl.nn.Activation">Activation</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.Activation">Activation</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.AdamW">AdamW</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.JSL.Algorithm">JSL.Algorithm</a></li><li><a href="api/jsl_nativebridge.html#type-jsl.nativebridge.NativeMLP.Activation">NativeMLP.Activation</a></li></ul><h2 id="B">B</h2><ul class="genindex-section"><li><a href="api/jsl_core.html#type-jsl.core.BC">BC</a></li><li><a href="api/jsl_core.html#type-jsl.core.BCHW">BCHW</a></li><li><a href="api/jsl_core.html#type-jsl.core.BHW">BHW</a></li><li><a href="api/jsl_core.html#type-jsl.core.BSF">BSF</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.BatchNorm2d">BatchNorm2d</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.BoostingAlgorithm">BoostingAlgorithm</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.BoostingObjective">BoostingObjective</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.Conv2D.Builder">Conv2D.Builder</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.DBSCAN.Builder">DBSCAN.Builder</a></li><li><a href="api/jsl_data.html#type-jsl.data.DataLoader.Batch">DataLoader.Batch</a></li><li><a href="api/jsl_data.html#type-jsl.data.DataLoader.BatchStream">DataLoader.BatchStream</a></li><li><a href="api/jsl_data.html#type-jsl.data.DataLoader.Builder">DataLoader.Builder</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.DecisionTree.Builder">DecisionTree.Builder</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.Dense.Builder">Dense.Builder</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.Flatten.Builder">Flatten.Builder</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.GRU.Builder">GRU.Builder</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.GaussianNaiveBayes.Builder">GaussianNaiveBayes.Builder</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.HistogramGradientBoosting.Builder">HistogramGradientBoosting.Builder</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.KMeans.Builder">KMeans.Builder</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.KNearestNeighbors.Builder">KNearestNeighbors.Builder</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.KNeighborsRegressor.Builder">KNeighborsRegressor.Builder</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.LSTM.Builder">LSTM.Builder</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.Lasso.Builder">Lasso.Builder</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.LinearRegression.Builder">LinearRegression.Builder</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.LinearSVM.Builder">LinearSVM.Builder</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.LogisticRegression.Builder">LogisticRegression.Builder</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.MaxPooling2D.Builder">MaxPooling2D.Builder</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.PCA.Builder">PCA.Builder</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.RandomForest.Builder">RandomForest.Builder</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.Ridge.Builder">Ridge.Builder</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.SelfAttention.Builder">SelfAttention.Builder</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.SequenceNetwork.Builder">SequenceNetwork.Builder</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.VanillaRNN.Builder">VanillaRNN.Builder</a></li></ul><h2 id="C">C</h2><ul class="genindex-section"><li><a href="api/jsl_nn.html#type-jsl.nn.CNN">CNN</a></li><li><a href="api/jsl_nativebridge.html#type-jsl.nativebridge.CommandQueueBuilder">CommandQueueBuilder</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.Conv2D">Conv2D</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.Conv2d">Conv2d</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.CrossEntropyLoss">CrossEntropyLoss</a></li></ul><h2 id="D">D</h2><ul class="genindex-section"><li><a href="api/jsl_ml.html#type-jsl.ml.DBSCAN">DBSCAN</a></li><li><a href="api/jsl_data.html#type-jsl.data.DataLoader">DataLoader</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.DataSplit">DataSplit</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.DecisionTree">DecisionTree</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.Dense">Dense</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.DistanceMetric">DistanceMetric</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.Dropout">Dropout</a></li></ul><h2 id="E">E</h2><ul class="genindex-section"><li><a href="api/jsl_ml.html#type-jsl.ml.EigenSolver">EigenSolver</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.Embedding">Embedding</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.Estimator">Estimator</a></li></ul><h2 id="F">F</h2><ul class="genindex-section"><li><a href="api/jsl_ml.html#type-jsl.ml.DataSplit.Fold">DataSplit.Fold</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.Flatten">Flatten</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.Flatten">Flatten</a></li></ul><h2 id="G">G</h2><ul class="genindex-section"><li><a href="api/jsl_nn.html#type-jsl.nn.GRU">GRU</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.GaussianNaiveBayes">GaussianNaiveBayes</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.GradientCheck">GradientCheck</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.Graph">Graph</a></li><li><a href="api/jsl_nativebridge.html#type-jsl.nativebridge.NativeContext.Guard">NativeContext.Guard</a></li></ul><h2 id="H">H</h2><ul class="genindex-section"><li><a href="api/jsl_ml.html#type-jsl.ml.DataSplit.Holdout">DataSplit.Holdout</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.HistogramGradientBoosting">HistogramGradientBoosting</a></li></ul><h2 id="I">I</h2><ul class="genindex-section"><li><a href="api/jsl_ml.html#type-jsl.ml.ImpurityCriterion">ImpurityCriterion</a></li><li><a href="api/jsl_concurrent.html#type-jsl.concurrent.InferenceEngine">InferenceEngine</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.NeuralNetwork.ImageBuilder">NeuralNetwork.ImageBuilder</a></li></ul><h2 id="J">J</h2><ul class="genindex-section"><li><a href="api/jsl.html#type-jsl.JSL">JSL</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.JSL">JSL</a></li><li><a href="api/jsl.html#type-jsl.JSLRuntimeException">JSLRuntimeException</a></li></ul><h2 id="K">K</h2><ul class="genindex-section"><li><a href="api/jsl_torch.html#type-jsl.torch.Activation.Kind">Activation.Kind</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.KMeans">KMeans</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.KNearestNeighbors">KNearestNeighbors</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.KNeighborsRegressor">KNeighborsRegressor</a></li></ul><h2 id="L">L</h2><ul class="genindex-section"><li><a href="api/jsl_nn.html#type-jsl.nn.LSTM">LSTM</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.Lasso">Lasso</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.Layer">Layer</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.LayerNorm">LayerNorm</a></li><li><a href="api/jsl_core.html#type-jsl.core.Layout">Layout</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.Linear">Linear</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.LinearRegression">LinearRegression</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.LinearSVM">LinearSVM</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.LogisticRegression">LogisticRegression</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.Loss">Loss</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.Loss">Loss</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.LossEvaluation">LossEvaluation</a></li></ul><h2 id="M">M</h2><ul class="genindex-section"><li><a href="api/jsl_data.html#type-jsl.data.DataLoader.MappedBatchStream">DataLoader.MappedBatchStream</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.JSL.Metric">JSL.Metric</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.MSELoss">MSELoss</a></li><li><a href="api/jsl_core.html#type-jsl.core.MatMul">MatMul</a></li><li><a href="api/jsl_core.html#type-jsl.core.Matrix">Matrix</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.MaxPool2d">MaxPool2d</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.MaxPooling2D">MaxPooling2D</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.Metrics">Metrics</a></li><li><a href="api/jsl_io.html#type-jsl.io.ModelCodec">ModelCodec</a></li><li><a href="api/jsl_core.html#type-jsl.core.ModelFormatException">ModelFormatException</a></li><li><a href="api/jsl_core.html#type-jsl.core.ModelKind">ModelKind</a></li><li><a href="api/jsl_core.html#type-jsl.core.ModelReader">ModelReader</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.ModelSerializer">ModelSerializer</a></li><li><a href="api/jsl_core.html#type-jsl.core.ModelWriter">ModelWriter</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.Module">Module</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.MultiheadAttention">MultiheadAttention</a></li></ul><h2 id="N">N</h2><ul class="genindex-section"><li><a href="api/jsl_nativebridge.html#type-jsl.nativebridge.NativeContext">NativeContext</a></li><li><a href="api/jsl_core.html#type-jsl.core.NativeKernels">NativeKernels</a></li><li><a href="api/jsl_nativebridge.html#type-jsl.nativebridge.NativeLibrary">NativeLibrary</a></li><li><a href="api/jsl_nativebridge.html#type-jsl.nativebridge.NativeMLP">NativeMLP</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.NativeQueueEvent">NativeQueueEvent</a></li><li><a href="api/jsl_nativebridge.html#type-jsl.nativebridge.NativeTensorHandle">NativeTensorHandle</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.NeuralNetwork">NeuralNetwork</a></li><li><a href="api/jsl_data.html#type-jsl.data.Normalization">Normalization</a></li></ul><h2 id="O">O</h2><ul class="genindex-section"><li><a href="api/jsl_nativebridge.html#type-jsl.nativebridge.NativeMLP.OutputActivation">NativeMLP.OutputActivation</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.Optimizer">Optimizer</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.Optimizer">Optimizer</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.OptimizerConfig">OptimizerConfig</a></li></ul><h2 id="P">P</h2><ul class="genindex-section"><li><a href="api/jsl_ml.html#type-jsl.ml.PCA">PCA</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.Padding">Padding</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.ParameterRef">ParameterRef</a></li><li><a href="api/jsl_core.html#type-jsl.core.Persistable">Persistable</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.SequencePool.Pooling">SequencePool.Pooling</a></li></ul><h2 id="R">R</h2><ul class="genindex-section"><li><a href="api/jsl_nn.html#type-jsl.nn.GradientCheck.Report">GradientCheck.Report</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.RandomForest">RandomForest</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.Ridge">Ridge</a></li></ul><h2 id="S">S</h2><ul class="genindex-section"><li><a href="api/jsl_torch.html#type-jsl.torch.SGD">SGD</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.SelfAttention">SelfAttention</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.SelfAttention">SelfAttention</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.SequenceNetwork">SequenceNetwork</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.SequencePool">SequencePool</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.Sequential">Sequential</a></li></ul><h2 id="T">T</h2><ul class="genindex-section"><li><a href="api/jsl_ml.html#type-jsl.ml.JSL.Task">JSL.Task</a></li><li><a href="api/jsl_core.html#type-jsl.core.Tensor">Tensor</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.Tensor">Tensor</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.TrainingHistory">TrainingHistory</a></li><li><a href="api/jsl_torch.html#type-jsl.torch.TransformerBlock">TransformerBlock</a></li><li><a href="api/jsl_ml.html#type-jsl.ml.TreeTask">TreeTask</a></li></ul><h2 id="V">V</h2><ul class="genindex-section"><li><a href="api/jsl_nn.html#type-jsl.nn.NeuralNetwork.VectorBuilder">NeuralNetwork.VectorBuilder</a></li><li><a href="api/jsl_nn.html#type-jsl.nn.VanillaRNN">VanillaRNN</a></li><li><a href="api/jsl_core.html#type-jsl.core.VectorMath">VectorMath</a></li></ul><div class="relbar"><a class="prev" href="index.html">JSL 2.4.0 文档</a><span class="spacer"></span><a class="next" href="api/index.html">模块索引</a></div>
 </article></main>
 </div>
+<div id="nav-mask" class="nav-mask"></div>
 <div id="search-mask" class="search-mask"></div>
 <div id="search-dialog" class="search-dialog" role="dialog" aria-label="搜索">
   <input id="search-input" type="search" placeholder="搜索类型、方法或说明…" autocomplete="off" />
@@ -226,6 +295,28 @@ footer.doc-footer a{color:var(--muted);text-decoration:underline}
   if(media&&media.addEventListener){media.addEventListener('change',function(){
     if((root.getAttribute('data-theme-pref')||'auto')==='auto'){apply('auto');}
   });}
+
+  // ---- mobile drawer ----
+  var navToggle=document.getElementById('nav-toggle');
+  var navMask=document.getElementById('nav-mask');
+  function setNav(open){
+    document.body.classList.toggle('nav-open',open);
+    if(navToggle){navToggle.setAttribute('aria-expanded',open?'true':'false');}
+  }
+  if(navToggle){navToggle.addEventListener('click',function(){
+    setNav(!document.body.classList.contains('nav-open'));
+  });}
+  if(navMask){navMask.addEventListener('click',function(){setNav(false);});}
+  document.addEventListener('click',function(e){
+    var a=e.target.closest?e.target.closest('.sidebar a'):null;
+    if(a&&window.innerWidth<=900){setNav(false);}
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){setNav(false);}
+  });
+  window.addEventListener('resize',function(){
+    if(window.innerWidth>900){setNav(false);}
+  });
 
   var mask=document.getElementById('search-mask');
   var dlg=document.getElementById('search-dialog');

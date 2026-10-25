@@ -349,6 +349,9 @@ pre.code code{background:none;border:0;padding:0;font-size:.8125rem}
 .tok-kw{color:var(--tok-kw)} .tok-str{color:var(--tok-str)}
 .tok-com{color:var(--tok-com);font-style:italic}
 .tok-num{color:var(--tok-num)} .tok-ann{color:var(--tok-ann)}
+blockquote{margin:.9rem 0;padding:.15rem 0 .15rem .85rem;
+  border-left:3px solid var(--border);color:var(--muted)}
+blockquote p{margin:.35rem 0}
 .admonition{background:var(--admon-bg);border-left:3px solid var(--admon-border);
   padding:.6rem .9rem;margin:.9rem 0;border-radius:0 4px 4px 0}
 .admonition-title{font-weight:700;margin:0 0 .2rem;font-size:.8125rem;color:var(--admon-border);
@@ -378,6 +381,13 @@ footer.doc-footer{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--bo
   color:var(--muted);font-size:.8125rem}
 footer.doc-footer a{color:var(--muted);text-decoration:underline}
 
+.nav-toggle{display:none;background:transparent;border:1px solid #5a5a5a;color:var(--topbar-fg);
+  font-size:1rem;line-height:1;padding:.25rem .45rem;border-radius:4px;cursor:pointer;margin-right:.4rem}
+.nav-toggle:hover{border-color:#8a8a8a}
+.nav-mask{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:45;display:none}
+body.nav-open .nav-mask{display:block}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:.9rem 0}
+.table-wrap table{margin:0}
 .search-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:none}
 .search-mask.open{display:block}
 .search-dialog{position:fixed;top:12vh;left:50%;transform:translateX(-50%);width:min(720px,92vw);
@@ -394,13 +404,69 @@ footer.doc-footer a{color:var(--muted);text-decoration:underline}
 .search-results .sr-meta{display:block;color:var(--muted);font-size:.78rem;margin-top:.15rem}
 .search-empty{padding:1rem;color:var(--muted);font-size:.9rem}
 
+/* ---------- tablet ---------- */
+@media (max-width:1024px){
+  .sidebar{flex:0 0 260px;width:260px}
+  main{padding:1.2rem 1.6rem 3rem}
+}
+/* ---------- phone: drawer navigation ---------- */
 @media (max-width:900px){
-  .topbar{position:static;height:auto;padding:.5rem .8rem;flex-wrap:wrap}
+  html,body{overflow-x:hidden}
+  .topbar{height:auto;min-height:48px;padding:.4rem .7rem;flex-wrap:nowrap;gap:.4rem;
+    overflow:hidden}
+  .nav-toggle{display:inline-block;flex:0 0 auto}
+  .crumbs{font-size:.78rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+    flex:1 1 auto;min-width:0;flex-wrap:nowrap;padding-right:.5rem;
+    mask-image:linear-gradient(to right,#000 calc(100% - 12px),transparent)}
+  .crumbs>*{flex:0 0 auto}
+  .crumbs .cur:last-child{overflow:hidden;text-overflow:ellipsis}
+  .crumbs .sep{margin:0 .25rem}
+  .crumb-version,.crumb-version+.sep,
+  .crumb-mid,.crumb-mid+.sep{display:none}
+  .topbar-tools{gap:.3rem;flex:0 0 auto}
+  .topbar-tools .tool-btn{padding:.2rem .3rem;font-size:.78rem}
+  .topbar-tools kbd{display:none}
+  .topbar-tools a[href*="api/index"]{display:none}
+  .topbar-tools a[href*="genindex"]{display:none}
+  .theme-select{max-width:4.6rem;font-size:.78rem}
   .shell{display:block}
-  .sidebar{position:static;width:auto;max-height:none;border-right:0;
-    border-bottom:1px solid var(--border)}
-  main{padding:1rem 1.1rem 3rem}
-  ul.chapters{grid-template-columns:1fr}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;width:min(84vw,320px);max-height:none;
+    transform:translateX(-102%);transition:transform .22s ease;z-index:50;
+    border-right:1px solid var(--border);padding-top:1rem;box-shadow:2px 0 18px rgba(0,0,0,.25)}
+  body.nav-open .sidebar{transform:none}
+  main{padding:1rem .95rem 3rem;max-width:none}
+  article{max-width:none}
+  h1{font-size:1.6rem}
+  h2{font-size:1.22rem;margin:1.5rem 0 .6rem}
+  h3{font-size:1.05rem}
+  body{font-size:15.5px}
+  ul.chapters{grid-template-columns:1fr;gap:1rem}
+  p.biglink,ul.chapters a{font-size:1.22rem}
+  /* signatures wrap instead of scrolling sideways */
+  dl.py>dt{white-space:normal;overflow-wrap:anywhere;line-height:1.5}
+  dl.py.method>dd,dl.py.constructor>dd{padding-left:.6rem}
+  /* field lists stack */
+  dl.field-list{grid-template-columns:1fr;gap:.1rem .5rem}
+  dl.field-list>dt{padding-top:.35rem}
+  pre.code{font-size:.75rem;padding:.6rem .7rem}
+  .table-wrap table{min-width:0}
+  table{font-size:.78rem}
+  table th,table td{padding:.3rem .4rem}
+  table.autosummary td:first-child{white-space:nowrap}
+  table td code{font-size:.76rem;padding:0 .2em}
+  .relbar{flex-direction:column;align-items:stretch;gap:.5rem}
+  .relbar .spacer{display:none}
+  .relbar .next{text-align:right}
+  ul.genindex-section{grid-template-columns:1fr}
+  footer.doc-footer{padding:1rem .95rem 2.5rem}
+}
+/* ---------- small phone ---------- */
+@media (max-width:420px){
+  .crumbs{font-size:.74rem}
+  .table-wrap table{min-width:0}
+  .admonition{padding:.5rem .7rem}
+  h1{font-size:1.45rem}
+  .topbar{padding:.35rem .5rem}
 }
 """
 
@@ -426,6 +492,28 @@ JS = r"""(function(){
   if(media&&media.addEventListener){media.addEventListener('change',function(){
     if((root.getAttribute('data-theme-pref')||'auto')==='auto'){apply('auto');}
   });}
+
+  // ---- mobile drawer ----
+  var navToggle=document.getElementById('nav-toggle');
+  var navMask=document.getElementById('nav-mask');
+  function setNav(open){
+    document.body.classList.toggle('nav-open',open);
+    if(navToggle){navToggle.setAttribute('aria-expanded',open?'true':'false');}
+  }
+  if(navToggle){navToggle.addEventListener('click',function(){
+    setNav(!document.body.classList.contains('nav-open'));
+  });}
+  if(navMask){navMask.addEventListener('click',function(){setNav(false);});}
+  document.addEventListener('click',function(e){
+    var a=e.target.closest?e.target.closest('.sidebar a'):null;
+    if(a&&window.innerWidth<=900){setNav(false);}
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){setNav(false);}
+  });
+  window.addEventListener('resize',function(){
+    if(window.innerWidth>900){setNav(false);}
+  });
 
   var mask=document.getElementById('search-mask');
   var dlg=document.getElementById('search-dialog');
@@ -524,10 +612,16 @@ def topbar_html(crumbs: list[tuple[str, str | None]], root: str) -> str:
     for label, href in crumbs:
         if href:
             bits.append(f'<a href="{href}">{esc(label)}</a>')
+        elif label == VERSION:
+            bits.append(f'<span class="cur crumb-version">{esc(label)}</span>')
+        elif label == "API 参考":
+            bits.append(f'<a class="crumb-mid" href="{href}">{esc(label)}</a>')
         else:
             bits.append(f'<span class="cur">{esc(label)}</span>')
     crumb = '<span class="sep">»</span>'.join(bits)
     return f'''<header class="topbar">
+<button id="nav-toggle" class="nav-toggle" type="button" aria-label="打开目录"
+        aria-controls="sidebar" aria-expanded="false">☰</button>
 <div class="crumbs">{crumb}</div>
 <div class="topbar-tools">
   <label>主题 <select id="theme-select" class="theme-select" aria-label="主题">
@@ -561,6 +655,10 @@ def page(title: str, crumbs: list[tuple[str, str | None]], body: str, *,
     Pages) skip directories whose name starts with an underscore, so an external
     ``_static/`` folder silently 404s and the page renders unstyled.
     """
+    # tables are wide by nature; wrap them so phones scroll them instead of
+    # stretching the whole page
+    body = body.replace("<table", '<div class="table-wrap"><table')
+    body = body.replace("</table>", "</table></div>")
     return f'''<!DOCTYPE html>
 <html lang="zh-CN" data-theme="light">
 <head>
@@ -578,6 +676,7 @@ def page(title: str, crumbs: list[tuple[str, str | None]], body: str, *,
 {body}
 </article></main>
 </div>
+<div id="nav-mask" class="nav-mask"></div>
 {SEARCH_OVERLAY}
 <script>window.__DOCS_ROOT__="{root}";window.__SEARCH_INDEX__={SEARCH_JSON};</script>
 <script>{JS}</script>
