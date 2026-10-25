@@ -3,10 +3,10 @@
  "title": "经典机器学习（5/9）",
  "modules": [
   {
-   "name": "jsl.ml",
+   "name": "basalt.ml",
    "types": [
     {
-     "qualified": "jsl.ml.Transformer",
+     "qualified": "basalt.ml.Transformer",
      "simple_qualified": "Transformer",
      "kind": "interface",
      "modifiers": [
@@ -17,14 +17,14 @@
      "implements": [],
      "file": "jsl/ml/Transformer.java",
      "line": 14,
-     "javadoc": "Common contract for stateful feature preprocessors and feature-engineering steps.\n\n<p>Every {@code Transformer} is {@link Persistable} so training-time statistics (means, scales,\ncategory vocabularies, imputation constants, bin edges, selected feature masks) can be serialized\ninto a {@code .jsl} container or inside a {@link Pipeline}, guaranteeing bit-identical behavior\nbetween training and production inference.</p>",
+     "javadoc": "Common contract for stateful feature preprocessors and feature-engineering steps.\n\n<p>Every {@code Transformer} is {@link Persistable} so training-time statistics (means, scales,\ncategory vocabularies, imputation constants, bin edges, selected feature masks) can be serialized\ninto a {@code .bsl} container or inside a {@link Pipeline}, guaranteeing bit-identical behavior\nbetween training and production inference.</p>",
      "nested": [],
      "members": [],
      "doc": {
       "summary": "有状态特征预处理与特征工程步骤的统一契约",
       "body": [
-       "实现类在 fit 阶段从数据中学出统计量（均值、尺度、类别词表、缺失填充常数、分桶边界、被选中的特征掩码），在 transform 阶段用这些统计量改写特征矩阵。继承 Persistable 使统计量可以单独写入 .jsl 容器，也可以随 Pipeline 一起序列化，从而保证训练与线上推理的行为逐位一致。",
-       "fit(Matrix) 等价于 fit(features, null)；fitTransform 先把特征交给 fit，再对同一批数据执行 transform，省去一次显式调用。inverseTransform 的默认实现直接抛 JSLUnsupportedOperationException，只有映射可逆的变换（MinMaxScaler、LabelEncoder、特征选择等）才覆盖它。"
+       "实现类在 fit 阶段从数据中学出统计量（均值、尺度、类别词表、缺失填充常数、分桶边界、被选中的特征掩码），在 transform 阶段用这些统计量改写特征矩阵。继承 Persistable 使统计量可以单独写入 .bsl 容器，也可以随 Pipeline 一起序列化，从而保证训练与线上推理的行为逐位一致。",
+       "fit(Matrix) 等价于 fit(features, null)；fitTransform 先把特征交给 fit，再对同一批数据执行 transform，省去一次显式调用。inverseTransform 的默认实现直接抛 BasaltUnsupportedOperationException，只有映射可逆的变换（MinMaxScaler、LabelEncoder、特征选择等）才覆盖它。"
       ],
       "notes": [
        "fit 的实现必须返回自身或等价实例，默认的 fit(Matrix) 正是把返回值继续传给 fit(Matrix, double[])",
@@ -33,14 +33,14 @@
       ],
       "example": "MinMaxScaler scaler = MinMaxScaler.builder()\n        .featureRange(0.0, 1.0)\n        .build();\n\nMatrix scaled = scaler.fitTransform(features);\nMatrix restored = scaler.inverseTransform(scaled);",
       "see": [
-       "jsl.ml.Pipeline",
-       "jsl.core.Persistable",
-       "jsl.core.Matrix"
+       "basalt.ml.Pipeline",
+       "basalt.core.Persistable",
+       "basalt.core.Matrix"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.TreeTask",
+     "qualified": "basalt.ml.TreeTask",
      "simple_qualified": "TreeTask",
      "kind": "enum",
      "modifiers": [
@@ -86,14 +86,14 @@
       ],
       "example": "DecisionTree regressor = DecisionTree.builder()\n        .task(TreeTask.REGRESSION)\n        .maxDepth(6)\n        .build();\n\nTreeTask task = regressor.task();",
       "see": [
-       "jsl.ml.DecisionTree",
-       "jsl.ml.ImpurityCriterion",
-       "jsl.ml.RandomForest"
+       "basalt.ml.DecisionTree",
+       "basalt.ml.ImpurityCriterion",
+       "basalt.ml.RandomForest"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.AgglomerativeClustering.Builder",
+     "qualified": "basalt.ml.AgglomerativeClustering.Builder",
      "simple_qualified": "AgglomerativeClustering.Builder",
      "kind": "class",
      "modifiers": [
@@ -187,13 +187,13 @@
       ],
       "example": "AgglomerativeClustering model = AgglomerativeClustering.builder()\n        .clusters(3)\n        .linkage(AgglomerativeClustering.Linkage.AVERAGE)\n        .build();\n\nmodel.fit(features);\nint[] labels = model.labels();",
       "see": [
-       "jsl.ml.AgglomerativeClustering",
-       "jsl.ml.AgglomerativeClustering.Linkage"
+       "basalt.ml.AgglomerativeClustering",
+       "basalt.ml.AgglomerativeClustering.Linkage"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.AgglomerativeClustering.Linkage",
+     "qualified": "basalt.ml.AgglomerativeClustering.Linkage",
      "simple_qualified": "AgglomerativeClustering.Linkage",
      "kind": "enum",
      "modifiers": [
@@ -261,13 +261,13 @@
       ],
       "example": "AgglomerativeClustering model = AgglomerativeClustering.builder()\n        .clusters(4)\n        .linkage(AgglomerativeClustering.Linkage.SINGLE)\n        .build();\n\nAgglomerativeClustering.Linkage used = model.linkage();",
       "see": [
-       "jsl.ml.AgglomerativeClustering",
-       "jsl.ml.AgglomerativeClustering.Builder"
+       "basalt.ml.AgglomerativeClustering",
+       "basalt.ml.AgglomerativeClustering.Builder"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.DBSCAN.Builder",
+     "qualified": "basalt.ml.DBSCAN.Builder",
      "simple_qualified": "DBSCAN.Builder",
      "kind": "class",
      "modifiers": [
@@ -373,7 +373,7 @@
      }
     },
     {
-     "qualified": "jsl.ml.DataSplit.Fold",
+     "qualified": "basalt.ml.DataSplit.Fold",
      "simple_qualified": "DataSplit.Fold",
      "kind": "record",
      "modifiers": [
@@ -398,12 +398,12 @@
        "各折测试块互不重叠，并集覆盖全部行"
       ],
       "see": [
-       "jsl.ml.DataSplit.kFold(Matrix, double[], int, long)"
+       "basalt.ml.DataSplit.kFold(Matrix, double[], int, long)"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.DataSplit.Holdout",
+     "qualified": "basalt.ml.DataSplit.Holdout",
      "simple_qualified": "DataSplit.Holdout",
      "kind": "record",
      "modifiers": [
@@ -428,12 +428,12 @@
        "划分结果只由 seed 与输入行数决定，与标签分布无关"
       ],
       "see": [
-       "jsl.ml.DataSplit.holdout(Matrix, double[], double, long)"
+       "basalt.ml.DataSplit.holdout(Matrix, double[], double, long)"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.DecisionTree.Builder",
+     "qualified": "basalt.ml.DecisionTree.Builder",
      "simple_qualified": "DecisionTree.Builder",
      "kind": "class",
      "modifiers": [
@@ -661,14 +661,14 @@
       ],
       "example": "DecisionTree tree = DecisionTree.builder()\n        .task(TreeTask.REGRESSION)\n        .maxDepth(5)\n        .minSamplesSplit(4)\n        .minSamplesLeaf(2)\n        .maxFeatures(2)\n        .bins(32)\n        .seed(11L)\n        .build();",
       "see": [
-       "jsl.ml.DecisionTree",
-       "jsl.ml.ImpurityCriterion",
-       "jsl.ml.TreeTask"
+       "basalt.ml.DecisionTree",
+       "basalt.ml.ImpurityCriterion",
+       "basalt.ml.TreeTask"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.FeatureImportance.PermutationResult",
+     "qualified": "basalt.ml.FeatureImportance.PermutationResult",
      "simple_qualified": "FeatureImportance.PermutationResult",
      "kind": "record",
      "modifiers": [
@@ -710,15 +710,15 @@
        "rawImportances 的行对应特征列，列对应重复序号，排序与打乱都只发生在行方向上",
        "记录本身不可变，但持有的数组仍可被外部修改"
       ],
-      "example": "FeatureImportance.PermutationResult result = FeatureImportance.permutationImportance(\n        model, features, targets, JSL.Metric.ACCURACY, 10, 42L);\n\nint[] order = result.rankedFeaturesDescending();\ndouble top = result.importancesMean()[order[0]];",
+      "example": "FeatureImportance.PermutationResult result = FeatureImportance.permutationImportance(\n        model, features, targets, Estimators.Metric.ACCURACY, 10, 42L);\n\nint[] order = result.rankedFeaturesDescending();\ndouble top = result.importancesMean()[order[0]];",
       "see": [
-       "jsl.ml.FeatureImportance",
-       "jsl.ml.FeatureImportance.permutationImportance(Estimator, Matrix, double[], JSL.Metric, int, long)"
+       "basalt.ml.FeatureImportance",
+       "basalt.ml.FeatureImportance.permutationImportance(Estimator, Matrix, double[], Estimators.Metric, int, long)"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.GaussianMixture.Builder",
+     "qualified": "basalt.ml.GaussianMixture.Builder",
      "simple_qualified": "GaussianMixture.Builder",
      "kind": "class",
      "modifiers": [
@@ -911,13 +911,13 @@
       ],
       "example": "GaussianMixture gmm = GaussianMixture.builder()\n        .components(3)\n        .maxIterations(200)\n        .tolerance(1e-5)\n        .regCovar(1e-6)\n        .seed(7L)\n        .build();\n\ngmm.fit(features);\ndouble[] labels = gmm.predict(features);",
       "see": [
-       "jsl.ml.GaussianMixture",
-       "jsl.ml.KMeans"
+       "basalt.ml.GaussianMixture",
+       "basalt.ml.KMeans"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.GaussianNaiveBayes.Builder",
+     "qualified": "basalt.ml.GaussianNaiveBayes.Builder",
      "simple_qualified": "GaussianNaiveBayes.Builder",
      "kind": "class",
      "modifiers": [
@@ -980,7 +980,7 @@
      }
     },
     {
-     "qualified": "jsl.ml.GridSearchCV.Builder",
+     "qualified": "basalt.ml.GridSearchCV.Builder",
      "simple_qualified": "GridSearchCV.Builder",
      "kind": "class",
      "modifiers": [
@@ -1031,11 +1031,11 @@
       },
       {
        "kind": "method",
-       "key": "scoring(JSL.Metric)",
-       "signature": "Builder scoring(JSL.Metric scoring)",
+       "key": "scoring(Estimators.Metric)",
+       "signature": "Builder scoring(Estimators.Metric scoring)",
        "params": [
         {
-         "type": "JSL.Metric",
+         "type": "Estimators.Metric",
          "name": "scoring"
         }
        ],
@@ -1044,7 +1044,7 @@
        "doc": {
         "summary": "设置交叉验证打分指标，默认 ACCURACY。",
         "params": {
-         "scoring": "JSL.Metric 常量，可取 ACCURACY、MACRO_F1、R2 或 RMSE，非 null"
+         "scoring": "Estimators.Metric 常量，可取 ACCURACY、MACRO_F1、R2 或 RMSE，非 null"
         },
         "returns": "this，便于链式调用",
         "throws": {
@@ -1152,18 +1152,18 @@
       "summary": "GridSearchCV 的构建器，登记参数网格与交叉验证策略。",
       "body": [
        "构建器没有公开构造器，只能由 GridSearchCV.builder(estimatorFactory) 取得，估计器工厂在那一刻即为必填，空工厂直接抛 NullPointerException。参数网格用 param 逐项登记，fit 时按登记顺序做笛卡尔积。",
-       "其余四项都有默认值：scoring 为 JSL.Metric.ACCURACY、cv 为 5、stratified 为 false、seed 为 42。build 只检查参数网格非空，配置错误主要靠各 setter 的即时校验拦下。"
+       "其余四项都有默认值：scoring 为 Estimators.Metric.ACCURACY、cv 为 5、stratified 为 false、seed 为 42。build 只检查参数网格非空，配置错误主要靠各 setter 的即时校验拦下。"
       ],
       "notes": [
        "必填项：至少一次 param 调用，否则 build 抛 IllegalArgumentException",
        "estimatorFactory 已被固定，构建器无法更换工厂",
        "工厂必须按参数 Map 返回未拟合的估计器，fit 会为每个候选、每一折各调用一次"
       ],
-      "example": "GridSearchCV search = GridSearchCV.builder(params -> DecisionTree.builder()\n                .maxDepth((Integer) params.get(\"maxDepth\"))\n                .build())\n        .param(\"maxDepth\", 3, 5, 8)\n        .scoring(JSL.Metric.ACCURACY)\n        .cv(5)\n        .stratified(true)\n        .seed(42L)\n        .build();\n\nsearch.fit(features, targets);",
+      "example": "GridSearchCV search = GridSearchCV.builder(params -> DecisionTree.builder()\n                .maxDepth((Integer) params.get(\"maxDepth\"))\n                .build())\n        .param(\"maxDepth\", 3, 5, 8)\n        .scoring(Estimators.Metric.ACCURACY)\n        .cv(5)\n        .stratified(true)\n        .seed(42L)\n        .build();\n\nsearch.fit(features, targets);",
       "see": [
-       "jsl.ml.GridSearchCV",
-       "jsl.ml.DataSplit",
-       "jsl.ml.JSL.Metric"
+       "basalt.ml.GridSearchCV",
+       "basalt.ml.DataSplit",
+       "basalt.ml.Estimators.Metric"
       ]
      }
     }

@@ -3,10 +3,10 @@
  "title": "eager 张量与模块（2/4）",
  "modules": [
   {
-   "name": "jsl.torch",
+   "name": "basalt.torch",
    "types": [
     {
-     "qualified": "jsl.torch.Flatten",
+     "qualified": "basalt.torch.Flatten",
      "simple_qualified": "Flatten",
      "kind": "class",
      "modifiers": [
@@ -68,14 +68,14 @@
        "reshape 会新分配张量并登记一个计算图节点，反向时按逆映射回传梯度，输出与输入不共享存储。"
       ],
       "see": [
-       "jsl.torch.Sequential",
-       "jsl.torch.Linear",
-       "jsl.torch.Tensor#reshape"
+       "basalt.torch.Sequential",
+       "basalt.torch.Linear",
+       "basalt.torch.Tensor#reshape"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.Graph",
+     "qualified": "basalt.torch.Graph",
      "simple_qualified": "Graph",
      "kind": "class",
      "modifiers": [
@@ -110,7 +110,7 @@
          "context": "原生上下文，图句柄只是它的一个视图，不持有额外原生资源"
         },
         "throws": {
-         "JSLRuntimeException": "context 为 null"
+         "BasaltRuntimeException": "context 为 null"
         },
         "notes": [
          "创建动作本身不改动图内容；多个 Graph 实例操作的是同一张图。"
@@ -136,7 +136,7 @@
         },
         "returns": "绑定该上下文的新图句柄",
         "throws": {
-         "JSLRuntimeException": "context 为 null"
+         "BasaltRuntimeException": "context 为 null"
         }
        }
       },
@@ -161,7 +161,7 @@
          "root": "反向起点，必须是当前计算图的产物；通常是形状 [1] 的损失"
         },
         "throws": {
-         "JSLRuntimeException": "root 为 null",
+         "BasaltRuntimeException": "root 为 null",
          "IllegalArgumentException": "root 属于另一个上下文"
         },
         "notes": [
@@ -245,14 +245,14 @@
        "size() 与 stats() 都是即时查询，各触发一次 JNI 调用，不宜在热循环中频繁调用。"
       ],
       "see": [
-       "jsl.torch.Tensor#backward()",
-       "jsl.torch.Optimizer",
-       "jsl.nativebridge.NativeContext"
+       "basalt.torch.Tensor#backward()",
+       "basalt.torch.Optimizer",
+       "basalt.nativebridge.NativeContext"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.GroupNorm",
+     "qualified": "basalt.torch.GroupNorm",
      "simple_qualified": "GroupNorm",
      "kind": "class",
      "modifiers": [
@@ -459,14 +459,14 @@
        "epsilon 直接参与 sqrt(var + epsilon)，构造阶段不校验取值。"
       ],
       "see": [
-       "jsl.torch.LayerNorm",
-       "jsl.torch.BatchNorm2d",
-       "jsl.torch.Tensor#groupNorm"
+       "basalt.torch.LayerNorm",
+       "basalt.torch.BatchNorm2d",
+       "basalt.torch.Tensor#groupNorm"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.L1Loss",
+     "qualified": "basalt.torch.L1Loss",
      "simple_qualified": "L1Loss",
      "kind": "class",
      "modifiers": [
@@ -528,14 +528,14 @@
        "与 MSELoss 一样不做广播；需要按样本平均时先自行 reshape。"
       ],
       "see": [
-       "jsl.torch.Loss",
-       "jsl.torch.MSELoss",
-       "jsl.torch.Tensor#l1Loss"
+       "basalt.torch.Loss",
+       "basalt.torch.MSELoss",
+       "basalt.torch.Tensor#l1Loss"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.LRScheduler",
+     "qualified": "basalt.torch.LRScheduler",
      "simple_qualified": "LRScheduler",
      "kind": "interface",
      "modifiers": [
@@ -563,14 +563,14 @@
        "接口不声明异常，也不规定步数上限；计数只增不减，没有重置入口。"
       ],
       "see": [
-       "jsl.torch.StepLR",
-       "jsl.torch.CosineAnnealingLR",
-       "jsl.torch.Optimizer#setLearningRate(float)"
+       "basalt.torch.StepLR",
+       "basalt.torch.CosineAnnealingLR",
+       "basalt.torch.Optimizer#setLearningRate(float)"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.LayerNorm",
+     "qualified": "basalt.torch.LayerNorm",
      "simple_qualified": "LayerNorm",
      "kind": "class",
      "modifiers": [
@@ -746,13 +746,13 @@
        "gamma 与 beta 的元素个数和输入最后一维不一致时，forward 抛 IllegalArgumentException。"
       ],
       "see": [
-       "jsl.torch.BatchNorm2d",
-       "jsl.torch.Tensor#layerNorm"
+       "basalt.torch.BatchNorm2d",
+       "basalt.torch.Tensor#layerNorm"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.Linear",
+     "qualified": "basalt.torch.Linear",
      "simple_qualified": "Linear",
      "kind": "class",
      "modifiers": [
@@ -929,14 +929,14 @@
        "形状检查发生在前向，最后一维不匹配时异常信息包含期望值与实际值。"
       ],
       "see": [
-       "jsl.torch.LayerNorm",
-       "jsl.torch.Sequential",
-       "jsl.torch.Tensor#matMul"
+       "basalt.torch.LayerNorm",
+       "basalt.torch.Sequential",
+       "basalt.torch.Tensor#matMul"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.Loss",
+     "qualified": "basalt.torch.Loss",
      "simple_qualified": "Loss",
      "kind": "interface",
      "modifiers": [
@@ -960,14 +960,14 @@
        "接口不声明异常，形状错误以 IllegalArgumentException 或 IllegalStateException 的形式在运行期暴露。"
       ],
       "see": [
-       "jsl.torch.MSELoss",
-       "jsl.torch.CrossEntropyLoss",
-       "jsl.torch.Tensor#backward()"
+       "basalt.torch.MSELoss",
+       "basalt.torch.CrossEntropyLoss",
+       "basalt.torch.Tensor#backward()"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.MSELoss",
+     "qualified": "basalt.torch.MSELoss",
      "simple_qualified": "MSELoss",
      "kind": "class",
      "modifiers": [
@@ -1026,14 +1026,14 @@
        "反向梯度为 2*(prediction-target)/n，对 prediction 与 target 两侧同时累积。"
       ],
       "see": [
-       "jsl.torch.Loss",
-       "jsl.torch.CrossEntropyLoss",
-       "jsl.torch.Tensor#mse(Tensor)"
+       "basalt.torch.Loss",
+       "basalt.torch.CrossEntropyLoss",
+       "basalt.torch.Tensor#mse(Tensor)"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.MaxPool2d",
+     "qualified": "basalt.torch.MaxPool2d",
      "simple_qualified": "MaxPool2d",
      "kind": "class",
      "modifiers": [
@@ -1203,13 +1203,13 @@
        "模块无参数，parameters() 恒为空列表。"
       ],
       "see": [
-       "jsl.torch.Conv2d",
-       "jsl.torch.Tensor#maxPool2d"
+       "basalt.torch.Conv2d",
+       "basalt.torch.Tensor#maxPool2d"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.Module",
+     "qualified": "basalt.torch.Module",
      "simple_qualified": "Module",
      "kind": "class",
      "modifiers": [
@@ -1298,7 +1298,7 @@
         },
         "returns": "forward 的返回值",
         "throws": {
-         "JSLRuntimeException": "input 为 null"
+         "BasaltRuntimeException": "input 为 null"
         },
         "notes": [
          "模块组合时统一走 apply 可把空值错误定位在边界上。"
@@ -1428,14 +1428,14 @@
        "基类不持有张量，也不做参数注册：参数必须由子类保存在字段中并通过 parameters() 暴露。"
       ],
       "see": [
-       "jsl.torch.Sequential",
-       "jsl.torch.Linear",
-       "jsl.torch.Optimizer"
+       "basalt.torch.Sequential",
+       "basalt.torch.Linear",
+       "basalt.torch.Optimizer"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.MultiheadAttention",
+     "qualified": "basalt.torch.MultiheadAttention",
      "simple_qualified": "MultiheadAttention",
      "kind": "class",
      "modifiers": [
@@ -1607,11 +1607,11 @@
        "train()/eval() 会同步切换内部 dropout；parameters() 只含四个投影的权重与偏置，不含缩放常量。",
        "namedParameters 的名称前缀为 query.、key.、value.、output.。"
       ],
-      "example": "try (JSL jsl = JSL.create()) {\n    MultiheadAttention attention =\n            new MultiheadAttention(jsl.context(), 64, 8, true, 0.1f, 7L);\n    Tensor input = jsl.randn(2, 16, 64);\n    attention.train();\n    Tensor output = attention.forward(input);\n    // output 形状为 [2, 16, 64]\n    attention.eval();\n    attention.close();\n}",
+      "example": "try (Basalt jsl = Basalt.create()) {\n    MultiheadAttention attention =\n            new MultiheadAttention(basalt.context(), 64, 8, true, 0.1f, 7L);\n    Tensor input = basalt.randn(2, 16, 64);\n    attention.train();\n    Tensor output = attention.forward(input);\n    // output 形状为 [2, 16, 64]\n    attention.eval();\n    attention.close();\n}",
       "see": [
-       "jsl.torch.SelfAttention",
-       "jsl.torch.TransformerBlock",
-       "jsl.torch.Linear"
+       "basalt.torch.SelfAttention",
+       "basalt.torch.TransformerBlock",
+       "basalt.torch.Linear"
       ]
      }
     }

@@ -77,7 +77,7 @@ fn bin_features_impl(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_core_NativeKernels_binFeatures(
+pub extern "system" fn Java_basalt_core_NativeKernels_binFeatures(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     data_array: JDoubleArray<'_>,

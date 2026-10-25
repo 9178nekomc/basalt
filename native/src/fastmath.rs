@@ -669,7 +669,7 @@ unsafe fn squared_distance_avx2(a: &[f64], b: &[f64]) -> f64 {
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_core_NativeKernels_ridgeFit(
+pub extern "system" fn Java_basalt_core_NativeKernels_ridgeFit(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     data_array: JDoubleArray<'_>,
@@ -734,7 +734,7 @@ pub extern "system" fn Java_jsl_core_NativeKernels_ridgeFit(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_core_NativeKernels_gaussianNbFit(
+pub extern "system" fn Java_basalt_core_NativeKernels_gaussianNbFit(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     data_array: JDoubleArray<'_>,
@@ -800,7 +800,7 @@ pub extern "system" fn Java_jsl_core_NativeKernels_gaussianNbFit(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_core_NativeKernels_kmeansFit(
+pub extern "system" fn Java_basalt_core_NativeKernels_kmeansFit(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     data_array: JDoubleArray<'_>,

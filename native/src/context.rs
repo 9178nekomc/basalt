@@ -124,7 +124,7 @@ impl Context {
         let pool = Arc::new(
             ThreadPoolBuilder::new()
                 .num_threads(requested)
-                .thread_name(move |index| format!("jsl-tensor-{requested}-{index}"))
+                .thread_name(move |index| format!("basalt-tensor-{requested}-{index}"))
                 .build()
                 .map_err(|error| {
                     NativeError::invalid(format!("cannot create native thread pool: {error}"))

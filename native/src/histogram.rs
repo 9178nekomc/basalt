@@ -42,7 +42,7 @@ fn session_from_ptr(pointer: jlong) -> Option<Arc<Mutex<HistogramSession>>> {
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_core_NativeKernels_histogramSessionCreate(
+pub extern "system" fn Java_basalt_core_NativeKernels_histogramSessionCreate(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     bins_array: JByteArray<'_>,
@@ -90,7 +90,7 @@ pub extern "system" fn Java_jsl_core_NativeKernels_histogramSessionCreate(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_core_NativeKernels_histogramSessionUpdate(
+pub extern "system" fn Java_basalt_core_NativeKernels_histogramSessionUpdate(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     session: jlong,
@@ -125,7 +125,7 @@ pub extern "system" fn Java_jsl_core_NativeKernels_histogramSessionUpdate(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_core_NativeKernels_histogramSessionAccumulate(
+pub extern "system" fn Java_basalt_core_NativeKernels_histogramSessionAccumulate(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     session: jlong,
@@ -202,7 +202,7 @@ pub extern "system" fn Java_jsl_core_NativeKernels_histogramSessionAccumulate(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_core_NativeKernels_histogramSessionDestroy(
+pub extern "system" fn Java_basalt_core_NativeKernels_histogramSessionDestroy(
     _env: JNIEnv<'_>,
     _class: JClass<'_>,
     session: jlong,

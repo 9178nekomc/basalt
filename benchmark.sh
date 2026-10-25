@@ -4,9 +4,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 "$ROOT/verify.sh"
 
-printf '\n==> running JSL benchmark suite\n'
+printf '\n==> running Basalt benchmark suite\n'
 java --add-modules jdk.incubator.vector -Xmx2g \
-  -cp "$ROOT/build/classes:$ROOT/build/test-classes" jsl.tests.JslBenchmark "$@" \
+  -cp "$ROOT/build/classes:$ROOT/build/test-classes" basalt.tests.BasaltBenchmark "$@" \
   | tee "$ROOT/build/logs/benchmark.log"
 
 PYTHON_BIN=""

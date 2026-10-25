@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure cProfile overhead on the same model-inference workload shape as the JSL JFR harness.
+"""Measure cProfile overhead on the same model-inference workload shape as the Basalt JFR harness.
 
 Two orchestration granularities are measured, because cProfile instruments every Python-level
 call: a coarse pipeline (one vectorized step per request) and a fine-grained pipeline (one

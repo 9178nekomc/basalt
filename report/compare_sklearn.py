@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Generate the shared JSLD datasets and benchmark scikit-learn on them.
+"""Generate the shared BasaltD datasets and benchmark scikit-learn on them.
 
-The Java harness (jsl.tests.SklearnComparison) reads the exact same JSLD files, so both
+The Java harness (basalt.tests.SklearnComparison) reads the exact same BasaltD files, so both
 libraries see bit-identical features and labels. Results are written to build/compare/sklearn.csv.
 """
 
@@ -101,10 +101,10 @@ def size_of(model) -> int:
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     train_x, train_y, train_t, test_x, test_y, test_t = make_data()
-    write_jsld(OUT / "clf_train.jsld", train_x, train_y)
-    write_jsld(OUT / "clf_test.jsld", test_x, test_y)
-    write_jsld(OUT / "reg_train.jsld", train_x, train_t)
-    write_jsld(OUT / "reg_test.jsld", test_x, test_t)
+    write_jsld(OUT / "clf_train.bsld", train_x, train_y)
+    write_jsld(OUT / "clf_test.bsld", test_x, test_y)
+    write_jsld(OUT / "reg_train.bsld", train_x, train_t)
+    write_jsld(OUT / "reg_test.bsld", test_x, test_t)
     print(f"data: train={train_x.shape}, test={test_x.shape}, "
           f"class balance={train_y.mean():.3f}")
 

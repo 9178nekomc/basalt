@@ -1,4 +1,4 @@
-//! JSL native kernels: AVX2/FMA GEMM and K-Means assignment behind a minimal JNI surface.
+//! Basalt native kernels: AVX2/FMA GEMM and K-Means assignment behind a minimal JNI surface.
 //!
 //! Design notes:
 //! * Arrays are pinned with `GetDoubleArrayElements`; inputs use `NoCopyBack`, outputs use
@@ -23,7 +23,7 @@ const STATUS_PANIC: jint = -2;
 const STATUS_BAD_ARGS: jint = -1;
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_core_NativeKernels_available(
+pub extern "system" fn Java_basalt_core_NativeKernels_available(
     _env: JNIEnv,
     _class: JClass,
 ) -> jint {
@@ -31,7 +31,7 @@ pub extern "system" fn Java_jsl_core_NativeKernels_available(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_core_NativeKernels_version(
+pub extern "system" fn Java_basalt_core_NativeKernels_version(
     _env: JNIEnv,
     _class: JClass,
 ) -> jint {
@@ -40,7 +40,7 @@ pub extern "system" fn Java_jsl_core_NativeKernels_version(
 
 /// `int gemm(double[] a, double[] b, double[] c, int m, int k, int n, int threads)`
 #[no_mangle]
-pub extern "system" fn Java_jsl_core_NativeKernels_gemm(
+pub extern "system" fn Java_basalt_core_NativeKernels_gemm(
     mut env: JNIEnv,
     _class: JClass,
     a_array: JDoubleArray,
@@ -80,7 +80,7 @@ pub extern "system" fn Java_jsl_core_NativeKernels_gemm(
 /// `int kmeansAssign(double[] data, double[] centers, int rows, int clusters, int features,
 ///                   int threads, int[] assignments, double[] distances)`
 #[no_mangle]
-pub extern "system" fn Java_jsl_core_NativeKernels_kmeansAssign(
+pub extern "system" fn Java_basalt_core_NativeKernels_kmeansAssign(
     mut env: JNIEnv,
     _class: JClass,
     data_array: JDoubleArray,
@@ -144,7 +144,7 @@ pub extern "system" fn Java_jsl_core_NativeKernels_kmeansAssign(
 /// Tree arrays are concatenated; `treeOffsets[t]` is the first node of tree `t`, with
 /// `treeOffsets[trees]` the total node count.
 #[no_mangle]
-pub extern "system" fn Java_jsl_core_NativeKernels_forestPredict(
+pub extern "system" fn Java_basalt_core_NativeKernels_forestPredict(
     mut env: JNIEnv,
     _class: JClass,
     data_array: JDoubleArray,
@@ -255,7 +255,7 @@ pub(crate) fn pool_for(threads: usize) -> Arc<ThreadPool> {
             Arc::new(
                 ThreadPoolBuilder::new()
                     .num_threads(threads)
-                    .thread_name(move |index| format!("jsl-native-{threads}-{index}"))
+                    .thread_name(move |index| format!("basalt-native-{threads}-{index}"))
                     .build()
                     .expect("cannot create native thread pool"),
             )
@@ -358,7 +358,7 @@ fn kmeans_assign(
 ///                  int[] left, int[] right, double[] value, int[] offsets, double[] labels,
 ///                  double[] votes, double scale)`
 #[no_mangle]
-pub extern "system" fn Java_jsl_core_NativeKernels_forestVote(
+pub extern "system" fn Java_basalt_core_NativeKernels_forestVote(
     mut env: JNIEnv,
     _class: JClass,
     data_array: JDoubleArray,
@@ -530,7 +530,7 @@ fn forest_vote(
 /// for the active feature ranges. Sample rows index into the full `bins` matrix using
 /// `featureCount` as the row stride.
 #[no_mangle]
-pub extern "system" fn Java_jsl_core_NativeKernels_histogramAccumulate(
+pub extern "system" fn Java_basalt_core_NativeKernels_histogramAccumulate(
     mut env: JNIEnv,
     _class: JClass,
     gradients_array: JDoubleArray,

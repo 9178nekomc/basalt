@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the JSL Markdown report into a self-contained HTML document.
+"""Render the Basalt Markdown report into a self-contained HTML document.
 
 No third-party dependencies: a deliberately small Markdown subset (headings, paragraphs,
 fenced code, tables, lists, blockquotes, images, bold, inline code) is sufficient for the
@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-SOURCE = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT / "JSL_ARCHITECTURE_AND_BENCHMARK.md"
+SOURCE = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT / "Basalt_ARCHITECTURE_AND_BENCHMARK.md"
 TARGET = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else SOURCE.with_suffix(".html")
 
 CSS = """
@@ -262,9 +262,9 @@ def main() -> None:
 <body>
 <main>
 <header class="hero">
-  <div class="eyebrow">JSL · Pure-JDK 21 Machine Learning Runtime</div>
+  <div class="eyebrow">Basalt · Pure-JDK 21 Machine Learning Runtime</div>
   <h1>{title}</h1>
-  <p>JSL · Pure-JDK 21 Machine Learning Runtime · 可复现基准与对比</p>
+  <p>Basalt · Pure-JDK 21 Machine Learning Runtime · 可复现基准与对比</p>
 </header>
 <nav class="toc"><strong>目录</strong><ol>{toc_html}</ol></nav>
 {body}

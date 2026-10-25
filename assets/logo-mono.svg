@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Basalt">
+  <title>Basalt</title>
+  <!-- Basalt cools into hexagonal columns.  Four cells of that lattice, one stroke, no fill. -->
+  <g fill="none" stroke="currentColor" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 256.0 214.0 L 183.3 172.0 L 183.3 88.0 L 256.0 46.0 L 328.7 88.0 L 328.7 172.0 Z"/>
+    <path d="M 183.3 340.0 L 110.5 298.0 L 110.5 214.0 L 183.3 172.0 L 256.0 214.0 L 256.0 298.0 Z"/>
+    <path d="M 328.7 340.0 L 256.0 298.0 L 256.0 214.0 L 328.7 172.0 L 401.5 214.0 L 401.5 298.0 Z"/>
+    <path d="M 256.0 466.0 L 183.3 424.0 L 183.3 340.0 L 256.0 298.0 L 328.7 340.0 L 328.7 424.0 Z"/>
+  </g>
+</svg>

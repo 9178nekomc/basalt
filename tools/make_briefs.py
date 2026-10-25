@@ -21,20 +21,20 @@ import json
 import os
 
 MODULE_ORDER = [
-    "jsl", "jsl.core", "jsl.data", "jsl.io", "jsl.ml", "jsl.nn",
-    "jsl.nativebridge", "jsl.torch", "jsl.concurrent",
+    "basalt", "basalt.core", "basalt.data", "basalt.io", "basalt.ml", "basalt.nn",
+    "basalt.nativebridge", "basalt.torch", "basalt.concurrent",
 ]
 
 MODULE_TITLE = {
-    "jsl": "门面与异常",
-    "jsl.core": "核心数据与模型 I/O",
-    "jsl.data": "数据管线",
-    "jsl.io": "持久化与 ONNX",
-    "jsl.ml": "经典机器学习",
-    "jsl.nn": "神经网络层与序列",
-    "jsl.nativebridge": "原生桥接层",
-    "jsl.torch": "eager 张量与模块",
-    "jsl.concurrent": "并发推理",
+    "basalt": "门面与异常",
+    "basalt.core": "核心数据与模型 I/O",
+    "basalt.data": "数据管线",
+    "basalt.io": "持久化与 ONNX",
+    "basalt.ml": "经典机器学习",
+    "basalt.nn": "神经网络层与序列",
+    "basalt.nativebridge": "原生桥接层",
+    "basalt.torch": "eager 张量与模块",
+    "basalt.concurrent": "并发推理",
 }
 
 

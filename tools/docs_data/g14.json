@@ -3,10 +3,10 @@
  "title": "经典机器学习（9/9）",
  "modules": [
   {
-   "name": "jsl.ml",
+   "name": "basalt.ml",
    "types": [
     {
-     "qualified": "jsl.ml.SelectKBest.ScoreFunc",
+     "qualified": "basalt.ml.SelectKBest.ScoreFunc",
      "simple_qualified": "SelectKBest.ScoreFunc",
      "kind": "enum",
      "modifiers": [
@@ -63,13 +63,13 @@
        "常数特征的分数为 0.0，与目标无关的特征同样得 0.0，排序时按特征下标升序稳定排列。"
       ],
       "see": [
-       "jsl.ml.SelectKBest",
-       "jsl.ml.Estimator"
+       "basalt.ml.SelectKBest",
+       "basalt.ml.Estimator"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.ShapExplainer.Explanation",
+     "qualified": "basalt.ml.ShapExplainer.Explanation",
      "simple_qualified": "ShapExplainer.Explanation",
      "kind": "record",
      "modifiers": [
@@ -95,13 +95,13 @@
        "record 不复制数组，构造后修改 predictions 或 meanAbsShap 会改变记录内容。"
       ],
       "see": [
-       "jsl.ml.ShapExplainer",
-       "jsl.core.Matrix"
+       "basalt.ml.ShapExplainer",
+       "basalt.core.Matrix"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.SimpleImputer.Builder",
+     "qualified": "basalt.ml.SimpleImputer.Builder",
      "simple_qualified": "SimpleImputer.Builder",
      "kind": "class",
      "modifiers": [
@@ -200,14 +200,14 @@
       ],
       "example": "SimpleImputer imputer = SimpleImputer.builder()\n        .strategy(SimpleImputer.Strategy.CONSTANT)\n        .fillValue(-1.0)\n        .build();\nimputer.fit(features);\nMatrix filled = imputer.transform(features);",
       "see": [
-       "jsl.ml.SimpleImputer",
-       "jsl.ml.SimpleImputer.Strategy",
-       "jsl.ml.StandardScaler.Builder"
+       "basalt.ml.SimpleImputer",
+       "basalt.ml.SimpleImputer.Strategy",
+       "basalt.ml.StandardScaler.Builder"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.SimpleImputer.Strategy",
+     "qualified": "basalt.ml.SimpleImputer.Strategy",
      "simple_qualified": "SimpleImputer.Strategy",
      "kind": "enum",
      "modifiers": [
@@ -274,13 +274,13 @@
        "策略随模型一起序列化，read 时按序数还原，序数越界由 ModelFormatException 拒绝。"
       ],
       "see": [
-       "jsl.ml.SimpleImputer",
-       "jsl.ml.SimpleImputer.Builder"
+       "basalt.ml.SimpleImputer",
+       "basalt.ml.SimpleImputer.Builder"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.StandardScaler.Builder",
+     "qualified": "basalt.ml.StandardScaler.Builder",
      "simple_qualified": "StandardScaler.Builder",
      "kind": "class",
      "modifiers": [
@@ -373,8 +373,8 @@
       ],
       "example": "StandardScaler scaler = StandardScaler.builder()\n        .withMean(true)\n        .withStd(true)\n        .build();\nscaler.fit(train);\nMatrix standardized = scaler.transform(test);\nMatrix restored = scaler.inverseTransform(standardized);",
       "see": [
-       "jsl.ml.StandardScaler",
-       "jsl.ml.SimpleImputer.Builder"
+       "basalt.ml.StandardScaler",
+       "basalt.ml.SimpleImputer.Builder"
       ]
      }
     }

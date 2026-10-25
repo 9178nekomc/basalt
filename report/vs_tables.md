@@ -1,10 +1,10 @@
-# JSL vs scikit-learn 指标表（自动生成）
+# Basalt vs scikit-learn 指标表（自动生成）
 
 数据：20 000 训练 / 10 000 测试，32 特征；计时为 5 次中位数。
 
 ## 客观指标
 
-| 任务 | 模型 | JSL 拟合 ms | sklearn 拟合 ms | 拟合比 | JSL 预测 ms | sklearn 预测 ms | JSL 得分 | sklearn 得分 | JSL 体积 KiB | pickle KiB |
+| 任务 | 模型 | Basalt 拟合 ms | sklearn 拟合 ms | 拟合比 | Basalt 预测 ms | sklearn 预测 ms | Basalt 得分 | sklearn 得分 | Basalt 体积 KiB | pickle KiB |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | 随机森林 分类 | RandomForest | 188.29 | 1136.27 | 0.17× | 59.08 | 38.29 | 0.766100 | 0.768800 | 1268.4 | 3484.9 |
 | 直方图提升 分类 | HistGradientBoosting | 498.04 | 484.56 | 1.03× | 23.86 | 30.35 | 0.798100 | 0.798900 | 167.2 | 364.1 |
@@ -19,12 +19,12 @@
 
 ## 主观评分
 
-| 维度 | JSL | scikit-learn | 依据 |
+| 维度 | Basalt | scikit-learn | 依据 |
 |---|---:|---:|---|
-| 易用性 | 7.5 | 9.5 | Builder + JSL 门面 + 强类型；仍缺 Pipeline 与文档生态 |
+| 易用性 | 7.5 | 9.5 | Builder + Basalt 门面 + 强类型；仍缺 Pipeline 与文档生态 |
 | 专业性 | 9.6 | 9.3 | 21 原生算子 + 梯度检验 + 生命周期安全 + JFR + CRC 持久化 |
 | 性能 | 9.5 | 9.0 | 10 项全部持平或反超；原生 GEMM 115 GF；CNN/Transformer 收敛 |
-| 可扩展性 | 9.6 | 9.0 | `jsl.torch` eager API + 21 ops + 类型安全管线 + JFR；仍无稀疏/分布式 |
+| 可扩展性 | 9.6 | 9.0 | `basalt.torch` eager API + 21 ops + 类型安全管线 + JFR；仍无稀疏/分布式 |
 | 精度 | 9.2 | 9.0 | 10 项全部持平或更优；全部新算子通过中心差分梯度检验 |
 | 深度 | 9.5 | 6.0 | 原生 CNN/Transformer/autograd/BPTT 为 sklearn 所无 |
 | 广度 | 9.0 | 9.0 | 23 项矩阵 87% vs 67%，原生层与 JFR 为 sklearn 所无 |

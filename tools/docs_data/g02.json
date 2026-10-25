@@ -3,10 +3,10 @@
  "title": "核心数据与模型 I/O（1/2）",
  "modules": [
   {
-   "name": "jsl.core",
+   "name": "basalt.core",
    "types": [
     {
-     "qualified": "jsl.core.BC",
+     "qualified": "basalt.core.BC",
      "simple_qualified": "BC",
      "kind": "class",
      "modifiers": [
@@ -27,7 +27,7 @@
       "summary": "批×通道布局标记，同时用于批×特征与批×类别",
       "body": [
        "BC 表示二维张量，第 0 轴为批（batch），第 1 轴为通道（channels）。源码注释同时声明该布局复用为「批 × 特征」与「批 × 类别」，因此全连接层的输入输出、以及分类头的 logits 都落在这一标记上。",
-       "该类没有成员，构造器为 private，运行期不存在任何实例。它只出现在泛型参数位置，例如 Tensor<BC>，用来在编译期固定轴的含义。jsl.nn 中的 CNN 以 Tensor<BC> 表示输出与目标，Flatten 用它在 BCHW 与 BC 之间转换。"
+       "该类没有成员，构造器为 private，运行期不存在任何实例。它只出现在泛型参数位置，例如 Tensor<BC>，用来在编译期固定轴的含义。basalt.nn 中的 CNN 以 Tensor<BC> 表示输出与目标，Flatten 用它在 BCHW 与 BC 之间转换。"
       ],
       "notes": [
        "仅做编译期标记：不产生对象、不占用堆内存、不带来运行时分派开销。",
@@ -35,14 +35,14 @@
       ],
       "example": "Tensor<BC> logits = Tensor.ofBC(2, 3, 0.5, 0.25, 0.75, 0.1, 0.2, 0.3);\nint batch = logits.dimension(0);\nint classes = logits.dimension(1);",
       "see": [
-       "jsl.core.Layout",
-       "jsl.core.Tensor",
-       "jsl.nn.CNN"
+       "basalt.core.Layout",
+       "basalt.core.Tensor",
+       "basalt.nn.CNN"
       ]
      }
     },
     {
-     "qualified": "jsl.core.BCHW",
+     "qualified": "basalt.core.BCHW",
      "simple_qualified": "BCHW",
      "kind": "class",
      "modifiers": [
@@ -72,14 +72,14 @@
       ],
       "example": "Tensor<BCHW> images = Tensor.zerosBCHW(4, 3, 32, 32);\nint channels = images.dimension(1);\nint height = images.dimension(2);",
       "see": [
-       "jsl.core.Layout",
-       "jsl.core.BHW",
-       "jsl.nn.Conv2D"
+       "basalt.core.Layout",
+       "basalt.core.BHW",
+       "basalt.nn.Conv2D"
       ]
      }
     },
     {
-     "qualified": "jsl.core.BHW",
+     "qualified": "basalt.core.BHW",
      "simple_qualified": "BHW",
      "kind": "class",
      "modifiers": [
@@ -109,13 +109,13 @@
       ],
       "example": "double[] pixels = new double[2 * 8 * 8];\nTensor<BHW> gray = Tensor.ofBHW(2, 8, 8, pixels);\nint rank = gray.rank();",
       "see": [
-       "jsl.core.Layout",
-       "jsl.core.BCHW"
+       "basalt.core.Layout",
+       "basalt.core.BCHW"
       ]
      }
     },
     {
-     "qualified": "jsl.core.BSF",
+     "qualified": "basalt.core.BSF",
      "simple_qualified": "BSF",
      "kind": "class",
      "modifiers": [
@@ -145,14 +145,14 @@
       ],
       "example": "Tensor<BSF> batch = Tensor.zerosBSF(8, 16, 32);\nint steps = batch.dimension(1);\nint features = batch.dimension(2);",
       "see": [
-       "jsl.core.Layout",
-       "jsl.nn.LSTM",
-       "jsl.nn.SequenceNetwork"
+       "basalt.core.Layout",
+       "basalt.nn.LSTM",
+       "basalt.nn.SequenceNetwork"
       ]
      }
     },
     {
-     "qualified": "jsl.core.Layout",
+     "qualified": "basalt.core.Layout",
      "simple_qualified": "Layout",
      "kind": "interface",
      "modifiers": [
@@ -180,16 +180,16 @@
       ],
       "example": "Tensor<BCHW> images = Tensor.zerosBCHW(2, 3, 8, 8);\nTensor<BSF> sequence = Tensor.zerosBSF(2, 4, 16);\n// images 与 sequence 是不同类型，编译器拒绝互相赋值\nint imageRank = images.rank();\nint sequenceRank = sequence.rank();",
       "see": [
-       "jsl.core.Tensor",
-       "jsl.core.BC",
-       "jsl.core.BCHW",
-       "jsl.core.BHW",
-       "jsl.core.BSF"
+       "basalt.core.Tensor",
+       "basalt.core.BC",
+       "basalt.core.BCHW",
+       "basalt.core.BHW",
+       "basalt.core.BSF"
       ]
      }
     },
     {
-     "qualified": "jsl.core.MatMul",
+     "qualified": "basalt.core.MatMul",
      "simple_qualified": "MatMul",
      "kind": "class",
      "modifiers": [
@@ -370,14 +370,14 @@
       ],
       "example": "try (MatMul engine = MatMul.create(4)) {\n    Matrix a = Matrix.zeros(512, 256);\n    Matrix b = Matrix.zeros(256, 128);\n    Matrix c = engine.multiply(a, b);\n    int columns = c.columns();\n}",
       "see": [
-       "jsl.core.Matrix",
-       "jsl.core.VectorMath",
-       "jsl.core.NativeKernels"
+       "basalt.core.Matrix",
+       "basalt.core.VectorMath",
+       "basalt.core.NativeKernels"
       ]
      }
     },
     {
-     "qualified": "jsl.core.Matrix",
+     "qualified": "basalt.core.Matrix",
      "simple_qualified": "Matrix",
      "kind": "class",
      "modifiers": [
@@ -848,14 +848,14 @@
       ],
       "example": "Matrix m = Matrix.fromRows(new double[][]{{1, 2}, {3, 4}});\nm.set(0, 1, 5.0);\ndouble[] live = m.data();\ndouble[] safe = m.toArray();\nMatrix product = m.matMul(m.transpose());",
       "see": [
-       "jsl.core.MatMul",
-       "jsl.core.Tensor",
-       "jsl.core.VectorMath"
+       "basalt.core.MatMul",
+       "basalt.core.Tensor",
+       "basalt.core.VectorMath"
       ]
      }
     },
     {
-     "qualified": "jsl.core.ModelFormatException",
+     "qualified": "basalt.core.ModelFormatException",
      "simple_qualified": "ModelFormatException",
      "kind": "class",
      "modifiers": [
@@ -867,7 +867,7 @@
      "implements": [],
      "file": "jsl/core/ModelFormatException.java",
      "line": 4,
-     "javadoc": "Unchecked failure raised when a .jsl stream is truncated, corrupt or incompatible.",
+     "javadoc": "Unchecked failure raised when a .bsl stream is truncated, corrupt or incompatible.",
      "nested": [],
      "members": [
       {
@@ -921,9 +921,9 @@
       }
      ],
      "doc": {
-      "summary": ".jsl 流截断、损坏或版本不兼容时抛出的非受检异常",
+      "summary": ".bsl 流截断、损坏或版本不兼容时抛出的非受检异常",
       "body": [
-       "ModelFormatException 继承 RuntimeException，方法签名里不出现受检声明，因此解码路径可以把格式错误从深层字段读取处直接向上抛出，无需逐层包装。捕获方只拦这一个类型即可覆盖全部 .jsl 解析失败。",
+       "ModelFormatException 继承 RuntimeException，方法签名里不出现受检声明，因此解码路径可以把格式错误从深层字段读取处直接向上抛出，无需逐层包装。捕获方只拦这一个类型即可覆盖全部 .bsl 解析失败。",
        "触发点集中在两处：ModelReader 的长度与剩余字节校验，以及 ModelKind.fromCode 与 ModelCodec 的魔数、版本、长度和 CRC32C 校验。类本身不携带额外字段，异常消息是唯一的诊断信息。"
       ],
       "notes": [
@@ -931,14 +931,14 @@
        "保存路径同样复用它表示超过容器上限，因此该类型在读、写两侧都会出现。"
       ],
       "see": [
-       "jsl.core.ModelReader",
-       "jsl.core.ModelKind",
-       "jsl.io.ModelCodec"
+       "basalt.core.ModelReader",
+       "basalt.core.ModelKind",
+       "basalt.io.ModelCodec"
       ]
      }
     },
     {
-     "qualified": "jsl.core.ModelKind",
+     "qualified": "basalt.core.ModelKind",
      "simple_qualified": "ModelKind",
      "kind": "enum",
      "modifiers": [
@@ -962,7 +962,7 @@
        "doc": {
         "summary": "卷积网络族，码值 1",
         "body": [
-         "对应 jsl.nn.CNN，解码时由 ModelCodec 分派到 ModelSerializer.readCNN 重建层结构与参数。"
+         "对应 basalt.nn.CNN，解码时由 ModelCodec 分派到 ModelSerializer.readCNN 重建层结构与参数。"
         ]
        }
       },
@@ -976,7 +976,7 @@
        "doc": {
         "summary": "直方图梯度提升族，码值 2",
         "body": [
-         "对应 jsl.ml.HistogramGradientBoosting，分派到该类的静态 read 方法。"
+         "对应 basalt.ml.HistogramGradientBoosting，分派到该类的静态 read 方法。"
         ]
        }
       },
@@ -990,7 +990,7 @@
        "doc": {
         "summary": "随机森林族，码值 3",
         "body": [
-         "对应 jsl.ml.RandomForest，分派到 readState 恢复树集合与类别表。"
+         "对应 basalt.ml.RandomForest，分派到 readState 恢复树集合与类别表。"
         ]
        }
       },
@@ -1004,7 +1004,7 @@
        "doc": {
         "summary": "K-Means 聚类族，码值 4",
         "body": [
-         "对应 jsl.ml.KMeans，分派到该类的静态 read 方法恢复中心与超参数。"
+         "对应 basalt.ml.KMeans，分派到该类的静态 read 方法恢复中心与超参数。"
         ]
        }
       },
@@ -1018,7 +1018,7 @@
        "doc": {
         "summary": "主成分分析族，码值 5",
         "body": [
-         "对应 jsl.ml.PCA，分派到该类的静态 read 方法恢复投影矩阵与均值。"
+         "对应 basalt.ml.PCA，分派到该类的静态 read 方法恢复投影矩阵与均值。"
         ]
        }
       },
@@ -1032,7 +1032,7 @@
        "doc": {
         "summary": "高斯朴素贝叶斯族，码值 6",
         "body": [
-         "对应 jsl.ml.GaussianNaiveBayes，分派到该类的静态 read 方法恢复均值、方差与对数先验。"
+         "对应 basalt.ml.GaussianNaiveBayes，分派到该类的静态 read 方法恢复均值、方差与对数先验。"
         ]
        }
       },
@@ -1046,7 +1046,7 @@
        "doc": {
         "summary": "长短期记忆网络族，码值 7",
         "body": [
-         "对应 jsl.nn.LSTM，分派到该类的静态 read 方法重建各门权重。"
+         "对应 basalt.nn.LSTM，分派到该类的静态 read 方法重建各门权重。"
         ]
        }
       },
@@ -1060,7 +1060,7 @@
        "doc": {
         "summary": "门控循环单元族，码值 8",
         "body": [
-         "对应 jsl.nn.GRU，分派到该类的静态 read 方法重建更新门与重置门权重。"
+         "对应 basalt.nn.GRU，分派到该类的静态 read 方法重建更新门与重置门权重。"
         ]
        }
       },
@@ -1074,7 +1074,7 @@
        "doc": {
         "summary": "基础循环网络族，码值 9",
         "body": [
-         "对应 jsl.nn.VanillaRNN，分派到该类的静态 read 方法重建循环权重。"
+         "对应 basalt.nn.VanillaRNN，分派到该类的静态 read 方法重建循环权重。"
         ]
        }
       },
@@ -1088,7 +1088,7 @@
        "doc": {
         "summary": "自注意力层族，码值 10",
         "body": [
-         "对应 jsl.nn.SelfAttention，分派到该类的静态 read 方法重建查询、键、值投影。"
+         "对应 basalt.nn.SelfAttention，分派到该类的静态 read 方法重建查询、键、值投影。"
         ]
        }
       },
@@ -1102,7 +1102,7 @@
        "doc": {
         "summary": "序列网络容器族，码值 11",
         "body": [
-         "对应 jsl.nn.SequenceNetwork，分派到该类的静态 read 方法按顺序重建子层列表。"
+         "对应 basalt.nn.SequenceNetwork，分派到该类的静态 read 方法按顺序重建子层列表。"
         ]
        }
       },
@@ -1451,7 +1451,7 @@
        "doc": {
         "summary": "按码值反查枚举常量",
         "params": {
-         "code": "从 .jsl 头部读出的整型码值；只有 1 至 32 有定义"
+         "code": "从 .bsl 头部读出的整型码值；只有 1 至 32 有定义"
         },
         "returns": "码值匹配的枚举常量",
         "throws": {
@@ -1466,8 +1466,8 @@
      "doc": {
       "summary": "可持久化模型族的稳定线格式标识码",
       "body": [
-       "每个常量的 code 就是 .jsl 容器头部第三个 int 字段的取值：ModelCodec.save 写入它，load 读出后再经 fromCode 还原成常量。码值从 1 开始连续分配到 32，与声明顺序一致，中间没有空洞。",
-       "常量对应实现 Persistable 的模型族：经典估计器与预处理器在 jsl.ml，序列模型在 jsl.nn。3.4 起共 32 个族，按用途分为网络与集成模型（1 至 11）、预处理与流水线（12 至 17）、核方法与无监督（18 至 23）、特征工程（24 至 26）、线性与树模型（27 至 32）。",
+       "每个常量的 code 就是 .bsl 容器头部第三个 int 字段的取值：ModelCodec.save 写入它，load 读出后再经 fromCode 还原成常量。码值从 1 开始连续分配到 32，与声明顺序一致，中间没有空洞。",
+       "常量对应实现 Persistable 的模型族：经典估计器与预处理器在 basalt.ml，序列模型在 basalt.nn。3.4 起共 32 个族，按用途分为网络与集成模型（1 至 11）、预处理与流水线（12 至 17）、核方法与无监督（18 至 23）、特征工程（24 至 26）、线性与树模型（27 至 32）。",
        "ModelCodec.readPayload 用 switch 把常量分派到各族的静态 read 方法，新增模型族必须同时扩展枚举与分派表。"
       ],
       "notes": [
@@ -1477,13 +1477,13 @@
        "Pipeline 的 payload 内嵌子步骤的码值，因此新增预处理类型后旧读取方无法解开含该步骤的流水线文件。"
       ],
       "see": [
-       "jsl.core.Persistable",
-       "jsl.io.ModelCodec"
+       "basalt.core.Persistable",
+       "basalt.io.ModelCodec"
       ]
      }
     },
     {
-     "qualified": "jsl.core.ModelReader",
+     "qualified": "basalt.core.ModelReader",
      "simple_qualified": "ModelReader",
      "kind": "class",
      "modifiers": [
@@ -1723,14 +1723,14 @@
        "读取器不校验魔数、版本与 CRC32C，这些由 ModelCodec 在构造它之前完成。"
       ],
       "see": [
-       "jsl.core.ModelWriter",
-       "jsl.io.ModelCodec",
-       "jsl.core.ModelFormatException"
+       "basalt.core.ModelWriter",
+       "basalt.io.ModelCodec",
+       "basalt.core.ModelFormatException"
       ]
      }
     },
     {
-     "qualified": "jsl.core.ModelWriter",
+     "qualified": "basalt.core.ModelWriter",
      "simple_qualified": "ModelWriter",
      "kind": "class",
      "modifiers": [
@@ -2033,13 +2033,13 @@
        "没有 close 或 reset，复用同一实例会继续追加而不是从头覆盖。"
       ],
       "see": [
-       "jsl.core.ModelReader",
-       "jsl.io.ModelCodec"
+       "basalt.core.ModelReader",
+       "basalt.io.ModelCodec"
       ]
      }
     },
     {
-     "qualified": "jsl.core.NativeKernels",
+     "qualified": "basalt.core.NativeKernels",
      "simple_qualified": "NativeKernels",
      "kind": "class",
      "modifiers": [
@@ -2051,7 +2051,7 @@
      "implements": [],
      "file": "jsl/core/NativeKernels.java",
      "line": 14,
-     "javadoc": "Optional Rust kernels loaded through JNI. The library is discovered from\n{@code -Djsl.native.path=...} (default {@code build/native/jsl_native.dll|.so|.dylib}) or from\n{@code java.library.path}. If loading fails, every caller falls back to the pure-Java path.",
+     "javadoc": "Optional Rust kernels loaded through JNI. The library is discovered from\n{@code -Djsl.native.path=...} (default {@code build/native/basalt_native.dll|.so|.dylib}) or from\n{@code java.library.path}. If loading fails, every caller falls back to the pure-Java path.",
      "nested": [
       "HistogramSessionHandle"
      ],
@@ -2174,10 +2174,10 @@
         },
         "returns": "无返回值，结果写入 c",
         "throws": {
-         "JSLRuntimeException": "原生返回非 0 状态码，消息携带该码值"
+         "BasaltRuntimeException": "原生返回非 0 状态码，消息携带该码值"
         },
         "body": [
-         "原生实现以 beta 为 0 覆盖 c，再按行切分给 rayon 线程池；m 小于 32 或可用线程不足时退化为单线程 dgemm。JSLRuntimeException 继承 IllegalStateException，因此按 JDK 异常捕获的调用方仍能回退到 Java 路径。"
+         "原生实现以 beta 为 0 覆盖 c，再按行切分给 rayon 线程池；m 小于 32 或可用线程不足时退化为单线程 dgemm。BasaltRuntimeException 继承 IllegalStateException，因此按 JDK 异常捕获的调用方仍能回退到 Java 路径。"
         ],
         "notes": [
          "未做可用性检查，需先判断 available()，否则抛 UnsatisfiedLinkError。",
@@ -2937,7 +2937,7 @@
      "doc": {
       "summary": "通过 JNI 暴露的可选 Rust 内核集合",
       "body": [
-       "类初始化时按三级顺序寻找动态库：先看 -Djsl.native.path 指定的文件，再从 classpath 的 /native/<platform>/ 资源解压到临时目录，最后回退到 java.library.path 上的 jsl_native。三步全部失败时 available() 为 false，调用方改走纯 Java 实现。",
+       "类初始化时按三级顺序寻找动态库：先看 -Djsl.native.path 指定的文件，再从 classpath 的 /native/<platform>/ 资源解压到临时目录，最后回退到 java.library.path 上的 basalt_native。三步全部失败时 available() 为 false，调用方改走纯 Java 实现。",
        "公开方法分两类：*Checked 系列把原生状态码翻译成布尔值，0 表示成功、非 0 表示参数或形状被拒绝，调用方据此回退；gemmChecked 是唯一把失败翻译成异常的方法。所有数组参数都是行主序的扁平 double[]、int[]、byte[]，不涉及张量句柄，也不进入计算图。",
        "createHistogramSession 返回不透明 long 句柄，把分箱矩阵、梯度与二阶梯度常驻原生内存，之后每个树节点只传样本下标与活跃特征表。句柄需要显式销毁，否则原生内存保留到进程结束。"
       ],
@@ -2947,11 +2947,11 @@
        "直方图会话句柄必须在训练结束时调用 destroyHistogramSession；会话内部以 f32 桶累加，与一次性路径的 f64 累加存在末位差异。",
        "原生侧按线程数缓存 rayon 线程池，threads 参数只影响本次调用的并行度，不改变池的生命周期。"
       ],
-      "example": "import jsl.core.NativeKernels;\n\npublic final class NativeProbe {\n    public static void main(String[] args) {\n        if (!NativeKernels.available()) {\n            System.out.println(\"unavailable: \" + NativeKernels.loadError());\n            System.out.println(\"expected at \" + NativeKernels.libraryPath());\n            return;\n        }\n        double[] data = {0.0, 0.0, 1.0, 1.0, 10.0, 10.0, 11.0, 11.0};\n        double[] centers = {0.0, 0.0, 10.0, 10.0};\n        int[] assignments = new int[4];\n        double[] distances = new double[4];\n        boolean ok = NativeKernels.kmeansAssignChecked(\n                data, centers, 4, 2, 2, 1, assignments, distances);\n        if (!ok) {\n            throw new IllegalStateException(\"native kernel rejected the shapes\");\n        }\n        for (int row = 0; row < assignments.length; row++) {\n            System.out.println(row + \" -> cluster \" + assignments[row]\n                    + \" (squared distance \" + distances[row] + \")\");\n        }\n    }\n}",
+      "example": "import basalt.core.NativeKernels;\n\npublic final class NativeProbe {\n    public static void main(String[] args) {\n        if (!NativeKernels.available()) {\n            System.out.println(\"unavailable: \" + NativeKernels.loadError());\n            System.out.println(\"expected at \" + NativeKernels.libraryPath());\n            return;\n        }\n        double[] data = {0.0, 0.0, 1.0, 1.0, 10.0, 10.0, 11.0, 11.0};\n        double[] centers = {0.0, 0.0, 10.0, 10.0};\n        int[] assignments = new int[4];\n        double[] distances = new double[4];\n        boolean ok = NativeKernels.kmeansAssignChecked(\n                data, centers, 4, 2, 2, 1, assignments, distances);\n        if (!ok) {\n            throw new IllegalStateException(\"native kernel rejected the shapes\");\n        }\n        for (int row = 0; row < assignments.length; row++) {\n            System.out.println(row + \" -> cluster \" + assignments[row]\n                    + \" (squared distance \" + distances[row] + \")\");\n        }\n    }\n}",
       "see": [
-       "jsl.nativebridge.NativeLibrary",
-       "jsl.core.MatMul",
-       "jsl.ml.HistogramGradientBoosting"
+       "basalt.nativebridge.NativeLibrary",
+       "basalt.core.MatMul",
+       "basalt.ml.HistogramGradientBoosting"
       ]
      }
     }

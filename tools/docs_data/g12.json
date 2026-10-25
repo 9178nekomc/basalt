@@ -3,10 +3,10 @@
  "title": "经典机器学习（7/9）",
  "modules": [
   {
-   "name": "jsl.ml",
+   "name": "basalt.ml",
    "types": [
     {
-     "qualified": "jsl.ml.Kernel.Type",
+     "qualified": "basalt.ml.Kernel.Type",
      "simple_qualified": "Kernel.Type",
      "kind": "enum",
      "modifiers": [
@@ -73,12 +73,12 @@
        "SIGMOID 并不保证半正定，使用时需自行确认适用性"
       ],
       "see": [
-       "jsl.ml.Kernel"
+       "basalt.ml.Kernel"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.KernelDensity.Builder",
+     "qualified": "basalt.ml.KernelDensity.Builder",
      "simple_qualified": "KernelDensity.Builder",
      "kind": "class",
      "modifiers": [
@@ -174,12 +174,12 @@
       ],
       "example": "KernelDensity model = KernelDensity.builder()\n        .bandwidth(0.5)\n        .kernel(KernelDensity.KernelType.TOPHAT)\n        .build();",
       "see": [
-       "jsl.ml.KernelDensity"
+       "basalt.ml.KernelDensity"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.KernelDensity.KernelType",
+     "qualified": "basalt.ml.KernelDensity.KernelType",
      "simple_qualified": "KernelDensity.KernelType",
      "kind": "enum",
      "modifiers": [
@@ -225,12 +225,12 @@
        "枚举序号会写入模型文件，取值顺序参与序列化格式"
       ],
       "see": [
-       "jsl.ml.KernelDensity"
+       "basalt.ml.KernelDensity"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.KernelPCA.Builder",
+     "qualified": "basalt.ml.KernelPCA.Builder",
      "simple_qualified": "KernelPCA.Builder",
      "kind": "class",
      "modifiers": [
@@ -389,13 +389,13 @@
       ],
       "example": "KernelPCA pca = KernelPCA.builder()\n        .components(3)\n        .rbf(0.5)\n        .build();",
       "see": [
-       "jsl.ml.KernelPCA",
-       "jsl.ml.Kernel"
+       "basalt.ml.KernelPCA",
+       "basalt.ml.Kernel"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.KernelRidge.Builder",
+     "qualified": "basalt.ml.KernelRidge.Builder",
      "simple_qualified": "KernelRidge.Builder",
      "kind": "class",
      "modifiers": [
@@ -554,13 +554,13 @@
       ],
       "example": "KernelRidge model = KernelRidge.builder()\n        .rbf(0.5)\n        .alpha(0.1)\n        .build();",
       "see": [
-       "jsl.ml.KernelRidge",
-       "jsl.ml.Kernel"
+       "basalt.ml.KernelRidge",
+       "basalt.ml.Kernel"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.Lasso.Builder",
+     "qualified": "basalt.ml.Lasso.Builder",
      "simple_qualified": "Lasso.Builder",
      "kind": "class",
      "modifiers": [
@@ -674,12 +674,12 @@
       ],
       "example": "Lasso model = Lasso.builder()\n        .alpha(0.05)\n        .maxIterations(1000)\n        .tolerance(1e-8)\n        .build();",
       "see": [
-       "jsl.ml.Lasso"
+       "basalt.ml.Lasso"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.LimeExplainer.LocalExplanation",
+     "qualified": "basalt.ml.LimeExplainer.LocalExplanation",
      "simple_qualified": "LimeExplainer.LocalExplanation",
      "kind": "record",
      "modifiers": [
@@ -705,12 +705,12 @@
        "记录是只读载体，不持有对原模型或训练数据的引用"
       ],
       "see": [
-       "jsl.ml.LimeExplainer"
+       "basalt.ml.LimeExplainer"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.LinearRegression.Builder",
+     "qualified": "basalt.ml.LinearRegression.Builder",
      "simple_qualified": "LinearRegression.Builder",
      "kind": "class",
      "modifiers": [
@@ -843,12 +843,12 @@
       ],
       "example": "LinearRegression model = LinearRegression.builder()\n        .learningRate(0.01)\n        .epochs(500)\n        .l2(0.001)\n        .fitIntercept(true)\n        .build();",
       "see": [
-       "jsl.ml.LinearRegression"
+       "basalt.ml.LinearRegression"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.LinearSVM.Builder",
+     "qualified": "basalt.ml.LinearSVM.Builder",
      "simple_qualified": "LinearSVM.Builder",
      "kind": "class",
      "modifiers": [
@@ -964,12 +964,12 @@
       ],
       "example": "LinearSVM model = LinearSVM.builder()\n        .lambda(0.001)\n        .epochs(50)\n        .seed(7L)\n        .build();",
       "see": [
-       "jsl.ml.LinearSVM"
+       "basalt.ml.LinearSVM"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.LogisticRegression.Builder",
+     "qualified": "basalt.ml.LogisticRegression.Builder",
      "simple_qualified": "LogisticRegression.Builder",
      "kind": "class",
      "modifiers": [
@@ -1082,12 +1082,12 @@
       ],
       "example": "LogisticRegression model = LogisticRegression.builder()\n        .learningRate(0.1)\n        .epochs(2000)\n        .l2(0.001)\n        .build();",
       "see": [
-       "jsl.ml.LogisticRegression"
+       "basalt.ml.LogisticRegression"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.MinMaxScaler.Builder",
+     "qualified": "basalt.ml.MinMaxScaler.Builder",
      "simple_qualified": "MinMaxScaler.Builder",
      "kind": "class",
      "modifiers": [
@@ -1186,12 +1186,12 @@
       ],
       "example": "MinMaxScaler scaler = MinMaxScaler.builder()\n        .featureRange(-1.0, 1.0)\n        .clip(true)\n        .build();",
       "see": [
-       "jsl.ml.MinMaxScaler"
+       "basalt.ml.MinMaxScaler"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.OneHotEncoder.Builder",
+     "qualified": "basalt.ml.OneHotEncoder.Builder",
      "simple_qualified": "OneHotEncoder.Builder",
      "kind": "class",
      "modifiers": [
@@ -1286,7 +1286,7 @@
       ],
       "example": "OneHotEncoder encoder = OneHotEncoder.builder()\n        .handleUnknown(OneHotEncoder.HandleUnknown.IGNORE)\n        .categoricalColumns(0, 2)\n        .build();",
       "see": [
-       "jsl.ml.OneHotEncoder"
+       "basalt.ml.OneHotEncoder"
       ]
      }
     }

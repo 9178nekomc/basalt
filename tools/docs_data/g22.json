@@ -3,10 +3,10 @@
  "title": "eager 张量与模块（4/4）",
  "modules": [
   {
-   "name": "jsl.torch",
+   "name": "basalt.torch",
    "types": [
     {
-     "qualified": "jsl.torch.ComputationGraph.Builder",
+     "qualified": "basalt.torch.ComputationGraph.Builder",
      "simple_qualified": "ComputationGraph.Builder",
      "kind": "class",
      "modifiers": [
@@ -249,14 +249,14 @@
       ],
       "example": "ComputationGraph graph = ComputationGraph.builder()\n        .addInputs(\"x\", \"skip\")\n        .addAddVertex(\"res\", \"x\", \"skip\")\n        .addSubVertex(\"diff\", \"x\", \"skip\")\n        .setOutputs(\"res\", \"diff\")\n        .build();",
       "see": [
-       "jsl.torch.ComputationGraph",
-       "jsl.torch.ComputationGraph.Vertex",
-       "jsl.torch.Module"
+       "basalt.torch.ComputationGraph",
+       "basalt.torch.ComputationGraph.Vertex",
+       "basalt.torch.Module"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.ComputationGraph.Vertex",
+     "qualified": "basalt.torch.ComputationGraph.Vertex",
      "simple_qualified": "ComputationGraph.Vertex",
      "kind": "record",
      "modifiers": [
@@ -281,13 +281,13 @@
        "参数集合不包含在此记录中，参数由 module.parameters() 提供。"
       ],
       "see": [
-       "jsl.torch.ComputationGraph",
-       "jsl.torch.ComputationGraph.VertexOp"
+       "basalt.torch.ComputationGraph",
+       "basalt.torch.ComputationGraph.VertexOp"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.ComputationGraph.VertexOp",
+     "qualified": "basalt.torch.ComputationGraph.VertexOp",
      "simple_qualified": "ComputationGraph.VertexOp",
      "kind": "enum",
      "modifiers": [
@@ -353,8 +353,8 @@
        "算子类型在登记后不可变，改变算子需要重新登记节点。"
       ],
       "see": [
-       "jsl.torch.ComputationGraph.Vertex",
-       "jsl.torch.ComputationGraph.Builder"
+       "basalt.torch.ComputationGraph.Vertex",
+       "basalt.torch.ComputationGraph.Builder"
       ]
      }
     }

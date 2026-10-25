@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract the public API surface of the JSL Java sources into a JSON model.
+"""Extract the public API surface of the Basalt Java sources into a JSON model.
 
 The extractor is dependency-free (stdlib only) and deliberately not a full Java
 parser.  It masks comments and string literals (preserving byte offsets), then
@@ -340,7 +340,7 @@ def parse_member(src: str, masked: str, start: int, end: int) -> Member | None:
             javadoc=javadoc,
         )
 
-    # `int MAGIC = 0x4A534C4D` -> the declaration is everything before '=',
+    # `int MAGIC = 0x42534C54` -> the declaration is everything before '=',
     # otherwise the initialiser would be taken as the field name.
     declaration = remainder.split("=", 1)[0].strip()
     field_tokens = declaration.split()

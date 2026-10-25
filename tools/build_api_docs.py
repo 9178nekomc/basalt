@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the JSL API documentation as a Sphinx/docs.python.org style HTML site.
+"""Build the Basalt API documentation as a Sphinx/docs.python.org style HTML site.
 
 Output layout (docs/):
 
@@ -29,28 +29,57 @@ import os
 import re
 import shutil
 import sys
+import urllib.parse
 
 from md_render import render_markdown, set_java_highlighter
 
 VERSION = "3.4.0"
-TITLE = f"JSL {VERSION} 文档"
-REPO = "https://github.com/9178nekomc/java-scikit-learn"
+
+
+def _mark_svg(stroke: str = "currentColor", weight: float = 24.0,
+              px: int | None = None) -> str:
+    """The Basalt mark: four cells of the hexagonal lattice basalt cools into.
+
+    One stroke weight, no fill, no gradient -- the same geometry as
+    assets/logo.svg, kept here so every page can inline it without a second file.
+    """
+    import math
+    r, c = 84.0, 256.0
+    dx = r * math.sqrt(3) / 2
+    cells = [(c, c - 1.5 * r), (c - dx, c), (c + dx, c), (c, c + 1.5 * r)]
+    paths = []
+    for px_, py_ in cells:
+        pts = [(px_ + r * math.cos(math.radians(90 + 60 * k)),
+                py_ + r * math.sin(math.radians(90 + 60 * k))) for k in range(6)]
+        paths.append("M " + " L ".join(f"{x:.1f} {y:.1f}" for x, y in pts) + " Z")
+    size = f' width="{px}" height="{px}"' if px else ""
+    return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"'
+            f'{size} class="brand-mark" aria-hidden="true" focusable="false">'
+            f'<g fill="none" stroke="{stroke}" stroke-width="{weight}" '
+            'stroke-linecap="round" stroke-linejoin="round">'
+            + "".join(f'<path d="{d}"/>' for d in paths) + "</g></svg>")
+
+
+FAVICON = ("data:image/svg+xml," + urllib.parse.quote(_mark_svg("#14181d", 34.0, 32), safe=""))
+BRAND_MARK = _mark_svg("currentColor", 38.0)
+TITLE = f"Basalt {VERSION} 文档"
+REPO = "https://github.com/9178nekomc/basalt"
 
 MODULE_ORDER = [
-    "jsl", "jsl.core", "jsl.data", "jsl.io", "jsl.ml", "jsl.nn",
-    "jsl.nativebridge", "jsl.torch", "jsl.concurrent",
+    "basalt", "basalt.core", "basalt.data", "basalt.io", "basalt.ml", "basalt.nn",
+    "basalt.nativebridge", "basalt.torch", "basalt.concurrent",
 ]
 
 MODULE_SUMMARY = {
-    "jsl": "统一门面：一次创建上下文，取张量、模块、优化器，并转发经典模型入口。",
-    "jsl.core": "基础数据层：行主序矩阵、布局标记、原生经典核、模型容器读写原语。",
-    "jsl.data": "JSLD 数据管线：流式与内存映射两条读取路径、标准化参数。",
-    "jsl.io": "模型持久化：.jsl v2 容器（magic + kind + 长度 + CRC32C）。",
-    "jsl.ml": "经典机器学习：线性模型、近邻、SVM、树、梯度提升、聚类、降维、朴素贝叶斯、指标与切分。",
-    "jsl.nn": "手写神经网络层：Dense / Conv2D / RNN / LSTM / GRU / 注意力、序列训练与序列化。",
-    "jsl.nativebridge": "原生桥接专家层：上下文、张量句柄、128 字节指令队列、自动求导入口。",
-    "jsl.torch": "PyTorch 风格 eager API：动态张量、Module 组合、原生 autograd、优化器与损失。",
-    "jsl.concurrent": "批量推理编排：虚拟线程 + 信号量限流。",
+    "basalt": "统一门面：一次创建上下文，取张量、模块、优化器，并转发经典模型入口。",
+    "basalt.core": "基础数据层：行主序矩阵、布局标记、原生经典核、模型容器读写原语。",
+    "basalt.data": "BasaltD 数据管线：流式与内存映射两条读取路径、标准化参数。",
+    "basalt.io": "模型持久化：.bsl v2 容器（magic + kind + 长度 + CRC32C）。",
+    "basalt.ml": "经典机器学习：线性模型、近邻、SVM、树、梯度提升、聚类、降维、朴素贝叶斯、指标与切分。",
+    "basalt.nn": "手写神经网络层：Dense / Conv2D / RNN / LSTM / GRU / 注意力、序列训练与序列化。",
+    "basalt.nativebridge": "原生桥接专家层：上下文、张量句柄、128 字节指令队列、自动求导入口。",
+    "basalt.torch": "PyTorch 风格 eager API：动态张量、Module 组合、原生 autograd、优化器与损失。",
+    "basalt.concurrent": "批量推理编排：虚拟线程 + 信号量限流。",
 }
 
 
@@ -235,7 +264,7 @@ def visible_members(t: dict) -> list[dict]:
 # --------------------------------------------------------------------------- #
 # CSS / JS
 # --------------------------------------------------------------------------- #
-CSS = r"""/* JSL documentation — Sphinx / docs.python.org inspired theme */
+CSS = r"""/* Basalt documentation — Sphinx / docs.python.org inspired theme */
 :root{
   --bg:#ffffff; --fg:#1a1a1a; --muted:#5c6673; --border:#dfe3e8; --border-soft:#eef1f4;
   --surface:#f8fafc; --surface-2:#edf1f6;
@@ -285,6 +314,8 @@ h4{font-size:.95rem;margin:1.4rem 0 .5rem;color:var(--muted);text-transform:uppe
   gap:1rem;height:44px;padding:0 1rem;background:var(--topbar-bg);color:var(--topbar-fg);
   font-size:.8125rem}
 .topbar a{color:var(--topbar-fg)}
+.brand-mark{width:21px;height:21px;flex:0 0 auto;margin-right:.55rem;opacity:.92}
+@media (max-width:900px){.brand-mark{display:none}}
 .topbar a:hover{color:#fff;text-decoration:none}
 .crumbs{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;min-width:0}
 .crumbs .sep{color:var(--topbar-muted)}
@@ -594,7 +625,7 @@ ul.genindex-section li:hover{background:var(--surface-2);border-radius:4px}
 """
 
 JS = r"""(function(){
-  var KEY='jsl-docs-theme';
+  var KEY='basalt-docs-theme';
   var root=document.documentElement;
   var media=window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)'):null;
   function resolve(pref){return pref==='auto'?(media&&media.matches?'dark':'light'):pref;}
@@ -752,25 +783,25 @@ def sidebar_html(active: str, page_toc: list[tuple[str, str]] | None = None,
     # Absolute URLs: the published site only ships docs/, so ../target would 404.
     # Release assets are the canonical download location.
     rel = f"{REPO}/releases/download/v{VERSION}"
-    parts.append(item(f"JSL {VERSION} 发布页（全部资产）", f"{REPO}/releases/tag/v{VERSION}"))
-    parts.append(item(f"jsl-runtime-{VERSION}-all.jar", f"{rel}/jsl-runtime-{VERSION}-all.jar"))
-    parts.append(item(f"jsl-runtime-{VERSION}.jar", f"{rel}/jsl-runtime-{VERSION}.jar"))
-    parts.append(item(f"jsl-runtime-{VERSION}-sources.jar",
-                      f"{rel}/jsl-runtime-{VERSION}-sources.jar"))
-    parts.append(item("jsl_native.dll（Windows x86_64）", f"{rel}/jsl_native.dll"))
-    parts.append(item(f"jsl-docs-{VERSION}.zip（离线文档）", f"{rel}/jsl-docs-{VERSION}.zip"))
+    parts.append(item(f"Basalt {VERSION} 发布页（全部资产）", f"{REPO}/releases/tag/v{VERSION}"))
+    parts.append(item(f"basalt-{VERSION}-all.jar", f"{rel}/basalt-{VERSION}-all.jar"))
+    parts.append(item(f"basalt-{VERSION}.jar", f"{rel}/basalt-{VERSION}.jar"))
+    parts.append(item(f"basalt-{VERSION}-sources.jar",
+                      f"{rel}/basalt-{VERSION}-sources.jar"))
+    parts.append(item("basalt_native.dll（Windows x86_64）", f"{rel}/basalt_native.dll"))
+    parts.append(item(f"basalt-docs-{VERSION}.zip（离线文档）", f"{rel}/basalt-docs-{VERSION}.zip"))
     parts.append("</ul>")
 
     parts.append('<div class="sidebar-head">各版文档</div><ul>')
-    parts.append(item(f"JSL {VERSION} (stable)", "index.html", "index"))
+    parts.append(item(f"Basalt {VERSION} (stable)", "index.html", "index"))
     parts.append(item("模块索引", "api/index.html", "modindex"))
     parts.append(item("总索引", "genindex.html", "genindex"))
     parts.append("</ul>")
 
     parts.append('<div class="sidebar-head">Other resources</div><ul>')
     parts.append(item("README", "readme.html", "readme"))
-    parts.append(item("架构与基准报告", "report/JSL_ARCHITECTURE_AND_BENCHMARK.html"))
-    parts.append(item("与 scikit-learn 对比", "report/JSL_VS_SKLEARN.html"))
+    parts.append(item("架构与基准报告", "report/Basalt_ARCHITECTURE_AND_BENCHMARK.html"))
+    parts.append(item("与 scikit-learn 对比", "report/Basalt_VS_SKLEARN.html"))
     parts.append(item("GitHub 仓库", REPO))
     parts.append("</ul>")
     parts.append("</aside>")
@@ -793,6 +824,7 @@ def topbar_html(crumbs: list[tuple[str, str | None]], root: str) -> str:
     return f'''<header class="topbar">
 <button id="nav-toggle" class="nav-toggle" type="button" aria-label="打开目录"
         aria-controls="sidebar" aria-expanded="false">☰</button>
+{BRAND_MARK}
 <div class="crumbs">{crumb}</div>
 <div class="topbar-tools">
   <label>主题 <select id="theme-select" class="theme-select" aria-label="主题">
@@ -837,7 +869,7 @@ def page(title: str, crumbs: list[tuple[str, str | None]], body: str, *,
     # flips to dark as soon as the footer script executes (a visible white flash).
     theme_boot = (
         "(function(){var r=document.documentElement;try{"
-        "var p=localStorage.getItem('jsl-docs-theme')||'auto';"
+        "var p=localStorage.getItem('basalt-docs-theme')||'auto';"
         "var q=/[?&]theme=(light|dark|auto)/.exec(location.search);if(q){p=q[1];}"
         "var d=p==='dark'||(p==='auto'&&window.matchMedia&&"
         "window.matchMedia('(prefers-color-scheme: dark)').matches);"
@@ -851,6 +883,9 @@ def page(title: str, crumbs: list[tuple[str, str | None]], body: str, *,
 <script>{theme_boot}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>{esc(title)}</title>
+<link rel="icon" href="{FAVICON}" type="image/svg+xml" />
+<meta name="theme-color" content="#1a1c1f" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
 <meta name="generator" content="tools/build_api_docs.py" />
 <style>{CSS}</style>
 </head>
@@ -1081,29 +1116,29 @@ def render_index(modules: list[dict], stats: dict) -> str:
         ("API 参考", "按模块组织的完整 API：类型、方法、参数、返回值与抛出条件", "api/index.html"),
         ("快速开始", "十行代码完成一次前向与反向传播", "#quickstart"),
         ("安装", "Maven 坐标、运行参数与原生库加载顺序", "#install"),
-        ("经典机器学习", "估计器、指标、数据切分与交叉验证", "api/jsl_ml.html"),
-        ("神经网络", "手写层、序列模型、注意力与序列训练", "api/jsl_nn.html"),
-        ("eager 张量", "PyTorch 风格动态张量、Module 组合与自动求导", "api/jsl_torch.html"),
-        ("原生内核", "指令队列、计算图、内存所有权与失败回退", "api/jsl_nativebridge.html"),
-        ("持久化", ".jsl v2 容器格式、CRC32C 校验与往返一致性", "api/jsl_io.html"),
+        ("经典机器学习", "估计器、指标、数据切分与交叉验证", "api/basalt_ml.html"),
+        ("神经网络", "手写层、序列模型、注意力与序列训练", "api/basalt_nn.html"),
+        ("eager 张量", "PyTorch 风格动态张量、Module 组合与自动求导", "api/basalt_torch.html"),
+        ("原生内核", "指令队列、计算图、内存所有权与失败回退", "api/basalt_nativebridge.html"),
+        ("持久化", ".bsl v2 容器格式、CRC32C 校验与往返一致性", "api/basalt_io.html"),
     ]
     resources = [
-        ("JSL 开发者指南", "构建、验证与基准脚本", "api/index.html"),
+        ("Basalt 开发者指南", "构建、验证与基准脚本", "api/index.html"),
         ("架构与基准报告", "原生 GEMM、自动求导与实测数据",
-         "report/JSL_ARCHITECTURE_AND_BENCHMARK.html"),
-        ("与 scikit-learn 对比", "同一份 JSLD 数据下的十项对比", "report/JSL_VS_SKLEARN.html"),
+         "report/Basalt_ARCHITECTURE_AND_BENCHMARK.html"),
+        ("与 scikit-learn 对比", "同一份 BasaltD 数据下的十项对比", "report/Basalt_VS_SKLEARN.html"),
         ("GitHub 仓库", "源码、发布产物与问题追踪", REPO),
     ]
     install = f"""<dependency>
-    <groupId>io.github.jsl</groupId>
-    <artifactId>jsl-runtime</artifactId>
+    <groupId>io.github.9178nekomc</groupId>
+    <artifactId>basalt</artifactId>
     <version>{VERSION}</version>
 </dependency>"""
-    quick = """try (JSL jsl = JSL.create()) {
-    Tensor x = jsl.randn(32, 8);
-    Tensor y = jsl.randn(32, 1);
-    Linear hidden = jsl.linear(8, 16);
-    Linear output = jsl.linear(16, 1);
+    quick = """try (Basalt jsl = Basalt.create()) {
+    Tensor x = basalt.randn(32, 8);
+    Tensor y = basalt.randn(32, 1);
+    Linear hidden = basalt.linear(8, 16);
+    Linear output = basalt.linear(16, 1);
     Tensor loss = output.forward(hidden.forward(x).relu()).mse(y);
     loss.backward();
 }"""
@@ -1130,7 +1165,7 @@ def render_index(modules: list[dict], stats: dict) -> str:
     )
 
     body = f'''<h1>{esc(TITLE)}</h1>
-<p class="welcome">欢迎！这里是 JSL {VERSION} 的官方文档。JSL 是一个 Java 调度、Rust 托管底层的
+<p class="welcome">欢迎！这里是 Basalt {VERSION} 的官方文档。Basalt 是一个 Java 调度、Rust 托管底层的
 机器学习运行时，覆盖 eager 张量、自动求导、原生 CNN/Transformer 算子与 scikit-learn 风格的经典估计器。</p>
 
 <h2 id="chapters">文档章节：</h2>
@@ -1142,14 +1177,14 @@ def render_index(modules: list[dict], stats: dict) -> str:
 <h2 id="install">安装</h2>
 <pre class="code"><code>{highlight_java(install)}</code></pre>
 <p>运行期需要开启 Vector API 孵化模块：<code>--add-modules jdk.incubator.vector</code>。
-原生库已随 <code>jsl-runtime-{VERSION}-all.jar</code> 打包；加载失败时经典模型自动回退纯 Java 路径。</p>
+原生库已随 <code>basalt-{VERSION}-all.jar</code> 打包；加载失败时经典模型自动回退纯 Java 路径。</p>
 
 <h2 id="quickstart">快速开始</h2>
 <pre class="code"><code>{highlight_java(quick)}</code></pre>
 
 <h2 id="layers">三层 API 边界</h2>
 <table><thead><tr><th>层级</th><th>入口</th><th>适用场景</th></tr></thead><tbody>
-<tr><td>整体</td><td><code>JSL</code> 门面、<code>Estimator.fit/predict</code></td>
+<tr><td>整体</td><td><code>Basalt</code> 门面、<code>Estimator.fit/predict</code></td>
 <td>一行完成训练、预测、交叉验证</td></tr>
 <tr><td>模块</td><td><code>RandomForest.builder()</code>、<code>HistogramGradientBoosting.builder()</code></td>
 <td>按模块调参、替换求解器、控制线程</td></tr>
@@ -1180,11 +1215,11 @@ def render_index(modules: list[dict], stats: dict) -> str:
 <div class="relbar"><span></span><span class="spacer"></span>
 <a class="next" href="api/index.html">API 参考</a></div>
 <footer class="doc-footer">
-<p>JSL {VERSION} · 文档由 <code>tools/build_api_docs.py</code> 生成于 {stats['generated']}。
+<p>Basalt {VERSION} · 文档由 <code>tools/build_api_docs.py</code> 生成于 {stats['generated']}。
 签名来源 <code>build/api/api.json</code>，说明来源 <code>tools/docs_data/</code>。</p>
 <p><a href="{REPO}" rel="noopener">{REPO}</a></p>
 </footer>'''
-    return page(TITLE, [("JSL", "index.html"), (VERSION, None), (f"{VERSION} 文档", None)],
+    return page(TITLE, [("Basalt", "index.html"), (f"{VERSION} 文档", None)],
                 body, active="index", root="")
 
 
@@ -1196,31 +1231,31 @@ def render_readme_page(stats: dict) -> str:
     body_html = body_html.replace('href="docs/index.html"', 'href="index.html"')
     body_html = re.sub(r'href="report/([\w.-]+)\.md"', r'href="report/\1.html"', body_html)
     body_html = re.sub(r'href="(target/[^"]+)"',
-                       r'href="https://github.com/9178nekomc/java-scikit-learn/raw/main/\1"',
+                       r'href="https://github.com/9178nekomc/basalt/raw/main/\1"',
                        body_html)
     body = (
         '<p class="welcome">本页由 <code>README.md</code> 自动渲染，内容与仓库根目录的 '
         f'<a href="{REPO}/blob/main/README.md" rel="noopener">README</a> 一致。'
         f'生成于 {stats["generated"]}。</p>'
         + body_html +
-        '<div class="relbar"><a class="prev" href="index.html">JSL 3.4.0 文档</a>'
+        '<div class="relbar"><a class="prev" href="index.html">Basalt 3.4.0 文档</a>'
         '<span class="spacer"></span><a class="next" href="api/index.html">模块索引</a></div>'
     )
     return page(f"README — {TITLE}",
-                [("JSL", "index.html"), (VERSION, None), ("README", None)],
+                [("Basalt", "index.html"), (VERSION, None), ("README", None)],
                 body, active="readme", root="")
 
 
 REPORT_LABELS = {
-    "JSL_ARCHITECTURE_AND_BENCHMARK.html": "架构与基准测试报告",
-    "JSL_VS_SKLEARN.html": "与 scikit-learn 的对比",
+    "Basalt_ARCHITECTURE_AND_BENCHMARK.html": "架构与基准测试报告",
+    "Basalt_VS_SKLEARN.html": "与 scikit-learn 的对比",
 }
 
 # The two report files are standalone documents generated by report/make_report.py.
 # They ship their own palette and have no navigation, so a copy opened from the site
 # used to be a one-way trip into a light-only page.  This shell adds a way back, the
 # same theme as the docs, and the cross-document fade.
-REPORT_HEAD = """<script>(function(){var r=document.documentElement,K='jsl-docs-theme';
+REPORT_HEAD = """<script>(function(){var r=document.documentElement,K='basalt-docs-theme';
 function res(p){return p==='auto'?(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):p;}
 function set(p){r.setAttribute('data-theme',res(p));r.setAttribute('data-theme-pref',p);try{localStorage.setItem(K,p);}catch(e){}}
 var p='auto',q=/[?&]theme=(light|dark|auto)/.exec(location.search);
@@ -1244,25 +1279,25 @@ document.addEventListener('DOMContentLoaded',function(){
 html[data-theme="dark"]{--jsl-bar-bg:rgba(26,29,33,.88);--jsl-bar-ink:#dde3ea;
   --jsl-bar-line:rgba(255,255,255,.09);--jsl-bar-hover:rgba(255,255,255,.08);
   --jsl-bar-strong:#fff;--jsl-bar-edge:#3d454f}
-.jsl-bar{position:fixed;top:0;left:0;right:auto;width:100%;max-width:100vw;box-sizing:border-box;
+.bsl-bar{position:fixed;top:0;left:0;right:auto;width:100%;max-width:100vw;box-sizing:border-box;
   height:44px;z-index:99;display:flex;
   align-items:center;gap:12px;padding:0 16px;background:var(--jsl-bar-bg);color:var(--jsl-bar-ink);
   font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans SC","Microsoft YaHei",sans-serif;
   box-shadow:0 1px 0 var(--jsl-bar-line);view-transition-name:jsl-bar;
   -webkit-backdrop-filter:saturate(180%) blur(14px);backdrop-filter:saturate(180%) blur(14px);
   transition:background-color .25s ease,color .25s ease,box-shadow .25s ease}
-.jsl-bar a{color:inherit;text-decoration:none;padding:5px 10px;border-radius:6px;
+.bsl-bar a{color:inherit;text-decoration:none;padding:5px 10px;border-radius:6px;
   transition:background-color .18s ease,color .18s ease}
-.jsl-bar a:hover{background:var(--jsl-bar-hover);color:var(--jsl-bar-strong)}
-.jsl-bar .sep{opacity:.32;user-select:none}
-.jsl-bar .t{color:inherit;opacity:.68;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.jsl-bar .sp{flex:1}
-.jsl-bar button{background:transparent;border:1px solid var(--jsl-bar-edge);color:inherit;cursor:pointer;
+.bsl-bar a:hover{background:var(--jsl-bar-hover);color:var(--jsl-bar-strong)}
+.bsl-bar .sep{opacity:.32;user-select:none}
+.bsl-bar .t{color:inherit;opacity:.68;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bsl-bar .sp{flex:1}
+.bsl-bar button{background:transparent;border:1px solid var(--jsl-bar-edge);color:inherit;cursor:pointer;
   border-radius:6px;padding:4px 10px;font-size:12px;font-family:inherit;
   transition:border-color .18s ease,color .18s ease,background-color .18s ease}
-.jsl-bar button:hover{border-color:var(--jsl-bar-strong);color:var(--jsl-bar-strong);
+.bsl-bar button:hover{border-color:var(--jsl-bar-strong);color:var(--jsl-bar-strong);
   background:var(--jsl-bar-hover)}
-.jsl-bar :focus-visible{outline:2px solid var(--jsl-bar-strong);outline-offset:2px}
+.bsl-bar :focus-visible{outline:2px solid var(--jsl-bar-strong);outline-offset:2px}
 body>main{padding-top:96px}
 /* wide tables have to scroll on their own, otherwise the document outgrows the
    viewport and every fixed element stretches with it */
@@ -1274,7 +1309,7 @@ nav.toc li::marker{content:""}
 body>main{animation:jsl-rise .34s cubic-bezier(.22,.61,.36,1) both}
 @keyframes jsl-rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion: reduce){body>main{animation:none}}
-@media (max-width:720px){body>main{padding-top:84px}.jsl-bar .t,.jsl-bar .sep{display:none}
+@media (max-width:720px){body>main{padding-top:84px}.bsl-bar .t,.bsl-bar .sep{display:none}
   code{overflow-wrap:anywhere}}
 html[data-theme="dark"]{color-scheme:dark;--ink:#d8dde3;--muted:#93a0ad;--line:#2e343b;
   --panel:#20242a;--accent:#7ab7ff;--accent-soft:#1b2733;--code:#14181d}
@@ -1325,21 +1360,21 @@ def render_module_index(modules: list[dict]) -> str:
         for m in modules
     )
     body = f'''<h1>模块索引</h1>
-<p class="welcome">JSL 按包组织 API。每个模块一页，页内按类型分组，类型下依次列出构造器、方法与字段。</p>
+<p class="welcome">Basalt 按包组织 API。每个模块一页，页内按类型分组，类型下依次列出构造器、方法与字段。</p>
 <table><thead><tr><th>模块</th><th class="num">公开类型</th><th>职责</th></tr></thead>
 <tbody>{rows}</tbody></table>
 <h2 id="order">阅读顺序建议</h2>
 <ul class="simple">
-<li><p>先读 <a href="jsl.html"><code>jsl</code></a> 门面，确认创建上下文与取模块的方式。</p></li>
-<li><p>张量训练走 <a href="jsl_torch.html"><code>jsl.torch</code></a>；经典模型走
-<a href="jsl_ml.html"><code>jsl.ml</code></a>。</p></li>
+<li><p>先读 <a href="basalt.html"><code>jsl</code></a> 门面，确认创建上下文与取模块的方式。</p></li>
+<li><p>张量训练走 <a href="basalt_torch.html"><code>basalt.torch</code></a>；经典模型走
+<a href="basalt_ml.html"><code>basalt.ml</code></a>。</p></li>
 <li><p>需要手写算子或排查生命周期时读
-<a href="jsl_nativebridge.html"><code>jsl.nativebridge</code></a>。</p></li>
+<a href="basalt_nativebridge.html"><code>basalt.nativebridge</code></a>。</p></li>
 </ul>
-<div class="relbar"><a class="prev" href="../index.html">JSL {VERSION} 文档</a>
-<span class="spacer"></span><a class="next" href="jsl.html">jsl</a></div>'''
+<div class="relbar"><a class="prev" href="../index.html">Basalt {VERSION} 文档</a>
+<span class="spacer"></span><a class="next" href="basalt.html">jsl</a></div>'''
     return page(f"模块索引 — {TITLE}",
-                [("JSL", "../index.html"), (VERSION, None), ("模块索引", None)],
+                [("Basalt", "../index.html"), (VERSION, None), ("模块索引", None)],
                 body, active="modindex", root="../")
 
 
@@ -1366,10 +1401,10 @@ def render_genindex(modules: list[dict]) -> str:
             f'<p class="welcome">按类型名首字母排列，共 {sum(len(v) for v in entries.values())} '
             "个公开类型。方法请在各模块页内查找，或用顶部快速搜索（Ctrl+K）。</p>"
             f'<div class="genindex-jumpbox">跳转：{jump}</div>' + "".join(sections) +
-            '<div class="relbar"><a class="prev" href="index.html">JSL 3.4.0 文档</a>'
+            '<div class="relbar"><a class="prev" href="index.html">Basalt 3.4.0 文档</a>'
             '<span class="spacer"></span><a class="next" href="api/index.html">模块索引</a></div>')
     return page(f"总索引 — {TITLE}",
-                [("JSL", "index.html"), (VERSION, None), ("总索引", None)],
+                [("Basalt", "index.html"), (VERSION, None), ("总索引", None)],
                 body, active="genindex", root="")
 
 
@@ -1479,10 +1514,10 @@ def main() -> int:
         prev_mod = modules[i - 1] if i > 0 else None
         next_mod = modules[i + 1] if i + 1 < len(modules) else None
         prev_link = ((prev_mod["name"], os.path.basename(page_name(prev_mod["name"])))
-                     if prev_mod else ("JSL 3.4.0 文档", "../index.html"))
+                     if prev_mod else ("Basalt 3.4.0 文档", "../index.html"))
         next_link = ((next_mod["name"], os.path.basename(page_name(next_mod["name"])))
                      if next_mod else ("模块索引", "index.html"))
-        crumbs = [("JSL", "../index.html"), (VERSION, None),
+        crumbs = [("Basalt", "../index.html"), (VERSION, None),
                   ("API 参考", "index.html"), (module["name"], None)]
         doc_html = render_module_page(module, docs, href_for, crumbs,
                                       relbar(prev_link, next_link))

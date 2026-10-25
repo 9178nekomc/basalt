@@ -3,10 +3,10 @@
  "title": "经典机器学习（4/9）",
  "modules": [
   {
-   "name": "jsl.ml",
+   "name": "basalt.ml",
    "types": [
     {
-     "qualified": "jsl.ml.Pipeline",
+     "qualified": "basalt.ml.Pipeline",
      "simple_qualified": "Pipeline",
      "kind": "class",
      "modifiers": [
@@ -22,7 +22,7 @@
      ],
      "file": "jsl/ml/Pipeline.java",
      "line": 27,
-     "javadoc": "Sequential pipeline of {@link Transformer} preprocessing / feature-engineering steps followed\nby an optional final {@link Estimator}, matching {@code sklearn.pipeline.Pipeline}.\n\n<p>Implements both {@link Estimator} (when an estimator head is attached or the last step is an\nestimator) and {@link Transformer} (when composed purely of transformers), plus full {@code .jsl}\nbinary persistence via {@link ModelCodec} so fitted preprocessing parameters and estimator weights\nare saved and loaded as a single atomic unit.</p>",
+     "javadoc": "Sequential pipeline of {@link Transformer} preprocessing / feature-engineering steps followed\nby an optional final {@link Estimator}, matching {@code sklearn.pipeline.Pipeline}.\n\n<p>Implements both {@link Estimator} (when an estimator head is attached or the last step is an\nestimator) and {@link Transformer} (when composed purely of transformers), plus full {@code .bsl}\nbinary persistence via {@link ModelCodec} so fitted preprocessing parameters and estimator weights\nare saved and loaded as a single atomic unit.</p>",
      "nested": [
       "Step",
       "Builder"
@@ -143,7 +143,7 @@
        "doc": {
         "summary": "逆序还原各步变换",
         "body": [
-         "先对最终估计器（若实现 Transformer）做 inverseTransform，再从最后一步向前逐级还原。未实现逆变换的步骤会抛 JSLUnsupportedOperationException。"
+         "先对最终估计器（若实现 Transformer）做 inverseTransform，再从最后一步向前逐级还原。未实现逆变换的步骤会抛 BasaltUnsupportedOperationException。"
         ],
         "params": {
          "transformed": "已变换矩阵，列数须与最后一步输出一致"
@@ -152,7 +152,7 @@
         "throws": {
          "NullPointerException": "transformed 为 null",
          "IllegalStateException": "任一步尚未拟合",
-         "jsl.JSLUnsupportedOperationException": "某步未实现 inverseTransform"
+         "basalt.BasaltUnsupportedOperationException": "某步未实现 inverseTransform"
         }
        }
       },
@@ -307,7 +307,7 @@
       "body": [
        "fit 按声明顺序对每一步调用 fitTransform：该步先用当前矩阵拟合自身参数，再把同一份矩阵变换后交给下一步；挂了最终估计器时，用最后一步的输出与原始 targets 拟合该估计器。transform 与 predict 只调用各步的 transform，不会重新估计任何参数。",
        "predict 先依次 transform 全部步骤，再交给最终估计器；未挂估计器但最后一步本身实现了 Estimator 时，直接把原始 features 交给该步的 predict，不再经过前面各步的变换。transform 在最终估计器也实现 Transformer 时会额外对它做一次变换，因此同一类型既能表达纯预处理管道，也能表达带输出变换的完整链路。",
-       "序列化先写步骤数，再对每步写名称、类型码、负载长度与负载，随后写一个字节标记是否存在最终估计器；存在时再写名称、类型码与负载。read 按类型码把每段负载交回 ModelCodec.readPayload 解码，因此预处理统计量与估计器权重在 .jsl 中是单个原子对象，加载后无需重新拟合。"
+       "序列化先写步骤数，再对每步写名称、类型码、负载长度与负载，随后写一个字节标记是否存在最终估计器；存在时再写名称、类型码与负载。read 按类型码把每段负载交回 ModelCodec.readPayload 解码，因此预处理统计量与估计器权重在 .bsl 中是单个原子对象，加载后无需重新拟合。"
       ],
       "notes": [
        "构建时至少要有一个步骤或一个最终估计器，否则 build() 抛 IllegalArgumentException",
@@ -315,17 +315,17 @@
        "步骤名重复时 namedSteps() 中后写入者覆盖先写入者",
        "read 把步骤数限制在 [0, 10000]，单个字符串长度限制在 [0, 65536] 字节"
       ],
-      "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {1.0, Double.NaN}, {2.0, 3.0}, {3.0, 4.0}, {4.0, 5.5}});\ndouble[] y = {1.0, 2.0, 3.0, 4.0};\n\nPipeline pipeline = Pipeline.builder()\n        .addStep(\"impute\", SimpleImputer.builder()\n                .strategy(SimpleImputer.Strategy.MEAN).build())\n        .addStep(\"scale\", StandardScaler.builder().build())\n        .estimator(\"ridge\", Ridge.builder().alpha(0.5).build())\n        .build()\n        .fit(x, y);\n\ndouble[] predictions = pipeline.predict(x);\nMatrix transformed = pipeline.transform(x);\n\nPath file = Path.of(\"pipeline.jsl\");\nModelCodec.save(file, pipeline);\nPipeline restored = ModelCodec.load(file, Pipeline.class);",
+      "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {1.0, Double.NaN}, {2.0, 3.0}, {3.0, 4.0}, {4.0, 5.5}});\ndouble[] y = {1.0, 2.0, 3.0, 4.0};\n\nPipeline pipeline = Pipeline.builder()\n        .addStep(\"impute\", SimpleImputer.builder()\n                .strategy(SimpleImputer.Strategy.MEAN).build())\n        .addStep(\"scale\", StandardScaler.builder().build())\n        .estimator(\"ridge\", Ridge.builder().alpha(0.5).build())\n        .build()\n        .fit(x, y);\n\ndouble[] predictions = pipeline.predict(x);\nMatrix transformed = pipeline.transform(x);\n\nPath file = Path.of(\"pipeline.bsl\");\nModelCodec.save(file, pipeline);\nPipeline restored = ModelCodec.load(file, Pipeline.class);",
       "see": [
-       "jsl.ml.Transformer",
-       "jsl.ml.Estimator",
-       "jsl.ml.Pipeline.Step",
-       "jsl.io.ModelCodec"
+       "basalt.ml.Transformer",
+       "basalt.ml.Estimator",
+       "basalt.ml.Pipeline.Step",
+       "basalt.io.ModelCodec"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.PolynomialFeatures",
+     "qualified": "basalt.ml.PolynomialFeatures",
      "simple_qualified": "PolynomialFeatures",
      "kind": "class",
      "modifiers": [
@@ -548,14 +548,14 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{{1.0, 2.0}, {3.0, 4.0}});\n\nPolynomialFeatures poly = PolynomialFeatures.builder()\n        .degree(2)\n        .interactionOnly(false)\n        .includeBias(true)\n        .build()\n        .fit(x);\n\nMatrix expanded = poly.transform(x);\nint columns = poly.outputFeatureCount();",
       "see": [
-       "jsl.ml.Transformer",
-       "jsl.ml.StandardScaler",
-       "jsl.ml.Pipeline"
+       "basalt.ml.Transformer",
+       "basalt.ml.StandardScaler",
+       "basalt.ml.Pipeline"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.RFE",
+     "qualified": "basalt.ml.RFE",
      "simple_qualified": "RFE",
      "kind": "class",
      "modifiers": [
@@ -797,15 +797,15 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {1.0, 0.5, 9.0}, {2.0, 1.5, 8.0},\n        {3.0, 1.0, 7.0}, {4.0, 2.0, 6.0}});\ndouble[] y = {1.0, 2.0, 3.0, 4.0};\n\nRFE rfe = RFE.builder(() -> Ridge.builder().alpha(0.1).build())\n        .nFeaturesToSelect(2)\n        .step(1)\n        .build()\n        .fit(x, y);\n\nMatrix reduced = rfe.transform(x);\nboolean[] mask = rfe.support();\nint[] ranking = rfe.ranking();\nint[] indices = rfe.selectedIndices();",
       "see": [
-       "jsl.ml.SelectKBest",
-       "jsl.ml.Ridge",
-       "jsl.ml.RandomForest",
-       "jsl.ml.Transformer"
+       "basalt.ml.SelectKBest",
+       "basalt.ml.Ridge",
+       "basalt.ml.RandomForest",
+       "basalt.ml.Transformer"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.RandomForest",
+     "qualified": "basalt.ml.RandomForest",
      "simple_qualified": "RandomForest",
      "kind": "class",
      "modifiers": [
@@ -1102,14 +1102,14 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {0.0, 1.0}, {1.0, 1.0}, {1.0, 0.0}, {2.0, 0.0},\n        {2.0, 1.0}, {3.0, 0.0}, {3.0, 1.0}, {4.0, 0.0}});\ndouble[] y = {0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0};\n\nRandomForest forest = RandomForest.builder()\n        .trees(50)\n        .maxDepth(6)\n        .minSamplesLeaf(1)\n        .maxFeatures(1)\n        .bins(64)\n        .threads(4)\n        .seed(42L)\n        .task(TreeTask.CLASSIFICATION)\n        .oob(true)\n        .build()\n        .fit(x, y);\n\ndouble[] label = forest.predict(x);\nMatrix probability = forest.predictProbability(x);\ndouble oob = forest.oobScore();",
       "see": [
-       "jsl.ml.DecisionTree",
-       "jsl.ml.PackedTrees",
-       "jsl.ml.TreeTask"
+       "basalt.ml.DecisionTree",
+       "basalt.ml.PackedTrees",
+       "basalt.ml.TreeTask"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.RandomizedSearchCV",
+     "qualified": "basalt.ml.RandomizedSearchCV",
      "simple_qualified": "RandomizedSearchCV",
      "kind": "class",
      "modifiers": [
@@ -1285,16 +1285,16 @@
        "每次迭代每折都新建估计器，总拟合次数为 nIter × cv 再加一次全量拟合",
        "cvResults 只保存参数与分数，不保存各折模型"
       ],
-      "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {0.0, 1.0}, {1.0, 1.0}, {1.0, 0.0}, {2.0, 0.0},\n        {2.0, 1.0}, {3.0, 0.0}, {3.0, 1.0}, {4.0, 0.0}});\ndouble[] y = {0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0};\n\nRandomizedSearchCV search = RandomizedSearchCV\n        .builder(params -> Ridge.builder()\n                .alpha((Double) params.get(\"alpha\")).build())\n        .paramLogUniform(\"alpha\", 1e-3, 10.0)\n        .nIter(20)\n        .cv(4)\n        .scoring(jsl.ml.JSL.Metric.R2)\n        .seed(7L)\n        .build()\n        .fit(x, y);\n\ndouble[] predictions = search.predict(x);\nMap<String, Object> best = search.bestParams();\ndouble score = search.bestScore();",
+      "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {0.0, 1.0}, {1.0, 1.0}, {1.0, 0.0}, {2.0, 0.0},\n        {2.0, 1.0}, {3.0, 0.0}, {3.0, 1.0}, {4.0, 0.0}});\ndouble[] y = {0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0};\n\nRandomizedSearchCV search = RandomizedSearchCV\n        .builder(params -> Ridge.builder()\n                .alpha((Double) params.get(\"alpha\")).build())\n        .paramLogUniform(\"alpha\", 1e-3, 10.0)\n        .nIter(20)\n        .cv(4)\n        .scoring(basalt.ml.Estimators.Metric.R2)\n        .seed(7L)\n        .build()\n        .fit(x, y);\n\ndouble[] predictions = search.predict(x);\nMap<String, Object> best = search.bestParams();\ndouble score = search.bestScore();",
       "see": [
-       "jsl.ml.GridSearchCV",
-       "jsl.ml.StratifiedKFold",
-       "jsl.ml.DataSplit"
+       "basalt.ml.GridSearchCV",
+       "basalt.ml.StratifiedKFold",
+       "basalt.ml.DataSplit"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.Ridge",
+     "qualified": "basalt.ml.Ridge",
      "simple_qualified": "Ridge",
      "kind": "class",
      "modifiers": [
@@ -1497,14 +1497,14 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}});\ndouble[] y = {0.0, 1.0, 1.0, 2.0};\nRidge ridge = Ridge.builder()\n        .alpha(0.5)\n        .fitIntercept(true)\n        .build()\n        .fit(x, y);\ndouble[] coefficients = ridge.weights();\ndouble bias = ridge.intercept();\ndouble[] predictions = ridge.predict(x);",
       "see": [
-       "jsl.ml.Lasso",
-       "jsl.ml.LinearRegression",
-       "jsl.ml.Ridge.Builder"
+       "basalt.ml.Lasso",
+       "basalt.ml.LinearRegression",
+       "basalt.ml.Ridge.Builder"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.SVC",
+     "qualified": "basalt.ml.SVC",
      "simple_qualified": "SVC",
      "kind": "class",
      "modifiers": [
@@ -1767,7 +1767,7 @@
      }
     },
     {
-     "qualified": "jsl.ml.SelectKBest",
+     "qualified": "basalt.ml.SelectKBest",
      "simple_qualified": "SelectKBest",
      "kind": "class",
      "modifiers": [
@@ -2001,14 +2001,14 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {1.0, 0.1, 5.0}, {1.2, 0.2, 4.9},\n        {3.0, 0.1, 5.1}, {3.1, 0.3, 5.0}});\ndouble[] y = {0.0, 0.0, 1.0, 1.0};\n\nSelectKBest selector = SelectKBest.builder()\n        .k(2)\n        .scoreFunc(SelectKBest.ScoreFunc.F_CLASSIF)\n        .build()\n        .fit(x, y);\n\nMatrix selected = selector.transform(x);\ndouble[] scores = selector.scores();\nboolean[] support = selector.getSupport();",
       "see": [
-       "jsl.ml.RFE",
-       "jsl.ml.Pipeline",
-       "jsl.ml.Transformer"
+       "basalt.ml.RFE",
+       "basalt.ml.Pipeline",
+       "basalt.ml.Transformer"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.ShapExplainer",
+     "qualified": "basalt.ml.ShapExplainer",
      "simple_qualified": "ShapExplainer",
      "kind": "class",
      "modifiers": [
@@ -2020,7 +2020,7 @@
      "implements": [],
      "file": "jsl/ml/ShapExplainer.java",
      "line": 20,
-     "javadoc": "SHapley Additive exPlanations (SHAP) calculator for JSL models.\n\n<p>Provides exact Shapley values when {@code features <= 10} and Monte-Carlo permutation\nShapley values for higher dimensions, strictly satisfying the local efficiency / additivity\naxiom: {@code baseValue + sum_j(shapValues[i][j]) == prediction[i]}.</p>\n\n<p>For linear models ({@link LinearRegression}, {@link Ridge}, {@link Lasso}, {@link LinearSVM}),\nuses the exact closed-form LinearSHAP formula {@code phi_j = w_j * (x_j - E[X_j])} in O(p) time.</p>",
+     "javadoc": "SHapley Additive exPlanations (SHAP) calculator for Basalt models.\n\n<p>Provides exact Shapley values when {@code features <= 10} and Monte-Carlo permutation\nShapley values for higher dimensions, strictly satisfying the local efficiency / additivity\naxiom: {@code baseValue + sum_j(shapValues[i][j]) == prediction[i]}.</p>\n\n<p>For linear models ({@link LinearRegression}, {@link Ridge}, {@link Lasso}, {@link LinearSVM}),\nuses the exact closed-form LinearSHAP formula {@code phi_j = w_j * (x_j - E[X_j])} in O(p) time.</p>",
      "nested": [
       "Explanation"
      ],
@@ -2159,14 +2159,14 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {0.0, 1.0}, {1.0, 1.5}, {2.0, 0.5}, {3.0, 2.0}});\ndouble[] y = {1.0, 2.0, 2.5, 3.5};\n\nRidge model = Ridge.builder().alpha(0.1).build().fit(x, y);\nShapExplainer explainer = new ShapExplainer(model, x, 64, 42L);\n\nShapExplainer.Explanation explanation = explainer.explain(x);\ndouble base = explanation.baseValue();\nMatrix phi = explanation.shapValues();\ndouble[] predictions = explanation.predictions();\ndouble[] importance = explanation.meanAbsShap();",
       "see": [
-       "jsl.ml.Ridge",
-       "jsl.ml.RandomForest",
-       "jsl.ml.HistogramGradientBoosting"
+       "basalt.ml.Ridge",
+       "basalt.ml.RandomForest",
+       "basalt.ml.HistogramGradientBoosting"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.SimpleImputer",
+     "qualified": "basalt.ml.SimpleImputer",
      "simple_qualified": "SimpleImputer",
      "kind": "class",
      "modifiers": [
@@ -2409,14 +2409,14 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {1.0, Double.NaN}, {2.0, 3.0},\n        {Double.NaN, 4.0}, {4.0, 5.0}});\n\nSimpleImputer imputer = SimpleImputer.builder()\n        .strategy(SimpleImputer.Strategy.MEDIAN)\n        .build()\n        .fit(x);\n\nMatrix filled = imputer.transform(x);\ndouble[] statistics = imputer.statistics();",
       "see": [
-       "jsl.ml.StandardScaler",
-       "jsl.ml.Pipeline",
-       "jsl.ml.Transformer"
+       "basalt.ml.StandardScaler",
+       "basalt.ml.Pipeline",
+       "basalt.ml.Transformer"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.StandardScaler",
+     "qualified": "basalt.ml.StandardScaler",
      "simple_qualified": "StandardScaler",
      "kind": "class",
      "modifiers": [
@@ -2736,14 +2736,14 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {1.0, 10.0}, {2.0, 20.0}, {3.0, 30.0}, {4.0, 40.0}});\n\nStandardScaler scaler = StandardScaler.builder()\n        .withMean(true)\n        .withStd(true)\n        .build()\n        .fit(x);\n\nMatrix z = scaler.transform(x);\nMatrix restored = scaler.inverseTransform(z);\ndouble[] mean = scaler.mean();\ndouble[] scale = scaler.scale();",
       "see": [
-       "jsl.ml.MinMaxScaler",
-       "jsl.ml.SimpleImputer",
-       "jsl.ml.Pipeline"
+       "basalt.ml.MinMaxScaler",
+       "basalt.ml.SimpleImputer",
+       "basalt.ml.Pipeline"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.StratifiedKFold",
+     "qualified": "basalt.ml.StratifiedKFold",
      "simple_qualified": "StratifiedKFold",
      "kind": "class",
      "modifiers": [
@@ -2886,9 +2886,9 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {0.0, 0.0}, {0.2, 0.1}, {1.0, 1.0},\n        {1.1, 0.9}, {2.0, 2.0}, {2.2, 1.8}});\ndouble[] y = {0.0, 0.0, 1.0, 1.0, 2.0, 2.0};\n\nStratifiedKFold cv = new StratifiedKFold(3, true, 42L);\nList<DataSplit.Fold> folds = cv.split(x, y);\nDataSplit.Fold first = folds.get(0);\nMatrix trainX = first.trainFeatures();\ndouble[] testY = first.testTargets();",
       "see": [
-       "jsl.ml.DataSplit",
-       "jsl.ml.GridSearchCV",
-       "jsl.ml.RandomizedSearchCV"
+       "basalt.ml.DataSplit",
+       "basalt.ml.GridSearchCV",
+       "basalt.ml.RandomizedSearchCV"
       ]
      }
     }

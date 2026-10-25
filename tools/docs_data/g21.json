@@ -3,10 +3,10 @@
  "title": "eager 张量与模块（3/4）",
  "modules": [
   {
-   "name": "jsl.torch",
+   "name": "basalt.torch",
    "types": [
     {
-     "qualified": "jsl.torch.NativeMemoryEvent",
+     "qualified": "basalt.torch.NativeMemoryEvent",
      "simple_qualified": "NativeMemoryEvent",
      "kind": "class",
      "modifiers": [
@@ -81,26 +81,26 @@
      "doc": {
       "summary": "原生上下文内存快照的 JFR 事件",
       "body": [
-       "JslMetrics.snapshot(NativeContext) 在返回 MetricsSnapshot 的同时填充并 commit 该事件，带出存活张量数、离堆字节数、计算图节点数与 JVM 堆已用量。",
+       "BasaltMetrics.snapshot(NativeContext) 在返回 MetricsSnapshot 的同时填充并 commit 该事件，带出存活张量数、离堆字节数、计算图节点数与 JVM 堆已用量。",
        "JFR 是 JDK 内置的事件框架，可用 jcmd <pid> JFR.start 在运行时打开采集，不必修改代码或重启进程；默认不记录，关闭时每次提交只付出一次 shouldCommit() 标志位读取。",
        "事件粒度是调用方主动采样的快照，不是每个算子一条；算子级明细由 OperatorExecutionEvent 承担。"
       ],
       "notes": [
-       "事件名为 jsl.NativeMemory，标签 JSL Native Memory，类别 {JSL, Observability}。",
+       "事件名为 basalt.NativeMemory，标签 Basalt Native Memory，类别 {Basalt, Observability}。",
        "三个原生计数取自 NativeContext.stats()；上下文为 null、已关闭或统计抛异常时全部置 0，事件仍照常提交。",
        "heapUsedBytes 为 Runtime.totalMemory() - freeMemory()，含尚未回收的垃圾，因此高于真实存活对象。",
        "字段全是 long 原始类型，JFR 以定长记录写入线程本地缓冲；未启用采集时字段赋值与 commit 一并跳过。",
        "不启动采样线程，采样节奏完全由调用方决定。"
       ],
       "see": [
-       "jsl.JslMetrics",
-       "jsl.torch.OperatorExecutionEvent",
-       "jsl.nativebridge.NativeContext"
+       "basalt.BasaltMetrics",
+       "basalt.torch.OperatorExecutionEvent",
+       "basalt.nativebridge.NativeContext"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.NativeQueueEvent",
+     "qualified": "basalt.torch.NativeQueueEvent",
      "simple_qualified": "NativeQueueEvent",
      "kind": "class",
      "modifiers": [
@@ -179,20 +179,20 @@
        "JFR 是 JDK 内置的事件框架，可在运行时用 jcmd <pid> JFR.start 打开采集，无需修改代码或重启进程，因此这条事件流在默认配置下始终可用。"
       ],
       "notes": [
-       "事件名为 jsl.NativeQueue，标签 Native Command Queue，类别 {JSL, Native}。",
+       "事件名为 basalt.NativeQueue，标签 Native Command Queue，类别 {Basalt, Native}。",
        "bytes 等于 commands * 128，对应每条指令 128 字节的定长线格式。",
        "threads 是传给原生的线程提示，0 表示由 Rust 侧按可用并行度决定。",
        "durationNanos 由 Java 侧两次 System.nanoTime() 测得，包含 JNI 进入与原生执行的全部时间。",
        "事件未启用时 commit 立即返回、不写任何记录；常态下每次队列执行仍有一次事件对象构造与两次时间戳读取，对象不逃逸时可被 JIT 标量替换。"
       ],
       "see": [
-       "jsl.nativebridge.CommandQueueBuilder",
-       "jsl.torch.Graph"
+       "basalt.nativebridge.CommandQueueBuilder",
+       "basalt.torch.Graph"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.OperatorExecutionEvent",
+     "qualified": "basalt.torch.OperatorExecutionEvent",
      "simple_qualified": "OperatorExecutionEvent",
      "kind": "class",
      "modifiers": [
@@ -268,11 +268,11 @@
      "doc": {
       "summary": "单次算子或估计器执行的 JFR 事件",
       "body": [
-       "JslMetrics.recordOperator 与 JslMetrics.time 在记录一次算子耗时后填充并 commit 该事件，带出算子名称、处理元素数、字节数与纳秒耗时；经典模型 fit 与批量推理复用同一条通道。",
+       "BasaltMetrics.recordOperator 与 BasaltMetrics.time 在记录一次算子耗时后填充并 commit 该事件，带出算子名称、处理元素数、字节数与纳秒耗时；经典模型 fit 与批量推理复用同一条通道。",
        "JFR 是 JDK 内置的事件框架，可用 jcmd <pid> JFR.start 在运行时打开采集，无需改动代码或重启进程。默认关闭时，一次记录只剩一次对象分配与一次 shouldCommit() 判断，对象不逃逸时可被 JIT 标量替换，字段写入与 commit 全部省略。"
       ],
       "notes": [
-       "事件名为 jsl.OperatorExecution，标签 JSL Operator Execution，类别 {JSL, Observability}。",
+       "事件名为 basalt.OperatorExecution，标签 Basalt Operator Execution，类别 {Basalt, Observability}。",
        "operator 为 null 或空白时整条记录提前返回：既不进统计表，也不产生事件。",
        "durationNanos 写入前被钳到至少 1 纳秒，JFR 记录里不会出现 0 耗时，统计表也用同一钳制值。",
        "elements 与 bytes 原值写入事件，而统计表用 Math.max(0, ·) 抹平负值，异常入参下两者可能不一致。",
@@ -280,14 +280,14 @@
        "每次记录都先问 shouldCommit() 再赋值，未启用采集时不写任何字段。"
       ],
       "see": [
-       "jsl.JslMetrics",
-       "jsl.torch.NativeMemoryEvent",
-       "jsl.torch.NativeQueueEvent"
+       "basalt.BasaltMetrics",
+       "basalt.torch.NativeMemoryEvent",
+       "basalt.torch.NativeQueueEvent"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.Optimizer",
+     "qualified": "basalt.torch.Optimizer",
      "simple_qualified": "Optimizer",
      "kind": "class",
      "modifiers": [
@@ -354,7 +354,7 @@
         },
         "throws": {
          "IllegalArgumentException": "学习率非正或非有限",
-         "JSLRuntimeException": "parameters 为 null"
+         "BasaltRuntimeException": "parameters 为 null"
         },
         "notes": [
          "受保护构造器，仅供子类调用；不校验参数是否 requiresGrad。"
@@ -551,14 +551,14 @@
        "基类不持有计算图，也不负责清图；清图由调用方在步末完成。"
       ],
       "see": [
-       "jsl.torch.SGD",
-       "jsl.torch.AdamW",
-       "jsl.torch.Tensor#zeroGrad()"
+       "basalt.torch.SGD",
+       "basalt.torch.AdamW",
+       "basalt.torch.Tensor#zeroGrad()"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.SGD",
+     "qualified": "basalt.torch.SGD",
      "simple_qualified": "SGD",
      "kind": "class",
      "modifiers": [
@@ -662,14 +662,14 @@
        "梯度为零时参数仍会因权重衰减项而收缩。"
       ],
       "see": [
-       "jsl.torch.Optimizer",
-       "jsl.torch.AdamW",
-       "jsl.torch.Tensor#sgd(float, float)"
+       "basalt.torch.Optimizer",
+       "basalt.torch.AdamW",
+       "basalt.torch.Tensor#sgd(float, float)"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.SelfAttention",
+     "qualified": "basalt.torch.SelfAttention",
      "simple_qualified": "SelfAttention",
      "kind": "class",
      "modifiers": [
@@ -798,13 +798,13 @@
        "namedParameters 的名称前缀为 query.、key.、value.、output.。"
       ],
       "see": [
-       "jsl.torch.MultiheadAttention",
-       "jsl.torch.TransformerBlock"
+       "basalt.torch.MultiheadAttention",
+       "basalt.torch.TransformerBlock"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.Sequential",
+     "qualified": "basalt.torch.Sequential",
      "simple_qualified": "Sequential",
      "kind": "class",
      "modifiers": [
@@ -1005,17 +1005,17 @@
        "close() 递归关闭子模块；同一模块实例加入多条流水线时，关闭其中一条会释放共享参数。",
        "depth() 返回直接子模块个数，不是嵌套深度。"
       ],
-      "example": "import jsl.JSL;\nimport jsl.core.BC;\nimport jsl.nn.Activation;\nimport jsl.torch.AdamW;\nimport jsl.torch.Loss;\nimport jsl.torch.Optimizer;\nimport jsl.torch.Sequential;\nimport jsl.torch.Tensor;\n\ntry (JSL jsl = JSL.create()) {\n    // start() 产生空流水线，输入与输出都钉在 BC\n    Sequential<BC, BC> model = Sequential.<BC>start()\n            .add(jsl.linear(8, 16))\n            .add(jsl.activation(Activation.RELU))\n            .add(jsl.linear(16, 4));\n\n    Tensor features = jsl.randn(32, 8);\n    Tensor targets = jsl.zeros(32, 4);\n    Loss criterion = jsl.mse();\n    Optimizer optimizer = new AdamW(model.parameters(), 0.01f);\n\n    for (int step = 0; step < 5; step++) {\n        Tensor loss = criterion.loss(model.forward(features), targets);\n        loss.backward();       // 1. 反向：梯度累积到参数\n        optimizer.step();      // 2. 更新：消费当前梯度\n        optimizer.zeroGrad();  // 3. 清零：为下一批准备\n        jsl.clearGraph();      // 4. 清图：丢弃本步节点与中间张量\n    }\n}",
+      "example": "import basalt.Basalt;\nimport basalt.core.BC;\nimport basalt.nn.Activation;\nimport basalt.torch.AdamW;\nimport basalt.torch.Loss;\nimport basalt.torch.Optimizer;\nimport basalt.torch.Sequential;\nimport basalt.torch.Tensor;\n\ntry (Basalt jsl = Basalt.create()) {\n    // start() 产生空流水线，输入与输出都钉在 BC\n    Sequential<BC, BC> model = Sequential.<BC>start()\n            .add(basalt.linear(8, 16))\n            .add(basalt.activation(Activation.RELU))\n            .add(basalt.linear(16, 4));\n\n    Tensor features = basalt.randn(32, 8);\n    Tensor targets = basalt.zeros(32, 4);\n    Loss criterion = basalt.mse();\n    Optimizer optimizer = new AdamW(model.parameters(), 0.01f);\n\n    for (int step = 0; step < 5; step++) {\n        Tensor loss = criterion.loss(model.forward(features), targets);\n        loss.backward();       // 1. 反向：梯度累积到参数\n        optimizer.step();      // 2. 更新：消费当前梯度\n        optimizer.zeroGrad();  // 3. 清零：为下一批准备\n        basalt.clearGraph();      // 4. 清图：丢弃本步节点与中间张量\n    }\n}",
       "see": [
-       "jsl.torch.Module",
-       "jsl.torch.Linear",
-       "jsl.torch.Conv2d",
-       "jsl.torch.Flatten"
+       "basalt.torch.Module",
+       "basalt.torch.Linear",
+       "basalt.torch.Conv2d",
+       "basalt.torch.Flatten"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.SmoothL1Loss",
+     "qualified": "basalt.torch.SmoothL1Loss",
      "simple_qualified": "SmoothL1Loss",
      "kind": "class",
      "modifiers": [
@@ -1130,14 +1130,14 @@
        "均值除以元素总数而非 batch 大小；分段掩码在 Java 侧逐元素生成，每次前向多一次 data() 全量拷贝。"
       ],
       "see": [
-       "jsl.torch.Tensor#smoothL1Loss(Tensor, float)",
-       "jsl.torch.L1Loss",
-       "jsl.torch.MSELoss"
+       "basalt.torch.Tensor#smoothL1Loss(Tensor, float)",
+       "basalt.torch.L1Loss",
+       "basalt.torch.MSELoss"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.StepLR",
+     "qualified": "basalt.torch.StepLR",
      "simple_qualified": "StepLR",
      "kind": "class",
      "modifiers": [
@@ -1256,14 +1256,14 @@
        "与 torch.optim.lr_scheduler.StepLR 对齐：第 e 步的学习率为 baseLr · gamma^(e // stepSize)。"
       ],
       "see": [
-       "jsl.torch.LRScheduler",
-       "jsl.torch.Optimizer#setLearningRate(float)",
-       "jsl.torch.CosineAnnealingLR"
+       "basalt.torch.LRScheduler",
+       "basalt.torch.Optimizer#setLearningRate(float)",
+       "basalt.torch.CosineAnnealingLR"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.Tensor",
+     "qualified": "basalt.torch.Tensor",
      "simple_qualified": "Tensor",
      "kind": "class",
      "modifiers": [
@@ -1616,7 +1616,7 @@
         },
         "throws": {
          "IllegalArgumentException": "values 长度与张量元素数不一致",
-         "JSLRuntimeException": "values 为 null"
+         "BasaltRuntimeException": "values 为 null"
         },
         "notes": [
          "直接写原生缓冲，不产生计算图节点；常用于加载权重。"
@@ -2763,17 +2763,17 @@
        "data()/grad() 每次都把原生缓冲复制成新 float[]，热路径上频繁调用会产生额外拷贝与 GC 压力。",
        "张量绑定创建它的 NativeContext，跨上下文混用会在队列执行时被拒绝；单个张量的元素总数上限为 Integer.MAX_VALUE。"
       ],
-      "example": "import jsl.JSL;\nimport jsl.torch.Tensor;\n\ntry (JSL jsl = JSL.create()) {\n    Tensor features = jsl.randn(4, 3);          // 形状 [4, 3]，不求导\n    Tensor weight = jsl.parameter(3, 1);        // 可训练参数，零初始化\n    Tensor loss = features.matMul(weight)       // [4, 3] x [3, 1] -> [4, 1]\n            .mse(jsl.zeros(4, 1));              // 标量损失，形状 [1]\n\n    loss.backward();                            // 梯度累加到 weight\n    float[] gradient = weight.grad();            // 复制出梯度\n    weight.sgd(0.1f, 0.0f);                     // weight -= lr * grad\n    weight.zeroGrad();                          // 清梯度\n    jsl.clearGraph();                           // 清图，避免节点累积\n}",
+      "example": "import basalt.Basalt;\nimport basalt.torch.Tensor;\n\ntry (Basalt jsl = Basalt.create()) {\n    Tensor features = basalt.randn(4, 3);          // 形状 [4, 3]，不求导\n    Tensor weight = basalt.parameter(3, 1);        // 可训练参数，零初始化\n    Tensor loss = features.matMul(weight)       // [4, 3] x [3, 1] -> [4, 1]\n            .mse(basalt.zeros(4, 1));              // 标量损失，形状 [1]\n\n    loss.backward();                            // 梯度累加到 weight\n    float[] gradient = weight.grad();            // 复制出梯度\n    weight.sgd(0.1f, 0.0f);                     // weight -= lr * grad\n    weight.zeroGrad();                          // 清梯度\n    basalt.clearGraph();                           // 清图，避免节点累积\n}",
       "see": [
-       "jsl.torch.Module",
-       "jsl.torch.Graph",
-       "jsl.torch.Optimizer",
-       "jsl.nativebridge.NativeContext"
+       "basalt.torch.Module",
+       "basalt.torch.Graph",
+       "basalt.torch.Optimizer",
+       "basalt.nativebridge.NativeContext"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.TransformerBlock",
+     "qualified": "basalt.torch.TransformerBlock",
      "simple_qualified": "TransformerBlock",
      "kind": "class",
      "modifiers": [
@@ -2997,14 +2997,14 @@
        "namedParameters 的名称前缀为 norm1.、attention.、norm2.、ffn1.、ffn2.。"
       ],
       "see": [
-       "jsl.torch.MultiheadAttention",
-       "jsl.torch.LayerNorm",
-       "jsl.torch.Activation"
+       "basalt.torch.MultiheadAttention",
+       "basalt.torch.LayerNorm",
+       "basalt.torch.Activation"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.Activation.Kind",
+     "qualified": "basalt.torch.Activation.Kind",
      "simple_qualified": "Activation.Kind",
      "kind": "enum",
      "modifiers": [
@@ -3099,8 +3099,8 @@
        "softmax 不在本枚举内；需要 softmax 时直接调用 Tensor.softmax(int)。"
       ],
       "see": [
-       "jsl.torch.Activation",
-       "jsl.torch.Tensor#gelu()"
+       "basalt.torch.Activation",
+       "basalt.torch.Tensor#gelu()"
       ]
      }
     }

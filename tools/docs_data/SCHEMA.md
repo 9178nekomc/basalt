@@ -19,13 +19,13 @@ type 和每个 member 增加一个 `doc` 对象。
       "intro": ["模块级导语第一段", "第二段"],
       "types": [
         {
-          "qualified": "jsl.JSL",
+          "qualified": "basalt.Basalt",
           "doc": {
             "summary": "一句话定位（≤60 字）",
             "body": ["第一段", "第二段"],
             "notes": ["使用约束 / 边界条件 / 性能特征"],
-            "example": "try (JSL jsl = JSL.create()) {\n    ...\n}",
-            "see": ["jsl.ml.JSL", "jsl.torch.Tensor"]
+            "example": "try (Basalt jsl = Basalt.create()) {\n    ...\n}",
+            "see": ["basalt.ml.Basalt", "basalt.torch.Tensor"]
           },
           "members": [
             {

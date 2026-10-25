@@ -3,10 +3,10 @@
  "title": "数据管线",
  "modules": [
   {
-   "name": "jsl.data",
+   "name": "basalt.data",
    "types": [
     {
-     "qualified": "jsl.data.DataLoader",
+     "qualified": "basalt.data.DataLoader",
      "simple_qualified": "DataLoader",
      "kind": "class",
      "modifiers": [
@@ -18,7 +18,7 @@
      "implements": [],
      "file": "jsl/data/DataLoader.java",
      "line": 32,
-     "javadoc": "Allocation-stable streaming over JSLD records. Every record is {@code featureCount} doubles\nfollowed by one label double.\n\n<p>Two readers share one {@link Batch} contract:</p>\n<ul>\n<li>{@link BatchStream} performs sequential channel reads into a direct buffer and decodes\nwith a {@link DoubleBuffer} view. The batch, its feature array, its label array and the\nbyte buffer are allocated once per stream.</li>\n<li>{@link MappedBatchStream} memory-maps the file and gathers rows with absolute bulk\n{@code DoubleBuffer.get(index, dst, off, len)} calls, so an epoch performs zero syscalls\nafter the initial map. Optional shuffling permutes an {@code int[]} row index, not the\ndata.</li>\n</ul>",
+     "javadoc": "Allocation-stable streaming over BasaltD records. Every record is {@code featureCount} doubles\nfollowed by one label double.\n\n<p>Two readers share one {@link Batch} contract:</p>\n<ul>\n<li>{@link BatchStream} performs sequential channel reads into a direct buffer and decodes\nwith a {@link DoubleBuffer} view. The batch, its feature array, its label array and the\nbyte buffer are allocated once per stream.</li>\n<li>{@link MappedBatchStream} memory-maps the file and gathers rows with absolute bulk\n{@code DoubleBuffer.get(index, dst, off, len)} calls, so an epoch performs zero syscalls\nafter the initial map. Optional shuffling permutes an {@code int[]} row index, not the\ndata.</li>\n</ul>",
      "nested": [
       "Builder",
       "Batch",
@@ -39,9 +39,9 @@
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "为指定 JSLD 文件创建读取器配置。",
+        "summary": "为指定 BasaltD 文件创建读取器配置。",
         "params": {
-         "source": "JSLD 文件路径；为 null 时构造 Builder 立即抛 NullPointerException"
+         "source": "BasaltD 文件路径；为 null 时构造 Builder 立即抛 NullPointerException"
         },
         "returns": "尚未设置 featureCount 的 Builder，后续用 open() 或 openMapped() 打开流",
         "notes": [
@@ -72,7 +72,7 @@
          "样本数少于 2 时抛 IllegalArgumentException。读取失败或文件头与 featureCount 不匹配时抛 UncheckedIOException。标准差为 0 的特征在后续应用时只做中心化。"
         ],
         "params": {
-         "source": "JSLD 文件路径",
+         "source": "BasaltD 文件路径",
          "featureCount": "每条记录的特征数，必须为正且与文件头中的值一致"
         },
         "returns": "持有均值和标准差副本的不可变 Normalization",
@@ -103,7 +103,7 @@
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "将特征矩阵与标签写成 JSLD 文件。",
+        "summary": "将特征矩阵与标签写成 BasaltD 文件。",
         "body": [
          "以 CREATE、WRITE、TRUNCATE_EXISTING 打开目标文件，先写 16 字节头（magic、version 1、features.columns()、保留位 0），再逐行写出特征与标签。缓冲容量取 1 MiB 与两条记录宽度中的较大者，写满即刷出。",
          "features 或 labels 为 null 时抛 NullPointerException；labels.length 与 features.rows() 不等时抛 IllegalArgumentException；通道打开或写入失败时抛 UncheckedIOException。记录宽度计算溢出 int 时抛 ArithmeticException。"
@@ -142,7 +142,7 @@
          "实现只依赖 Files.size，不打开通道、不读取也不校验 magic、version 与保留位，因此对头部损坏的文件仍可能返回一个数值。"
         ],
         "params": {
-         "source": "JSLD 文件路径",
+         "source": "BasaltD 文件路径",
          "featureCount": "每条记录的特征数，用于推导记录宽度；加一后乘 8 溢出 int 时抛 ArithmeticException"
         },
         "returns": "记录条数，未做任何上界限制",
@@ -154,11 +154,11 @@
       }
      ],
      "doc": {
-      "summary": "JSLD 记录的批式读取入口，附带统计与写盘工具。",
+      "summary": "BasaltD 记录的批式读取入口，附带统计与写盘工具。",
       "body": [
-       "文件头固定 16 字节：magic 0x4A534C44（\"JSLD\"）、version 1、featureCount 与保留位（写入为 0，读取要求为 0）。其后每条记录为 featureCount 个 double 特征加一个 double 标签，记录宽度 (featureCount + 1) * 8 字节。",
+       "文件头固定 16 字节：magic 0x4A534C44（\"BasaltD\"）、version 1、featureCount 与保留位（写入为 0，读取要求为 0）。其后每条记录为 featureCount 个 double 特征加一个 double 标签，记录宽度 (featureCount + 1) * 8 字节。",
        "两个读取器共享同一 Batch 契约。BatchStream 顺序读入按批大小分配的直接缓冲区，再用 DoubleBuffer 视图解码；MappedBatchStream 映射整个文件，以绝对批量读取汇集行，映射之后一个 epoch 内无系统调用。批次、特征数组、标签数组与字节缓冲只在构造期分配一次。",
-       "除读取器外，类还提供三个静态工具：write 生成 JSLD 文件，estimateNormalization 单遍统计均值与样本标准差，rowCount 由文件大小推算记录数。"
+       "除读取器外，类还提供三个静态工具：write 生成 BasaltD 文件，estimateNormalization 单遍统计均值与样本标准差，rowCount 由文件大小推算记录数。"
       ],
       "notes": [
        "类本身无实例（构造器私有），Builder、Batch、BatchStream、MappedBatchStream 均为静态嵌套类型。",
@@ -166,19 +166,19 @@
        "批次数组在流的生命周期内复用，next() 会覆盖上一批内容，跨批保存须自行拷贝。",
        "每个流都不是线程安全的，并发读取应为每个线程建立独立的流。"
       ],
-      "example": "Path file = Path.of(\"dataset.jsld\");\nMatrix features = Matrix.fromRows(new double[][]{\n        {1.0, 2.0}, {3.0, 4.0}, {5.0, 7.0}, {2.0, 1.0}});\nDataLoader.write(file, features, new double[]{0.0, 1.0, 1.0, 0.0});\n\nNormalization normalization = DataLoader.estimateNormalization(file, 2);\ntry (DataLoader.BatchStream stream = DataLoader.builder(file)\n        .featureCount(2)\n        .batchSize(2)\n        .normalization(normalization)\n        .open()) {\n    while (stream.next()) {\n        DataLoader.Batch batch = stream.batch();\n        for (int row = 0; row < batch.rows(); row++) {\n            double label = batch.label(row);\n            double first = batch.feature(row, 0);\n        }\n    }\n}",
+      "example": "Path file = Path.of(\"dataset.bsld\");\nMatrix features = Matrix.fromRows(new double[][]{\n        {1.0, 2.0}, {3.0, 4.0}, {5.0, 7.0}, {2.0, 1.0}});\nDataLoader.write(file, features, new double[]{0.0, 1.0, 1.0, 0.0});\n\nNormalization normalization = DataLoader.estimateNormalization(file, 2);\ntry (DataLoader.BatchStream stream = DataLoader.builder(file)\n        .featureCount(2)\n        .batchSize(2)\n        .normalization(normalization)\n        .open()) {\n    while (stream.next()) {\n        DataLoader.Batch batch = stream.batch();\n        for (int row = 0; row < batch.rows(); row++) {\n            double label = batch.label(row);\n            double first = batch.feature(row, 0);\n        }\n    }\n}",
       "see": [
-       "jsl.data.Normalization",
-       "jsl.data.DataLoader.Builder",
-       "jsl.data.DataLoader.Batch",
-       "jsl.data.DataLoader.BatchStream",
-       "jsl.data.DataLoader.MappedBatchStream",
-       "jsl.io.ModelCodec"
+       "basalt.data.Normalization",
+       "basalt.data.DataLoader.Builder",
+       "basalt.data.DataLoader.Batch",
+       "basalt.data.DataLoader.BatchStream",
+       "basalt.data.DataLoader.MappedBatchStream",
+       "basalt.io.ModelCodec"
       ]
      }
     },
     {
-     "qualified": "jsl.data.Normalization",
+     "qualified": "basalt.data.Normalization",
      "simple_qualified": "Normalization",
      "kind": "class",
      "modifiers": [
@@ -282,15 +282,15 @@
        "实例不可变、无状态，可跨线程共享；但 apply 会就地覆盖调用方数组。",
        "特征数在构造时固定，不能对长度不同的记录复用同一实例。"
       ],
-      "example": "Path file = Path.of(\"dataset.jsld\");\nDataLoader.write(file,\n        Matrix.fromRows(new double[][]{{1.0, 2.0}, {3.0, 4.0}, {5.0, 7.0}}),\n        new double[]{0.0, 1.0, 0.0});\n\nNormalization normalization = DataLoader.estimateNormalization(file, 2);\nint features = normalization.featureCount();\ndouble[] means = normalization.means();\ndouble[] deviations = normalization.standardDeviations();",
+      "example": "Path file = Path.of(\"dataset.bsld\");\nDataLoader.write(file,\n        Matrix.fromRows(new double[][]{{1.0, 2.0}, {3.0, 4.0}, {5.0, 7.0}}),\n        new double[]{0.0, 1.0, 0.0});\n\nNormalization normalization = DataLoader.estimateNormalization(file, 2);\nint features = normalization.featureCount();\ndouble[] means = normalization.means();\ndouble[] deviations = normalization.standardDeviations();",
       "see": [
-       "jsl.data.DataLoader.estimateNormalization(Path, int)",
-       "jsl.data.DataLoader.Builder.normalization(Normalization)"
+       "basalt.data.DataLoader.estimateNormalization(Path, int)",
+       "basalt.data.DataLoader.Builder.normalization(Normalization)"
       ]
      }
     },
     {
-     "qualified": "jsl.data.DataLoader.Batch",
+     "qualified": "basalt.data.DataLoader.Batch",
      "simple_qualified": "DataLoader.Batch",
      "kind": "class",
      "modifiers": [
@@ -436,15 +436,15 @@
        "实例与流一一绑定，非线程安全；批次内容在下次 next() 后失效。",
        "需要跨批留存时，用 System.arraycopy 复制有效区间。"
       ],
-      "example": "try (DataLoader.BatchStream stream = DataLoader.builder(Path.of(\"dataset.jsld\"))\n        .featureCount(2)\n        .batchSize(64)\n        .open()) {\n    while (stream.next()) {\n        DataLoader.Batch batch = stream.batch();\n        for (int row = 0; row < batch.rows(); row++) {\n            double label = batch.label(row);\n            double first = batch.feature(row, 0);\n        }\n    }\n}",
+      "example": "try (DataLoader.BatchStream stream = DataLoader.builder(Path.of(\"dataset.bsld\"))\n        .featureCount(2)\n        .batchSize(64)\n        .open()) {\n    while (stream.next()) {\n        DataLoader.Batch batch = stream.batch();\n        for (int row = 0; row < batch.rows(); row++) {\n            double label = batch.label(row);\n            double first = batch.feature(row, 0);\n        }\n    }\n}",
       "see": [
-       "jsl.data.DataLoader.BatchStream.batch()",
-       "jsl.data.DataLoader.MappedBatchStream.batch()"
+       "basalt.data.DataLoader.BatchStream.batch()",
+       "basalt.data.DataLoader.MappedBatchStream.batch()"
       ]
      }
     },
     {
-     "qualified": "jsl.data.DataLoader.BatchStream",
+     "qualified": "basalt.data.DataLoader.BatchStream",
      "simple_qualified": "DataLoader.BatchStream",
      "kind": "class",
      "modifiers": [
@@ -545,7 +545,7 @@
       }
      ],
      "doc": {
-      "summary": "顺序分批读取 JSLD，可回绕重读。",
+      "summary": "顺序分批读取 BasaltD，可回绕重读。",
       "body": [
        "构造时按 recordBytes * batchSize 分配直接缓冲区，并创建批次、特征数组与标签数组，之后不再分配。每次 next() 先压缩缓冲区，从通道循环读取直到缓冲填满或文件结束，再把完整的记录解码进批次；不足一条记录的尾部字节在文件结束时抛 EOFException。",
        "rewind() 把通道位置重置到 16 字节头之后、清空缓冲区并复位结束标志，缓冲与批次对象继续复用，不重新打开文件。流在关闭后不可再用。"
@@ -555,15 +555,15 @@
        "shuffle 与 seed 只影响 openMapped()，本读取器始终按文件顺序返回。",
        "非线程安全，且不支持与另一读取器共享同一批次。"
       ],
-      "example": "try (DataLoader.BatchStream stream = DataLoader.builder(Path.of(\"dataset.jsld\"))\n        .featureCount(8)\n        .batchSize(128)\n        .open()) {\n    for (int epoch = 0; epoch < 3; epoch++) {\n        while (stream.next()) {\n            DataLoader.Batch batch = stream.batch();\n            int rows = batch.rows();\n        }\n        stream.rewind();\n    }\n}",
+      "example": "try (DataLoader.BatchStream stream = DataLoader.builder(Path.of(\"dataset.bsld\"))\n        .featureCount(8)\n        .batchSize(128)\n        .open()) {\n    for (int epoch = 0; epoch < 3; epoch++) {\n        while (stream.next()) {\n            DataLoader.Batch batch = stream.batch();\n            int rows = batch.rows();\n        }\n        stream.rewind();\n    }\n}",
       "see": [
-       "jsl.data.DataLoader.Builder.open()",
-       "jsl.data.DataLoader.MappedBatchStream"
+       "basalt.data.DataLoader.Builder.open()",
+       "basalt.data.DataLoader.MappedBatchStream"
       ]
      }
     },
     {
-     "qualified": "jsl.data.DataLoader.Builder",
+     "qualified": "basalt.data.DataLoader.Builder",
      "simple_qualified": "DataLoader.Builder",
      "kind": "class",
      "modifiers": [
@@ -599,7 +599,7 @@
         "returns": "this，便于链式调用",
         "notes": [
          "未设置时 open()/openMapped() 抛 IllegalArgumentException",
-         "与文件头不一致时读取阶段抛 UncheckedIOException（Invalid or incompatible JSLD header）"
+         "与文件头不一致时读取阶段抛 UncheckedIOException（Invalid or incompatible BasaltD header）"
         ]
        }
       },
@@ -748,16 +748,16 @@
        "非线程安全，构建完成后不应再修改。",
        "shuffle 与 seed 只对 openMapped() 生效，open() 会静默忽略。"
       ],
-      "example": "DataLoader.Builder builder = DataLoader.builder(Path.of(\"dataset.jsld\"))\n        .featureCount(8)\n        .batchSize(256)\n        .shuffle(true)\n        .seed(7);\ntry (DataLoader.MappedBatchStream stream = builder.openMapped()) {\n    while (stream.next()) {\n        int rows = stream.batch().rows();\n    }\n}",
+      "example": "DataLoader.Builder builder = DataLoader.builder(Path.of(\"dataset.bsld\"))\n        .featureCount(8)\n        .batchSize(256)\n        .shuffle(true)\n        .seed(7);\ntry (DataLoader.MappedBatchStream stream = builder.openMapped()) {\n    while (stream.next()) {\n        int rows = stream.batch().rows();\n    }\n}",
       "see": [
-       "jsl.data.DataLoader.builder(Path)",
-       "jsl.data.DataLoader.BatchStream",
-       "jsl.data.DataLoader.MappedBatchStream"
+       "basalt.data.DataLoader.builder(Path)",
+       "basalt.data.DataLoader.BatchStream",
+       "basalt.data.DataLoader.MappedBatchStream"
       ]
      }
     },
     {
-     "qualified": "jsl.data.DataLoader.MappedBatchStream",
+     "qualified": "basalt.data.DataLoader.MappedBatchStream",
      "simple_qualified": "DataLoader.MappedBatchStream",
      "kind": "class",
      "modifiers": [
@@ -888,10 +888,10 @@
        "close() 只置关闭标志，不显式解除映射；关闭后 next()/rewind() 抛 IllegalStateException（与 BatchStream 的 IOException 不同）。",
        "总行数受 int 索引限制，超过 Integer.MAX_VALUE 的文件在 openMapped() 阶段即被拒绝。"
       ],
-      "example": "try (DataLoader.MappedBatchStream stream = DataLoader.builder(Path.of(\"dataset.jsld\"))\n        .featureCount(8)\n        .batchSize(256)\n        .shuffle(true)\n        .seed(7)\n        .openMapped()) {\n    for (int epoch = 0; epoch < 5; epoch++) {\n        while (stream.next()) {\n            DataLoader.Batch batch = stream.batch();\n            int rows = batch.rows();\n        }\n        stream.rewind();\n    }\n}",
+      "example": "try (DataLoader.MappedBatchStream stream = DataLoader.builder(Path.of(\"dataset.bsld\"))\n        .featureCount(8)\n        .batchSize(256)\n        .shuffle(true)\n        .seed(7)\n        .openMapped()) {\n    for (int epoch = 0; epoch < 5; epoch++) {\n        while (stream.next()) {\n            DataLoader.Batch batch = stream.batch();\n            int rows = batch.rows();\n        }\n        stream.rewind();\n    }\n}",
       "see": [
-       "jsl.data.DataLoader.Builder.openMapped()",
-       "jsl.data.DataLoader.BatchStream"
+       "basalt.data.DataLoader.Builder.openMapped()",
+       "basalt.data.DataLoader.BatchStream"
       ]
      }
     }

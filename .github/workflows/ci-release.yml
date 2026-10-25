@@ -1,4 +1,4 @@
-name: JSL Cross-Platform Native Build & Release
+name: Basalt Cross-Platform Native Build & Release
 
 on:
   push:
@@ -22,23 +22,23 @@ jobs:
           - os: ubuntu-latest
             platform: linux-x86_64
             rust_target: x86_64-unknown-linux-gnu
-            artifact_name: libjsl_native.so
+            artifact_name: libbasalt_native.so
           - os: ubuntu-24.04-arm
             platform: linux-aarch64
             rust_target: aarch64-unknown-linux-gnu
-            artifact_name: libjsl_native.so
+            artifact_name: libbasalt_native.so
           - os: windows-latest
             platform: windows-x86_64
             rust_target: x86_64-pc-windows-msvc
-            artifact_name: jsl_native.dll
+            artifact_name: basalt_native.dll
           - os: macos-13
             platform: macos-x86_64
             rust_target: x86_64-apple-darwin
-            artifact_name: libjsl_native.dylib
+            artifact_name: libbasalt_native.dylib
           - os: macos-14
             platform: macos-aarch64
             rust_target: aarch64-apple-darwin
-            artifact_name: libjsl_native.dylib
+            artifact_name: libbasalt_native.dylib
 
     steps:
       - name: Checkout repository
@@ -68,7 +68,7 @@ jobs:
           cp "native/target/${{ matrix.rust_target }}/release/${{ matrix.artifact_name }}" \
              "src/main/resources/native/${{ matrix.platform }}/${{ matrix.artifact_name }}"
 
-      - name: Run full JSL verification suite on host platform
+      - name: Run full Basalt verification suite on host platform
         shell: bash
         run: ./verify.sh
 
@@ -114,7 +114,7 @@ jobs:
       - name: Upload release JARs
         uses: actions/upload-artifact@v4
         with:
-          name: jsl-release-jars
+          name: basalt-release-jars
           path: target/*.jar
 
       - name: Publish GitHub Release on Tag

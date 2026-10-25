@@ -3,10 +3,10 @@
  "title": "神经网络层与序列（3/3）",
  "modules": [
   {
-   "name": "jsl.nn",
+   "name": "basalt.nn",
    "types": [
     {
-     "qualified": "jsl.nn.Dense.Builder",
+     "qualified": "basalt.nn.Dense.Builder",
      "simple_qualified": "Dense.Builder",
      "kind": "class",
      "modifiers": [
@@ -126,13 +126,13 @@
       ],
       "example": "Dense dense = Dense.builder()\n        .units(64)\n        .activation(Activation.TANH)\n        .seed(11L)\n        .build();\n\nDense head = Dense.builder()\n        .units(3)\n        .activation(Activation.SOFTMAX)\n        .build();",
       "see": [
-       "jsl.nn.Dense",
-       "jsl.nn.Activation"
+       "basalt.nn.Dense",
+       "basalt.nn.Activation"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.Flatten.Builder",
+     "qualified": "basalt.nn.Flatten.Builder",
      "simple_qualified": "Flatten.Builder",
      "kind": "class",
      "modifiers": [
@@ -174,12 +174,12 @@
       ],
       "example": "Flatten flatten = Flatten.builder().build();",
       "see": [
-       "jsl.nn.Flatten"
+       "basalt.nn.Flatten"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.GRU.Builder",
+     "qualified": "basalt.nn.GRU.Builder",
      "simple_qualified": "GRU.Builder",
      "kind": "class",
      "modifiers": [
@@ -260,12 +260,12 @@
        "校验发生在 build：hiddenSize 非正时抛出 IllegalArgumentException，而非在 setter 中。"
       ],
       "see": [
-       "jsl.nn.GRU"
+       "basalt.nn.GRU"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.GradientCheck.Report",
+     "qualified": "basalt.nn.GradientCheck.Report",
      "simple_qualified": "GradientCheck.Report",
      "kind": "record",
      "modifiers": [
@@ -329,12 +329,12 @@
        "checkNetwork 产生的报告 inputChecks 恒为 0、maxInputError 恒为 0.0"
       ],
       "see": [
-       "jsl.nn.GradientCheck"
+       "basalt.nn.GradientCheck"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.LSTM.Builder",
+     "qualified": "basalt.nn.LSTM.Builder",
      "simple_qualified": "LSTM.Builder",
      "kind": "class",
      "modifiers": [
@@ -415,12 +415,12 @@
        "校验发生在 build：hiddenSize 非正时抛出 IllegalArgumentException，而非在 setter 中。"
       ],
       "see": [
-       "jsl.nn.LSTM"
+       "basalt.nn.LSTM"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.MaxPooling2D.Builder",
+     "qualified": "basalt.nn.MaxPooling2D.Builder",
      "simple_qualified": "MaxPooling2D.Builder",
      "kind": "class",
      "modifiers": [
@@ -524,12 +524,12 @@
       ],
       "example": "MaxPooling2D pool = MaxPooling2D.builder()\n        .poolSize(3, 3)\n        .strides(1, 1)\n        .build();",
       "see": [
-       "jsl.nn.MaxPooling2D"
+       "basalt.nn.MaxPooling2D"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.NeuralNetwork.ImageBuilder",
+     "qualified": "basalt.nn.NeuralNetwork.ImageBuilder",
      "simple_qualified": "NeuralNetwork.ImageBuilder",
      "kind": "class",
      "modifiers": [
@@ -628,14 +628,14 @@
        "进入 VectorBuilder 时复制列表，两个构建器不再共享可变状态"
       ],
       "see": [
-       "jsl.nn.NeuralNetwork.VectorBuilder",
-       "jsl.nn.Conv2D",
-       "jsl.nn.MaxPooling2D"
+       "basalt.nn.NeuralNetwork.VectorBuilder",
+       "basalt.nn.Conv2D",
+       "basalt.nn.MaxPooling2D"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.NeuralNetwork.VectorBuilder",
+     "qualified": "basalt.nn.NeuralNetwork.VectorBuilder",
      "simple_qualified": "NeuralNetwork.VectorBuilder",
      "kind": "class",
      "modifiers": [
@@ -749,13 +749,13 @@
        "build 不校验损失与末端激活是否匹配，也不检查层数是否为空"
       ],
       "see": [
-       "jsl.nn.NeuralNetwork.ImageBuilder",
-       "jsl.nn.CNN"
+       "basalt.nn.NeuralNetwork.ImageBuilder",
+       "basalt.nn.CNN"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.SelfAttention.Builder",
+     "qualified": "basalt.nn.SelfAttention.Builder",
      "simple_qualified": "SelfAttention.Builder",
      "kind": "class",
      "modifiers": [
@@ -859,12 +859,12 @@
        "缩放因子 1 / sqrt(dimension) 在构造时计算，之后不可更改。"
       ],
       "see": [
-       "jsl.nn.SelfAttention"
+       "basalt.nn.SelfAttention"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.SequenceNetwork.Builder",
+     "qualified": "basalt.nn.SequenceNetwork.Builder",
      "simple_qualified": "SequenceNetwork.Builder",
      "kind": "class",
      "modifiers": [
@@ -1036,14 +1036,14 @@
        "默认池化 LAST 适合分类；需要利用全部时间步时可改为 MEAN。"
       ],
       "see": [
-       "jsl.nn.SequenceNetwork",
-       "jsl.nn.SequencePool",
-       "jsl.nn.Dense"
+       "basalt.nn.SequenceNetwork",
+       "basalt.nn.SequencePool",
+       "basalt.nn.Dense"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.SequencePool.Pooling",
+     "qualified": "basalt.nn.SequencePool.Pooling",
      "simple_qualified": "SequencePool.Pooling",
      "kind": "enum",
      "modifiers": [
@@ -1089,13 +1089,13 @@
        "没有 MAX 归约；需要最大值池化时应在层外自行实现。"
       ],
       "see": [
-       "jsl.nn.SequencePool",
-       "jsl.nn.SequenceNetwork"
+       "basalt.nn.SequencePool",
+       "basalt.nn.SequenceNetwork"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.VanillaRNN.Builder",
+     "qualified": "basalt.nn.VanillaRNN.Builder",
      "simple_qualified": "VanillaRNN.Builder",
      "kind": "class",
      "modifiers": [
@@ -1176,7 +1176,7 @@
        "校验发生在 build：hiddenSize 非正时抛出 IllegalArgumentException。"
       ],
       "see": [
-       "jsl.nn.VanillaRNN"
+       "basalt.nn.VanillaRNN"
       ]
      }
     }

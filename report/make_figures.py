@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Generate JSL benchmark figures and Markdown tables from build/bench/*.csv.
+"""Generate Basalt benchmark figures and Markdown tables from build/bench/*.csv.
 
 Usage:
     python report/make_figures.py
 
-Requires matplotlib and numpy (standard scientific Python). No JSL dependency.
+Requires matplotlib and numpy (standard scientific Python). No Basalt dependency.
 All figures use a light, print-friendly theme with a colour-blind-safe palette.
 """
 
@@ -65,7 +65,7 @@ plt.rcParams.update(
 def read(name: str) -> list[dict[str, str]]:
     path = BENCH / name
     if not path.exists():
-        raise SystemExit(f"missing benchmark CSV: {path}; run JslBenchmark first")
+        raise SystemExit(f"missing benchmark CSV: {path}; run BasaltBenchmark first")
     with path.open(newline="", encoding="utf-8") as handle:
         return list(csv.DictReader(handle))
 
@@ -179,7 +179,7 @@ def fig_loader() -> None:
     ax1.set_xticklabels([str(b) for b in batches])
     ax1.set_xlabel("批次大小")
     ax1.set_ylabel("吞吐 (MiB/s)")
-    ax1.set_title("JSLD 数据管线吞吐")
+    ax1.set_title("BasaltD 数据管线吞吐")
     ax1.legend(loc="upper left", ncol=3, fontsize=8)
 
     for index, mode in enumerate(modes):
@@ -341,7 +341,7 @@ def fig_serialization() -> None:
     colors = [BLUE, TEAL, ORANGE, PURPLE, RED][: len(names)]
     axes[0].bar(names, sizes, color=colors, width=0.55)
     axes[0].set_ylabel("文件大小 (KiB)")
-    axes[0].set_title(".jsl 体积")
+    axes[0].set_title(".bsl 体积")
     axes[0].tick_params(axis="x", rotation=25)
 
     width = 0.38
@@ -426,7 +426,7 @@ def fig_gradient_decay() -> None:
 
 
 def markdown_tables() -> None:
-    lines: list[str] = ["# JSL 基准数据表（自动生成）", ""]
+    lines: list[str] = ["# Basalt 基准数据表（自动生成）", ""]
 
     rows = read("matmul.csv")
     lines += ["## 矩阵乘法", "", "| n | 标量 (ms) | SIMD+FJ (ms) | 加速比 | GFLOP/s |",

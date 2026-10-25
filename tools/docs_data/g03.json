@@ -3,10 +3,10 @@
  "title": "核心数据与模型 I/O（2/2）",
  "modules": [
   {
-   "name": "jsl.core",
+   "name": "basalt.core",
    "types": [
     {
-     "qualified": "jsl.core.Persistable",
+     "qualified": "basalt.core.Persistable",
      "simple_qualified": "Persistable",
      "kind": "interface",
      "modifiers": [
@@ -17,11 +17,11 @@
      "implements": [],
      "file": "jsl/core/Persistable.java",
      "line": 4,
-     "javadoc": "A model that can serialize itself into the versioned .jsl binary container.",
+     "javadoc": "A model that can serialize itself into the versioned .bsl binary container.",
      "nested": [],
      "members": [],
      "doc": {
-      "summary": "可写入 .jsl 容器的模型契约",
+      "summary": "可写入 .bsl 容器的模型契约",
       "body": [
        "实现类声明自己的 ModelKind 并提供 write，把全部状态按固定顺序写进 ModelWriter。容器头部（魔数、版本、码值、长度、CRC32C）由 ModelCodec 负责，实现类只处理负载部分。",
        "读取侧没有对称接口：解码由 ModelCodec.read 按码值分派到各模型族自己的静态 read(ModelReader) 方法。写入顺序必须与该方法逐字段对应，否则校验和仍然通过，但字段会整体错位。"
@@ -31,14 +31,14 @@
        "write 不负责写长度前缀，数组长度需要实现类自己先写一个 int 再写元素。"
       ],
       "see": [
-       "jsl.core.ModelKind",
-       "jsl.core.ModelWriter",
-       "jsl.io.ModelCodec"
+       "basalt.core.ModelKind",
+       "basalt.core.ModelWriter",
+       "basalt.io.ModelCodec"
       ]
      }
     },
     {
-     "qualified": "jsl.core.Tensor",
+     "qualified": "basalt.core.Tensor",
      "simple_qualified": "Tensor",
      "kind": "class",
      "modifiers": [
@@ -592,24 +592,24 @@
       "body": [
        "元素存放在单个连续 double[] 中，按行主序线性化：index 从第 0 轴起依次执行 index = index * shape[axis] + coordinate，最后一维变化最快。形状以 int[] 保存并在构造时克隆，shape() 返回的同样是副本。",
        "布局不是运行期字段，而是泛型参数 S。Tensor<BCHW> 与 Tensor<BSF> 是不同类型，卷积层与序列层因此在编译期就无法互相传参；轴数与各轴长度仍由 shape 数组在运行期保存，可经 rank 与 dimension 读取。",
-       "of 系列工厂克隆传入的变长参数数组，zeros 系列直接分配已清零的数组；data() 返回内部数组本体，toArray() 与 copy() 才产生副本。本类属于 jsl.core，是神经网络层与经典估计器共用的数值容器，不参与计算图。"
+       "of 系列工厂克隆传入的变长参数数组，zeros 系列直接分配已清零的数组；data() 返回内部数组本体，toArray() 与 copy() 才产生副本。本类属于 basalt.core，是神经网络层与经典估计器共用的数值容器，不参与计算图。"
       ],
       "notes": [
        "data() 暴露内部存储，写入等同修改张量；需要快照时使用 toArray()。",
        "sliceBatch 复制数据而非创建视图，返回的张量与源张量不共享存储。",
        "dimension(int) 不做轴范围校验，越界由数组访问抛出 ArrayIndexOutOfBoundsException。",
-       "与 jsl.torch.Tensor 无关：后者是持有原生句柄、参与计算图的类型。"
+       "与 basalt.torch.Tensor 无关：后者是持有原生句柄、参与计算图的类型。"
       ],
       "example": "Tensor<BC> logits = Tensor.ofBC(2, 3, 0.5, 0.25, 0.75, 0.1, 0.2, 0.3);\ndouble v = logits.get(1, 2);\nTensor<BC> head = logits.sliceBatch(0, 1);\nTensor<BCHW> blank = Tensor.zerosBCHW(1, 3, 32, 32);\nint rank = blank.rank();",
       "see": [
-       "jsl.core.Layout",
-       "jsl.core.Matrix",
-       "jsl.torch.Tensor"
+       "basalt.core.Layout",
+       "basalt.core.Matrix",
+       "basalt.torch.Tensor"
       ]
      }
     },
     {
-     "qualified": "jsl.core.VectorMath",
+     "qualified": "basalt.core.VectorMath",
      "simple_qualified": "VectorMath",
      "kind": "class",
      "modifiers": [
@@ -1015,14 +1015,14 @@
       ],
       "example": "double[] a = {1.0, 2.0, 3.0};\ndouble[] b = {0.5, 0.5, 0.5};\ndouble numerator = VectorMath.dot(a, 0, b, 0, a.length);\nVectorMath.axpy(-1.0, b, a);\ndouble d2 = VectorMath.squaredEuclidean(a, 0, b, 0, a.length);\ndouble before = VectorMath.clipNorm(a, 1.0);",
       "see": [
-       "jsl.core.MatMul",
-       "jsl.core.Matrix",
-       "jsl.ml.DistanceMetric"
+       "basalt.core.MatMul",
+       "basalt.core.Matrix",
+       "basalt.ml.DistanceMetric"
       ]
      }
     },
     {
-     "qualified": "jsl.core.NativeKernels.HistogramSessionHandle",
+     "qualified": "basalt.core.NativeKernels.HistogramSessionHandle",
      "simple_qualified": "NativeKernels.HistogramSessionHandle",
      "kind": "class",
      "modifiers": [
@@ -1110,8 +1110,8 @@
       ],
       "example": "long session = NativeKernels.createHistogramSession(bins, gradients, hessians, features, maxBins);\ntry (NativeKernels.HistogramSessionHandle handle =\n        new NativeKernels.HistogramSessionHandle(session)) {\n    NativeKernels.updateHistogramSession(handle.handle(), gradients, hessians);\n}",
       "see": [
-       "jsl.core.NativeKernels",
-       "jsl.ml.HistogramGradientBoosting"
+       "basalt.core.NativeKernels",
+       "basalt.ml.HistogramGradientBoosting"
       ]
      }
     }

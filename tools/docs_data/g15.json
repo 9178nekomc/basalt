@@ -3,10 +3,10 @@
  "title": "神经网络层与序列（1/3）",
  "modules": [
   {
-   "name": "jsl.nn",
+   "name": "basalt.nn",
    "types": [
     {
-     "qualified": "jsl.nn.Activation",
+     "qualified": "basalt.nn.Activation",
      "simple_qualified": "Activation",
      "kind": "enum",
      "modifiers": [
@@ -140,13 +140,13 @@
       ],
       "example": "Dense output = Dense.builder()\n        .units(3)\n        .activation(Activation.SOFTMAX)\n        .seed(7L)\n        .build();\n\nTensor<BC> features = Tensor.ofBC(2, 4, new double[2 * 4]);\nTensor<BC> probabilities = output.forward(features);\n\nDense hidden = Dense.builder()\n        .units(8)\n        .activation(Activation.RELU)\n        .build();",
       "see": [
-       "jsl.nn.Dense",
-       "jsl.nn.Conv2D"
+       "basalt.nn.Dense",
+       "basalt.nn.Conv2D"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.CNN",
+     "qualified": "basalt.nn.CNN",
      "simple_qualified": "CNN",
      "kind": "class",
      "modifiers": [
@@ -281,7 +281,7 @@
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "返回模型种类，用于 .jsl 容器头部。",
+        "summary": "返回模型种类，用于 .bsl 容器头部。",
         "returns": "常量 ModelKind.CNN"
        }
       },
@@ -303,7 +303,7 @@
          "转发给 ModelSerializer.writeCNN，依次写出损失序号、优化器类型与四个超参、层数以及每层的配置与已初始化的权重。"
         ],
         "params": {
-         "writer": "目标写入器，容器头由 jsl.io.ModelCodec 负责"
+         "writer": "目标写入器，容器头由 basalt.io.ModelCodec 负责"
         },
         "notes": [
          "尚未见过输入的层只写结构，参数以 -1 标记，加载后需重新 forward 才会初始化权重"
@@ -326,15 +326,15 @@
       ],
       "example": "CNN model = NeuralNetwork.builder()\n        .add(Conv2D.builder().filters(4).kernelSize(3, 3)\n                .activation(Activation.RELU).padding(Padding.SAME).build())\n        .add(MaxPooling2D.builder().poolSize(2, 2).build())\n        .add(Flatten.builder().build())\n        .add(Dense.builder().units(3).activation(Activation.SOFTMAX).build())\n        .loss(Loss.CATEGORICAL_CROSSENTROPY)\n        .optimizer(Optimizer.ADAM.withLearningRate(0.01))\n        .build();\n\nTensor<BCHW> features = Tensor.ofBCHW(8, 1, 4, 4, new double[8 * 16]);\ndouble[] labels = new double[8 * 3];\nfor (int row = 0; row < 8; row++) {\n    labels[row * 3] = 1.0;\n}\nTensor<BC> targets = Tensor.ofBC(8, 3, labels);\n\nTrainingHistory history = model.fit(features, targets, 5);\ndouble finalLoss = history.lastLoss();",
       "see": [
-       "jsl.nn.NeuralNetwork",
-       "jsl.nn.Loss",
-       "jsl.nn.ModelSerializer",
-       "jsl.nn.TrainingHistory"
+       "basalt.nn.NeuralNetwork",
+       "basalt.nn.Loss",
+       "basalt.nn.ModelSerializer",
+       "basalt.nn.TrainingHistory"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.Conv2D",
+     "qualified": "basalt.nn.Conv2D",
      "simple_qualified": "Conv2D",
      "kind": "class",
      "modifiers": [
@@ -471,16 +471,16 @@
       ],
       "example": "Conv2D conv = Conv2D.builder()\n        .filters(8)\n        .kernelSize(3, 3)\n        .strides(1, 1)\n        .padding(Padding.SAME)\n        .activation(Activation.RELU)\n        .seed(7L)\n        .build();\n\nTensor<BCHW> input = Tensor.ofBCHW(2, 3, 8, 8, new double[2 * 3 * 8 * 8]);\nTensor<BCHW> featureMap = conv.forward(input);\n\nTensor<BCHW> gradient = Tensor.zerosBCHW(2, 8, 8, 8);\nconv.backward(gradient);\nconv.update(new OptimizerConfig(Optimizer.ADAM, 0.001, 0.9, 0.999, 1e-8));",
       "see": [
-       "jsl.nn.Layer",
-       "jsl.nn.Padding",
-       "jsl.nn.MaxPooling2D",
-       "jsl.nn.Flatten",
-       "jsl.nn.Activation"
+       "basalt.nn.Layer",
+       "basalt.nn.Padding",
+       "basalt.nn.MaxPooling2D",
+       "basalt.nn.Flatten",
+       "basalt.nn.Activation"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.Dense",
+     "qualified": "basalt.nn.Dense",
      "simple_qualified": "Dense",
      "kind": "class",
      "modifiers": [
@@ -648,15 +648,15 @@
       ],
       "example": "Dense dense = Dense.builder()\n        .units(10)\n        .activation(Activation.RELU)\n        .seed(1L)\n        .build();\n\nTensor<BC> input = Tensor.ofBC(4, 6, new double[4 * 6]);\nTensor<BC> hidden = dense.forward(input);\n\ndense.backward(Tensor.zerosBC(4, 10));\ndense.update(Optimizer.SGD.withLearningRate(0.01));",
       "see": [
-       "jsl.nn.Layer",
-       "jsl.nn.Activation",
-       "jsl.nn.ParameterRef",
-       "jsl.nn.OptimizerConfig"
+       "basalt.nn.Layer",
+       "basalt.nn.Activation",
+       "basalt.nn.ParameterRef",
+       "basalt.nn.OptimizerConfig"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.Flatten",
+     "qualified": "basalt.nn.Flatten",
      "simple_qualified": "Flatten",
      "kind": "class",
      "modifiers": [
@@ -755,14 +755,14 @@
       ],
       "example": "Flatten flatten = Flatten.builder().build();\n\nTensor<BCHW> featureMap = Tensor.ofBCHW(2, 4, 3, 3, new double[2 * 4 * 3 * 3]);\nTensor<BC> flat = flatten.forward(featureMap);\n\nTensor<BCHW> restored = flatten.backward(flat);",
       "see": [
-       "jsl.nn.Layer",
-       "jsl.nn.Dense",
-       "jsl.nn.Conv2D"
+       "basalt.nn.Layer",
+       "basalt.nn.Dense",
+       "basalt.nn.Conv2D"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.GRU",
+     "qualified": "basalt.nn.GRU",
      "simple_qualified": "GRU",
      "kind": "class",
      "modifiers": [
@@ -973,14 +973,14 @@
       ],
       "example": "GRU gru = GRU.builder().hiddenSize(8).seed(42).build();\nTensor<BSF> input = Tensor.zerosBSF(2, 5, 3);\nTensor<BSF> output = gru.forward(input);\nTensor<BSF> inputGradient = gru.backward(Tensor.zerosBSF(2, 5, 8));\ngru.update(Optimizer.ADAM.withLearningRate(0.01));",
       "see": [
-       "jsl.nn.LSTM",
-       "jsl.nn.VanillaRNN",
-       "jsl.nn.SequenceNetwork"
+       "basalt.nn.LSTM",
+       "basalt.nn.VanillaRNN",
+       "basalt.nn.SequenceNetwork"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.GradientCheck",
+     "qualified": "basalt.nn.GradientCheck",
      "simple_qualified": "GradientCheck",
      "kind": "class",
      "modifiers": [
@@ -1199,14 +1199,14 @@
       ],
       "example": "Layer<BSF, BSF> layer = VanillaRNN.builder().hiddenSize(3).seed(7).build();\ndouble[] values = new double[2 * 3 * 2];\nfor (int i = 0; i < values.length; i++) {\n    values[i] = 0.1 * (i + 1);\n}\ndouble[] weights = new double[2 * 3 * 3];\njava.util.Arrays.fill(weights, 1.0);\n\nTensor<BSF> input = Tensor.ofBSF(2, 3, 2, values);\nTensor<BSF> upstream = Tensor.ofBSF(2, 3, 3, weights);\nGradientCheck.Report report = GradientCheck.checkLayer(layer, input, upstream, 1e-6);\nboolean ok = report.passed(1e-6);",
       "see": [
-       "jsl.nn.ParameterRef",
-       "jsl.nn.Layer",
-       "jsl.nn.SequenceNetwork"
+       "basalt.nn.ParameterRef",
+       "basalt.nn.Layer",
+       "basalt.nn.SequenceNetwork"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.LSTM",
+     "qualified": "basalt.nn.LSTM",
      "simple_qualified": "LSTM",
      "kind": "class",
      "modifiers": [
@@ -1417,14 +1417,14 @@
       ],
       "example": "LSTM lstm = LSTM.builder().hiddenSize(8).seed(42).build();\nTensor<BSF> input = Tensor.zerosBSF(2, 5, 3);\nTensor<BSF> output = lstm.forward(input);\nTensor<BSF> inputGradient = lstm.backward(Tensor.zerosBSF(2, 5, 8));\nlstm.update(Optimizer.ADAM.withLearningRate(0.01));",
       "see": [
-       "jsl.nn.GRU",
-       "jsl.nn.SequenceNetwork",
-       "jsl.nn.SequencePool"
+       "basalt.nn.GRU",
+       "basalt.nn.SequenceNetwork",
+       "basalt.nn.SequencePool"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.Layer",
+     "qualified": "basalt.nn.Layer",
      "simple_qualified": "Layer",
      "kind": "interface",
      "modifiers": [
@@ -1453,15 +1453,15 @@
       ],
       "example": "Layer<BC, BC> identity = new Layer<>() {\n    @Override\n    public Tensor<BC> forward(Tensor<BC> input) {\n        return input;\n    }\n\n    @Override\n    public Tensor<BC> backward(Tensor<BC> gradient) {\n        return gradient;\n    }\n};\n\nTensor<BC> output = identity.forward(Tensor.zerosBC(2, 3));\nint parameterCount = identity.parameters().size();",
       "see": [
-       "jsl.core.Layout",
-       "jsl.core.Tensor",
-       "jsl.nn.Dense",
-       "jsl.nn.Conv2D"
+       "basalt.core.Layout",
+       "basalt.core.Tensor",
+       "basalt.nn.Dense",
+       "basalt.nn.Conv2D"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.Loss",
+     "qualified": "basalt.nn.Loss",
      "simple_qualified": "Loss",
      "kind": "enum",
      "modifiers": [
@@ -1522,13 +1522,13 @@
       ],
       "example": "Tensor<BC> prediction = Tensor.ofBC(2, 3,\n        0.7, 0.2, 0.1,\n        0.1, 0.8, 0.1);\nTensor<BC> target = Tensor.ofBC(2, 3,\n        1.0, 0.0, 0.0,\n        0.0, 1.0, 0.0);\n\nLossEvaluation evaluation = Loss.CATEGORICAL_CROSSENTROPY.evaluate(prediction, target);\ndouble loss = evaluation.loss();\nboolean hasLogitGradient = evaluation.hasSoftmaxLogitGradient();",
       "see": [
-       "jsl.nn.LossEvaluation",
-       "jsl.nn.CNN"
+       "basalt.nn.LossEvaluation",
+       "basalt.nn.CNN"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.LossEvaluation",
+     "qualified": "basalt.nn.LossEvaluation",
      "simple_qualified": "LossEvaluation",
      "kind": "record",
      "modifiers": [
@@ -1600,13 +1600,13 @@
        "标准三参构造器同样可用，用于显式携带 softmax-logit 梯度"
       ],
       "see": [
-       "jsl.nn.Loss",
-       "jsl.nn.CNN"
+       "basalt.nn.Loss",
+       "basalt.nn.CNN"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.MaxPooling2D",
+     "qualified": "basalt.nn.MaxPooling2D",
      "simple_qualified": "MaxPooling2D",
      "kind": "class",
      "modifiers": [
@@ -1712,9 +1712,9 @@
       ],
       "example": "MaxPooling2D pool = MaxPooling2D.builder()\n        .poolSize(2, 2)\n        .strides(2, 2)\n        .build();\n\nTensor<BCHW> input = Tensor.ofBCHW(1, 1, 4, 4, new double[16]);\nTensor<BCHW> pooled = pool.forward(input);\n\nTensor<BCHW> gradient = Tensor.zerosBCHW(1, 1, 2, 2);\nTensor<BCHW> inputGradient = pool.backward(gradient);",
       "see": [
-       "jsl.nn.Layer",
-       "jsl.nn.Conv2D",
-       "jsl.nn.Flatten"
+       "basalt.nn.Layer",
+       "basalt.nn.Conv2D",
+       "basalt.nn.Flatten"
       ]
      }
     }

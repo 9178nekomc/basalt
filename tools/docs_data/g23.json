@@ -3,10 +3,10 @@
  "title": "并发推理",
  "modules": [
   {
-   "name": "jsl.concurrent",
+   "name": "basalt.concurrent",
    "types": [
     {
-     "qualified": "jsl.concurrent.InferenceEngine",
+     "qualified": "basalt.concurrent.InferenceEngine",
      "simple_qualified": "InferenceEngine",
      "kind": "class",
      "modifiers": [
@@ -165,10 +165,10 @@
        "closed 标志是普通 boolean 字段，关闭与并发提交之间没有额外同步，不建议跨线程关闭。",
        "close() 调用 ExecutorService.close()，会等待已提交任务结束。"
       ],
-      "example": "Matrix train = Matrix.fromRows(new double[][]{{1.0, 2.0}, {3.0, 4.0}, {5.0, 7.0}});\nEstimator model = jsl.ml.JSL.fit(jsl.ml.JSL.Algorithm.RIDGE, train, new double[]{1.0, 2.0, 3.0});\ntry (InferenceEngine engine = new InferenceEngine(4)) {\n    List<double[]> out = engine.predict(model, List.of(train, train));\n    System.out.println(out.size());\n}",
+      "example": "Matrix train = Matrix.fromRows(new double[][]{{1.0, 2.0}, {3.0, 4.0}, {5.0, 7.0}});\nEstimator model = basalt.ml.Estimators.fit(basalt.ml.Estimators.Algorithm.RIDGE, train, new double[]{1.0, 2.0, 3.0});\ntry (InferenceEngine engine = new InferenceEngine(4)) {\n    List<double[]> out = engine.predict(model, List.of(train, train));\n    System.out.println(out.size());\n}",
       "see": [
-       "jsl.ml.Estimator",
-       "jsl.core.Matrix"
+       "basalt.ml.Estimator",
+       "basalt.core.Matrix"
       ]
      }
     }

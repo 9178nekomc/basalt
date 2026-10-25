@@ -3,10 +3,10 @@
  "title": "神经网络层与序列（2/3）",
  "modules": [
   {
-   "name": "jsl.nn",
+   "name": "basalt.nn",
    "types": [
     {
-     "qualified": "jsl.nn.ModelSerializer",
+     "qualified": "basalt.nn.ModelSerializer",
      "simple_qualified": "ModelSerializer",
      "kind": "class",
      "modifiers": [
@@ -38,7 +38,7 @@
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "把 CNN 写入 .jsl 文件。",
+        "summary": "把 CNN 写入 .bsl 文件。",
         "body": [
          "先让模型把载荷写进内存缓冲，再由 ModelCodec 补齐 24 字节头部并一次性写入文件；目标文件已存在时被截断覆盖。"
         ],
@@ -48,7 +48,7 @@
         },
         "throws": {
          "UncheckedIOException": "文件打开或写入失败",
-         "ModelFormatException": "载荷长度超出 .jsl 容器上限",
+         "ModelFormatException": "载荷长度超出 .bsl 容器上限",
          "NullPointerException": "model 为 null"
         },
         "notes": [
@@ -69,7 +69,7 @@
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "从 .jsl 文件读出 CNN。",
+        "summary": "从 .bsl 文件读出 CNN。",
         "params": {
          "source": "源文件路径"
         },
@@ -144,9 +144,9 @@
       }
      ],
      "doc": {
-      "summary": "CNN 的 .jsl 持久化门面，负责层载荷的读写。",
+      "summary": "CNN 的 .bsl 持久化门面，负责层载荷的读写。",
       "body": [
-       "容器格式由 jsl.io.ModelCodec 负责，包含 magic、版本号与 CRC32C 校验和；本类只处理 CNN 载荷：损失序号、优化器类型与四个超参、层数，然后逐层写类型标记、配置，以及已初始化层的参数值。",
+       "容器格式由 basalt.io.ModelCodec 负责，包含 magic、版本号与 CRC32C 校验和；本类只处理 CNN 载荷：损失序号、优化器类型与四个超参、层数，然后逐层写类型标记、配置，以及已初始化层的参数值。",
        "readCNN 重建各层后校验拓扑：必须恰好出现一个 Flatten，Flatten 之前只允许 Conv2D 与 MaxPooling2D，之后只允许 Dense，层数须落在 1 到 100000 之间。层类型标记为 1 到 4，分别对应卷积、最大池化、展平与全连接。"
       ],
       "notes": [
@@ -155,15 +155,15 @@
        "参数只在层已见过输入（inputChannels 或 inputFeatures 大于 0）时写出，未初始化的层以 -1 标记，加载后需重新前向才会生成权重",
        "损失与优化器以枚举序号写入，调整枚举常量顺序会使旧文件解析错误"
       ],
-      "example": "CNN model = NeuralNetwork.builder()\n        .add(Conv2D.builder().filters(4).kernelSize(3, 3).padding(Padding.SAME).build())\n        .add(MaxPooling2D.builder().poolSize(2, 2).build())\n        .add(Flatten.builder().build())\n        .add(Dense.builder().units(3).activation(Activation.SOFTMAX).build())\n        .build();\nmodel.predict(Tensor.ofBCHW(2, 1, 4, 4, new double[2 * 16]));\n\nPath path = Path.of(\"model.jsl\");\nModelSerializer.save(path, model);\nCNN restored = ModelSerializer.loadCNN(path);",
+      "example": "CNN model = NeuralNetwork.builder()\n        .add(Conv2D.builder().filters(4).kernelSize(3, 3).padding(Padding.SAME).build())\n        .add(MaxPooling2D.builder().poolSize(2, 2).build())\n        .add(Flatten.builder().build())\n        .add(Dense.builder().units(3).activation(Activation.SOFTMAX).build())\n        .build();\nmodel.predict(Tensor.ofBCHW(2, 1, 4, 4, new double[2 * 16]));\n\nPath path = Path.of(\"model.bsl\");\nModelSerializer.save(path, model);\nCNN restored = ModelSerializer.loadCNN(path);",
       "see": [
-       "jsl.nn.CNN",
-       "jsl.io.ModelCodec"
+       "basalt.nn.CNN",
+       "basalt.io.ModelCodec"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.NeuralNetwork",
+     "qualified": "basalt.nn.NeuralNetwork",
      "simple_qualified": "NeuralNetwork",
      "kind": "class",
      "modifiers": [
@@ -207,15 +207,15 @@
       ],
       "example": "CNN model = NeuralNetwork.builder()\n        .add(Conv2D.builder().filters(8).kernelSize(3, 3).activation(Activation.RELU).build())\n        .add(MaxPooling2D.builder().poolSize(2, 2).build())\n        .add(Flatten.builder().build())\n        .add(Dense.builder().units(10).activation(Activation.SOFTMAX).build())\n        .loss(Loss.CATEGORICAL_CROSSENTROPY)\n        .optimizer(Optimizer.SGD.withLearningRate(0.05))\n        .build();\nint layers = model.layerCount();",
       "see": [
-       "jsl.nn.CNN",
-       "jsl.nn.Conv2D",
-       "jsl.nn.Dense",
-       "jsl.nn.Flatten"
+       "basalt.nn.CNN",
+       "basalt.nn.Conv2D",
+       "basalt.nn.Dense",
+       "basalt.nn.Flatten"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.Optimizer",
+     "qualified": "basalt.nn.Optimizer",
      "simple_qualified": "Optimizer",
      "kind": "enum",
      "modifiers": [
@@ -308,19 +308,19 @@
        "SGD 直接执行 values -= learningRate × gradient，且不递增步计数；ADAM 与 ADAMW 走同一条偏差修正路径，即维护一阶与二阶矩的指数滑动平均，再除以 1 - beta^step。当前内核没有实现解耦权重衰减，两个常量在 Parameter.update 中的分支相同。"
       ],
       "notes": [
-       "枚举序号会写进 .jsl 载荷，调整常量顺序会破坏旧文件的兼容性",
+       "枚举序号会写进 .bsl 载荷，调整常量顺序会破坏旧文件的兼容性",
        "步计数只在非 SGD 更新时递增，混用 SGD 与 Adam 时偏差修正会沿用此前计数",
        "beta 与 epsilon 对 SGD 分支没有作用，但仍须通过 OptimizerConfig 的校验"
       ],
       "example": "OptimizerConfig adam = Optimizer.ADAM.withLearningRate(0.001);\nOptimizerConfig sgd = Optimizer.SGD.withLearningRate(0.05);\nOptimizerConfig custom = new OptimizerConfig(Optimizer.ADAMW, 0.002, 0.85, 0.995, 1e-7);",
       "see": [
-       "jsl.nn.OptimizerConfig",
-       "jsl.nn.Parameter"
+       "basalt.nn.OptimizerConfig",
+       "basalt.nn.Parameter"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.OptimizerConfig",
+     "qualified": "basalt.nn.OptimizerConfig",
      "simple_qualified": "OptimizerConfig",
      "kind": "record",
      "modifiers": [
@@ -347,13 +347,13 @@
        "序列化时按 optimizer 序号与四个 double 写入，加载时同样经过构造器校验"
       ],
       "see": [
-       "jsl.nn.Optimizer",
-       "jsl.nn.Parameter"
+       "basalt.nn.Optimizer",
+       "basalt.nn.Parameter"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.Padding",
+     "qualified": "basalt.nn.Padding",
      "simple_qualified": "Padding",
      "kind": "enum",
      "modifiers": [
@@ -403,13 +403,13 @@
       ],
       "example": "Conv2D same = Conv2D.builder()\n        .filters(4)\n        .kernelSize(3, 3)\n        .padding(Padding.SAME)\n        .build();\n\nConv2D valid = Conv2D.builder()\n        .filters(4)\n        .kernelSize(3, 3)\n        .padding(Padding.VALID)\n        .build();\n\nTensor<BCHW> input = Tensor.zerosBCHW(1, 2, 7, 7);\nint sameWidth = same.forward(input).dimension(3);\nint validWidth = valid.forward(input).dimension(3);",
       "see": [
-       "jsl.nn.Conv2D",
-       "jsl.nn.Conv2D.Builder"
+       "basalt.nn.Conv2D",
+       "basalt.nn.Conv2D.Builder"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.ParameterRef",
+     "qualified": "basalt.nn.ParameterRef",
      "simple_qualified": "ParameterRef",
      "kind": "record",
      "modifiers": [
@@ -491,15 +491,15 @@
       ],
       "example": "Layer<BSF, BSF> layer = VanillaRNN.builder().hiddenSize(4).build();\nList<ParameterRef> parameters = layer.parameters();\nfor (ParameterRef parameter : parameters) {\n    double[] values = parameter.values();\n    double[] gradient = parameter.gradient();\n    double scale = Math.sqrt(parameter.size());\n    for (int i = 0; i < values.length; i++) {\n        values[i] -= 0.01 * gradient[i] / scale;\n    }\n}",
       "see": [
-       "jsl.nn.Layer",
-       "jsl.nn.GradientCheck",
-       "jsl.nn.SequenceNetwork",
-       "jsl.nn.Parameter"
+       "basalt.nn.Layer",
+       "basalt.nn.GradientCheck",
+       "basalt.nn.SequenceNetwork",
+       "basalt.nn.Parameter"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.SelfAttention",
+     "qualified": "basalt.nn.SelfAttention",
      "simple_qualified": "SelfAttention",
      "kind": "class",
      "modifiers": [
@@ -713,14 +713,14 @@
       ],
       "example": "SelfAttention attention = SelfAttention.builder()\n        .dimension(4)\n        .causal(true)\n        .seed(7)\n        .build();\nTensor<BSF> input = Tensor.zerosBSF(2, 6, 4);\nTensor<BSF> output = attention.forward(input);\nTensor<BSF> inputGradient = attention.backward(Tensor.zerosBSF(2, 6, 4));\nattention.update(Optimizer.ADAM.withLearningRate(0.001));",
       "see": [
-       "jsl.nn.LSTM",
-       "jsl.nn.SequenceNetwork",
-       "jsl.nn.SequencePool"
+       "basalt.nn.LSTM",
+       "basalt.nn.SequenceNetwork",
+       "basalt.nn.SequencePool"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.SequenceNetwork",
+     "qualified": "basalt.nn.SequenceNetwork",
      "simple_qualified": "SequenceNetwork",
      "kind": "class",
      "modifiers": [
@@ -1083,15 +1083,15 @@
       ],
       "example": "SequenceNetwork network = SequenceNetwork.builder()\n        .add(LSTM.builder().hiddenSize(8).seed(1).build())\n        .add(SelfAttention.builder().dimension(8).causal(true).seed(2).build())\n        .pooling(SequencePool.Pooling.LAST)\n        .head(Dense.builder().units(2).activation(Activation.SOFTMAX).seed(3).build())\n        .loss(Loss.CATEGORICAL_CROSSENTROPY)\n        .optimizer(Optimizer.ADAM.withLearningRate(0.01))\n        .gradientClip(5.0)\n        .build();\nTensor<BSF> features = Tensor.zerosBSF(16, 10, 4);\nTensor<BC> scores = network.predict(features);",
       "see": [
-       "jsl.nn.SequencePool",
-       "jsl.nn.LSTM",
-       "jsl.nn.Dense",
-       "jsl.nn.Loss"
+       "basalt.nn.SequencePool",
+       "basalt.nn.LSTM",
+       "basalt.nn.Dense",
+       "basalt.nn.Loss"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.SequencePool",
+     "qualified": "basalt.nn.SequencePool",
      "simple_qualified": "SequencePool",
      "kind": "class",
      "modifiers": [
@@ -1209,13 +1209,13 @@
       ],
       "example": "SequencePool pool = SequencePool.of(SequencePool.Pooling.MEAN);\nTensor<BSF> sequence = Tensor.zerosBSF(4, 6, 3);\nTensor<BC> pooled = pool.forward(sequence);\nTensor<BSF> gradient = pool.backward(Tensor.zerosBC(4, 3));",
       "see": [
-       "jsl.nn.SequenceNetwork",
-       "jsl.nn.LSTM"
+       "basalt.nn.SequenceNetwork",
+       "basalt.nn.LSTM"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.TrainingHistory",
+     "qualified": "basalt.nn.TrainingHistory",
      "simple_qualified": "TrainingHistory",
      "kind": "record",
      "modifiers": [
@@ -1280,12 +1280,12 @@
        "由 CNN.fit 与 SequenceNetwork.fit 返回，长度分别等于 epochs 与轮数"
       ],
       "see": [
-       "jsl.nn.CNN"
+       "basalt.nn.CNN"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.VanillaRNN",
+     "qualified": "basalt.nn.VanillaRNN",
      "simple_qualified": "VanillaRNN",
      "kind": "class",
      "modifiers": [
@@ -1476,14 +1476,14 @@
       ],
       "example": "VanillaRNN rnn = VanillaRNN.builder().hiddenSize(8).seed(42).build();\nTensor<BSF> input = Tensor.zerosBSF(2, 5, 3);\nTensor<BSF> output = rnn.forward(input);\nTensor<BSF> inputGradient = rnn.backward(Tensor.zerosBSF(2, 5, 8));\nrnn.update(Optimizer.SGD.withLearningRate(0.05));",
       "see": [
-       "jsl.nn.LSTM",
-       "jsl.nn.GRU",
-       "jsl.nn.SequenceNetwork"
+       "basalt.nn.LSTM",
+       "basalt.nn.GRU",
+       "basalt.nn.SequenceNetwork"
       ]
      }
     },
     {
-     "qualified": "jsl.nn.Conv2D.Builder",
+     "qualified": "basalt.nn.Conv2D.Builder",
      "simple_qualified": "Conv2D.Builder",
      "kind": "class",
      "modifiers": [
@@ -1688,9 +1688,9 @@
       ],
       "example": "Conv2D conv = Conv2D.builder()\n        .filters(16)\n        .kernelSize(5, 5)\n        .strides(2, 2)\n        .padding(Padding.SAME)\n        .activation(Activation.GELU)\n        .seed(2024L)\n        .build();",
       "see": [
-       "jsl.nn.Conv2D",
-       "jsl.nn.Padding",
-       "jsl.nn.Activation"
+       "basalt.nn.Conv2D",
+       "basalt.nn.Padding",
+       "basalt.nn.Activation"
       ]
      }
     }

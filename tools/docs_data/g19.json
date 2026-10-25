@@ -3,10 +3,10 @@
  "title": "eager 张量与模块（1/4）",
  "modules": [
   {
-   "name": "jsl.torch",
+   "name": "basalt.torch",
    "types": [
     {
-     "qualified": "jsl.torch.Activation",
+     "qualified": "basalt.torch.Activation",
      "simple_qualified": "Activation",
      "kind": "class",
      "modifiers": [
@@ -144,14 +144,14 @@
        "激活由原生内核逐元素计算，输出是新分配的张量，梯度按元素导数回传。"
       ],
       "see": [
-       "jsl.torch.Module",
-       "jsl.torch.Sequential",
-       "jsl.torch.Activation.Kind"
+       "basalt.torch.Module",
+       "basalt.torch.Sequential",
+       "basalt.torch.Activation.Kind"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.AdamW",
+     "qualified": "basalt.torch.AdamW",
      "simple_qualified": "AdamW",
      "kind": "class",
      "modifiers": [
@@ -317,14 +317,14 @@
        "同一参数不应同时交给两个优化器：矩缓冲按张量地址存放在上下文中，后创建者会覆盖前者。"
       ],
       "see": [
-       "jsl.torch.Optimizer",
-       "jsl.torch.SGD",
-       "jsl.torch.Tensor#adam(float, float, float, float, float, long)"
+       "basalt.torch.Optimizer",
+       "basalt.torch.SGD",
+       "basalt.torch.Tensor#adam(float, float, float, float, float, long)"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.BCEWithLogitsLoss",
+     "qualified": "basalt.torch.BCEWithLogitsLoss",
      "simple_qualified": "BCEWithLogitsLoss",
      "kind": "class",
      "modifiers": [
@@ -385,16 +385,16 @@
        "返回张量在 prediction 上是线性的替代图，一阶梯度正确，但二阶导数不等于真实 BCE 的 Hessian。",
        "无状态、无可训练参数，可复用同一实例。"
       ],
-      "example": "try (JSL jsl = JSL.create()) {\n    BCEWithLogitsLoss criterion = new BCEWithLogitsLoss();\n    Tensor logits = jsl.randn(4, 1);\n    Tensor target = jsl.zeros(4, 1);   // 二分类标签，元素取 0 或 1\n    Tensor loss = criterion.loss(logits, target);\n    loss.backward();\n}",
+      "example": "try (Basalt jsl = Basalt.create()) {\n    BCEWithLogitsLoss criterion = new BCEWithLogitsLoss();\n    Tensor logits = basalt.randn(4, 1);\n    Tensor target = basalt.zeros(4, 1);   // 二分类标签，元素取 0 或 1\n    Tensor loss = criterion.loss(logits, target);\n    loss.backward();\n}",
       "see": [
-       "jsl.torch.Loss",
-       "jsl.torch.CrossEntropyLoss",
-       "jsl.torch.Tensor#bceWithLogitsLoss(Tensor)"
+       "basalt.torch.Loss",
+       "basalt.torch.CrossEntropyLoss",
+       "basalt.torch.Tensor#bceWithLogitsLoss(Tensor)"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.BatchNorm2d",
+     "qualified": "basalt.torch.BatchNorm2d",
      "simple_qualified": "BatchNorm2d",
      "kind": "class",
      "modifiers": [
@@ -621,14 +621,14 @@
        "在从未训练过的模块上直接 eval()，归一化使用均值 0、方差 1，输出近似为 gamma·x + beta。"
       ],
       "see": [
-       "jsl.torch.LayerNorm",
-       "jsl.torch.Module#train()",
-       "jsl.torch.Tensor#batchNorm2d"
+       "basalt.torch.LayerNorm",
+       "basalt.torch.Module#train()",
+       "basalt.torch.Tensor#batchNorm2d"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.Checkpoint",
+     "qualified": "basalt.torch.Checkpoint",
      "simple_qualified": "Checkpoint",
      "kind": "class",
      "modifiers": [
@@ -863,7 +863,7 @@
      "doc": {
       "summary": "训练检查点的保存与恢复",
       "body": [
-       "save 把模块的 stateDict、epoch、loss、优化器学习率与 AdamW 步数写进单个二进制文件：魔数 0x4A534C4B（“JSLK”）、版本 1，随后是 epoch、loss、学习率、步数，再逐项写入名称长度 + UTF-8 名称 + 元素个数 + 以 double 存储的数值。",
+       "save 把模块的 stateDict、epoch、loss、优化器学习率与 AdamW 步数写进单个二进制文件：魔数 0x42534C4B（“BasaltK”）、版本 1，随后是 epoch、loss、学习率、步数，再逐项写入名称长度 + UTF-8 名称 + 元素个数 + 以 double 存储的数值。",
        "restore 先 load 再把参数表灌回模块：文件中学习率大于 0 时写回优化器，优化器是 AdamW 时同时恢复步数计数器，返回的 Checkpoint 提供 epoch 与 loss，供续训时对齐轮次与日志。",
        "AdamW 的一阶、二阶矩缓冲保存在原生上下文里、按张量句柄索引，不进入检查点；恢复后矩缓冲从零开始累积，偏差校正按恢复出的步数计算，因此续训初期的更新幅度与不间断训练并不相同。"
       ],
@@ -873,16 +873,16 @@
        "load 校验魔数与版本，读完后检查没有剩余字节，任一不符抛 ModelFormatException。",
        "恢复要求模块的 namedParameters 键集与文件一致，缺键抛 IllegalArgumentException；多余键被忽略。"
       ],
-      "example": "try (JSL jsl = JSL.create()) {\n    Linear model = new Linear(jsl.context(), 16, 4);\n    AdamW optimizer = new AdamW(model.parameters(), 1e-3f);\n    // ... 训练若干轮\n    Checkpoint.save(Path.of(\"ckpt.bin\"), model, optimizer, 3, 0.42f);\n    Checkpoint ckpt = Checkpoint.restore(Path.of(\"ckpt.bin\"), model, optimizer);\n    int nextEpoch = ckpt.epoch() + 1;\n}",
+      "example": "try (Basalt jsl = Basalt.create()) {\n    Linear model = new Linear(basalt.context(), 16, 4);\n    AdamW optimizer = new AdamW(model.parameters(), 1e-3f);\n    // ... 训练若干轮\n    Checkpoint.save(Path.of(\"ckpt.bin\"), model, optimizer, 3, 0.42f);\n    Checkpoint ckpt = Checkpoint.restore(Path.of(\"ckpt.bin\"), model, optimizer);\n    int nextEpoch = ckpt.epoch() + 1;\n}",
       "see": [
-       "jsl.torch.Module#stateDict()",
-       "jsl.torch.AdamW#stepCount()",
-       "jsl.torch.CosineAnnealingLR"
+       "basalt.torch.Module#stateDict()",
+       "basalt.torch.AdamW#stepCount()",
+       "basalt.torch.CosineAnnealingLR"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.ComputationGraph",
+     "qualified": "basalt.torch.ComputationGraph",
      "simple_qualified": "ComputationGraph",
      "kind": "class",
      "modifiers": [
@@ -984,7 +984,7 @@
         },
         "returns": "以输出名为键的 LinkedHashMap，顺序与 outputNames 一致",
         "throws": {
-         "JSLParameterException": "inputs 为 null",
+         "BasaltParameterException": "inputs 为 null",
          "IllegalArgumentException": "缺少某个必需的输入名"
         },
         "notes": [
@@ -1124,16 +1124,16 @@
        "train()/eval() 与 close() 会传播到所有持有模块的节点；图本身不分配张量，中间结果由各算子按需创建。",
        "执行顺序在 build 时确定且不可变；vertices() 保持登记顺序，与 executionOrder() 的顺序不一定相同。"
       ],
-      "example": "try (JSL jsl = JSL.create()) {\n    ComputationGraph graph = ComputationGraph.builder()\n            .addInputs(\"x\")\n            .addLayer(\"conv\", new Conv2d(jsl.context(), 3, 8, 3, 3, 1, 1, 1, 1, true, 0L), \"x\")\n            .addLayer(\"block\", new Conv2d(jsl.context(), 8, 8, 3, 3, 1, 1, 1, 1, true, 0L), \"conv\")\n            .addAddVertex(\"res\", \"conv\", \"block\")   // 残差：把 conv 的输出与 block 的输出相加\n            .setOutputs(\"res\")\n            .build();\n    Tensor y = graph.forward(jsl.randn(2, 3, 16, 16));\n    graph.close();\n}",
+      "example": "try (Basalt jsl = Basalt.create()) {\n    ComputationGraph graph = ComputationGraph.builder()\n            .addInputs(\"x\")\n            .addLayer(\"conv\", new Conv2d(basalt.context(), 3, 8, 3, 3, 1, 1, 1, 1, true, 0L), \"x\")\n            .addLayer(\"block\", new Conv2d(basalt.context(), 8, 8, 3, 3, 1, 1, 1, 1, true, 0L), \"conv\")\n            .addAddVertex(\"res\", \"conv\", \"block\")   // 残差：把 conv 的输出与 block 的输出相加\n            .setOutputs(\"res\")\n            .build();\n    Tensor y = graph.forward(basalt.randn(2, 3, 16, 16));\n    graph.close();\n}",
       "see": [
-       "jsl.torch.Module",
-       "jsl.torch.Sequential",
-       "jsl.torch.ComputationGraph.Builder"
+       "basalt.torch.Module",
+       "basalt.torch.Sequential",
+       "basalt.torch.ComputationGraph.Builder"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.Conv2d",
+     "qualified": "basalt.torch.Conv2d",
      "simple_qualified": "Conv2d",
      "kind": "class",
      "modifiers": [
@@ -1585,16 +1585,16 @@
        "输入通道数必须能被 groups 整除，且 inputChannels/groups 必须等于权重的第二维，否则 Tensor.conv2d 抛 IllegalArgumentException。",
        "偏置通过广播相加实现，会额外产生一个计算图节点；不需要偏置时置 useBias=false 可省去该节点。"
       ],
-      "example": "try (JSL jsl = JSL.create()) {\n    Conv2d conv = new Conv2d(jsl.context(), 3, 16, 3, 3, 1, 1, 1, 1, true, 42L);\n    Tensor input = jsl.randn(4, 3, 32, 32);\n    Tensor output = conv.forward(input);\n    // output 形状为 [4, 16, 32, 32]\n    conv.close();\n}",
+      "example": "try (Basalt jsl = Basalt.create()) {\n    Conv2d conv = new Conv2d(basalt.context(), 3, 16, 3, 3, 1, 1, 1, 1, true, 42L);\n    Tensor input = basalt.randn(4, 3, 32, 32);\n    Tensor output = conv.forward(input);\n    // output 形状为 [4, 16, 32, 32]\n    conv.close();\n}",
       "see": [
-       "jsl.torch.MaxPool2d",
-       "jsl.torch.Flatten",
-       "jsl.torch.Tensor#conv2d"
+       "basalt.torch.MaxPool2d",
+       "basalt.torch.Flatten",
+       "basalt.torch.Tensor#conv2d"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.CosineAnnealingLR",
+     "qualified": "basalt.torch.CosineAnnealingLR",
      "simple_qualified": "CosineAnnealingLR",
      "kind": "class",
      "modifiers": [
@@ -1730,16 +1730,16 @@
        "currentLearningRate() 返回优化器当前的学习率，而不是按公式重算的值；外部改过优化器学习率后两者会不一致。",
        "计数器从 0 开始，第一次 step() 后 t = 1，因此要经过 T_max 次调用才降到 etaMin。"
       ],
-      "example": "try (JSL jsl = JSL.create()) {\n    Linear model = new Linear(jsl.context(), 16, 4);\n    AdamW optimizer = new AdamW(model.parameters(), 1e-3f);\n    CosineAnnealingLR scheduler = new CosineAnnealingLR(optimizer, 100, 1e-5f);\n    for (int epoch = 1; epoch <= 100; epoch++) {\n        // ... 前向、反向\n        optimizer.step();\n        float lr = scheduler.step();\n    }\n}",
+      "example": "try (Basalt jsl = Basalt.create()) {\n    Linear model = new Linear(basalt.context(), 16, 4);\n    AdamW optimizer = new AdamW(model.parameters(), 1e-3f);\n    CosineAnnealingLR scheduler = new CosineAnnealingLR(optimizer, 100, 1e-5f);\n    for (int epoch = 1; epoch <= 100; epoch++) {\n        // ... 前向、反向\n        optimizer.step();\n        float lr = scheduler.step();\n    }\n}",
       "see": [
-       "jsl.torch.LRScheduler",
-       "jsl.torch.StepLR",
-       "jsl.torch.Optimizer#setLearningRate(float)"
+       "basalt.torch.LRScheduler",
+       "basalt.torch.StepLR",
+       "basalt.torch.Optimizer#setLearningRate(float)"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.CrossEntropyLoss",
+     "qualified": "basalt.torch.CrossEntropyLoss",
      "simple_qualified": "CrossEntropyLoss",
      "kind": "class",
      "modifiers": [
@@ -1800,14 +1800,14 @@
        "无状态、无可训练参数，可复用同一实例。"
       ],
       "see": [
-       "jsl.torch.Loss",
-       "jsl.torch.MSELoss",
-       "jsl.torch.Tensor#crossEntropy(Tensor)"
+       "basalt.torch.Loss",
+       "basalt.torch.MSELoss",
+       "basalt.torch.Tensor#crossEntropy(Tensor)"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.DepthwiseSeparableConv2d",
+     "qualified": "basalt.torch.DepthwiseSeparableConv2d",
      "simple_qualified": "DepthwiseSeparableConv2d",
      "kind": "class",
      "modifiers": [
@@ -2093,16 +2093,16 @@
        "train()/eval() 与 close() 同时作用于两段；模块自身不持有额外张量。",
        "计算量约为普通 k×k 卷积的 1/outputChannels 加 1/(k×k)，代价是通道间信息只在 pointwise 段交换。"
       ],
-      "example": "try (JSL jsl = JSL.create()) {\n    DepthwiseSeparableConv2d block =\n            new DepthwiseSeparableConv2d(jsl.context(), 32, 64, 3, 2, 1, 42L);\n    Tensor y = block.forward(jsl.randn(1, 32, 56, 56));\n    // y 形状为 [1, 64, 28, 28]\n    block.close();\n}",
+      "example": "try (Basalt jsl = Basalt.create()) {\n    DepthwiseSeparableConv2d block =\n            new DepthwiseSeparableConv2d(basalt.context(), 32, 64, 3, 2, 1, 42L);\n    Tensor y = block.forward(basalt.randn(1, 32, 56, 56));\n    // y 形状为 [1, 64, 28, 28]\n    block.close();\n}",
       "see": [
-       "jsl.torch.Conv2d",
-       "jsl.torch.BatchNorm2d",
-       "jsl.torch.Activation"
+       "basalt.torch.Conv2d",
+       "basalt.torch.BatchNorm2d",
+       "basalt.torch.Activation"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.Dropout",
+     "qualified": "basalt.torch.Dropout",
      "simple_qualified": "Dropout",
      "kind": "class",
      "modifiers": [
@@ -2218,13 +2218,13 @@
        "内部 seed 可变，同一实例不宜跨线程并发调用 forward。"
       ],
       "see": [
-       "jsl.torch.Module#train()",
-       "jsl.torch.Tensor#dropout"
+       "basalt.torch.Module#train()",
+       "basalt.torch.Tensor#dropout"
       ]
      }
     },
     {
-     "qualified": "jsl.torch.Embedding",
+     "qualified": "basalt.torch.Embedding",
      "simple_qualified": "Embedding",
      "kind": "class",
      "modifiers": [
@@ -2327,7 +2327,7 @@
         },
         "returns": "形状为 input.shape() 末尾追加 dimension 的新张量",
         "throws": {
-         "JSLRuntimeException": "索引非有限，或落在 [0, vocabularySize) 之外（由原生内核校验）"
+         "BasaltRuntimeException": "索引非有限，或落在 [0, vocabularySize) 之外（由原生内核校验）"
         },
         "notes": [
          "输出不复制权重之外的数据，行内容与权重对应行逐元素相同。"
@@ -2384,8 +2384,8 @@
        "反向传播按索引做散射累加，同一索引在输入中出现多次时梯度相加。"
       ],
       "see": [
-       "jsl.torch.Linear",
-       "jsl.torch.Tensor#embedding"
+       "basalt.torch.Linear",
+       "basalt.torch.Tensor#embedding"
       ]
      }
     }

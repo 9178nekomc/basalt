@@ -1,7 +1,7 @@
 //! Error type shared by the tensor engine and the JNI boundary.
 //!
 //! The numeric codes are part of the Java contract: every native entry point returns `0` on
-//! success and a negative code on failure, and also throws the matching `JSLRuntimeException`
+//! success and a negative code on failure, and also throws the matching `BasaltRuntimeException`
 //! subclass with the same message so a Java caller cannot accidentally ignore a failed operation.
 
 use std::fmt;
@@ -59,11 +59,11 @@ impl NativeError {
 
     pub fn exception_class(&self) -> &'static str {
         match self.code {
-            STATUS_INVALID => "jsl/JSLParameterException",
-            STATUS_SHAPE => "jsl/JSLShapeException",
-            STATUS_OOM => "jsl/JSLMemoryException",
-            STATUS_UNSUPPORTED => "jsl/JSLUnsupportedOperationException",
-            _ => "jsl/JSLRuntimeException",
+            STATUS_INVALID => "basalt/BasaltParameterException",
+            STATUS_SHAPE => "basalt/BasaltShapeException",
+            STATUS_OOM => "basalt/BasaltMemoryException",
+            STATUS_UNSUPPORTED => "basalt/BasaltUnsupportedOperationException",
+            _ => "basalt/BasaltRuntimeException",
         }
     }
 }

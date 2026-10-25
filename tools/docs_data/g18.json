@@ -3,10 +3,10 @@
  "title": "原生桥接层",
  "modules": [
   {
-   "name": "jsl.nativebridge",
+   "name": "basalt.nativebridge",
    "types": [
     {
-     "qualified": "jsl.nativebridge.CommandQueueBuilder",
+     "qualified": "basalt.nativebridge.CommandQueueBuilder",
      "simple_qualified": "CommandQueueBuilder",
      "kind": "class",
      "modifiers": [
@@ -327,7 +327,7 @@
          "context": "指令与张量所属的上下文；入队句柄都必须属于它"
         },
         "throws": {
-         "JSLRuntimeException": "context 为 null"
+         "BasaltRuntimeException": "context 为 null"
         },
         "notes": [
          "缓冲区按 ByteOrder.nativeOrder() 创建，与原生 OpCommand 的字节序一致。",
@@ -365,7 +365,7 @@
         "returns": "this，便于链式追加",
         "notes": [
          "算子只写数据不改形状，输出必须已按目标形状分配。",
-         "内维不相等或输出形状不符时，原生侧抛 JSLRuntimeException。"
+         "内维不相等或输出形状不符时，原生侧抛 BasaltRuntimeException。"
         ]
        }
       },
@@ -943,7 +943,7 @@
         },
         "returns": "this，便于链式追加",
         "throws": {
-         "JSLRuntimeException": "input、weight 或 output 为 null",
+         "BasaltRuntimeException": "input、weight 或 output 为 null",
          "IllegalArgumentException": "某个句柄属于其他上下文"
         },
         "notes": [
@@ -998,7 +998,7 @@
         },
         "returns": "this，便于链式追加",
         "throws": {
-         "JSLRuntimeException": "input、gamma、beta 或 output 为 null",
+         "BasaltRuntimeException": "input、gamma、beta 或 output 为 null",
          "IllegalArgumentException": "某个句柄属于其他上下文"
         },
         "notes": [
@@ -1377,18 +1377,18 @@
        "非线程安全：指令缓冲、计数与扩容都无同步，跨线程共享同一实例需外部加锁。",
        "execute() 不清空队列；对同一批指令再次执行会因输出已被当前计算图生产而失败，需先调用 NativeContext.clearGraph()。",
        "close() 只清空队列，不释放原生资源，本类未实现 AutoCloseable。",
-       "原生错误以 JSLRuntimeException 抛出；execute 的 JFR 事件在 finally 中提交，失败时同样记录。"
+       "原生错误以 BasaltRuntimeException 抛出；execute 的 JFR 事件在 finally 中提交，失败时同样记录。"
       ],
       "example": "try (NativeContext context = NativeContext.create(4)) {\n    NativeTensorHandle left = context.zeros(2, 3);\n    NativeTensorHandle right = context.zeros(3, 4);\n    NativeTensorHandle product = context.zeros(2, 4);\n    NativeTensorHandle activated = context.zeros(2, 4);\n    CommandQueueBuilder queue = new CommandQueueBuilder(context);\n    queue.matMul(left, right, product)\n            .relu(product, activated)\n            .executeAndClear();\n    float[] values = activated.data();\n}",
       "see": [
-       "jsl.nativebridge.NativeContext",
-       "jsl.nativebridge.NativeTensorHandle",
-       "jsl.nativebridge.NativeMLP"
+       "basalt.nativebridge.NativeContext",
+       "basalt.nativebridge.NativeTensorHandle",
+       "basalt.nativebridge.NativeMLP"
       ]
      }
     },
     {
-     "qualified": "jsl.nativebridge.NativeContext",
+     "qualified": "basalt.nativebridge.NativeContext",
      "simple_qualified": "NativeContext",
      "kind": "class",
      "modifiers": [
@@ -1443,7 +1443,7 @@
         "returns": "持有独立原生上下文的新实例",
         "throws": {
          "IllegalArgumentException": "threads 小于 0 或大于 256",
-         "jsl.JSLRuntimeException": "原生引擎不可用，消息含加载错误与预期路径",
+         "basalt.BasaltRuntimeException": "原生引擎不可用，消息含加载错误与预期路径",
          "IllegalStateException": "原生上下文分配返回空指针"
         },
         "notes": [
@@ -1515,7 +1515,7 @@
         },
         "returns": "requiresGrad 为 false 的零张量句柄",
         "throws": {
-         "jsl.JSLRuntimeException": "shape 为 null",
+         "basalt.BasaltRuntimeException": "shape 为 null",
          "IllegalArgumentException": "shape 为空、含非正维度、元素总数溢出或超过 Integer.MAX_VALUE"
         },
         "notes": [
@@ -1542,7 +1542,7 @@
         },
         "returns": "requiresGrad 为 true 的零张量句柄",
         "throws": {
-         "jsl.JSLRuntimeException": "shape 为 null",
+         "basalt.BasaltRuntimeException": "shape 为 null",
          "IllegalArgumentException": "shape 为空、含非正维度、元素总数溢出或超过 Integer.MAX_VALUE"
         },
         "notes": [
@@ -1574,7 +1574,7 @@
         },
         "returns": "requiresGrad 为 false 的张量句柄",
         "throws": {
-         "jsl.JSLRuntimeException": "data 或 shape 为 null，或数据含非有限值",
+         "basalt.BasaltRuntimeException": "data 或 shape 为 null，或数据含非有限值",
          "IllegalArgumentException": "数据长度与 shape 不符，或 shape 本身非法"
         },
         "notes": [
@@ -1611,7 +1611,7 @@
         },
         "returns": "绑定到当前上下文的张量句柄",
         "throws": {
-         "jsl.JSLRuntimeException": "data 或 shape 为 null，或数据含非有限值",
+         "basalt.BasaltRuntimeException": "data 或 shape 为 null，或数据含非有限值",
          "IllegalArgumentException": "数据长度与 shape 不符，或 shape 本身非法"
         }
        }
@@ -1650,7 +1650,7 @@
         },
         "returns": "已填充随机数据的张量句柄",
         "throws": {
-         "jsl.JSLRuntimeException": "shape 为 null、scale 为负或非有限",
+         "basalt.BasaltRuntimeException": "shape 为 null、scale 为负或非有限",
          "IllegalArgumentException": "shape 非法或元素总数超出 int 范围"
         },
         "notes": [
@@ -1676,7 +1676,7 @@
          "root": "计算图输出张量，必须属于当前上下文"
         },
         "throws": {
-         "jsl.JSLRuntimeException": "root 为 null，或 root 已关闭",
+         "basalt.BasaltRuntimeException": "root 为 null，或 root 已关闭",
          "IllegalArgumentException": "root 属于其他上下文"
         },
         "notes": [
@@ -1709,7 +1709,7 @@
         "returns": "裁剪前的全局梯度范数；空列表时为 0.0",
         "throws": {
          "IllegalArgumentException": "某个张量属于其他上下文",
-         "jsl.JSLRuntimeException": "maxNorm 为负或非有限，或某个张量已关闭"
+         "basalt.BasaltRuntimeException": "maxNorm 为负或非有限，或某个张量已关闭"
         },
         "notes": [
          "范数不超过阈值时不修改任何梯度，但仍返回实际范数。"
@@ -1807,18 +1807,18 @@
       "notes": [
        "线程安全：多个线程可并发调用，读锁允许多个 JNI 调用并行，close() 需等待在途调用退出。",
        "生命周期：close() 幂等；未显式关闭时由 Cleaner 在对象不可达后兜底销毁。",
-       "失败模式：引擎不可用时构造抛 jsl.JSLRuntimeException；关闭后调用抛 IllegalStateException。"
+       "失败模式：引擎不可用时构造抛 basalt.BasaltRuntimeException；关闭后调用抛 IllegalStateException。"
       ],
       "example": "try (NativeContext ctx = NativeContext.create(4)) {\n    NativeTensorHandle weight = ctx.parameter(4, 3);\n    weight.randomize(42L, 0.1f);\n    try (NativeTensorHandle batch = ctx.of(new float[]{1f, 2f, 3f}, 1, 3)) {\n        long[] stats = ctx.stats();\n        System.out.println(stats[0] + \" tensors, graph nodes \" + ctx.graphSize());\n        System.out.println(batch.rank() + \" dims, weight norm \" + weight.norm());\n    }\n}",
       "see": [
-       "jsl.nativebridge.NativeTensorHandle",
-       "jsl.nativebridge.NativeLibrary",
-       "jsl.nativebridge.NativeContext.Guard"
+       "basalt.nativebridge.NativeTensorHandle",
+       "basalt.nativebridge.NativeLibrary",
+       "basalt.nativebridge.NativeContext.Guard"
       ]
      }
     },
     {
-     "qualified": "jsl.nativebridge.NativeLibrary",
+     "qualified": "basalt.nativebridge.NativeLibrary",
      "simple_qualified": "NativeLibrary",
      "kind": "class",
      "modifiers": [
@@ -1894,7 +1894,7 @@
          "错误消息由三段拼成：固定前缀、loadError() 的内容，以及 libraryPath() 给出的预期路径与运行 native-build.sh 的提示，便于直接定位是未编译还是路径不对。"
         ],
         "throws": {
-         "jsl.JSLRuntimeException": "原生库不可用；消息包含加载错误与预期路径"
+         "basalt.BasaltRuntimeException": "原生库不可用；消息包含加载错误与预期路径"
         }
        }
       }
@@ -1902,25 +1902,25 @@
      "doc": {
       "summary": "原生张量运行时的可用性门面",
       "body": [
-       "动态库只由 jsl.core.NativeKernels 在类初始化时加载一次，本类仅转发可用性、错误信息与路径查询，并额外提供 version() 与 requireAvailable()。单一加载点避免经典内核与张量引擎同时使用时出现已在其他类加载器中加载的失败。",
-       "查找顺序固定为三步：先按系统属性 jsl.native.path 定位文件，存在就 System.load；否则从 classpath 的 /native/平台标签/ 解压到临时目录加载；最后回退到 System.loadLibrary，由 java.library.path 解析。",
+       "动态库只由 basalt.core.NativeKernels 在类初始化时加载一次，本类仅转发可用性、错误信息与路径查询，并额外提供 version() 与 requireAvailable()。单一加载点避免经典内核与张量引擎同时使用时出现已在其他类加载器中加载的失败。",
+       "查找顺序固定为三步：先按系统属性 basalt.native.path 定位文件，存在就 System.load；否则从 classpath 的 /native/平台标签/ 解压到临时目录加载；最后回退到 System.loadLibrary，由 java.library.path 解析。",
        "available() 表示三步中任一步成功。失败时 loadError() 保留首次捕获的异常摘要，libraryPath() 报告实际加载位置或预期位置，requireAvailable() 用两者拼出可直接采取行动的错误消息。"
       ],
       "notes": [
-       "jsl.native.path 的默认值是 build/native 下的平台库文件名，未设置属性时即按该路径查找。",
-       "默认文件名按平台选择：Windows 为 jsl_native.dll，macOS 为 libjsl_native.dylib，其余为 libjsl_native.so；classpath 资源中的平台标签形如 windows-x86_64。",
+       "basalt.native.path 的默认值是 build/native 下的平台库文件名，未设置属性时即按该路径查找。",
+       "默认文件名按平台选择：Windows 为 basalt_native.dll，macOS 为 libbasalt_native.dylib，其余为 libbasalt_native.so；classpath 资源中的平台标签形如 windows-x86_64。",
        "加载在类初始化阶段完成，结果不可变，运行期不会重试。",
        "加载失败不影响纯 Java 路径，经典估计器会自动回退。",
-       "requireAvailable() 抛 jsl.JSLRuntimeException，它是 IllegalStateException 的子类。"
+       "requireAvailable() 抛 basalt.BasaltRuntimeException，它是 IllegalStateException 的子类。"
       ],
       "see": [
-       "jsl.nativebridge.NativeContext",
-       "jsl.core.NativeKernels"
+       "basalt.nativebridge.NativeContext",
+       "basalt.core.NativeKernels"
       ]
      }
     },
     {
-     "qualified": "jsl.nativebridge.NativeMLP",
+     "qualified": "basalt.nativebridge.NativeMLP",
      "simple_qualified": "NativeMLP",
      "kind": "class",
      "modifiers": [
@@ -1934,7 +1934,7 @@
      ],
      "file": "jsl/nativebridge/NativeMLP.java",
      "line": 24,
-     "javadoc": "A compact multilayer perceptron built entirely from the public tensor/queue API.\n\n<p>This class is the \"expert tier\" reference implementation: it shows how to compose matmul,\nbroadcast add, activation and MSE nodes, run one backward pass, and update parameters with\nAdam. It is intentionally not a high-level estimator; the classical {@code jsl.ml} models keep\ntheir own tuned implementations.</p>\n\n<p>Mini-batches are padded by wrapping to the start of the shuffled epoch when the last batch is\nshort. That keeps every native tensor shape static (no reallocation per step) at the cost of a\nsmall duplicate-sample bias in the final batch.</p>",
+     "javadoc": "A compact multilayer perceptron built entirely from the public tensor/queue API.\n\n<p>This class is the \"expert tier\" reference implementation: it shows how to compose matmul,\nbroadcast add, activation and MSE nodes, run one backward pass, and update parameters with\nAdam. It is intentionally not a high-level estimator; the classical {@code basalt.ml} models keep\ntheir own tuned implementations.</p>\n\n<p>Mini-batches are padded by wrapping to the start of the shuffled epoch when the last batch is\nshort. That keeps every native tensor shape static (no reallocation per step) at the cost of a\nsmall duplicate-sample bias in the final batch.</p>",
      "nested": [
       "Activation",
       "OutputActivation"
@@ -1979,7 +1979,7 @@
         },
         "throws": {
          "IllegalArgumentException": "layerSizes 少于两个元素或含非正宽度",
-         "JSLRuntimeException": "context、layerSizes、activation 或 outputActivation 为 null"
+         "BasaltRuntimeException": "context、layerSizes、activation 或 outputActivation 为 null"
         },
         "notes": [
          "layerSizes 在构造时被复制，之后修改入参数组不影响实例。",
@@ -2100,7 +2100,7 @@
         "throws": {
          "IllegalArgumentException": "数据集为空、行数不等、行列宽不符，或 epochs、batchSize 非正",
          "IllegalStateException": "实例已关闭，或某步损失为非有限值",
-         "JSLRuntimeException": "features 或 targets 为 null"
+         "BasaltRuntimeException": "features 或 targets 为 null"
         },
         "notes": [
          "每个 batch 结束即更新参数并清零梯度，不累积跨批梯度。",
@@ -2220,14 +2220,14 @@
       ],
       "example": "try (NativeContext context = NativeContext.create(4)) {\n    NativeMLP mlp = new NativeMLP(context, new int[]{2, 16, 1},\n            NativeMLP.Activation.RELU, NativeMLP.OutputActivation.NONE, 42L);\n    float[][] features = {{0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}};\n    float[][] targets = {{0.0f}, {1.0f}, {1.0f}, {0.0f}};\n    float loss = mlp.fit(features, targets, 200, 4, 0.05f, 0.0f);\n    float[] predictions = mlp.predictScalar(features);\n    mlp.close();\n}",
       "see": [
-       "jsl.nativebridge.CommandQueueBuilder",
-       "jsl.nativebridge.NativeContext",
-       "jsl.nativebridge.NativeTensorHandle"
+       "basalt.nativebridge.CommandQueueBuilder",
+       "basalt.nativebridge.NativeContext",
+       "basalt.nativebridge.NativeTensorHandle"
       ]
      }
     },
     {
-     "qualified": "jsl.nativebridge.NativeTensorHandle",
+     "qualified": "basalt.nativebridge.NativeTensorHandle",
      "simple_qualified": "NativeTensorHandle",
      "kind": "class",
      "modifiers": [
@@ -2360,7 +2360,7 @@
          "values": "新数据，长度必须等于 size()"
         },
         "throws": {
-         "jsl.JSLRuntimeException": "values 为 null，或含非有限值",
+         "basalt.BasaltRuntimeException": "values 为 null，或含非有限值",
          "IllegalArgumentException": "长度与张量元素总数不符",
          "IllegalStateException": "句柄或上下文已关闭"
         }
@@ -2384,7 +2384,7 @@
          "value": "填充值，必须为有限数"
         },
         "throws": {
-         "jsl.JSLRuntimeException": "value 非有限",
+         "basalt.BasaltRuntimeException": "value 非有限",
          "IllegalStateException": "句柄或上下文已关闭"
         }
        }
@@ -2412,7 +2412,7 @@
          "scale": "幅度，必须有限且非负"
         },
         "throws": {
-         "jsl.JSLRuntimeException": "scale 为负或非有限",
+         "basalt.BasaltRuntimeException": "scale 为负或非有限",
          "IllegalStateException": "句柄或上下文已关闭"
         },
         "notes": [
@@ -2455,7 +2455,7 @@
          "learningRate": "学习率，必须有限且非负"
         },
         "throws": {
-         "jsl.JSLRuntimeException": "learningRate 为负或非有限",
+         "basalt.BasaltRuntimeException": "learningRate 为负或非有限",
          "IllegalStateException": "句柄或上下文已关闭"
         },
         "notes": [
@@ -2486,7 +2486,7 @@
          "weightDecay": "权重衰减系数"
         },
         "throws": {
-         "jsl.JSLRuntimeException": "learningRate 为负或非有限",
+         "basalt.BasaltRuntimeException": "learningRate 为负或非有限",
          "IllegalStateException": "句柄或上下文已关闭"
         },
         "notes": [
@@ -2537,7 +2537,7 @@
          "step": "步数，必须为正，用于偏差校正"
         },
         "throws": {
-         "jsl.JSLRuntimeException": "学习率非法、beta 越界、epsilon 非正或 step 非正",
+         "basalt.BasaltRuntimeException": "学习率非法、beta 越界、epsilon 非正或 step 非正",
          "IllegalStateException": "句柄或上下文已关闭"
         },
         "notes": [
@@ -2637,14 +2637,14 @@
       ],
       "example": "try (NativeContext ctx = NativeContext.create();\n     NativeTensorHandle weight = ctx.parameter(3, 2)) {\n    weight.randomize(7L, 0.5f);\n    weight.fill(0.1f);\n    float[] flat = weight.data();\n    System.out.println(weight + \" -> \" + flat.length);\n}",
       "see": [
-       "jsl.nativebridge.NativeContext",
-       "jsl.nativebridge.NativeContext.Guard",
-       "jsl.nativebridge.CommandQueueBuilder"
+       "basalt.nativebridge.NativeContext",
+       "basalt.nativebridge.NativeContext.Guard",
+       "basalt.nativebridge.CommandQueueBuilder"
       ]
      }
     },
     {
-     "qualified": "jsl.nativebridge.NativeContext.Guard",
+     "qualified": "basalt.nativebridge.NativeContext.Guard",
      "simple_qualified": "NativeContext.Guard",
      "kind": "class",
      "modifiers": [
@@ -2702,12 +2702,12 @@
        "Guard 存活期间 close() 会阻塞在写锁上，长耗时操作应尽量缩短持锁区间。"
       ],
       "see": [
-       "jsl.nativebridge.NativeContext"
+       "basalt.nativebridge.NativeContext"
       ]
      }
     },
     {
-     "qualified": "jsl.nativebridge.NativeMLP.Activation",
+     "qualified": "basalt.nativebridge.NativeMLP.Activation",
      "simple_qualified": "NativeMLP.Activation",
      "kind": "enum",
      "modifiers": [
@@ -2764,7 +2764,7 @@
      }
     },
     {
-     "qualified": "jsl.nativebridge.NativeMLP.OutputActivation",
+     "qualified": "basalt.nativebridge.NativeMLP.OutputActivation",
      "simple_qualified": "NativeMLP.OutputActivation",
      "kind": "enum",
      "modifiers": [

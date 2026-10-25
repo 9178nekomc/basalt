@@ -3,10 +3,10 @@
  "title": "经典机器学习（8/9）",
  "modules": [
   {
-   "name": "jsl.ml",
+   "name": "basalt.ml",
    "types": [
     {
-     "qualified": "jsl.ml.OneHotEncoder.HandleUnknown",
+     "qualified": "basalt.ml.OneHotEncoder.HandleUnknown",
      "simple_qualified": "OneHotEncoder.HandleUnknown",
      "kind": "enum",
      "modifiers": [
@@ -53,13 +53,13 @@
       ],
       "example": "OneHotEncoder encoder = OneHotEncoder.builder()\n        .handleUnknown(OneHotEncoder.HandleUnknown.IGNORE)\n        .build();",
       "see": [
-       "jsl.ml.OneHotEncoder",
-       "jsl.ml.OneHotEncoder.Builder"
+       "basalt.ml.OneHotEncoder",
+       "basalt.ml.OneHotEncoder.Builder"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.PCA.Builder",
+     "qualified": "basalt.ml.PCA.Builder",
      "simple_qualified": "PCA.Builder",
      "kind": "class",
      "modifiers": [
@@ -211,7 +211,7 @@
      }
     },
     {
-     "qualified": "jsl.ml.Pipeline.Builder",
+     "qualified": "basalt.ml.Pipeline.Builder",
      "simple_qualified": "Pipeline.Builder",
      "kind": "class",
      "modifiers": [
@@ -376,13 +376,13 @@
       ],
       "example": "Pipeline pipeline = Pipeline.builder()\n        .addStep(PolynomialFeatures.builder().degree(2).build())\n        .estimator(\"ridge\", Ridge.builder().alpha(1.0).build())\n        .build();",
       "see": [
-       "jsl.ml.Pipeline",
-       "jsl.ml.Pipeline.Step"
+       "basalt.ml.Pipeline",
+       "basalt.ml.Pipeline.Step"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.Pipeline.Step",
+     "qualified": "basalt.ml.Pipeline.Step",
      "simple_qualified": "Pipeline.Step",
      "kind": "record",
      "modifiers": [
@@ -403,18 +403,18 @@
        "steps() 返回不可变列表，元素即 Step 记录本身。"
       ],
       "notes": [
-       "name 参与 namedSteps() 的键与 .jsl 持久化，需自行保证唯一",
+       "name 参与 namedSteps() 的键与 .bsl 持久化，需自行保证唯一",
        "name 或 transformer 为 null 时构造抛 NullPointerException"
       ],
       "example": "Pipeline.Step step = new Pipeline.Step(\"poly\", PolynomialFeatures.builder().build());",
       "see": [
-       "jsl.ml.Pipeline",
-       "jsl.ml.Pipeline.Builder"
+       "basalt.ml.Pipeline",
+       "basalt.ml.Pipeline.Builder"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.PolynomialFeatures.Builder",
+     "qualified": "basalt.ml.PolynomialFeatures.Builder",
      "simple_qualified": "PolynomialFeatures.Builder",
      "kind": "class",
      "modifiers": [
@@ -537,12 +537,12 @@
       ],
       "example": "PolynomialFeatures poly = PolynomialFeatures.builder()\n        .degree(3)\n        .interactionOnly(false)\n        .includeBias(true)\n        .build();",
       "see": [
-       "jsl.ml.PolynomialFeatures"
+       "basalt.ml.PolynomialFeatures"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.RFE.Builder",
+     "qualified": "basalt.ml.RFE.Builder",
      "simple_qualified": "RFE.Builder",
      "kind": "class",
      "modifiers": [
@@ -642,13 +642,13 @@
       ],
       "example": "RFE rfe = RFE.builder(() -> Ridge.builder().build())\n        .nFeaturesToSelect(3)\n        .step(1)\n        .build();",
       "see": [
-       "jsl.ml.RFE",
-       "jsl.ml.SelectKBest"
+       "basalt.ml.RFE",
+       "basalt.ml.SelectKBest"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.RandomForest.Builder",
+     "qualified": "basalt.ml.RandomForest.Builder",
      "simple_qualified": "RandomForest.Builder",
      "kind": "class",
      "modifiers": [
@@ -891,13 +891,13 @@
       ],
       "example": "RandomForest forest = RandomForest.builder()\n        .trees(200)\n        .maxDepth(10)\n        .minSamplesLeaf(2)\n        .maxFeatures(3)\n        .bins(64)\n        .threads(8)\n        .seed(42L)\n        .task(TreeTask.REGRESSION)\n        .oob(true)\n        .build();",
       "see": [
-       "jsl.ml.RandomForest",
-       "jsl.ml.TreeTask"
+       "basalt.ml.RandomForest",
+       "basalt.ml.TreeTask"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.RandomizedSearchCV.Builder",
+     "qualified": "basalt.ml.RandomizedSearchCV.Builder",
      "simple_qualified": "RandomizedSearchCV.Builder",
      "kind": "class",
      "modifiers": [
@@ -1084,11 +1084,11 @@
       },
       {
        "kind": "method",
-       "key": "scoring(JSL.Metric)",
-       "signature": "Builder scoring(JSL.Metric scoring)",
+       "key": "scoring(Estimators.Metric)",
+       "signature": "Builder scoring(Estimators.Metric scoring)",
        "params": [
         {
-         "type": "JSL.Metric",
+         "type": "Estimators.Metric",
          "name": "scoring"
         }
        ],
@@ -1208,16 +1208,16 @@
        "均值并列时保留先出现的那一组，比较使用严格大于",
        "估计器工厂在每折与最终重训时都会被调用"
       ],
-      "example": "RandomizedSearchCV search = RandomizedSearchCV.builder(\n                params -> Ridge.builder().alpha((Double) params.get(\"alpha\")).build())\n        .paramLogUniform(\"alpha\", 1e-3, 10.0)\n        .nIter(20)\n        .scoring(JSL.Metric.R2)\n        .cv(5)\n        .seed(42L)\n        .build();",
+      "example": "RandomizedSearchCV search = RandomizedSearchCV.builder(\n                params -> Ridge.builder().alpha((Double) params.get(\"alpha\")).build())\n        .paramLogUniform(\"alpha\", 1e-3, 10.0)\n        .nIter(20)\n        .scoring(Estimators.Metric.R2)\n        .cv(5)\n        .seed(42L)\n        .build();",
       "see": [
-       "jsl.ml.RandomizedSearchCV",
-       "jsl.ml.RandomizedSearchCV.ParameterSampler",
-       "jsl.ml.GridSearchCV"
+       "basalt.ml.RandomizedSearchCV",
+       "basalt.ml.RandomizedSearchCV.ParameterSampler",
+       "basalt.ml.GridSearchCV"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.RandomizedSearchCV.ParameterSampler",
+     "qualified": "basalt.ml.RandomizedSearchCV.ParameterSampler",
      "simple_qualified": "RandomizedSearchCV.ParameterSampler",
      "kind": "interface",
      "modifiers": [
@@ -1243,13 +1243,13 @@
        "抽样是有放回的，同一次搜索内可能抽到完全相同的参数组合"
       ],
       "see": [
-       "jsl.ml.RandomizedSearchCV",
-       "jsl.ml.RandomizedSearchCV.Builder"
+       "basalt.ml.RandomizedSearchCV",
+       "basalt.ml.RandomizedSearchCV.Builder"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.Ridge.Builder",
+     "qualified": "basalt.ml.Ridge.Builder",
      "simple_qualified": "Ridge.Builder",
      "kind": "class",
      "modifiers": [
@@ -1342,12 +1342,12 @@
       ],
       "example": "Ridge model = Ridge.builder()\n        .alpha(0.1)\n        .fitIntercept(true)\n        .build();",
       "see": [
-       "jsl.ml.Ridge"
+       "basalt.ml.Ridge"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.SVC.Builder",
+     "qualified": "basalt.ml.SVC.Builder",
      "simple_qualified": "SVC.Builder",
      "kind": "class",
      "modifiers": [
@@ -1620,13 +1620,13 @@
       ],
       "example": "SVC model = SVC.builder()\n        .rbf(0.5)\n        .c(1.0)\n        .tolerance(1e-4)\n        .maxIterations(600)\n        .seed(42L)\n        .build();",
       "see": [
-       "jsl.ml.SVC",
-       "jsl.ml.Kernel"
+       "basalt.ml.SVC",
+       "basalt.ml.Kernel"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.SelectKBest.Builder",
+     "qualified": "basalt.ml.SelectKBest.Builder",
      "simple_qualified": "SelectKBest.Builder",
      "kind": "class",
      "modifiers": [
@@ -1726,8 +1726,8 @@
       ],
       "example": "SelectKBest selector = SelectKBest.builder()\n        .k(10)\n        .scoreFunc(SelectKBest.ScoreFunc.F_CLASSIF)\n        .build();",
       "see": [
-       "jsl.ml.SelectKBest",
-       "jsl.ml.RFE"
+       "basalt.ml.SelectKBest",
+       "basalt.ml.RFE"
       ]
      }
     }

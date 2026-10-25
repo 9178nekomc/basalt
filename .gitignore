@@ -4,13 +4,13 @@ build/
 native/target/
 
 # Maven build intermediates. The three release jars are force-added
-# explicitly with `git add -f target/jsl-runtime-2.4.0*.jar`.
+# explicitly with `git add -f target/basalt-2.4.0*.jar`.
 target/
 
 # ── Compiled / generated artifacts ───────────────────────
 *.class
-*.jsl
-*.jsld
+*.bsl
+*.bsld
 
 # ── IDE / OS noise ───────────────────────────────────────
 .idea/

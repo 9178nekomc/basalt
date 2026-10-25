@@ -3,10 +3,10 @@
  "title": "经典机器学习（2/9）",
  "modules": [
   {
-   "name": "jsl.ml",
+   "name": "basalt.ml",
    "types": [
     {
-     "qualified": "jsl.ml.GridSearchCV",
+     "qualified": "basalt.ml.GridSearchCV",
      "simple_qualified": "GridSearchCV",
      "kind": "class",
      "modifiers": [
@@ -189,17 +189,17 @@
        "工厂每折调用一次，估计器实例不跨折复用，工厂内部应无共享可变状态",
        "每次 fit 会清空 cvResults 并重置最优结果"
       ],
-      "example": "Matrix x = Matrix.fromRows(new double[][] {\n        {0.0, 0.0}, {0.2, 0.1}, {0.1, 0.3}, {0.3, 0.2},\n        {1.0, 1.0}, {1.2, 0.9}, {0.9, 1.1}, {1.1, 1.2}\n});\ndouble[] y = {0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0};\n\nGridSearchCV search = GridSearchCV.builder(\n                params -> KNearestNeighbors.builder()\n                        .k((Integer) params.get(\"k\"))\n                        .build())\n        .param(\"k\", 1, 3)\n        .scoring(JSL.Metric.ACCURACY)\n        .cv(2)\n        .stratified(true)\n        .seed(42L)\n        .build()\n        .fit(x, y);\n\nEstimator best = search.bestEstimator();\nMap<String, Object> bestParams = search.bestParams();\ndouble bestScore = search.bestScore();\ndouble[] label = search.predict(x);",
+      "example": "Matrix x = Matrix.fromRows(new double[][] {\n        {0.0, 0.0}, {0.2, 0.1}, {0.1, 0.3}, {0.3, 0.2},\n        {1.0, 1.0}, {1.2, 0.9}, {0.9, 1.1}, {1.1, 1.2}\n});\ndouble[] y = {0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0};\n\nGridSearchCV search = GridSearchCV.builder(\n                params -> KNearestNeighbors.builder()\n                        .k((Integer) params.get(\"k\"))\n                        .build())\n        .param(\"k\", 1, 3)\n        .scoring(Estimators.Metric.ACCURACY)\n        .cv(2)\n        .stratified(true)\n        .seed(42L)\n        .build()\n        .fit(x, y);\n\nEstimator best = search.bestEstimator();\nMap<String, Object> bestParams = search.bestParams();\ndouble bestScore = search.bestScore();\ndouble[] label = search.predict(x);",
       "see": [
-       "jsl.ml.KFold",
-       "jsl.ml.DataSplit",
-       "jsl.ml.JSL",
-       "jsl.ml.Estimator"
+       "basalt.ml.KFold",
+       "basalt.ml.DataSplit",
+       "basalt.ml.Estimators",
+       "basalt.ml.Estimator"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.HistogramGradientBoosting",
+     "qualified": "basalt.ml.HistogramGradientBoosting",
      "simple_qualified": "HistogramGradientBoosting",
      "kind": "class",
      "modifiers": [
@@ -498,14 +498,14 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {0.0, 1.0}, {1.0, 1.0}, {1.0, 0.0}, {2.0, 0.0},\n        {2.0, 1.0}, {3.0, 0.0}, {3.0, 1.0}, {4.0, 0.0}});\ndouble[] y = {0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0};\n\nHistogramGradientBoosting model = HistogramGradientBoosting.builder()\n        .algorithm(BoostingAlgorithm.LIGHTGBM)\n        .objective(BoostingObjective.LOGISTIC)\n        .iterations(200)\n        .learningRate(0.1)\n        .maxLeaves(15)\n        .featureFraction(0.8)\n        .validationFraction(0.25)\n        .earlyStoppingRounds(20)\n        .build()\n        .fit(x, y);\n\ndouble[] probability = model.predictProbability(x);\ndouble[] label = model.predict(x);\ndouble[] history = model.lossHistory();",
       "see": [
-       "jsl.ml.BoostingAlgorithm",
-       "jsl.ml.BoostingObjective",
-       "jsl.ml.DecisionTree"
+       "basalt.ml.BoostingAlgorithm",
+       "basalt.ml.BoostingObjective",
+       "basalt.ml.DecisionTree"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.ImpurityCriterion",
+     "qualified": "basalt.ml.ImpurityCriterion",
      "simple_qualified": "ImpurityCriterion",
      "kind": "enum",
      "modifiers": [
@@ -547,13 +547,13 @@
       ],
       "example": "ImpurityCriterion criterion = ImpurityCriterion.ENTROPY;\n\nDecisionTree tree = DecisionTree.builder()\n        .criterion(criterion)\n        .task(criterion.task())\n        .maxDepth(4)\n        .build();",
       "see": [
-       "jsl.ml.DecisionTree",
-       "jsl.ml.TreeTask"
+       "basalt.ml.DecisionTree",
+       "basalt.ml.TreeTask"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.IsolationForest",
+     "qualified": "basalt.ml.IsolationForest",
      "simple_qualified": "IsolationForest",
      "kind": "class",
      "modifiers": [
@@ -805,15 +805,15 @@
       ],
       "example": "Matrix features = Matrix.fromRows(new double[][] {\n        {0.0, 0.1}, {0.2, 0.0}, {0.1, 0.2}, {0.15, 0.1},\n        {9.0, 9.2}, {9.4, 8.8}, {10.0, 9.0}, {0.3, 0.25}\n});\n\nIsolationForest forest = IsolationForest.builder()\n        .trees(100)\n        .maxSamples(256)\n        .contamination(0.25)\n        .seed(42L)\n        .build()\n        .fit(features);\n\ndouble[] score = forest.anomalyScore(features);\ndouble[] decision = forest.decisionFunction(features);\ndouble[] label = forest.predict(features);",
       "see": [
-       "jsl.ml.Estimator",
-       "jsl.core.Persistable",
-       "jsl.ml.JSL"
+       "basalt.ml.Estimator",
+       "basalt.core.Persistable",
+       "basalt.ml.Estimators"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.JSL",
-     "simple_qualified": "JSL",
+     "qualified": "basalt.ml.Estimators",
+     "simple_qualified": "Basalt",
      "kind": "class",
      "modifiers": [
       "public",
@@ -822,7 +822,7 @@
      "generic": "",
      "extends": "",
      "implements": [],
-     "file": "jsl/ml/JSL.java",
+     "file": "jsl/ml/Basalt.java",
      "line": 9,
      "javadoc": "One-call facade over the estimator catalogue.",
      "nested": [
@@ -967,17 +967,17 @@
        "folds 的合法范围沿用 DataSplit.kFold 的约束（2 到样本数）",
        "门面本身无状态，全部方法为 static"
       ],
-      "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}, {2, 2}, {2, 1}});\ndouble[] y = {0.5, 1.0, 1.5, 2.0, 2.5, 2.2};\nEstimator model = JSL.fit(JSL.Algorithm.RIDGE, x, y);\ndouble[] prediction = JSL.predict(model, x);\ndouble score = JSL.crossValidate(JSL.Algorithm.RIDGE, x, y, 3, JSL.Metric.R2);",
+      "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}, {2, 2}, {2, 1}});\ndouble[] y = {0.5, 1.0, 1.5, 2.0, 2.5, 2.2};\nEstimator model = Basalt.fit(Basalt.Algorithm.RIDGE, x, y);\ndouble[] prediction = Basalt.predict(model, x);\ndouble score = Basalt.crossValidate(Basalt.Algorithm.RIDGE, x, y, 3, Estimators.Metric.R2);",
       "see": [
-       "jsl.ml.JSL.Algorithm",
-       "jsl.ml.JSL.Metric",
-       "jsl.ml.Estimator",
-       "jsl.ml.DataSplit"
+       "basalt.ml.Estimators.Algorithm",
+       "basalt.ml.Estimators.Metric",
+       "basalt.ml.Estimator",
+       "basalt.ml.DataSplit"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.KBinsDiscretizer",
+     "qualified": "basalt.ml.KBinsDiscretizer",
      "simple_qualified": "KBinsDiscretizer",
      "kind": "class",
      "modifiers": [
@@ -1251,14 +1251,14 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][] {\n        {0.0, 10.0}, {0.5, 12.0}, {1.0, 14.0},\n        {2.0, 16.0}, {4.0, 18.0}, {8.0, 20.0}\n});\n\nKBinsDiscretizer discretizer = KBinsDiscretizer.builder()\n        .nBins(3)\n        .strategy(KBinsDiscretizer.Strategy.QUANTILE)\n        .encode(KBinsDiscretizer.Encode.ORDINAL)\n        .build()\n        .fit(x);\n\nMatrix binned = discretizer.transform(x);\nMatrix restored = discretizer.inverseTransform(binned);\ndouble[][] edges = discretizer.binEdges();",
       "see": [
-       "jsl.ml.Transformer",
-       "jsl.ml.KMeans",
-       "jsl.ml.OneHotEncoder"
+       "basalt.ml.Transformer",
+       "basalt.ml.KMeans",
+       "basalt.ml.OneHotEncoder"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.KFold",
+     "qualified": "basalt.ml.KFold",
      "simple_qualified": "KFold",
      "kind": "class",
      "modifiers": [
@@ -1404,14 +1404,14 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][] {\n        {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}, {2.0, 2.0},\n        {2.0, 3.0}, {3.0, 2.0}, {3.0, 3.0}, {4.0, 4.0}\n});\ndouble[] y = {0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0};\n\nKFold kfold = new KFold(4);\nList<DataSplit.Fold> folds = kfold.split(x, y);\n\nDataSplit.Fold first = folds.get(0);\nMatrix trainX = first.trainFeatures();\nMatrix testX = first.testFeatures();\nint count = kfold.folds();\nboolean shuffled = kfold.shuffle();",
       "see": [
-       "jsl.ml.DataSplit",
-       "jsl.ml.GridSearchCV",
-       "jsl.ml.StratifiedKFold"
+       "basalt.ml.DataSplit",
+       "basalt.ml.GridSearchCV",
+       "basalt.ml.StratifiedKFold"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.KMeans",
+     "qualified": "basalt.ml.KMeans",
      "simple_qualified": "KMeans",
      "kind": "class",
      "modifiers": [
@@ -1675,13 +1675,13 @@
       ],
       "example": "Matrix features = Matrix.fromRows(new double[][] {\n    {0.0, 0.0}, {0.4, 0.2}, {0.1, 0.5},\n    {9.6, 9.8}, {10.0, 10.2}, {9.4, 9.9}\n});\nKMeans kmeans = KMeans.builder()\n        .clusters(2)\n        .restarts(4)\n        .maxIterations(200)\n        .seed(7L)\n        .build()\n        .fit(features);\ndouble[] assignment = kmeans.predict(features);\ndouble[] distance = kmeans.transform(features);\nMatrix centers = kmeans.centroids();\ndouble inertia = kmeans.inertia();",
       "see": [
-       "jsl.ml.Estimator",
-       "jsl.core.Persistable"
+       "basalt.ml.Estimator",
+       "basalt.core.Persistable"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.KNearestNeighbors",
+     "qualified": "basalt.ml.KNearestNeighbors",
      "simple_qualified": "KNearestNeighbors",
      "kind": "class",
      "modifiers": [
@@ -1789,14 +1789,14 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}});\ndouble[] y = {0, 1, 1, 0};\nKNearestNeighbors knn = KNearestNeighbors.builder()\n        .k(3)\n        .metric(DistanceMetric.MANHATTAN)\n        .build()\n        .fit(x, y);\ndouble[] labels = knn.predict(x);",
       "see": [
-       "jsl.ml.KNeighborsRegressor",
-       "jsl.ml.DistanceMetric",
-       "jsl.ml.KNearestNeighbors.Builder"
+       "basalt.ml.KNeighborsRegressor",
+       "basalt.ml.DistanceMetric",
+       "basalt.ml.KNearestNeighbors.Builder"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.KNeighborsRegressor",
+     "qualified": "basalt.ml.KNeighborsRegressor",
      "simple_qualified": "KNeighborsRegressor",
      "kind": "class",
      "modifiers": [
@@ -1894,13 +1894,13 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}});\ndouble[] y = {0.0, 1.0, 1.0, 2.0};\nKNeighborsRegressor regressor = KNeighborsRegressor.builder().k(2).build().fit(x, y);\ndouble[] predictions = regressor.predict(x);",
       "see": [
-       "jsl.ml.KNearestNeighbors",
-       "jsl.ml.DistanceMetric"
+       "basalt.ml.KNearestNeighbors",
+       "basalt.ml.DistanceMetric"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.Kernel",
+     "qualified": "basalt.ml.Kernel",
      "simple_qualified": "Kernel",
      "kind": "class",
      "modifiers": [
@@ -2243,14 +2243,14 @@
       ],
       "example": "Matrix a = Matrix.fromRows(new double[][] {{1.0, 2.0}, {2.0, 1.0}});\nMatrix b = Matrix.fromRows(new double[][] {{0.0, 1.0}, {3.0, 3.0}});\n\nKernel kernel = Kernel.rbf(0.5);\ndouble value = kernel.evaluate(a.data(), 0, b.data(), 0, 2);\nMatrix gram = kernel.gram(a, b);\n\nKernel poly = Kernel.poly(3, 0.25, 1.0);\ndouble degree = poly.degree();\ndouble coef0 = poly.coef0();",
       "see": [
-       "jsl.ml.SVC",
-       "jsl.ml.KernelRidge",
-       "jsl.ml.KernelPCA"
+       "basalt.ml.SVC",
+       "basalt.ml.KernelRidge",
+       "basalt.ml.KernelPCA"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.KernelDensity",
+     "qualified": "basalt.ml.KernelDensity",
      "simple_qualified": "KernelDensity",
      "kind": "class",
      "modifiers": [
@@ -2522,9 +2522,9 @@
       ],
       "example": "Matrix train = Matrix.fromRows(new double[][] {\n        {0.0}, {0.4}, {1.0}, {1.2}, {2.0}, {3.5}\n});\nMatrix query = Matrix.fromRows(new double[][] {{0.5}, {1.5}, {3.0}});\n\nKernelDensity kde = KernelDensity.builder()\n        .bandwidth(0.5)\n        .kernel(KernelDensity.KernelType.GAUSSIAN)\n        .build()\n        .fit(train);\n\ndouble[] logDensity = kde.scoreSamples(query);\nMatrix drawn = kde.sample(100, 7L);\ndouble bandwidth = kde.bandwidth();",
       "see": [
-       "jsl.ml.Estimator",
-       "jsl.core.Persistable",
-       "jsl.ml.Kernel"
+       "basalt.ml.Estimator",
+       "basalt.core.Persistable",
+       "basalt.ml.Kernel"
       ]
      }
     }

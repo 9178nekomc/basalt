@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Benchmark Python thread/process orchestration for the JSL concurrency comparison.
+"""Benchmark Python thread/process orchestration for the Basalt concurrency comparison.
 
-CPU-bound Python needs processes because of the GIL; I/O-bound Python can use threads. The JSL
+CPU-bound Python needs processes because of the GIL; I/O-bound Python can use threads. The Basalt
 side writes build/compare/vthreads.csv; this script writes python_concurrency.csv.
 """
 
@@ -25,7 +25,7 @@ WEIGHTS = np.random.default_rng(2).normal(size=32)
 
 
 def cpu_task() -> float:
-    """Same shape as one JSL batch: 16x32 features dotted with a 32-vector."""
+    """Same shape as one Basalt batch: 16x32 features dotted with a 32-vector."""
     return float(np.dot(BATCH, WEIGHTS).sum())
 
 

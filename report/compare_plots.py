@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the JSL vs scikit-learn comparison figures and metric tables."""
+"""Render the Basalt vs scikit-learn comparison figures and metric tables."""
 
 from __future__ import annotations
 
@@ -67,7 +67,7 @@ ORDER = [
 ]
 
 RADAR_AXES = ["易用性", "专业性", "性能", "可扩展性", "精度", "深度", "广度", "鲁棒性"]
-JSL_SCORES = [7.5, 9.6, 9.5, 9.6, 9.2, 9.5, 9.0, 9.0]
+Basalt_SCORES = [7.5, 9.6, 9.5, 9.6, 9.2, 9.5, 9.0, 9.0]
 SKLEARN_SCORES = [9.5, 9.3, 9.0, 9.0, 9.0, 6.0, 9.0, 9.0]
 
 BREADTH = [
@@ -123,7 +123,7 @@ def speed_chart(jsl, sk) -> None:
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.2, 4.2))
     positions = np.arange(len(labels))
     width = 0.38
-    ax1.bar(positions - width / 2, jsl_fit, width, color=BLUE, label="JSL")
+    ax1.bar(positions - width / 2, jsl_fit, width, color=BLUE, label="Basalt")
     ax1.bar(positions + width / 2, sk_fit, width, color=ORANGE, label="scikit-learn")
     ax1.set_yscale("log")
     ax1.set_ylabel("拟合耗时 (ms, 对数轴)")
@@ -136,7 +136,7 @@ def speed_chart(jsl, sk) -> None:
         ax1.text(index, max(a, b) * 1.25, f"{ratio:.1f}×", ha="center", fontsize=7.4,
                  color=MUTED)
 
-    ax2.bar(positions - width / 2, jsl_pred, width, color=BLUE, label="JSL")
+    ax2.bar(positions - width / 2, jsl_pred, width, color=BLUE, label="Basalt")
     ax2.bar(positions + width / 2, sk_pred, width, color=ORANGE, label="scikit-learn")
     ax2.set_yscale("log")
     ax2.set_ylabel("预测耗时 (ms, 对数轴)")
@@ -148,7 +148,7 @@ def speed_chart(jsl, sk) -> None:
         ratio = a / b
         ax2.text(index, max(a, b) * 1.25, f"{ratio:.1f}×", ha="center", fontsize=7.4,
                  color=MUTED)
-    handles = [Patch(color=BLUE, label="JSL"), Patch(color=ORANGE, label="scikit-learn")]
+    handles = [Patch(color=BLUE, label="Basalt"), Patch(color=ORANGE, label="scikit-learn")]
     fig.legend(handles=handles, loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.02))
     fig.tight_layout(rect=(0, 0.05, 1, 1))
     save(fig, "fig_vs_speed.png")
@@ -166,7 +166,7 @@ def quality_chart(jsl, sk) -> None:
     sk_scores = [float(sk[(t, m)]["score"]) for t, m, _ in clf_models]
     positions = np.arange(len(labels))
     width = 0.34
-    ax1.bar(positions - width / 2, jsl_scores, width, color=BLUE, label="JSL")
+    ax1.bar(positions - width / 2, jsl_scores, width, color=BLUE, label="Basalt")
     ax1.bar(positions + width / 2, sk_scores, width, color=ORANGE, label="scikit-learn")
     ax1.set_ylim(0.5, 0.9)
     ax1.set_ylabel("测试集准确率")
@@ -181,7 +181,7 @@ def quality_chart(jsl, sk) -> None:
     jsl_scores = [float(jsl[(t, m)]["score"]) for t, m, _ in reg_models]
     sk_scores = [float(sk[(t, m)]["score"]) for t, m, _ in reg_models]
     positions = np.arange(len(labels))
-    ax2.bar(positions - width / 2, jsl_scores, width, color=BLUE, label="JSL")
+    ax2.bar(positions - width / 2, jsl_scores, width, color=BLUE, label="Basalt")
     ax2.bar(positions + width / 2, sk_scores, width, color=ORANGE, label="scikit-learn")
     ax2.set_ylim(0.0, 1.0)
     ax2.set_ylabel("测试集 R²")
@@ -191,7 +191,7 @@ def quality_chart(jsl, sk) -> None:
     for index, (a, b) in enumerate(zip(jsl_scores, sk_scores)):
         ax2.text(index - width / 2, a + 0.02, f"{a:.4f}", ha="center", fontsize=7.2, color=MUTED)
         ax2.text(index + width / 2, b + 0.02, f"{b:.4f}", ha="center", fontsize=7.2, color=MUTED)
-    handles = [Patch(color=BLUE, label="JSL"), Patch(color=ORANGE, label="scikit-learn")]
+    handles = [Patch(color=BLUE, label="Basalt"), Patch(color=ORANGE, label="scikit-learn")]
     fig.legend(handles=handles, loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.02))
     fig.tight_layout(rect=(0, 0.05, 1, 1))
     save(fig, "fig_vs_quality.png")
@@ -204,17 +204,17 @@ def size_chart(jsl, sk) -> None:
     positions = np.arange(len(labels))
     width = 0.38
     fig, ax = plt.subplots(figsize=(8.6, 4.0))
-    ax.bar(positions - width / 2, jsl_bytes, width, color=BLUE, label="JSL (.jsl)")
+    ax.bar(positions - width / 2, jsl_bytes, width, color=BLUE, label="Basalt (.bsl)")
     ax.bar(positions + width / 2, sk_bytes, width, color=ORANGE, label="sklearn pickle")
     ax.set_yscale("log")
     ax.set_ylabel("序列化体积 (KiB, 对数轴)")
-    ax.set_title("模型体积：二进制 .jsl vs Python pickle")
+    ax.set_title("模型体积：二进制 .bsl vs Python pickle")
     ax.set_xticks(positions)
     ax.set_xticklabels(labels, fontsize=8)
     for index, (a, b) in enumerate(zip(jsl_bytes, sk_bytes)):
         ax.text(index - width / 2, a * 1.15, f"{a:.0f}", ha="center", fontsize=7, color=MUTED)
         ax.text(index + width / 2, b * 1.15, f"{b:.0f}", ha="center", fontsize=7, color=MUTED)
-    handles = [Patch(color=BLUE, label="JSL (.jsl)"), Patch(color=ORANGE, label="sklearn pickle")]
+    handles = [Patch(color=BLUE, label="Basalt (.bsl)"), Patch(color=ORANGE, label="sklearn pickle")]
     fig.legend(handles=handles, loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.02))
     fig.tight_layout(rect=(0, 0.05, 1, 1))
     save(fig, "fig_vs_size.png")
@@ -223,7 +223,7 @@ def size_chart(jsl, sk) -> None:
 def radar_chart() -> None:
     angles = np.linspace(0, 2 * np.pi, len(RADAR_AXES), endpoint=False).tolist()
     angles += angles[:1]
-    jsl = JSL_SCORES + JSL_SCORES[:1]
+    jsl = Basalt_SCORES + Basalt_SCORES[:1]
     sk = SKLEARN_SCORES + SKLEARN_SCORES[:1]
     fig, ax = plt.subplots(figsize=(5.8, 5.4), subplot_kw={"polar": True})
     ax.set_theta_offset(np.pi / 2)
@@ -234,7 +234,7 @@ def radar_chart() -> None:
     ax.set_yticks([2, 4, 6, 8, 10])
     ax.set_yticklabels(["2", "4", "6", "8", "10"], fontsize=7, color=MUTED)
     ax.grid(color=GRID)
-    ax.plot(angles, jsl, color=BLUE, lw=2, label="JSL")
+    ax.plot(angles, jsl, color=BLUE, lw=2, label="Basalt")
     ax.fill(angles, jsl, color=BLUE, alpha=0.15)
     ax.plot(angles, sk, color=ORANGE, lw=2, label="scikit-learn")
     ax.fill(angles, sk, color=ORANGE, alpha=0.12)
@@ -250,7 +250,7 @@ def breadth_chart() -> None:
     fig, ax = plt.subplots(figsize=(6.8, 7.2))
     ax.imshow(matrix, cmap=cmap, vmin=0, vmax=1, aspect="auto")
     ax.set_xticks([0, 1])
-    ax.set_xticklabels(["JSL", "scikit-learn"], fontsize=10)
+    ax.set_xticklabels(["Basalt", "scikit-learn"], fontsize=10)
     ax.set_yticks(range(len(rows)))
     ax.set_yticklabels([row[0] for row in rows], fontsize=9)
     ax.set_xticks(np.arange(-0.5, 2, 1), minor=True)
@@ -282,14 +282,14 @@ def concurrency_chart() -> None:
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10.6, 4.0))
     cpu = [("顺序", float([r for r in java_rows if r["scenario"] == "cpu" and r["mode"] == "sequential"][0]["wall_ms"]),
-            "JSL"),
-           ("平台线程×8", float([r for r in java_rows if r["scenario"] == "cpu" and r["mode"] == "platform-8"][0]["wall_ms"]), "JSL"),
-           ("虚拟线程×8", float([r for r in java_rows if r["scenario"] == "cpu" and r["mode"] == "virtual-8"][0]["wall_ms"]), "JSL"),
+            "Basalt"),
+           ("平台线程×8", float([r for r in java_rows if r["scenario"] == "cpu" and r["mode"] == "platform-8"][0]["wall_ms"]), "Basalt"),
+           ("虚拟线程×8", float([r for r in java_rows if r["scenario"] == "cpu" and r["mode"] == "virtual-8"][0]["wall_ms"]), "Basalt"),
            ("Python 线程", float([r for r in python_rows if r["scenario"] == "cpu" and r["mode"] == "python-threads"][0]["wall_ms"]), "Python"),
            ("Python 进程×8", float([r for r in python_rows if r["scenario"] == "cpu" and r["mode"] == "python-processes"][0]["wall_ms"]), "Python")]
     labels = [row[0] for row in cpu]
     values = [row[1] / 1000.0 for row in cpu]
-    colors = [BLUE if row[2] == "JSL" else ORANGE for row in cpu]
+    colors = [BLUE if row[2] == "Basalt" else ORANGE for row in cpu]
     bars = ax1.bar(labels, values, color=colors, width=0.55)
     ax1.set_yscale("log")
     ax1.set_ylabel("4000 次推理总耗时 (s, 对数轴)")
@@ -299,14 +299,14 @@ def concurrency_chart() -> None:
         ax1.text(bar.get_x() + bar.get_width() / 2, value * 1.15, f"{value:.2f}s",
                  ha="center", fontsize=7.6, color=MUTED)
 
-    io = [("顺序", float([r for r in java_rows if r["scenario"] == "io" and r["mode"] == "sequential"][0]["wall_ms"]), "JSL"),
-          ("平台线程×8", float([r for r in java_rows if r["scenario"] == "io" and r["mode"] == "platform-8"][0]["wall_ms"]), "JSL"),
-          ("虚拟线程", float([r for r in java_rows if r["scenario"] == "io" and r["mode"] == "virtual"][0]["wall_ms"]), "JSL"),
+    io = [("顺序", float([r for r in java_rows if r["scenario"] == "io" and r["mode"] == "sequential"][0]["wall_ms"]), "Basalt"),
+          ("平台线程×8", float([r for r in java_rows if r["scenario"] == "io" and r["mode"] == "platform-8"][0]["wall_ms"]), "Basalt"),
+          ("虚拟线程", float([r for r in java_rows if r["scenario"] == "io" and r["mode"] == "virtual"][0]["wall_ms"]), "Basalt"),
           ("Python 线程×64", float([r for r in python_rows if r["scenario"] == "io" and r["mode"] == "python-threads"][0]["wall_ms"]), "Python"),
           ("Python 进程×8", float([r for r in python_rows if r["scenario"] == "io" and r["mode"] == "python-processes"][0]["wall_ms"]), "Python")]
     labels = [row[0] for row in io]
     values = [row[1] / 1000.0 for row in io]
-    colors = [BLUE if row[2] == "JSL" else ORANGE for row in io]
+    colors = [BLUE if row[2] == "Basalt" else ORANGE for row in io]
     bars = ax2.bar(labels, values, color=colors, width=0.55)
     ax2.set_yscale("log")
     ax2.set_ylabel("4000 个 1ms I/O 任务总耗时 (s, 对数轴)")
@@ -316,7 +316,7 @@ def concurrency_chart() -> None:
         ax2.text(bar.get_x() + bar.get_width() / 2, value * 1.15, f"{value:.2f}s",
                  ha="center", fontsize=7.6, color=MUTED)
 
-    handles = [Patch(color=BLUE, label="JSL (Java 21)"), Patch(color=ORANGE, label="Python")]
+    handles = [Patch(color=BLUE, label="Basalt (Java 21)"), Patch(color=ORANGE, label="Python")]
     fig.legend(handles=handles, loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.02))
     fig.tight_layout(rect=(0, 0.05, 1, 1))
     save(fig, "fig_vs_concurrency.png")
@@ -332,12 +332,12 @@ def profiling_chart() -> None:
         for row in csv.DictReader(handle):
             python_rows[row["scenario"]] = row
 
-    jsl_overhead = float(java_row["JSL + JFR (always-on)"]["overhead_percent"])
+    jsl_overhead = float(java_row["Basalt + JFR (always-on)"]["overhead_percent"])
     coarse = float(python_rows["Python + cProfile (coarse)"]["overhead_percent"])
     fine = float(python_rows["Python + cProfile (fine)"]["overhead_percent"])
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10.8, 4.0))
-    labels = ["JSL + JFR\n(内置, 采样式)", "Python + cProfile\n(粗粒度编排)", "Python + cProfile\n(细粒度编排)"]
+    labels = ["Basalt + JFR\n(内置, 采样式)", "Python + cProfile\n(粗粒度编排)", "Python + cProfile\n(细粒度编排)"]
     values = [max(jsl_overhead, 0.0), coarse, fine]
     colors = [BLUE, ORANGE, ORANGE]
     bars = ax1.bar(labels, values, color=colors, width=0.52)
@@ -349,11 +349,11 @@ def profiling_chart() -> None:
                  f"{raw:+.1f}%", ha="center", fontsize=9, color=MUTED)
     ax1.set_ylim(0, max(values) * 1.25)
 
-    jsl_base = float(java_row["JSL + JFR (always-on)"]["baseline_ms"])
-    jsl_profiled = float(java_row["JSL + JFR (always-on)"]["profiled_ms"])
+    jsl_base = float(java_row["Basalt + JFR (always-on)"]["baseline_ms"])
+    jsl_profiled = float(java_row["Basalt + JFR (always-on)"]["profiled_ms"])
     py_coarse = python_rows["Python + cProfile (coarse)"]
     py_fine = python_rows["Python + cProfile (fine)"]
-    labels = ["JSL 基线", "JSL + JFR", "Python 基线\n(粗)", "Python + cProfile\n(粗)", "Python 基线\n(细)", "Python + cProfile\n(细)"]
+    labels = ["Basalt 基线", "Basalt + JFR", "Python 基线\n(粗)", "Python + cProfile\n(粗)", "Python 基线\n(细)", "Python + cProfile\n(细)"]
     values = [jsl_base, jsl_profiled,
               float(py_coarse["baseline_ms"]), float(py_coarse["profiled_ms"]),
               float(py_fine["baseline_ms"]), float(py_fine["profiled_ms"])]
@@ -366,17 +366,17 @@ def profiling_chart() -> None:
         ax2.text(bar.get_x() + bar.get_width() / 2, value * 1.02, f"{value:.0f}",
                  ha="center", fontsize=7.4, color=MUTED)
 
-    handles = [Patch(color=BLUE, label="JSL (Java 21)"), Patch(color=ORANGE, label="Python 3.11")]
+    handles = [Patch(color=BLUE, label="Basalt (Java 21)"), Patch(color=ORANGE, label="Python 3.11")]
     fig.legend(handles=handles, loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.02))
     fig.tight_layout(rect=(0, 0.05, 1, 1))
     save(fig, "fig_vs_profiling.png")
 
 
 def tables(jsl, sk) -> None:
-    lines = ["# JSL vs scikit-learn 指标表（自动生成）", "",
+    lines = ["# Basalt vs scikit-learn 指标表（自动生成）", "",
              "数据：20 000 训练 / 10 000 测试，32 特征；计时为 5 次中位数。", "",
              "## 客观指标", "",
-             "| 任务 | 模型 | JSL 拟合 ms | sklearn 拟合 ms | 拟合比 | JSL 预测 ms | sklearn 预测 ms | JSL 得分 | sklearn 得分 | JSL 体积 KiB | pickle KiB |",
+             "| 任务 | 模型 | Basalt 拟合 ms | sklearn 拟合 ms | 拟合比 | Basalt 预测 ms | sklearn 预测 ms | Basalt 得分 | sklearn 得分 | Basalt 体积 KiB | pickle KiB |",
              "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
     for task, model, label in ORDER:
         j = jsl[(task, model)]
@@ -388,18 +388,18 @@ def tables(jsl, sk) -> None:
             f"{jp:.2f} | {sp:.2f} | {float(j['score']):.6f} | {float(s['score']):.6f} | "
             f"{int(j['model_bytes']) / 1024:.1f} | {int(s['model_bytes']) / 1024:.1f} |"
         )
-    lines += ["", "## 主观评分", "", "| 维度 | JSL | scikit-learn | 依据 |", "|---|---:|---:|---|"]
+    lines += ["", "## 主观评分", "", "| 维度 | Basalt | scikit-learn | 依据 |", "|---|---:|---:|---|"]
     rationale = [
-        "Builder + JSL 门面 + 强类型；仍缺 Pipeline 与文档生态",
+        "Builder + Basalt 门面 + 强类型；仍缺 Pipeline 与文档生态",
         "21 原生算子 + 梯度检验 + 生命周期安全 + JFR + CRC 持久化",
         "10 项全部持平或反超；原生 GEMM 115 GF；CNN/Transformer 收敛",
-        "`jsl.torch` eager API + 21 ops + 类型安全管线 + JFR；仍无稀疏/分布式",
+        "`basalt.torch` eager API + 21 ops + 类型安全管线 + JFR；仍无稀疏/分布式",
         "10 项全部持平或更优；全部新算子通过中心差分梯度检验",
         "原生 CNN/Transformer/autograd/BPTT 为 sklearn 所无",
         "23 项矩阵 87% vs 67%，原生层与 JFR 为 sklearn 所无",
         "原生失败自动回退；双重释放/野指针/GC 兜底均有测试",
     ]
-    for axis, a, b, reason in zip(RADAR_AXES, JSL_SCORES, SKLEARN_SCORES, rationale):
+    for axis, a, b, reason in zip(RADAR_AXES, Basalt_SCORES, SKLEARN_SCORES, rationale):
         lines.append(f"| {axis} | {a:.1f} | {b:.1f} | {reason} |")
     lines += ["", "> 主观评分是作者基于本报告证据的判断，不是测量值。", ""]
     path = ROOT / "report" / "vs_tables.md"
@@ -408,7 +408,7 @@ def tables(jsl, sk) -> None:
 
 
 def main() -> None:
-    jsl = read("jsl.csv")
+    jsl = read("basalt.csv")
     sk = read("sklearn.csv")
     speed_chart(jsl, sk)
     quality_chart(jsl, sk)

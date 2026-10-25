@@ -12,15 +12,15 @@ esac
 case "$(uname -s)" in
   MINGW*|MSYS*|CYGWIN*)
     PLATFORM="windows-$CPU"
-    LIB_NAME="jsl_native.dll"
+    LIB_NAME="basalt_native.dll"
     ;;
   Darwin*)
     PLATFORM="macos-$CPU"
-    LIB_NAME="libjsl_native.dylib"
+    LIB_NAME="libbasalt_native.dylib"
     ;;
   *)
     PLATFORM="linux-$CPU"
-    LIB_NAME="libjsl_native.so"
+    LIB_NAME="libbasalt_native.so"
     ;;
 esac
 
@@ -38,7 +38,7 @@ elif command -v g++ >/dev/null 2>&1 || command -v clang++ >/dev/null 2>&1; then
   CXX_BIN="$(command -v g++ || command -v clang++)"
   printf '==> cargo not found; compiling C++ JNI native kernels via %s
 ' "$CXX_BIN"
-  "$CXX_BIN" -O3 -std=c++17 -fPIC -shared -pthread -I "$ROOT/native/cpp"     "$ROOT/native/cpp/jsl_native.cpp" -o "$ROOT/build/native/$LIB_NAME"
+  "$CXX_BIN" -O3 -std=c++17 -fPIC -shared -pthread -I "$ROOT/native/cpp"     "$ROOT/native/cpp/basalt_native.cpp" -o "$ROOT/build/native/$LIB_NAME"
   cp "$ROOT/build/native/$LIB_NAME" "$ROOT/src/main/resources/native/$PLATFORM/$LIB_NAME"
 else
   printf '==> no native compiler found; using prebuilt native binary if available

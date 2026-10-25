@@ -3,10 +3,10 @@
  "title": "经典机器学习（3/9）",
  "modules": [
   {
-   "name": "jsl.ml",
+   "name": "basalt.ml",
    "types": [
     {
-     "qualified": "jsl.ml.KernelPCA",
+     "qualified": "basalt.ml.KernelPCA",
      "simple_qualified": "KernelPCA",
      "kind": "class",
      "modifiers": [
@@ -256,14 +256,14 @@
       ],
       "example": "Matrix features = Matrix.fromRows(new double[][] {\n    {1.0, 2.0}, {2.0, 1.0}, {3.0, 4.0}, {4.0, 3.0}, {5.0, 6.0}\n});\nKernelPCA kpca = KernelPCA.builder()\n        .components(2)\n        .rbf(0.5)\n        .build()\n        .fit(features);\nMatrix projected = kpca.transform(features);\ndouble[] eigenvalues = kpca.eigenvalues();",
       "see": [
-       "jsl.ml.Kernel",
-       "jsl.ml.PCA",
-       "jsl.ml.KernelPCA.Builder"
+       "basalt.ml.Kernel",
+       "basalt.ml.PCA",
+       "basalt.ml.KernelPCA.Builder"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.KernelRidge",
+     "qualified": "basalt.ml.KernelRidge",
      "simple_qualified": "KernelRidge",
      "kind": "class",
      "modifiers": [
@@ -467,14 +467,14 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {1, 0}, {0, 1}, {1, 1}});\ndouble[] y = {0.0, 1.0, 1.0, 2.0};\nKernelRidge model = KernelRidge.builder()\n        .rbf(1.0)\n        .alpha(0.1)\n        .build()\n        .fit(x, y);\ndouble[] predictions = model.predict(x);\ndouble[] dual = model.dualCoef();",
       "see": [
-       "jsl.ml.Kernel",
-       "jsl.ml.Ridge",
-       "jsl.ml.KernelRidge.Builder"
+       "basalt.ml.Kernel",
+       "basalt.ml.Ridge",
+       "basalt.ml.KernelRidge.Builder"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.LabelEncoder",
+     "qualified": "basalt.ml.LabelEncoder",
      "simple_qualified": "LabelEncoder",
      "kind": "class",
      "modifiers": [
@@ -971,13 +971,13 @@
       ],
       "example": "LabelEncoder encoder = new LabelEncoder();\ndouble[] codes = encoder.fitTransform(new double[]{3.0, 1.0, 3.0, 2.0});\ndouble[] original = encoder.inverseTransform(codes);\ndouble[] classes = encoder.classes();\n\nLabelEncoder names = new LabelEncoder();\nint[] ids = names.fitTransform(new String[]{\"cat\", \"dog\", \"cat\"});\nString[] restored = names.inverseTransformStrings(ids);",
       "see": [
-       "jsl.ml.OneHotEncoder",
-       "jsl.ml.Transformer"
+       "basalt.ml.OneHotEncoder",
+       "basalt.ml.Transformer"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.Lasso",
+     "qualified": "basalt.ml.Lasso",
      "simple_qualified": "Lasso",
      "kind": "class",
      "modifiers": [
@@ -1174,14 +1174,14 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{{1, 0}, {0, 1}, {1, 1}, {2, 2}});\ndouble[] y = {1.0, 2.0, 3.0, 5.0};\nLasso lasso = Lasso.builder()\n        .alpha(0.1)\n        .maxIterations(500)\n        .build()\n        .fit(x, y);\ndouble[] coefficients = lasso.weights();\ndouble bias = lasso.intercept();",
       "see": [
-       "jsl.ml.Ridge",
-       "jsl.ml.LinearRegression",
-       "jsl.ml.Lasso.Builder"
+       "basalt.ml.Ridge",
+       "basalt.ml.LinearRegression",
+       "basalt.ml.Lasso.Builder"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.LimeExplainer",
+     "qualified": "basalt.ml.LimeExplainer",
      "simple_qualified": "LimeExplainer",
      "kind": "class",
      "modifiers": [
@@ -1320,14 +1320,14 @@
       ],
       "example": "Matrix train = Matrix.fromRows(new double[][]{{0, 0}, {1, 0}, {0, 1}, {1, 1}});\ndouble[] y = {0, 0, 1, 1};\nLogisticRegression model = LogisticRegression.builder().build().fit(train, y);\nLimeExplainer lime = new LimeExplainer(model, train, 200, 0.75, 7L);\nLimeExplainer.LocalExplanation explanation = lime.explainInstance(new double[]{1.0, 0.2});\ndouble[] weights = explanation.featureWeights();\ndouble fidelity = explanation.r2Fidelity();\nint[] ranked = explanation.topFeatures();",
       "see": [
-       "jsl.ml.ShapExplainer",
-       "jsl.ml.Estimator",
-       "jsl.ml.Pipeline"
+       "basalt.ml.ShapExplainer",
+       "basalt.ml.Estimator",
+       "basalt.ml.Pipeline"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.LinearRegression",
+     "qualified": "basalt.ml.LinearRegression",
      "simple_qualified": "LinearRegression",
      "kind": "class",
      "modifiers": [
@@ -1575,14 +1575,14 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 1}, {1, 1}, {2, 1}, {3, 1}});\ndouble[] y = {1.0, 3.0, 5.0, 7.0};\nLinearRegression model = LinearRegression.builder()\n        .learningRate(0.05)\n        .epochs(2000)\n        .fitIntercept(true)\n        .build()\n        .fit(x, y);\ndouble[] predictions = model.predict(x);\ndouble one = model.predictOne(new double[]{4.0, 1.0}, 0);",
       "see": [
-       "jsl.ml.Ridge",
-       "jsl.ml.LogisticRegression",
-       "jsl.ml.LinearRegression.Builder"
+       "basalt.ml.Ridge",
+       "basalt.ml.LogisticRegression",
+       "basalt.ml.LinearRegression.Builder"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.LinearSVM",
+     "qualified": "basalt.ml.LinearSVM",
      "simple_qualified": "LinearSVM",
      "kind": "class",
      "modifiers": [
@@ -1799,13 +1799,13 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}});\ndouble[] y = {0, 0, 1, 1};\nLinearSVM svm = LinearSVM.builder()\n        .lambda(0.01)\n        .epochs(20)\n        .seed(42L)\n        .build()\n        .fit(x, y);\ndouble[] labels = svm.predict(x);\ndouble[] w = svm.weights();\ndouble b = svm.bias();",
       "see": [
-       "jsl.ml.LogisticRegression",
-       "jsl.ml.LinearSVM.Builder"
+       "basalt.ml.LogisticRegression",
+       "basalt.ml.LinearSVM.Builder"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.LogisticRegression",
+     "qualified": "basalt.ml.LogisticRegression",
      "simple_qualified": "LogisticRegression",
      "kind": "class",
      "modifiers": [
@@ -2044,14 +2044,14 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}});\ndouble[] y = {0, 0, 1, 1};\nLogisticRegression model = LogisticRegression.builder()\n        .learningRate(0.1)\n        .epochs(2000)\n        .build()\n        .fit(x, y);\ndouble[] probability = model.predictProbability(x);\ndouble[] labels = model.predict(x);",
       "see": [
-       "jsl.ml.LinearSVM",
-       "jsl.ml.Metrics",
-       "jsl.ml.LogisticRegression.Builder"
+       "basalt.ml.LinearSVM",
+       "basalt.ml.Metrics",
+       "basalt.ml.LogisticRegression.Builder"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.Metrics",
+     "qualified": "basalt.ml.Metrics",
      "simple_qualified": "Metrics",
      "kind": "class",
      "modifiers": [
@@ -2434,13 +2434,13 @@
       ],
       "example": "double[] expected = {1, 0, 1, 1, 0};\ndouble[] predicted = {1, 0, 0, 1, 0};\ndouble accuracy = Metrics.accuracy(expected, predicted);\ndouble f1 = Metrics.f1(expected, predicted, 1.0);\nint[][] matrix = Metrics.confusionMatrix(expected, predicted);\ndouble auc = Metrics.rocAuc(expected, new double[]{0.9, 0.1, 0.4, 0.8, 0.2});",
       "see": [
-       "jsl.ml.JSL.Metric",
-       "jsl.ml.Estimator"
+       "basalt.ml.Estimators.Metric",
+       "basalt.ml.Estimator"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.MinMaxScaler",
+     "qualified": "basalt.ml.MinMaxScaler",
      "simple_qualified": "MinMaxScaler",
      "kind": "class",
      "modifiers": [
@@ -2759,14 +2759,14 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{{1, 10}, {2, 20}, {3, 30}});\nMinMaxScaler scaler = MinMaxScaler.builder()\n        .featureRange(-1.0, 1.0)\n        .clip(true)\n        .build()\n        .fit(x);\nMatrix scaled = scaler.transform(x);\nMatrix restored = scaler.inverseTransform(scaled);\ndouble[] scale = scaler.scale();",
       "see": [
-       "jsl.ml.StandardScaler",
-       "jsl.ml.Transformer",
-       "jsl.ml.MinMaxScaler.Builder"
+       "basalt.ml.StandardScaler",
+       "basalt.ml.Transformer",
+       "basalt.ml.MinMaxScaler.Builder"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.OneHotEncoder",
+     "qualified": "basalt.ml.OneHotEncoder",
      "simple_qualified": "OneHotEncoder",
      "kind": "class",
      "modifiers": [
@@ -3057,14 +3057,14 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{\n    {0, 1.5}, {1, 2.5}, {2, 3.5}\n});\nOneHotEncoder encoder = OneHotEncoder.builder()\n        .categoricalColumns(0)\n        .handleUnknown(OneHotEncoder.HandleUnknown.IGNORE)\n        .build()\n        .fit(x);\nMatrix encoded = encoder.transform(x);\nint width = encoder.outputFeatureCount();\nMatrix back = encoder.inverseTransform(encoded);",
       "see": [
-       "jsl.ml.LabelEncoder",
-       "jsl.ml.KBinsDiscretizer",
-       "jsl.ml.OneHotEncoder.Builder"
+       "basalt.ml.LabelEncoder",
+       "basalt.ml.KBinsDiscretizer",
+       "basalt.ml.OneHotEncoder.Builder"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.PCA",
+     "qualified": "basalt.ml.PCA",
      "simple_qualified": "PCA",
      "kind": "class",
      "modifiers": [
@@ -3384,9 +3384,9 @@
       ],
       "example": "Matrix features = Matrix.fromRows(new double[][] {\n    {2.5, 2.4}, {0.5, 0.7}, {2.2, 2.9},\n    {1.9, 2.2}, {3.1, 3.0}, {2.3, 2.7}\n});\nPCA pca = PCA.builder()\n        .components(1)\n        .solver(EigenSolver.AUTO)\n        .whiten(true)\n        .build()\n        .fit(features);\nMatrix projected = pca.transform(features);\nMatrix restored = pca.inverseTransform(projected);\ndouble[] ratio = pca.explainedVarianceRatio();",
       "see": [
-       "jsl.ml.EigenSolver",
-       "jsl.ml.Estimator",
-       "jsl.core.Persistable"
+       "basalt.ml.EigenSolver",
+       "basalt.ml.Estimator",
+       "basalt.core.Persistable"
       ]
      }
     }

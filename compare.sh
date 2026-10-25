@@ -15,25 +15,25 @@ if [ -z "$PYTHON_BIN" ]; then
   exit 1
 fi
 
-printf '==> verifying JSL\n'
+printf '==> verifying Basalt\n'
 "$ROOT/verify.sh"
 
 printf '\n==> generating shared data and running scikit-learn\n'
 "$PYTHON_BIN" "$ROOT/report/compare_sklearn.py"
 
-printf '\n==> running JSL on the same data\n'
+printf '\n==> running Basalt on the same data\n'
 java --add-modules jdk.incubator.vector -Xmx3g \
-  -cp "$ROOT/build/classes:$ROOT/build/test-classes" jsl.tests.SklearnComparison
+  -cp "$ROOT/build/classes:$ROOT/build/test-classes" basalt.tests.SklearnComparison
 
 printf '\n==> running concurrency benchmarks\n'
 java --add-modules jdk.incubator.vector -Xmx2g \
-  -cp "$ROOT/build/classes:$ROOT/build/test-classes" jsl.tests.ConcurrencyBenchmark
+  -cp "$ROOT/build/classes:$ROOT/build/test-classes" basalt.tests.ConcurrencyBenchmark
 "$PYTHON_BIN" "$ROOT/report/compare_concurrency.py"
 
 printf '\n==> rendering comparison figures and tables\n'
 "$PYTHON_BIN" "$ROOT/report/compare_plots.py"
 
 printf '\n==> rendering self-contained HTML\n'
-"$PYTHON_BIN" "$ROOT/report/make_report.py" "$ROOT/report/JSL_VS_SKLEARN.md"
+"$PYTHON_BIN" "$ROOT/report/make_report.py" "$ROOT/report/Basalt_VS_SKLEARN.md"
 
-printf '\nComparison complete: report/JSL_VS_SKLEARN.html\n'
+printf '\nComparison complete: report/Basalt_VS_SKLEARN.html\n'

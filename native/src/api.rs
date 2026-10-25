@@ -62,7 +62,7 @@ fn run_jni<'local, T>(
         }
         Err(_) => {
             let _ = env.throw_new(
-                "jsl/JSLRuntimeException",
+                "basalt/BasaltRuntimeException",
                 "native panic caught at the JNI boundary",
             );
             default
@@ -117,7 +117,7 @@ fn tensor_shape_of(tensor: &Arc<RwLock<NativeTensor>>) -> Result<Vec<usize>> {
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_available(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_available(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
 ) -> jint {
@@ -125,7 +125,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_available(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_version(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_version(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
 ) -> jint {
@@ -133,7 +133,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_version(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_createContext(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_createContext(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
 ) -> jlong {
@@ -147,7 +147,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_createContext(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_destroyContext(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_destroyContext(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -171,7 +171,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_destroyContext(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_contextStats(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_contextStats(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -194,7 +194,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_contextStats(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_clearGraph(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_clearGraph(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -206,7 +206,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_clearGraph(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_graphSize(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_graphSize(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -219,7 +219,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_graphSize(
 // ------------------------------------------------------------------ tensor lifecycle
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_createTensor(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_createTensor(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -235,7 +235,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_createTensor(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_createTensorFromData(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_createTensorFromData(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -253,7 +253,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_createTensorFromData
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_setTensorData(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_setTensorData(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -273,7 +273,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_setTensorData(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_tensorData(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_tensorData(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -300,7 +300,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_tensorData(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_tensorGrad(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_tensorGrad(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -333,7 +333,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_tensorGrad(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_tensorShape(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_tensorShape(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -354,7 +354,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_tensorShape(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_fillTensor(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_fillTensor(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -368,7 +368,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_fillTensor(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_randomizeTensor(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_randomizeTensor(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -383,7 +383,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_randomizeTensor(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_zeroGrad(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_zeroGrad(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -396,7 +396,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_zeroGrad(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_releaseTensor(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_releaseTensor(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -413,7 +413,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_releaseTensor(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_sgdStep(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_sgdStep(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -433,7 +433,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_sgdStep(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_adamStep(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_adamStep(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -474,7 +474,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_adamStep(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_clipGradNorm(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_clipGradNorm(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -493,7 +493,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_clipGradNorm(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_tensorNorm(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_tensorNorm(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -514,7 +514,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_tensorNorm(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_tensorGradNorm(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_tensorGradNorm(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -535,7 +535,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_tensorGradNorm(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_tensorIsFinite(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_tensorIsFinite(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -558,7 +558,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_tensorIsFinite(
 // ------------------------------------------------------------------ queue and backward
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_executeQueue(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_executeQueue(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,
@@ -600,7 +600,7 @@ pub extern "system" fn Java_jsl_nativebridge_NativeBindings_executeQueue(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_jsl_nativebridge_NativeBindings_backward(
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_backward(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
     context: jlong,

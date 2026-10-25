@@ -9,6 +9,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
+name = "basalt_native"
+version = "0.2.0"
+dependencies = [
+ "jni",
+ "matrixmultiply",
+ "rayon",
+ "slotmap",
+]
+
+[[package]]
 name = "bytes"
 version = "1.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -109,16 +119,6 @@ checksum = "38c0b942f458fe50cdac086d2f946512305e5631e720728f2a61aabcd47a6264"
 dependencies = [
  "quote",
  "syn",
-]
-
-[[package]]
-name = "jsl_native"
-version = "0.2.0"
-dependencies = [
- "jni",
- "matrixmultiply",
- "rayon",
- "slotmap",
 ]
 
 [[package]]

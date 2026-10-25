@@ -4,14 +4,37 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.github.jsl</groupId>
-    <artifactId>jsl-runtime</artifactId>
+    <groupId>io.github.9178nekomc</groupId>
+    <artifactId>basalt</artifactId>
     <version>3.4.0</version>
     <packaging>jar</packaging>
 
-    <name>JSL Runtime</name>
-    <description>Java + Rust PyTorch-class runtime: eager tensors, autograd, native CNN/Transformer kernels, JFR.</description>
-    <url>https://github.com/jsl-runtime/jsl</url>
+    <name>Basalt</name>
+    <description>JVM machine-learning runtime: eager tensors, autograd, native CNN/Transformer kernels and scikit-learn-class estimators. Java schedules, Rust computes.</description>
+    <url>https://9178nekomc.github.io/basalt/</url>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/license/mit</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>9178nekomc</id>
+            <name>9178nekomc</name>
+            <url>https://github.com/9178nekomc</url>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/9178nekomc/basalt.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/9178nekomc/basalt.git</developerConnection>
+        <url>https://github.com/9178nekomc/basalt</url>
+        <tag>v3.4.0</tag>
+    </scm>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -98,8 +121,8 @@
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                         </manifest>
                         <manifestEntries>
-                            <Automatic-Module-Name>jsl.runtime</Automatic-Module-Name>
-                            <Implementation-Title>JSL Runtime</Implementation-Title>
+                            <Automatic-Module-Name>basalt.runtime</Automatic-Module-Name>
+                            <Implementation-Title>Basalt Runtime</Implementation-Title>
                             <Implementation-Version>${project.version}</Implementation-Version>
                         </manifestEntries>
                     </archive>
@@ -138,8 +161,8 @@
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <manifestEntries>
-                                        <Automatic-Module-Name>jsl.runtime</Automatic-Module-Name>
-                                        <Implementation-Title>JSL Runtime</Implementation-Title>
+                                        <Automatic-Module-Name>basalt.runtime</Automatic-Module-Name>
+                                        <Implementation-Title>Basalt Runtime</Implementation-Title>
                                         <Implementation-Version>${project.version}</Implementation-Version>
                                     </manifestEntries>
                                 </transformer>
@@ -166,4 +189,77 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Maven Central needs a sources jar (already attached), a javadoc jar and a
+             detached GPG signature over every artifact.  All three live in this
+             profile so an ordinary `mvn install` stays offline and key-free. -->
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.10.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <!-- The tensor layer is written against jdk.incubator.vector;
+                                 javadoc needs the same module and the same leniency as
+                                 javac, otherwise it stops on missing @param tags. -->
+                            <doclint>none</doclint>
+                            <quiet>true</quiet>
+                            <additionalOptions>
+                                <additionalOption>--add-modules</additionalOption>
+                                <additionalOption>jdk.incubator.vector</additionalOption>
+                            </additionalOptions>
+                        </configuration>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.7</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <!-- Keeps the passphrase out of the shell history; the
+                                 variable is fed by publish.sh from an env var. -->
+                            <gpgArguments>
+                                <arg>--pinentry-mode</arg>
+                                <arg>loopback</arg>
+                            </gpgArguments>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.7.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <!-- `publishingServerId` matches the <server id="central">
+                                 entry in ~/.m2/settings.xml that holds the portal token. -->
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

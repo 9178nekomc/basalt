@@ -3,10 +3,10 @@
  "title": "持久化与 ONNX",
  "modules": [
   {
-   "name": "jsl.io",
+   "name": "basalt.io",
    "types": [
     {
-     "qualified": "jsl.io.ModelCodec",
+     "qualified": "basalt.io.ModelCodec",
      "simple_qualified": "ModelCodec",
      "kind": "class",
      "modifiers": [
@@ -18,23 +18,23 @@
      "implements": [],
      "file": "jsl/io/ModelCodec.java",
      "line": 64,
-     "javadoc": "Versioned .jsl container: 24-byte header + CRC32C-checked payload.\n\n<pre>\nint  magic     0x4A534C4D (\"JSLM\")\nint  version   2\nint  kind      stable ModelKind code\nint  length    payload bytes\nlong crc32c    checksum of the payload\nbyte[length]   model-specific payload\n</pre>",
+     "javadoc": "Versioned .bsl container: 24-byte header + CRC32C-checked payload.\n\n<pre>\nint  magic     0x42534C54 (\"BasaltM\")\nint  version   2\nint  kind      stable ModelKind code\nint  length    payload bytes\nlong crc32c    checksum of the payload\nbyte[length]   model-specific payload\n</pre>",
      "nested": [],
      "members": [
       {
        "kind": "field",
        "key": "MAGIC",
-       "signature": "int MAGIC = 0x4A534C4D",
+       "signature": "int MAGIC = 0x42534C54",
        "params": [],
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "容器魔数 0x4A534C4D，即 ASCII \"JSLM\"。",
+        "summary": "容器魔数 0x42534C54，即 ASCII \"BasaltM\"。",
         "body": [
-         "位于文件前 4 字节，save 写入，load 与 peekKind 校验；不匹配时抛 ModelFormatException（\"Invalid .jsl magic\"）。"
+         "位于文件前 4 字节，save 写入，load 与 peekKind 校验；不匹配时抛 ModelFormatException（\"Invalid .bsl magic\"）。"
         ],
         "notes": [
-         "注意与 JSLD 数据格式的魔数 0x4A534C44 不同"
+         "注意与 BasaltD 数据格式的魔数 0x4A534C44 不同"
         ]
        }
       },
@@ -48,7 +48,7 @@
        "doc": {
         "summary": "当前容器版本号，值为 2。",
         "body": [
-         "紧随 magic 之后写入。load 与 peekKind 要求完全相等，其他版本一律抛 ModelFormatException（\"Unsupported .jsl version\"），不尝试降级解析。"
+         "紧随 magic 之后写入。load 与 peekKind 要求完全相等，其他版本一律抛 ModelFormatException（\"Unsupported .bsl version\"），不尝试降级解析。"
         ],
         "notes": [
          "版本只描述容器布局，载荷格式由各模型自行定义"
@@ -72,7 +72,7 @@
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "把模型序列化为 .jsl 文件。",
+        "summary": "把模型序列化为 .bsl 文件。",
         "body": [
          "先创建初始容量 4096 的 ModelWriter，调用 model.write 得到载荷字节，据此计算 CRC32C，再组装 24 字节头与载荷，以 CREATE、WRITE、TRUNCATE_EXISTING 打开通道循环写出。",
          "target 或 model 为 null 时抛 NullPointerException；载荷长度超过 Integer.MAX_VALUE - 24 时抛 ModelFormatException；打开或写入失败抛 UncheckedIOException。模型的 write 实现自身抛出的异常会原样传播。"
@@ -100,13 +100,13 @@
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "读取并校验 .jsl 文件，返回模型。",
+        "summary": "读取并校验 .bsl 文件，返回模型。",
         "body": [
          "映射文件后依次校验：长度不小于 24 字节、magic 匹配、version 为 2、kind 编码可识别、声明长度等于文件大小减 24、CRC32C 与头部记录一致；随后按 ModelKind 分发到对应模型的 read 方法，并要求载荷被完整消费。",
          "任一校验失败抛 ModelFormatException（截断、魔数错误、版本不支持、长度不符、校验和不匹配、载荷有残留字节）；文件打开或映射失败抛 UncheckedIOException。"
         ],
         "params": {
-         "source": "输入路径，须为 save 写出的 .jsl 文件"
+         "source": "输入路径，须为 save 写出的 .bsl 文件"
         },
         "returns": "按文件内 kind 构造的模型实例，静态类型为 Persistable",
         "notes": [
@@ -223,7 +223,7 @@
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "返回 .jsl 文件的总字节数。",
+        "summary": "返回 .bsl 文件的总字节数。",
         "body": [
          "直接委托 Files.size，不解析头部也不校验内容；文件不存在、不可读或路径指向目录时抛 UncheckedIOException。"
         ],
@@ -233,15 +233,15 @@
         "returns": "文件长度（字节），包含 24 字节头",
         "notes": [
          "载荷大小等于返回值减 24",
-         "可对任意文件使用，不要求是 .jsl 容器"
+         "可对任意文件使用，不要求是 .bsl 容器"
         ]
        }
       }
      ],
      "doc": {
-      "summary": "带版本与 CRC32C 校验的 .jsl 模型容器读写器。",
+      "summary": "带版本与 CRC32C 校验的 .bsl 模型容器读写器。",
       "body": [
-       "容器由 24 字节头与载荷组成，字段依次为 int magic = 0x4A534C4D（\"JSLM\"）、int version = 2、int kind（ModelKind 编码）、int length（载荷字节数）、long crc32c，随后是 length 字节的模型载荷，均按大端序。",
+       "容器由 24 字节头与载荷组成，字段依次为 int magic = 0x42534C54（\"BasaltM\"）、int version = 2、int kind（ModelKind 编码）、int length（载荷字节数）、long crc32c，随后是 length 字节的模型载荷，均按大端序。",
        "save() 让模型把状态写进内存 ModelWriter，再分配整文件缓冲、填头并循环写出；load() 只读映射整个文件，依次比对 magic、version、长度与文件大小，再在映射区原地计算 CRC32C，通过后把偏移 24 起的零拷贝切片交给按 ModelKind 分发的读取器。",
        "载荷解码完成后要求被完整消费，残留字节视为格式错误。所有失败以未检查异常抛出：结构性问题用 ModelFormatException，I/O 问题包装为 UncheckedIOException。"
       ],
@@ -251,16 +251,16 @@
        "版本不匹配直接拒绝，不做向后兼容解析；ModelFormatException 为 RuntimeException。",
        "类为静态工具，无实例（构造器私有），无可变状态，可并发调用。"
       ],
-      "example": "Matrix features = Matrix.fromRows(new double[][]{\n        {0.0, 1.0}, {1.0, 1.5}, {9.0, 8.5}, {8.5, 9.0}});\nKMeans model = KMeans.builder().clusters(2).build().fit(features);\n\nPath file = Path.of(\"kmeans.jsl\");\nModelCodec.save(file, model);\nKMeans restored = ModelCodec.load(file, KMeans.class);\nlong bytes = ModelCodec.fileSize(file);",
+      "example": "Matrix features = Matrix.fromRows(new double[][]{\n        {0.0, 1.0}, {1.0, 1.5}, {9.0, 8.5}, {8.5, 9.0}});\nKMeans model = KMeans.builder().clusters(2).build().fit(features);\n\nPath file = Path.of(\"kmeans.bsl\");\nModelCodec.save(file, model);\nKMeans restored = ModelCodec.load(file, KMeans.class);\nlong bytes = ModelCodec.fileSize(file);",
       "see": [
-       "jsl.core.Persistable",
-       "jsl.core.ModelKind",
-       "jsl.core.ModelFormatException"
+       "basalt.core.Persistable",
+       "basalt.core.ModelKind",
+       "basalt.core.ModelFormatException"
       ]
      }
     },
     {
-     "qualified": "jsl.io.OnnxConverter",
+     "qualified": "basalt.io.OnnxConverter",
      "simple_qualified": "OnnxConverter",
      "kind": "class",
      "modifiers": [
@@ -272,19 +272,19 @@
      "implements": [],
      "file": "jsl/io/OnnxConverter.java",
      "line": 47,
-     "javadoc": "High-level ONNX model import and export facade.\n\n<p>Supports:</p>\n<ul>\n<li>Loading standard `.onnx` files into {@link OnnxModel} for native JVM execution.</li>\n<li>Exporting JSL classical models ({@link LinearRegression}, {@link Ridge}, {@link Lasso},\n{@link LogisticRegression}, {@link LinearSVM}, {@link PCA}, {@link StandardScaler},\n{@link MinMaxScaler}, {@link Pipeline}) and deep learning modules ({@link Linear},\n{@link Conv2d}, {@link DepthwiseSeparableConv2d}, {@link Sequential},\n{@link ComputationGraph}) to standard `.onnx` files (IR v8, Opset 17).</li>\n</ul>",
+     "javadoc": "High-level ONNX model import and export facade.\n\n<p>Supports:</p>\n<ul>\n<li>Loading standard `.onnx` files into {@link OnnxModel} for native JVM execution.</li>\n<li>Exporting Basalt classical models ({@link LinearRegression}, {@link Ridge}, {@link Lasso},\n{@link LogisticRegression}, {@link LinearSVM}, {@link PCA}, {@link StandardScaler},\n{@link MinMaxScaler}, {@link Pipeline}) and deep learning modules ({@link Linear},\n{@link Conv2d}, {@link DepthwiseSeparableConv2d}, {@link Sequential},\n{@link ComputationGraph}) to standard `.onnx` files (IR v8, Opset 17).</li>\n</ul>",
      "nested": [
       "StepResult"
      ],
      "doc": {
-      "summary": "ONNX 导入导出门面：把 JSL 估计器与模块翻译成 .onnx。",
+      "summary": "ONNX 导入导出门面：把 Basalt 估计器与模块翻译成 .onnx。",
       "body": [
        "导入侧只有 load，直接转调 OnnxModel.load。导出侧把两类对象翻译成节点与常量张量：估计器方向接受 Pipeline、StandardScaler、MinMaxScaler、PCA、LinearRegression、Ridge、Lasso、LogisticRegression、LinearSVM；模块方向接受 Sequential、Linear、Conv2d、DepthwiseSeparableConv2d、Activation、MaxPool2d、Flatten、BatchNorm2d、LayerNorm、Dropout 与 ComputationGraph。产物统一声明 IR v8、Opset 17。",
-       "翻译是结构性的：线性模型展开为 MatMul + Add，标准化器展开为 Sub/Mul（StandardScaler 的尺度取倒数预先算好），PCA 展开为 Sub + MatMul（主成分先转置），Pipeline 按步骤串联并以 step0、step1、est 等前缀命名中间值；LogisticRegression 在回归输出后再接 Sigmoid。类型不在支持列表内时在翻译阶段抛 JSLUnsupportedOperationException，此时不会写出任何文件。",
+       "翻译是结构性的：线性模型展开为 MatMul + Add，标准化器展开为 Sub/Mul（StandardScaler 的尺度取倒数预先算好），PCA 展开为 Sub + MatMul（主成分先转置），Pipeline 按步骤串联并以 step0、step1、est 等前缀命名中间值；LogisticRegression 在回归输出后再接 Sigmoid。类型不在支持列表内时在翻译阶段抛 BasaltUnsupportedOperationException，此时不会写出任何文件。",
        "输入输出声明：估计器导出固定为 input 形状 [-1, inputFeatures] 与输出形状 [-1, outDim]，-1 表示动态批；模块导出把调用方给的 inputShape 原样写进第一输入声明，输出形状留空（未知）；ComputationGraph 导出中每个图输入都套用同一 inputShape。生成的算子集合限定在 OnnxModel 执行器的白名单内，因此导出的模型也能被重新加载执行。"
       ],
       "notes": [
-       "全部数值以 float32 写入，JSL 侧的 double 权重在导出时降精度；往返一次会引入 float32 舍入误差。",
+       "全部数值以 float32 写入，Basalt 侧的 double 权重在导出时降精度；往返一次会引入 float32 舍入误差。",
        "只表达前向推理：Dropout 写成 Identity，BatchNorm2d 使用 runningMean/runningVar 与 epsilon，training_mode 不写。",
        "输出 shape 不写入具体维度，下游工具无法据文件做静态形状校验。",
        "导出不做算子集裁剪，也不检查目标机器上的 onnxruntime 版本是否支持 Opset 17。",
@@ -292,10 +292,10 @@
       ],
       "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {0.0, 1.0}, {1.0, 1.5}, {9.0, 8.5}, {8.5, 9.0}});\ndouble[] y = {0.0, 0.0, 1.0, 1.0};\nLinearRegression model = LinearRegression.builder().build().fit(x, y);\n\nPath file = Path.of(\"linear.onnx\");\nOnnxConverter.export(model, 2, file);\n\nOnnxModel onnx = OnnxConverter.load(file);\nint features = onnx.inputs().get(0).shape()[1];\nMatrix scores = onnx.predictMatrix(x);",
       "see": [
-       "jsl.io.OnnxModel",
-       "jsl.ml.Pipeline",
-       "jsl.torch.Sequential",
-       "jsl.torch.ComputationGraph"
+       "basalt.io.OnnxModel",
+       "basalt.ml.Pipeline",
+       "basalt.torch.Sequential",
+       "basalt.torch.ComputationGraph"
       ]
      },
      "members": [
@@ -359,7 +359,7 @@
          "target": "输出路径，父目录须已存在，已存在文件被覆盖"
         },
         "throws": {
-         "JSLUnsupportedOperationException": "估计器类型或 Pipeline 中某一步骤不受支持",
+         "BasaltUnsupportedOperationException": "估计器类型或 Pipeline 中某一步骤不受支持",
          "UncheckedIOException": "目标路径不可写或写入失败"
         },
         "notes": [
@@ -399,7 +399,7 @@
          "target": "输出路径，父目录须已存在"
         },
         "throws": {
-         "JSLUnsupportedOperationException": "模块链中出现不受支持的类型",
+         "BasaltUnsupportedOperationException": "模块链中出现不受支持的类型",
          "UncheckedIOException": "目标路径不可写或写入失败"
         },
         "notes": [
@@ -428,7 +428,7 @@
         "summary": "把估计器翻译成内存中的 ONNX 模型。",
         "body": [
          "按类型分流：Pipeline 遍历 steps() 逐个追加变换步骤（前缀 step0、step1…），若末端估计器非 null 再以 est 前缀追加；单独的 Transformer 走 tr0 前缀；其他估计器走 est0 前缀。追加过程中生成的权重、均值、尺度等以 TensorData 放入 initializers，节点名与值名由前缀派生。",
-         "返回的模型固定为 irVersion 8、opsetVersion 17、producerName \"JSL\"、graphName \"jsl_ml_graph\"；input 声明为 elemType 1、shape [-1, inputFeatures]，output 声明为 elemType 1、shape [-1, outDim]，其中 outDim 由最后一步决定（线性与逻辑回归为 1，PCA 为主成分个数，标准化器沿用输入维数）。"
+         "返回的模型固定为 irVersion 8、opsetVersion 17、producerName \"Basalt\"、graphName \"jsl_ml_graph\"；input 声明为 elemType 1、shape [-1, inputFeatures]，output 声明为 elemType 1、shape [-1, outDim]，其中 outDim 由最后一步决定（线性与逻辑回归为 1，PCA 为主成分个数，标准化器沿用输入维数）。"
         ],
         "params": {
          "estimator": "待翻译的估计器，其权重、均值、标准差等在调用时读取",
@@ -438,10 +438,10 @@
         "throws": {
          "NullPointerException": "estimator 为 null",
          "IllegalArgumentException": "inputFeatures 小于等于 0（\"inputFeatures must be positive\"）",
-         "JSLUnsupportedOperationException": "估计器类型或 Pipeline 中某一步骤不受支持"
+         "BasaltUnsupportedOperationException": "估计器类型或 Pipeline 中某一步骤不受支持"
         },
         "notes": [
-         "所有常量都以 float32 副本写入，与 JSL 侧的原数组不共享存储",
+         "所有常量都以 float32 副本写入，与 Basalt 侧的原数组不共享存储",
          "输出维度信息只在 ValueInfo 中体现，节点本身不携带 shape",
          "只翻译结构与数值，不写出 sklearn 的类名、参数列表等元数据"
         ]
@@ -467,7 +467,7 @@
         "summary": "把模块翻译成内存中的 ONNX 模型。",
         "body": [
          "ComputationGraph 走整图分支：按 executionOrder() 逐顶点翻译，MODULE 顶点递归展开为算子节点，ADD/SUB/MUL 顶点直接成同名节点；输入名取自 inputNames()、输出名取自 outputNames()，图名 jsl_dag_graph，输出声明 shape 为 null。",
-         "其他模块包成单链：输入名固定 \"input\"，输出名由 appendModule 返回，图名 jsl_torch_graph。两种分支都使用 irVersion 8、opsetVersion 17、producerName \"JSL\"，每个输入声明都套用传入的 inputShape。"
+         "其他模块包成单链：输入名固定 \"input\"，输出名由 appendModule 返回，图名 jsl_torch_graph。两种分支都使用 irVersion 8、opsetVersion 17、producerName \"Basalt\"，每个输入声明都套用传入的 inputShape。"
         ],
         "params": {
          "module": "待翻译的模块，权重取自 weight()、bias()、gamma()、beta()、runningMean()、runningVar() 等访问器",
@@ -476,7 +476,7 @@
         "returns": "新构造的 OnnxModel，常量以 float32 保存",
         "throws": {
          "NullPointerException": "module 或 inputShape 为 null",
-         "JSLUnsupportedOperationException": "模块类型不在支持列表内（\"ONNX export does not yet support module type\"）"
+         "BasaltUnsupportedOperationException": "模块类型不在支持列表内（\"ONNX export does not yet support module type\"）"
         },
         "notes": [
          "Flatten 固定写 axis = 1，Conv 的 pads 按上下左右对称写出",
@@ -489,7 +489,7 @@
      ]
     },
     {
-     "qualified": "jsl.io.OnnxModel",
+     "qualified": "basalt.io.OnnxModel",
      "simple_qualified": "OnnxModel",
      "kind": "class",
      "modifiers": [
@@ -501,7 +501,7 @@
      "implements": [],
      "file": "jsl/io/OnnxModel.java",
      "line": 31,
-     "javadoc": "Standard ONNX (Open Neural Network Exchange) {@code ModelProto} representation and native-backed\ninference engine.\n\n<p>Implements a zero-dependency Protobuf wire-format decoder/encoder for the official\n{@code onnx.proto3} schema (IR v8, Opset 17) so Python-trained ONNX models (from PyTorch,\nscikit-learn {@code skl2onnx}, or ONNX Runtime) can be loaded and executed directly in the JVM,\nand JSL models can be exported to `.onnx` files consumable by Python `onnxruntime`.</p>",
+     "javadoc": "Standard ONNX (Open Neural Network Exchange) {@code ModelProto} representation and native-backed\ninference engine.\n\n<p>Implements a zero-dependency Protobuf wire-format decoder/encoder for the official\n{@code onnx.proto3} schema (IR v8, Opset 17) so Python-trained ONNX models (from PyTorch,\nscikit-learn {@code skl2onnx}, or ONNX Runtime) can be loaded and executed directly in the JVM,\nand Basalt models can be exported to `.onnx` files consumable by Python `onnxruntime`.</p>",
      "nested": [
       "TensorData",
       "Attribute",
@@ -513,9 +513,9 @@
      "doc": {
       "summary": "ONNX ModelProto 的内存表示与原生推理引擎，零依赖编解码。",
       "body": [
-       "解码不依赖 protobuf 运行时：load 读入整个文件后按 proto3 线格式逐字段解释 ir_version、opset_import、producer_name 与 graph（node、initializer、input、output），未知字段按线类型跳过，因此 doc_string、metadata_props、training_info 等无关段不会导致失败。缺失字段走缺省值：IR 8、Opset 17、producer \"JSL\"、图名 \"jsl_graph\"。",
+       "解码不依赖 protobuf 运行时：load 读入整个文件后按 proto3 线格式逐字段解释 ir_version、opset_import、producer_name 与 graph（node、initializer、input、output），未知字段按线类型跳过，因此 doc_string、metadata_props、training_info 等无关段不会导致失败。缺失字段走缺省值：IR 8、Opset 17、producer \"Basalt\"、图名 \"jsl_graph\"。",
        "计算图执行由 run 完成：先为每个 initializer 建张量放进按名字索引的环境表，再用 feed 覆盖同名条目，然后按 nodes 的列表顺序逐节点求值，中间结果写回同一张表；最后按 outputs 声明的名字从表中取值。单输入重载取 inputs 第一个作为输入名、outputs 第一个作为返回项。",
-       "支持算子为固定白名单：MatMul、Gemm、Add、Sub、Mul、Div、Relu、Sigmoid、Tanh、Gelu、Silu、LeakyRelu、Elu、Softmax、Identity、Dropout、Flatten、Reshape、Transpose、Conv、MaxPool、BatchNormalization、LayerNormalization、GreaterOrEqual、Where。执行到白名单外的节点时抛 JSLUnsupportedOperationException，报错信息带算子名，图不会部分产出。"
+       "支持算子为固定白名单：MatMul、Gemm、Add、Sub、Mul、Div、Relu、Sigmoid、Tanh、Gelu、Silu、LeakyRelu、Elu、Softmax、Identity、Dropout、Flatten、Reshape、Transpose、Conv、MaxPool、BatchNormalization、LayerNormalization、GreaterOrEqual、Where。执行到白名单外的节点时抛 BasaltUnsupportedOperationException，报错信息带算子名，图不会部分产出。"
       ],
       "notes": [
        "张量类型映射：TensorData 只存 float32。解码时 raw_data 按 data_type 转换——INT64(7) 与 DOUBLE(11) 逐元素转 float，其余一律按 FLOAT 解释；raw_data 缺失时回退 float_data 或 int64_data。编码恒写 DataType.FLOAT(1) 与 little-endian raw_data。",
@@ -526,10 +526,10 @@
       ],
       "example": "Path file = Path.of(\"model.onnx\");\nOnnxModel model = OnnxModel.load(file);\n\nfor (OnnxModel.ValueInfo in : model.inputs()) {\n    System.out.println(in.name() + \" \" + java.util.Arrays.toString(in.shape()));\n}\nSystem.out.println(model.opsetVersion() + \" / \" + model.nodes().size());\n\nMatrix features = Matrix.fromRows(new double[][]{{\n        1.0, 2.0}, {3.0, 4.0}});\nMatrix scores = model.predictMatrix(features);\n\nbyte[] encoded = model.toBytes();\nmodel.save(Path.of(\"copy.onnx\"));",
       "see": [
-       "jsl.io.OnnxConverter",
-       "jsl.io.ModelCodec",
-       "jsl.torch.Tensor",
-       "jsl.nativebridge.NativeContext"
+       "basalt.io.OnnxConverter",
+       "basalt.io.ModelCodec",
+       "basalt.torch.Tensor",
+       "basalt.nativebridge.NativeContext"
       ]
      },
      "members": [
@@ -581,7 +581,7 @@
         "params": {
          "irVersion": "IR 版本号，写入 ir_version 字段；导出路径固定传 8",
          "opsetVersion": "算子集版本，写入 opset_import.version；导出路径固定传 17",
-         "producerName": "生成工具名，写入 producer_name；文件缺该字段时解码回落 \"JSL\"",
+         "producerName": "生成工具名，写入 producer_name；文件缺该字段时解码回落 \"Basalt\"",
          "graphName": "计算图名，写入 graph.name；缺省为 \"jsl_graph\"",
          "inputs": "图输入声明，run 用第一个的名字作为单输入入口",
          "outputs": "图输出声明，run 按此顺序收集返回项",
@@ -689,7 +689,7 @@
        "javadoc": "",
        "doc": {
         "summary": "返回生成工具名。",
-        "returns": "producer_name；缺省为 \"JSL\"，JSL 自身导出的模型即为该值"
+        "returns": "producer_name；缺省为 \"Basalt\"，Basalt 自身导出的模型即为该值"
        }
       },
       {
@@ -785,7 +785,7 @@
         "returns": "rows × outCols 的预测结果矩阵，元素为 double",
         "throws": {
          "IllegalStateException": "模型未声明输入（\"ONNX graph has no declared inputs\"），或输出名未被任何节点产生",
-         "JSLUnsupportedOperationException": "图中出现白名单外的算子"
+         "BasaltUnsupportedOperationException": "图中出现白名单外的算子"
         },
         "notes": [
          "只使用第一个输入与第一个输出，多输入模型须改用 run(NativeContext, Map)",
@@ -823,7 +823,7 @@
         "returns": "第一个输出名对应的张量",
         "throws": {
          "IllegalStateException": "inputs 为空，或第一个输出名未被执行环境产生",
-         "JSLUnsupportedOperationException": "图中出现白名单外的算子"
+         "BasaltUnsupportedOperationException": "图中出现白名单外的算子"
         },
         "notes": [
          "context 为 null 时由 Map 版本抛 NullPointerException",
@@ -861,7 +861,7 @@
         "throws": {
          "NullPointerException": "context 或 feed 为 null",
          "IllegalStateException": "某个输出名在执行环境中不存在（\"ONNX execution did not produce output\"）",
-         "JSLUnsupportedOperationException": "节点算子不在支持集合内"
+         "BasaltUnsupportedOperationException": "节点算子不在支持集合内"
         },
         "notes": [
          "每次调用都重新为 initializers 建张量，重复推理时这部分开销固定存在",
@@ -893,7 +893,7 @@
      ]
     },
     {
-     "qualified": "jsl.io.OnnxModel.Attribute",
+     "qualified": "basalt.io.OnnxModel.Attribute",
      "simple_qualified": "OnnxModel.Attribute",
      "kind": "record",
      "modifiers": [
@@ -1094,7 +1094,7 @@
      ]
     },
     {
-     "qualified": "jsl.io.OnnxModel.Node",
+     "qualified": "basalt.io.OnnxModel.Node",
      "simple_qualified": "OnnxModel.Node",
      "kind": "record",
      "modifiers": [
@@ -1210,7 +1210,7 @@
      ]
     },
     {
-     "qualified": "jsl.io.OnnxModel.TensorData",
+     "qualified": "basalt.io.OnnxModel.TensorData",
      "simple_qualified": "OnnxModel.TensorData",
      "kind": "record",
      "modifiers": [
@@ -1240,7 +1240,7 @@
      "members": []
     },
     {
-     "qualified": "jsl.io.OnnxModel.ValueInfo",
+     "qualified": "basalt.io.OnnxModel.ValueInfo",
      "simple_qualified": "OnnxModel.ValueInfo",
      "kind": "record",
      "modifiers": [
@@ -1263,7 +1263,7 @@
       "notes": [
        "没有紧凑构造器，字段不做校验，shape 可为 null、可为空数组",
        "执行器完全不使用 shape 与 elemType，仅作元数据；实际形状由传入张量决定",
-       "JSL 导出时 elemType 恒为 1，批维写 -1，因此同一模型可接受任意批大小"
+       "Basalt 导出时 elemType 恒为 1，批维写 -1，因此同一模型可接受任意批大小"
       ]
      },
      "members": []

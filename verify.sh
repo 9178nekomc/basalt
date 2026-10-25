@@ -18,7 +18,7 @@ case "$(uname -s)" in
 esac
 TEST_CP="$CLASSES$CP_SEP$TEST_CLASSES"
 
-if [ "${JSL_SKIP_NATIVE:-0}" != "1" ]; then
+if [ "${BASALT_SKIP_NATIVE:-0}" != "1" ]; then
   printf '==> building and testing native kernels
 '
   ./native-build.sh
@@ -73,45 +73,45 @@ check_warnings "$LOG_DIR/main-javac.log"
 printf '==> compiling test sources (-Xlint:all)
 '
 emit_sources src/test/java "$LOG_DIR/test-sources.txt" \
-  ! -name "JslApiTest.java" ! -name "PerformanceTest.java"
+  ! -name "BasaltApiTest.java" ! -name "PerformanceTest.java"
 "${JAVAC_CMD[@]}" "${JAVAC_FLAGS[@]}" -cp "$CLASSES" -d "$TEST_CLASSES" @"$LOG_DIR/test-sources.txt" > "$LOG_DIR/test-javac.log" 2>&1
 check_warnings "$LOG_DIR/test-javac.log"
 
 printf '==> running classical suite
 '
-java --add-modules jdk.incubator.vector -cp "$TEST_CP" jsl.tests.TestSuite
+java --add-modules jdk.incubator.vector -cp "$TEST_CP" basalt.tests.TestSuite
 printf '==> running industrial ML suite
 '
-java --add-modules jdk.incubator.vector -cp "$TEST_CP" jsl.tests.IndustrialTestSuite
+java --add-modules jdk.incubator.vector -cp "$TEST_CP" basalt.tests.IndustrialTestSuite
 printf '==> running sequence suite
 '
-java --add-modules jdk.incubator.vector -cp "$TEST_CP" jsl.tests.SequenceTestSuite
+java --add-modules jdk.incubator.vector -cp "$TEST_CP" basalt.tests.SequenceTestSuite
 printf '==> running breadth suite
 '
-java --add-modules jdk.incubator.vector -cp "$TEST_CP" jsl.tests.BreadthTestSuite
+java --add-modules jdk.incubator.vector -cp "$TEST_CP" basalt.tests.BreadthTestSuite
 printf '==> running native tensor suite
 '
-java --add-modules jdk.incubator.vector -cp "$TEST_CP" jsl.tests.NativeTestSuite
+java --add-modules jdk.incubator.vector -cp "$TEST_CP" basalt.tests.NativeTestSuite
 printf '==> running torch eager/autograd suite
 '
-java --add-modules jdk.incubator.vector -cp "$TEST_CP" jsl.tests.TorchTestSuite
+java --add-modules jdk.incubator.vector -cp "$TEST_CP" basalt.tests.TorchTestSuite
 
 if [ -f "$TEST_CLASSES/jsl/tests/Phase1TestSuite.class" ]; then
   printf '==> running Phase 1 suite (JNI engineering, preprocessing, model selection, pipeline)
 '
-  java --add-modules jdk.incubator.vector -cp "$TEST_CP" jsl.tests.Phase1TestSuite
+  java --add-modules jdk.incubator.vector -cp "$TEST_CP" basalt.tests.Phase1TestSuite
 fi
 
 if [ -f "$TEST_CLASSES/jsl/tests/Phase2TestSuite.class" ]; then
   printf '==> running Phase 2 suite (kernels, unsupervised, feature eng, DAG, LR schedulers, ONNX)
 '
-  java --add-modules jdk.incubator.vector -cp "$TEST_CP" jsl.tests.Phase2TestSuite
+  java --add-modules jdk.incubator.vector -cp "$TEST_CP" basalt.tests.Phase2TestSuite
 fi
 
 if [ -f "$TEST_CLASSES/jsl/tests/Phase3TestSuite.class" ]; then
   printf '==> running Phase 3 suite (explainability SHAP/LIME, JFR & observability metrics)
 '
-  java --add-modules jdk.incubator.vector -cp "$TEST_CP" jsl.tests.Phase3TestSuite
+  java --add-modules jdk.incubator.vector -cp "$TEST_CP" basalt.tests.Phase3TestSuite
 fi
 
 if [ -f "$ROOT/pom.xml" ] && command -v mvn >/dev/null 2>&1; then
@@ -135,5 +135,5 @@ for source in src/test/compile-fail/jsl/tests/*.java; do
 ' "$(basename "$source")"
 done
 
-printf 'All JSL verification checks passed.
+printf 'All Basalt verification checks passed.
 '

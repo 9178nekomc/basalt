@@ -1,654 +1,654 @@
 {
- "group": "g24",
- "title": "包内可见类型",
- "modules": [
-  {
-   "name": "jsl",
-   "types": [
+  "group": "g24",
+  "title": "包内可见类型",
+  "modules": [
     {
-     "qualified": "jsl.JslMetrics.OperatorTracker",
-     "simple_qualified": "JslMetrics.OperatorTracker",
-     "kind": "class",
-     "modifiers": [
-      "private",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/JslMetrics.java",
-     "line": 142,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "按算子名分桶的调用量与延迟累加器",
-      "body": [
-       "recordOperator 通过 ConcurrentHashMap.computeIfAbsent 在某个算子名首次出现时创建实例，之后同名算子的所有调用都累加到这一份计数器上，因此它是 JslMetrics 内部唯一的可变指标载体。",
-       "调用次数、总纳秒、元素数与字节数用 LongAdder 累加，最大耗时用 AtomicLong 的 accumulateAndGet 维护；延迟样本写入长度 256 的环形数组，snapshot() 按键值拷贝当前已填充部分并排序取 p50、p95、p99。",
-       "snapshot() 产出的 OperatorSummary 会进入公开的 MetricsSnapshot，并被 toPrometheus() 渲染成带 op 标签的指标行，所以这一类型虽然包内可见，仍决定了调用方读到的分位数口径。"
-      ],
-      "notes": [
-       "分位数只覆盖环形数组内的样本，采样数超过 256 后早期样本会被覆盖。"
+      "name": "basalt",
+      "types": [
+        {
+          "qualified": "basalt.BasaltMetrics.OperatorTracker",
+          "simple_qualified": "BasaltMetrics.OperatorTracker",
+          "kind": "class",
+          "modifiers": [
+            "private",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/BasaltMetrics.java",
+          "line": 142,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "按算子名分桶的调用量与延迟累加器",
+            "body": [
+              "recordOperator 通过 ConcurrentHashMap.computeIfAbsent 在某个算子名首次出现时创建实例，之后同名算子的所有调用都累加到这一份计数器上，因此它是 BasaltMetrics 内部唯一的可变指标载体。",
+              "调用次数、总纳秒、元素数与字节数用 LongAdder 累加，最大耗时用 AtomicLong 的 accumulateAndGet 维护；延迟样本写入长度 256 的环形数组，snapshot() 按键值拷贝当前已填充部分并排序取 p50、p95、p99。",
+              "snapshot() 产出的 OperatorSummary 会进入公开的 MetricsSnapshot，并被 toPrometheus() 渲染成带 op 标签的指标行，所以这一类型虽然包内可见，仍决定了调用方读到的分位数口径。"
+            ],
+            "notes": [
+              "分位数只覆盖环形数组内的样本，采样数超过 256 后早期样本会被覆盖。"
+            ]
+          }
+        }
       ]
-     }
+    },
+    {
+      "name": "basalt.core",
+      "types": [
+        {
+          "qualified": "basalt.core.MatMul.RowTask",
+          "simple_qualified": "MatMul.RowTask",
+          "kind": "class",
+          "modifiers": [
+            "private",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "RecursiveAction",
+          "implements": [],
+          "file": "jsl/core/MatMul.java",
+          "line": 126,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "compute()",
+              "signature": "void compute()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "ForkJoin 调度入口：二分区间或就地计算行块",
+                "body": [
+                  "由 ForkJoinPool 在 MatMul.multiply 的 pool.invoke 之后调用，也可能由父任务通过 invokeAll 提交。判定为叶任务时转入 computeBlock，用 VectorMath.dot 逐列填充共享 output 数组；否则按行区间对半拆成两个 RowTask 并等待二者结束。"
+                ],
+                "returns": "无返回值；结果写入构造时传入的共享 output 数组",
+                "throws": {}
+              }
+            }
+          ],
+          "doc": {
+            "summary": "按行区间切分的 ForkJoin 乘法子任务",
+            "body": [
+              "MatMul.multiply 在未走原生内核时先转置右操作数，再把整个行区间封装成 RowTask 交给 pool.invoke；任务只持有数组引用与区间下标，所有子任务共享同一个 output 数组，各自只写自己负责的行。",
+              "compute() 是 RecursiveAction 的分治入口：行数不超过 ROW_BLOCK（8）或区间工作量不超过 WORK_THRESHOLD（65536）时直接计算，否则从中点二分并用 invokeAll 提交两个子任务并等待返回。"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "basalt.io",
+      "types": [
+        {
+          "qualified": "basalt.io.OnnxConverter.StepResult",
+          "simple_qualified": "OnnxConverter.StepResult",
+          "kind": "record",
+          "modifiers": [
+            "private"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/io/OnnxConverter.java",
+          "line": 397,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "一段导出片段的输出值名与输出维度",
+            "body": [
+              "appendLinearModel、appendTransformer、appendEstimator 每向计算图追加一段就返回该记录，上层据此把下一段的输入接到上一段的 outputName 上；Pipeline 的逐级串联就是靠这两个字段推进的。",
+              "outputDim 只用于构造 graph output 的 ValueInfo 形状 [-1, outputDim]：线性模型与二分类固定为 1，PCA 为所取主成分数，标准化等逐元素变换沿用输入维度。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.io.OnnxModel.ProtoReader",
+          "simple_qualified": "OnnxModel.ProtoReader",
+          "kind": "class",
+          "modifiers": [
+            "private",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/io/OnnxModel.java",
+          "line": 817,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "protobuf 解码游标，供加载路径逐层读取字段",
+            "body": [
+              "parseModelProto 为每个嵌套消息新建一个 ProtoReader 包住对应的字节片段，hasMore() 控制读取循环，skip() 按 wire type 跳过当前版本不认识的字段，使解析器可以容忍模型文件中的新增字段。",
+              "load(Path) 读入整个文件后即由这组游标完成解析；readVarint 在字节耗尽时抛 IllegalStateException，skip 遇到 0、1、2、5 之外的 wire type 抛同一异常，对应被截断或损坏的文件。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.io.OnnxModel.ProtoWriter",
+          "simple_qualified": "OnnxModel.ProtoWriter",
+          "kind": "class",
+          "modifiers": [
+            "private",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/io/OnnxModel.java",
+          "line": 753,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "生成 .onnx 字节的 protobuf 编码缓冲区",
+            "body": [
+              "公开的 toBytes() 用它逐字段拼装 ModelProto：writeTag 与 writeVarint 写键和变长整数，writeFloatField 写 5 号 wire type 的定长浮点，writeBytesField 与 writeStringField 写 2 号 wire type 的长度前缀块。",
+              "缓冲区从 256 字节起按需倍增，toByteArray() 截取到实际写入位置，因此保存出的文件不含未使用的尾部空间；save(Path) 直接落盘这份字节。"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "basalt.ml",
+      "types": [
+        {
+          "qualified": "basalt.ml.BinnedFeatures",
+          "simple_qualified": "BinnedFeatures",
+          "kind": "class",
+          "modifiers": [
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/BinnedFeatures.java",
+          "line": 16,
+          "javadoc": "Quantile binning shared by the histogram boosting core and the random-forest trees.\n\n<p>Each feature is discretized into at most {@code maxBins} buckets. A bucket boundary is stored\nas the midpoint of two adjacent order statistics and is interpreted as\n{@code value <= threshold -> left}. Midpoints are computed as {@code a/2 + b/2} so that two huge\nfinite values cannot overflow to infinity, and the fallback keeps the boundary strictly inside\n{@code [a, b)} even for adjacent IEEE-754 doubles.</p>",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "共享的分位分桶特征表示，树模型在桶上做分裂搜索",
+            "body": [
+              "DecisionTree.fit、RandomForest.fit 与 HistogramGradientBoosting.fit 都先调用 build 把稠密特征离散成 byte 桶号；随机森林随后把同一份结果传给包内的 DecisionTree.fitBinned，避免为每棵树重复分桶与复制矩阵。",
+              "每个特征至多 maxBins 个桶，阈值取相邻顺序统计量的中点，判定语义为 value <= threshold 归左。原生内核可用且行数不少于 512、列数不少于 2 时走 NativeKernels.binFeaturesChecked，否则走 Java 排序路径。",
+              "build 还会校验 maxBins 落在 [2, 255]（MAX_BINS），越界抛 IllegalArgumentException。"
+            ],
+            "notes": [
+              "中点按 a/2 + b/2 计算，避免两个极大有限值相加溢出；回退分支保证阈值仍严格落在 [a, b) 内。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.MlChecks",
+          "simple_qualified": "MlChecks",
+          "kind": "class",
+          "modifiers": [
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/MlChecks.java",
+          "line": 6,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "估计器共用的输入校验方法集合",
+            "body": [
+              "各估计器的 fit 与 predict 入口通过 features、trainingData、predictionData 统一检查空引用、样本数与目标数一致、特征列数与拟合时一致，以及数组内所有取值有限；参数不合法抛 IllegalArgumentException，模型未拟合抛 IllegalStateException。",
+              "positiveFinite 与 nonNegativeFinite 供各 Builder 的 build() 校验超参数，因此非法学习率、容差一类问题在构建阶段就暴露，而不是等到训练。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.PackedTrees",
+          "simple_qualified": "PackedTrees",
+          "kind": "class",
+          "modifiers": [
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/PackedTrees.java",
+          "line": 6,
+          "javadoc": "Concatenated tree arrays for the native ensemble predictor.",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "把多棵树拼接成连续数组，供原生集成预测器读取",
+            "body": [
+              "RandomForest 与 HistogramGradientBoosting 在训练结束以及 read 反序列化后调用 pack，把每棵 TreeModel 的 feature、threshold、left、right、value 平铺进一组数组，offsets 记录第 i 棵树的起始下标。",
+              "预测时整组数组一次性传给原生集成内核，避免逐棵树跨 JNI 调用；copyInto 在搬运时把子节点下标加上偏移，因此拼接后的树之间可以互相跳转。"
+            ],
+            "notes": [
+              "offsets 长度为树数加一，最后一项等于总节点数。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.TreeModel",
+          "simple_qualified": "TreeModel",
+          "kind": "class",
+          "modifiers": [
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/TreeModel.java",
+          "line": 16,
+          "javadoc": "Flat, array-backed regression/classification tree used for inference.\n\n<p>Nodes live in parallel arrays; a leaf is marked by {@code feature == -1}. Prediction is an\niterative pointer walk over primitive arrays, which removes the virtual dispatch and pointer\nchasing of an object tree and keeps the hot path cache friendly. The same representation is\nused by random forests and gradient boosting, so both share one predictor.</p>",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "扁平的数组式回归/分类树，推理为纯下标游走",
+            "body": [
+              "节点存放在 feature、threshold、left、right、value 五个平行数组中，feature 为 -1 表示叶节点；predict 从 0 号节点开始按 value <= threshold 选择左右子节点，直到叶节点返回其值，不做对象分发。",
+              "DecisionTree、RandomForest、HistogramGradientBoosting 与 IsolationForest 共用这一表示，write 与 read 通过 ModelWriter/ModelReader 落盘，模型文件与内存布局一一对应，读回时校验节点数与子节点范围。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.DecisionTree.Workspace",
+          "simple_qualified": "DecisionTree.Workspace",
+          "kind": "class",
+          "modifiers": [
+            "private",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/DecisionTree.java",
+          "line": 466,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "一次 CART 拟合复用的直方图缓冲区",
+            "body": [
+              "fitBinned 在完成类别编码后构造一次，随后的递归建树反复在其上累计统计量；按任务类型分支：分类保存每特征每桶的类别计数与左右计数，回归保存和、平方和与样本数。",
+              "缓冲区大小由 BinnedFeatures.maxBinCount 与特征数决定，随节点递归传递，避免在每个节点内部重新分配。",
+              "Workspace 也持有编码后的类别下标与回归目标数组，使分裂评估只依赖这一个对象。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.HistogramGradientBoosting.HistogramWorkspace",
+          "simple_qualified": "HistogramGradientBoosting.HistogramWorkspace",
+          "kind": "class",
+          "modifiers": [
+            "private",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/HistogramGradientBoosting.java",
+          "line": 746,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "Java 直方图累加的分块暂存区",
+            "body": [
+              "accumulateHistogramJava 在需要并行时按线程数切块，workspace 保存每个分块的 gradient、hessian、count 数组；clear 只清活动特征对应的桶区间，reduce 把各分块累加到 0 号块，再拷回目标直方图。",
+              "实例在 fit 时按特征数、最大桶数与线程数创建，训练结束置空；countAtOrBelow 与 subtractHistogram 也借用它的 maxBins 计算桶偏移。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.HistogramGradientBoosting.LeafCandidate",
+          "simple_qualified": "HistogramGradientBoosting.LeafCandidate",
+          "kind": "record",
+          "modifiers": [
+            "private"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/HistogramGradientBoosting.java",
+          "line": 787,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "best-leaf-first 增长时优先队列中的待分裂叶节点",
+            "body": [
+              "buildLeafWise 维护一个按 decision.gain 降序的优先队列，每次取出增益最大的候选展开；候选携带该节点的样本下标、深度、分裂决策与已算好的直方图，展开或丢弃时直方图归还池。",
+              "深度达到 maxDepth 或样本数不足 2 * minSamplesLeaf 时不再入队，避免无意义的分裂搜索；左右子节点生成后各自重新入队，直到叶数达到 maxLeaves。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.HistogramGradientBoosting.NodeHistogram",
+          "simple_qualified": "HistogramGradientBoosting.NodeHistogram",
+          "kind": "class",
+          "modifiers": [
+            "private",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/HistogramGradientBoosting.java",
+          "line": 734,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "单节点的一阶/二阶梯度与样本计数直方图",
+            "body": [
+              "由三组等长数组组成，下标为 feature * maxBins + bin；rentHistogram 从 histogramPool 借出，建树过程用完即归还，以减少每轮迭代在节点上的分配。",
+              "父子节点之间采用 LightGBM 的减法技巧：只累加较小的子节点，较大的子节点由父直方图减去小子节点得到，因此同一份缓冲区会在递归中多次复用。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.HistogramGradientBoosting.SplitDecision",
+          "simple_qualified": "HistogramGradientBoosting.SplitDecision",
+          "kind": "record",
+          "modifiers": [
+            "private"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/HistogramGradientBoosting.java",
+          "line": 784,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "一次分裂扫描的结果：特征、阈值、桶号与增益",
+            "body": [
+              "bestSplit 在节点直方图上枚举桶边界并返回增益最大的候选；buildDepthWise 与 buildLeafWise 依据 gain 是否大于 0 判定该节点保持为叶，partition 则用 bin 把样本分到左右两支。",
+              "threshold 是写入 TreeModel 供推理比较的实数边界，bin 是训练期分桶下标，两者语义不同，不能互相替代。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.KMeans.Run",
+          "simple_qualified": "KMeans.Run",
+          "kind": "record",
+          "modifiers": [
+            "private"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/KMeans.java",
+          "line": 335,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "单次 k-means 重启的质心、惯性与迭代轮数",
+            "body": [
+              "runOnce 用 k-means++ 选取初始质心后迭代到质心位移不超过 tolerance 的平方或达到 maxIterations，返回质心数组、各样本到所属质心平方距离之和（惯性）以及实际完成的轮数。",
+              "fit 对 restarts 次运行按惯性取最小者写入模型字段，Run 只作为这一次比较的载体，不对外暴露。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.KNearestNeighbors.Neighbor",
+          "simple_qualified": "KNearestNeighbors.Neighbor",
+          "kind": "record",
+          "modifiers": [
+            "private"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/KNearestNeighbors.java",
+          "line": 78,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "分类 k 近邻的候选：距离与标签",
+            "body": [
+              "predict 逐行扫描训练集，把 (距离, 标签) 放入按距离降序的小顶堆，堆大小超过 k 即弹出最远者；遍历结束后堆内即为 k 个最近邻，用于多数投票。",
+              "投票出现平票时取标签较小者，因此结果对标签的数值顺序有确定依赖。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.KNeighborsRegressor.Neighbor",
+          "simple_qualified": "KNeighborsRegressor.Neighbor",
+          "kind": "record",
+          "modifiers": [
+            "private"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/KNeighborsRegressor.java",
+          "line": 62,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "回归 k 近邻的候选：距离与目标值",
+            "body": [
+              "predict 逐行扫描训练集，把 (距离, 目标值) 放入按距离降序的堆并保持至多 k 个元素，最后对堆内 target 求和并除以堆的实际大小。",
+              "训练样本少于 k 时堆中只有实际找到的邻居，均值按堆的实际大小计算，而不是按 k。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.PCA.EigenDecomposition",
+          "simple_qualified": "PCA.EigenDecomposition",
+          "kind": "record",
+          "modifiers": [
+            "private"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/PCA.java",
+          "line": 429,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "对称矩阵对角化的特征值与特征向量",
+            "body": [
+              "jacobi 做循环 Jacobi 对角化后返回该结果：eigenvalues 取收敛矩阵的对角线，eigenvectors 按行存放，第 i 个特征向量是矩阵的第 i 列。",
+              "fitCovariance 与 fitGram 都按特征值降序取前 componentCount 个分量；Gram 路径还会用 sqrt(特征值) 归一化特征向量，把样本空间的主成分转回特征空间。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.SVC.BinarySmoResult",
+          "simple_qualified": "SVC.BinarySmoResult",
+          "kind": "record",
+          "modifiers": [
+            "private"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/SVC.java",
+          "line": 296,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "一个二分类子问题的 SMO 解：系数与偏置",
+            "body": [
+              "fit 对二分类建立一个子问题、对多分类按 one-vs-rest 每类建立一个，每个子问题调用 fitBinarySmo 得到该结果：alpha 长度等于样本数，bias 是决策函数偏置。",
+              "写回模型时 alpha 会先乘以标签 y[i] 存入 alphas[m]，bias 直接写入 intercepts[m]，推理时按同类顺序组合各子问题的输出。"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "basalt.nativebridge",
+      "types": [
+        {
+          "qualified": "basalt.nativebridge.NativeBindings",
+          "simple_qualified": "NativeBindings",
+          "kind": "class",
+          "modifiers": [
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nativebridge/NativeBindings.java",
+          "line": 13,
+          "javadoc": "Raw JNI surface. Package-private on purpose: callers must go through {@link NativeContext} and\n{@link NativeTensorHandle}, which enforce lifecycle, ownership and argument validation.\n\n<p>Every method that returns {@code int} returns {@code 0} on success. The Rust side throws\n{@link IllegalStateException} before returning a negative status, so a Java caller can never\nsilently continue after a rejected operation.</p>",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "包内可见的原始 JNI 方法声明表",
+            "body": [
+              "所有方法均为 native 声明，与 Rust 侧导出的符号一一对应；返回 int 的方法以 0 表示成功，返回 long 的创建方法以 0 表示分配失败，返回 int[] 的方法用于读取形状。",
+              "调用方不直接接触这张表：NativeContext 与 NativeTensorHandle 在 Guard 持有的读锁下转发调用，并在返回后补上生命周期与参数校验。"
+            ],
+            "notes": [
+              "Rust 侧在返回负状态前会先抛 IllegalStateException，因此 Java 调用方不会在操作被拒绝后继续执行。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nativebridge.NativeContext.State",
+          "simple_qualified": "NativeContext.State",
+          "kind": "class",
+          "modifiers": [
+            "private",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Runnable"
+          ],
+          "file": "jsl/nativebridge/NativeContext.java",
+          "line": 254,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "run()",
+              "signature": "void run()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "释放上下文指针，至多执行一次",
+                "body": [
+                  "由 Cleaner 线程在上下文不可达时调用，或由 NativeContext.close 通过 cleanable.clean() 同步调用。抢占到非零指针的一方执行 NativeBindings.destroyContext，另一方取到 0 后立即返回。"
+                ],
+                "returns": "无返回值；内部异常被吞掉以保证清理线程安全",
+                "throws": {}
+              }
+            }
+          ],
+          "doc": {
+            "summary": "上下文指针的清理动作，由 Cleaner 执行",
+            "body": [
+              "NativeContext 构造时把 State 注册到静态 Cleaner，close() 也会调用 cleanable.clean()；两条路径都进入 run，先以 getAndSet(0) 取走指针，得到 0 即说明已被另一方释放，直接返回。",
+              "抢占到指针的一方调用 NativeBindings.destroyContext；异常被捕获并忽略，因为清理线程不应向外抛出，且上下文注册表使重复销毁成为无操作。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nativebridge.NativeTensorHandle.State",
+          "simple_qualified": "NativeTensorHandle.State",
+          "kind": "class",
+          "modifiers": [
+            "private",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Runnable"
+          ],
+          "file": "jsl/nativebridge/NativeTensorHandle.java",
+          "line": 165,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "run()",
+              "signature": "void run()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "把非零张量指针归还给所属上下文",
+                "body": [
+                  "由 Cleaner 线程或 close() 触发。取到非零指针后调用 context.releaseTensorQuietly(value)，该调用在上下文仍打开时经 Guard 转发到 NativeBindings.releaseTensor，否则静默跳过。"
+                ],
+                "returns": "无返回值；不抛出异常",
+                "throws": {}
+              }
+            }
+          ],
+          "doc": {
+            "summary": "张量句柄的释放动作，保证只归还一次",
+            "body": [
+              "NativeTensorHandle 构造时把 State 注册到静态 Cleaner，close() 与不可达回收都落到 run；指针先被 getAndSet(0)，因此重复关闭不会二次释放。",
+              "释放委托给 context.releaseTensorQuietly：上下文仍打开时经 Guard 转发到 NativeBindings.releaseTensor，上下文已关闭时直接返回，因为原生销毁上下文时已回收其全部张量。"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "basalt.nn",
+      "types": [
+        {
+          "qualified": "basalt.nn.Parameter",
+          "simple_qualified": "Parameter",
+          "kind": "class",
+          "modifiers": [
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/Parameter.java",
+          "line": 8,
+          "javadoc": "Trainable array with private SGD/Adam state; both updates run through SIMD loops.",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "带私有 SGD/Adam 状态的训练参数数组",
+            "body": [
+              "每个实例持有一份 double[] 权重与两份同长的一阶、二阶矩缓冲，Dense、Conv2D、GRU、LSTM 等层在构造时创建，训练循环里调用 update 原地更新。",
+              "update 按 OptimizerConfig 选择 SGD 或 Adam：两者都用 VectorSpecies 做向量化循环并以标量循环收尾；Adam 路径每更新一次把 step 加一，并按 1 - beta^step 做偏差校正。",
+              "层的 parameters() 通过 ParameterRef 暴露 values() 数组，因此这一类型会出现在参数列表相关的签名链上，调用方据此读取或检查权重。"
+            ]
+          }
+        }
+      ]
     }
-   ]
-  },
-  {
-   "name": "jsl.core",
-   "types": [
-    {
-     "qualified": "jsl.core.MatMul.RowTask",
-     "simple_qualified": "MatMul.RowTask",
-     "kind": "class",
-     "modifiers": [
-      "private",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "RecursiveAction",
-     "implements": [],
-     "file": "jsl/core/MatMul.java",
-     "line": 126,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "compute()",
-       "signature": "void compute()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "ForkJoin 调度入口：二分区间或就地计算行块",
-        "body": [
-         "由 ForkJoinPool 在 MatMul.multiply 的 pool.invoke 之后调用，也可能由父任务通过 invokeAll 提交。判定为叶任务时转入 computeBlock，用 VectorMath.dot 逐列填充共享 output 数组；否则按行区间对半拆成两个 RowTask 并等待二者结束。"
-        ],
-        "returns": "无返回值；结果写入构造时传入的共享 output 数组",
-        "throws": {}
-       }
-      }
-     ],
-     "doc": {
-      "summary": "按行区间切分的 ForkJoin 乘法子任务",
-      "body": [
-       "MatMul.multiply 在未走原生内核时先转置右操作数，再把整个行区间封装成 RowTask 交给 pool.invoke；任务只持有数组引用与区间下标，所有子任务共享同一个 output 数组，各自只写自己负责的行。",
-       "compute() 是 RecursiveAction 的分治入口：行数不超过 ROW_BLOCK（8）或区间工作量不超过 WORK_THRESHOLD（65536）时直接计算，否则从中点二分并用 invokeAll 提交两个子任务并等待返回。"
-      ]
-     }
-    }
-   ]
-  },
-  {
-   "name": "jsl.io",
-   "types": [
-    {
-     "qualified": "jsl.io.OnnxConverter.StepResult",
-     "simple_qualified": "OnnxConverter.StepResult",
-     "kind": "record",
-     "modifiers": [
-      "private"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/io/OnnxConverter.java",
-     "line": 397,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "一段导出片段的输出值名与输出维度",
-      "body": [
-       "appendLinearModel、appendTransformer、appendEstimator 每向计算图追加一段就返回该记录，上层据此把下一段的输入接到上一段的 outputName 上；Pipeline 的逐级串联就是靠这两个字段推进的。",
-       "outputDim 只用于构造 graph output 的 ValueInfo 形状 [-1, outputDim]：线性模型与二分类固定为 1，PCA 为所取主成分数，标准化等逐元素变换沿用输入维度。"
-      ]
-     }
-    },
-    {
-     "qualified": "jsl.io.OnnxModel.ProtoReader",
-     "simple_qualified": "OnnxModel.ProtoReader",
-     "kind": "class",
-     "modifiers": [
-      "private",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/io/OnnxModel.java",
-     "line": 817,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "protobuf 解码游标，供加载路径逐层读取字段",
-      "body": [
-       "parseModelProto 为每个嵌套消息新建一个 ProtoReader 包住对应的字节片段，hasMore() 控制读取循环，skip() 按 wire type 跳过当前版本不认识的字段，使解析器可以容忍模型文件中的新增字段。",
-       "load(Path) 读入整个文件后即由这组游标完成解析；readVarint 在字节耗尽时抛 IllegalStateException，skip 遇到 0、1、2、5 之外的 wire type 抛同一异常，对应被截断或损坏的文件。"
-      ]
-     }
-    },
-    {
-     "qualified": "jsl.io.OnnxModel.ProtoWriter",
-     "simple_qualified": "OnnxModel.ProtoWriter",
-     "kind": "class",
-     "modifiers": [
-      "private",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/io/OnnxModel.java",
-     "line": 753,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "生成 .onnx 字节的 protobuf 编码缓冲区",
-      "body": [
-       "公开的 toBytes() 用它逐字段拼装 ModelProto：writeTag 与 writeVarint 写键和变长整数，writeFloatField 写 5 号 wire type 的定长浮点，writeBytesField 与 writeStringField 写 2 号 wire type 的长度前缀块。",
-       "缓冲区从 256 字节起按需倍增，toByteArray() 截取到实际写入位置，因此保存出的文件不含未使用的尾部空间；save(Path) 直接落盘这份字节。"
-      ]
-     }
-    }
-   ]
-  },
-  {
-   "name": "jsl.ml",
-   "types": [
-    {
-     "qualified": "jsl.ml.BinnedFeatures",
-     "simple_qualified": "BinnedFeatures",
-     "kind": "class",
-     "modifiers": [
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/BinnedFeatures.java",
-     "line": 16,
-     "javadoc": "Quantile binning shared by the histogram boosting core and the random-forest trees.\n\n<p>Each feature is discretized into at most {@code maxBins} buckets. A bucket boundary is stored\nas the midpoint of two adjacent order statistics and is interpreted as\n{@code value <= threshold -> left}. Midpoints are computed as {@code a/2 + b/2} so that two huge\nfinite values cannot overflow to infinity, and the fallback keeps the boundary strictly inside\n{@code [a, b)} even for adjacent IEEE-754 doubles.</p>",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "共享的分位分桶特征表示，树模型在桶上做分裂搜索",
-      "body": [
-       "DecisionTree.fit、RandomForest.fit 与 HistogramGradientBoosting.fit 都先调用 build 把稠密特征离散成 byte 桶号；随机森林随后把同一份结果传给包内的 DecisionTree.fitBinned，避免为每棵树重复分桶与复制矩阵。",
-       "每个特征至多 maxBins 个桶，阈值取相邻顺序统计量的中点，判定语义为 value <= threshold 归左。原生内核可用且行数不少于 512、列数不少于 2 时走 NativeKernels.binFeaturesChecked，否则走 Java 排序路径。",
-       "build 还会校验 maxBins 落在 [2, 255]（MAX_BINS），越界抛 IllegalArgumentException。"
-      ],
-      "notes": [
-       "中点按 a/2 + b/2 计算，避免两个极大有限值相加溢出；回退分支保证阈值仍严格落在 [a, b) 内。"
-      ]
-     }
-    },
-    {
-     "qualified": "jsl.ml.MlChecks",
-     "simple_qualified": "MlChecks",
-     "kind": "class",
-     "modifiers": [
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/MlChecks.java",
-     "line": 6,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "估计器共用的输入校验方法集合",
-      "body": [
-       "各估计器的 fit 与 predict 入口通过 features、trainingData、predictionData 统一检查空引用、样本数与目标数一致、特征列数与拟合时一致，以及数组内所有取值有限；参数不合法抛 IllegalArgumentException，模型未拟合抛 IllegalStateException。",
-       "positiveFinite 与 nonNegativeFinite 供各 Builder 的 build() 校验超参数，因此非法学习率、容差一类问题在构建阶段就暴露，而不是等到训练。"
-      ]
-     }
-    },
-    {
-     "qualified": "jsl.ml.PackedTrees",
-     "simple_qualified": "PackedTrees",
-     "kind": "class",
-     "modifiers": [
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/PackedTrees.java",
-     "line": 6,
-     "javadoc": "Concatenated tree arrays for the native ensemble predictor.",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "把多棵树拼接成连续数组，供原生集成预测器读取",
-      "body": [
-       "RandomForest 与 HistogramGradientBoosting 在训练结束以及 read 反序列化后调用 pack，把每棵 TreeModel 的 feature、threshold、left、right、value 平铺进一组数组，offsets 记录第 i 棵树的起始下标。",
-       "预测时整组数组一次性传给原生集成内核，避免逐棵树跨 JNI 调用；copyInto 在搬运时把子节点下标加上偏移，因此拼接后的树之间可以互相跳转。"
-      ],
-      "notes": [
-       "offsets 长度为树数加一，最后一项等于总节点数。"
-      ]
-     }
-    },
-    {
-     "qualified": "jsl.ml.TreeModel",
-     "simple_qualified": "TreeModel",
-     "kind": "class",
-     "modifiers": [
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/TreeModel.java",
-     "line": 16,
-     "javadoc": "Flat, array-backed regression/classification tree used for inference.\n\n<p>Nodes live in parallel arrays; a leaf is marked by {@code feature == -1}. Prediction is an\niterative pointer walk over primitive arrays, which removes the virtual dispatch and pointer\nchasing of an object tree and keeps the hot path cache friendly. The same representation is\nused by random forests and gradient boosting, so both share one predictor.</p>",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "扁平的数组式回归/分类树，推理为纯下标游走",
-      "body": [
-       "节点存放在 feature、threshold、left、right、value 五个平行数组中，feature 为 -1 表示叶节点；predict 从 0 号节点开始按 value <= threshold 选择左右子节点，直到叶节点返回其值，不做对象分发。",
-       "DecisionTree、RandomForest、HistogramGradientBoosting 与 IsolationForest 共用这一表示，write 与 read 通过 ModelWriter/ModelReader 落盘，模型文件与内存布局一一对应，读回时校验节点数与子节点范围。"
-      ]
-     }
-    },
-    {
-     "qualified": "jsl.ml.DecisionTree.Workspace",
-     "simple_qualified": "DecisionTree.Workspace",
-     "kind": "class",
-     "modifiers": [
-      "private",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/DecisionTree.java",
-     "line": 466,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "一次 CART 拟合复用的直方图缓冲区",
-      "body": [
-       "fitBinned 在完成类别编码后构造一次，随后的递归建树反复在其上累计统计量；按任务类型分支：分类保存每特征每桶的类别计数与左右计数，回归保存和、平方和与样本数。",
-       "缓冲区大小由 BinnedFeatures.maxBinCount 与特征数决定，随节点递归传递，避免在每个节点内部重新分配。",
-       "Workspace 也持有编码后的类别下标与回归目标数组，使分裂评估只依赖这一个对象。"
-      ]
-     }
-    },
-    {
-     "qualified": "jsl.ml.HistogramGradientBoosting.HistogramWorkspace",
-     "simple_qualified": "HistogramGradientBoosting.HistogramWorkspace",
-     "kind": "class",
-     "modifiers": [
-      "private",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/HistogramGradientBoosting.java",
-     "line": 746,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "Java 直方图累加的分块暂存区",
-      "body": [
-       "accumulateHistogramJava 在需要并行时按线程数切块，workspace 保存每个分块的 gradient、hessian、count 数组；clear 只清活动特征对应的桶区间，reduce 把各分块累加到 0 号块，再拷回目标直方图。",
-       "实例在 fit 时按特征数、最大桶数与线程数创建，训练结束置空；countAtOrBelow 与 subtractHistogram 也借用它的 maxBins 计算桶偏移。"
-      ]
-     }
-    },
-    {
-     "qualified": "jsl.ml.HistogramGradientBoosting.LeafCandidate",
-     "simple_qualified": "HistogramGradientBoosting.LeafCandidate",
-     "kind": "record",
-     "modifiers": [
-      "private"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/HistogramGradientBoosting.java",
-     "line": 787,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "best-leaf-first 增长时优先队列中的待分裂叶节点",
-      "body": [
-       "buildLeafWise 维护一个按 decision.gain 降序的优先队列，每次取出增益最大的候选展开；候选携带该节点的样本下标、深度、分裂决策与已算好的直方图，展开或丢弃时直方图归还池。",
-       "深度达到 maxDepth 或样本数不足 2 * minSamplesLeaf 时不再入队，避免无意义的分裂搜索；左右子节点生成后各自重新入队，直到叶数达到 maxLeaves。"
-      ]
-     }
-    },
-    {
-     "qualified": "jsl.ml.HistogramGradientBoosting.NodeHistogram",
-     "simple_qualified": "HistogramGradientBoosting.NodeHistogram",
-     "kind": "class",
-     "modifiers": [
-      "private",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/HistogramGradientBoosting.java",
-     "line": 734,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "单节点的一阶/二阶梯度与样本计数直方图",
-      "body": [
-       "由三组等长数组组成，下标为 feature * maxBins + bin；rentHistogram 从 histogramPool 借出，建树过程用完即归还，以减少每轮迭代在节点上的分配。",
-       "父子节点之间采用 LightGBM 的减法技巧：只累加较小的子节点，较大的子节点由父直方图减去小子节点得到，因此同一份缓冲区会在递归中多次复用。"
-      ]
-     }
-    },
-    {
-     "qualified": "jsl.ml.HistogramGradientBoosting.SplitDecision",
-     "simple_qualified": "HistogramGradientBoosting.SplitDecision",
-     "kind": "record",
-     "modifiers": [
-      "private"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/HistogramGradientBoosting.java",
-     "line": 784,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "一次分裂扫描的结果：特征、阈值、桶号与增益",
-      "body": [
-       "bestSplit 在节点直方图上枚举桶边界并返回增益最大的候选；buildDepthWise 与 buildLeafWise 依据 gain 是否大于 0 判定该节点保持为叶，partition 则用 bin 把样本分到左右两支。",
-       "threshold 是写入 TreeModel 供推理比较的实数边界，bin 是训练期分桶下标，两者语义不同，不能互相替代。"
-      ]
-     }
-    },
-    {
-     "qualified": "jsl.ml.KMeans.Run",
-     "simple_qualified": "KMeans.Run",
-     "kind": "record",
-     "modifiers": [
-      "private"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/KMeans.java",
-     "line": 335,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "单次 k-means 重启的质心、惯性与迭代轮数",
-      "body": [
-       "runOnce 用 k-means++ 选取初始质心后迭代到质心位移不超过 tolerance 的平方或达到 maxIterations，返回质心数组、各样本到所属质心平方距离之和（惯性）以及实际完成的轮数。",
-       "fit 对 restarts 次运行按惯性取最小者写入模型字段，Run 只作为这一次比较的载体，不对外暴露。"
-      ]
-     }
-    },
-    {
-     "qualified": "jsl.ml.KNearestNeighbors.Neighbor",
-     "simple_qualified": "KNearestNeighbors.Neighbor",
-     "kind": "record",
-     "modifiers": [
-      "private"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/KNearestNeighbors.java",
-     "line": 78,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "分类 k 近邻的候选：距离与标签",
-      "body": [
-       "predict 逐行扫描训练集，把 (距离, 标签) 放入按距离降序的小顶堆，堆大小超过 k 即弹出最远者；遍历结束后堆内即为 k 个最近邻，用于多数投票。",
-       "投票出现平票时取标签较小者，因此结果对标签的数值顺序有确定依赖。"
-      ]
-     }
-    },
-    {
-     "qualified": "jsl.ml.KNeighborsRegressor.Neighbor",
-     "simple_qualified": "KNeighborsRegressor.Neighbor",
-     "kind": "record",
-     "modifiers": [
-      "private"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/KNeighborsRegressor.java",
-     "line": 62,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "回归 k 近邻的候选：距离与目标值",
-      "body": [
-       "predict 逐行扫描训练集，把 (距离, 目标值) 放入按距离降序的堆并保持至多 k 个元素，最后对堆内 target 求和并除以堆的实际大小。",
-       "训练样本少于 k 时堆中只有实际找到的邻居，均值按堆的实际大小计算，而不是按 k。"
-      ]
-     }
-    },
-    {
-     "qualified": "jsl.ml.PCA.EigenDecomposition",
-     "simple_qualified": "PCA.EigenDecomposition",
-     "kind": "record",
-     "modifiers": [
-      "private"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/PCA.java",
-     "line": 429,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "对称矩阵对角化的特征值与特征向量",
-      "body": [
-       "jacobi 做循环 Jacobi 对角化后返回该结果：eigenvalues 取收敛矩阵的对角线，eigenvectors 按行存放，第 i 个特征向量是矩阵的第 i 列。",
-       "fitCovariance 与 fitGram 都按特征值降序取前 componentCount 个分量；Gram 路径还会用 sqrt(特征值) 归一化特征向量，把样本空间的主成分转回特征空间。"
-      ]
-     }
-    },
-    {
-     "qualified": "jsl.ml.SVC.BinarySmoResult",
-     "simple_qualified": "SVC.BinarySmoResult",
-     "kind": "record",
-     "modifiers": [
-      "private"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/SVC.java",
-     "line": 296,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "一个二分类子问题的 SMO 解：系数与偏置",
-      "body": [
-       "fit 对二分类建立一个子问题、对多分类按 one-vs-rest 每类建立一个，每个子问题调用 fitBinarySmo 得到该结果：alpha 长度等于样本数，bias 是决策函数偏置。",
-       "写回模型时 alpha 会先乘以标签 y[i] 存入 alphas[m]，bias 直接写入 intercepts[m]，推理时按同类顺序组合各子问题的输出。"
-      ]
-     }
-    }
-   ]
-  },
-  {
-   "name": "jsl.nativebridge",
-   "types": [
-    {
-     "qualified": "jsl.nativebridge.NativeBindings",
-     "simple_qualified": "NativeBindings",
-     "kind": "class",
-     "modifiers": [
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nativebridge/NativeBindings.java",
-     "line": 13,
-     "javadoc": "Raw JNI surface. Package-private on purpose: callers must go through {@link NativeContext} and\n{@link NativeTensorHandle}, which enforce lifecycle, ownership and argument validation.\n\n<p>Every method that returns {@code int} returns {@code 0} on success. The Rust side throws\n{@link IllegalStateException} before returning a negative status, so a Java caller can never\nsilently continue after a rejected operation.</p>",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "包内可见的原始 JNI 方法声明表",
-      "body": [
-       "所有方法均为 native 声明，与 Rust 侧导出的符号一一对应；返回 int 的方法以 0 表示成功，返回 long 的创建方法以 0 表示分配失败，返回 int[] 的方法用于读取形状。",
-       "调用方不直接接触这张表：NativeContext 与 NativeTensorHandle 在 Guard 持有的读锁下转发调用，并在返回后补上生命周期与参数校验。"
-      ],
-      "notes": [
-       "Rust 侧在返回负状态前会先抛 IllegalStateException，因此 Java 调用方不会在操作被拒绝后继续执行。"
-      ]
-     }
-    },
-    {
-     "qualified": "jsl.nativebridge.NativeContext.State",
-     "simple_qualified": "NativeContext.State",
-     "kind": "class",
-     "modifiers": [
-      "private",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "Runnable"
-     ],
-     "file": "jsl/nativebridge/NativeContext.java",
-     "line": 254,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "run()",
-       "signature": "void run()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "释放上下文指针，至多执行一次",
-        "body": [
-         "由 Cleaner 线程在上下文不可达时调用，或由 NativeContext.close 通过 cleanable.clean() 同步调用。抢占到非零指针的一方执行 NativeBindings.destroyContext，另一方取到 0 后立即返回。"
-        ],
-        "returns": "无返回值；内部异常被吞掉以保证清理线程安全",
-        "throws": {}
-       }
-      }
-     ],
-     "doc": {
-      "summary": "上下文指针的清理动作，由 Cleaner 执行",
-      "body": [
-       "NativeContext 构造时把 State 注册到静态 Cleaner，close() 也会调用 cleanable.clean()；两条路径都进入 run，先以 getAndSet(0) 取走指针，得到 0 即说明已被另一方释放，直接返回。",
-       "抢占到指针的一方调用 NativeBindings.destroyContext；异常被捕获并忽略，因为清理线程不应向外抛出，且上下文注册表使重复销毁成为无操作。"
-      ]
-     }
-    },
-    {
-     "qualified": "jsl.nativebridge.NativeTensorHandle.State",
-     "simple_qualified": "NativeTensorHandle.State",
-     "kind": "class",
-     "modifiers": [
-      "private",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "Runnable"
-     ],
-     "file": "jsl/nativebridge/NativeTensorHandle.java",
-     "line": 165,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "run()",
-       "signature": "void run()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把非零张量指针归还给所属上下文",
-        "body": [
-         "由 Cleaner 线程或 close() 触发。取到非零指针后调用 context.releaseTensorQuietly(value)，该调用在上下文仍打开时经 Guard 转发到 NativeBindings.releaseTensor，否则静默跳过。"
-        ],
-        "returns": "无返回值；不抛出异常",
-        "throws": {}
-       }
-      }
-     ],
-     "doc": {
-      "summary": "张量句柄的释放动作，保证只归还一次",
-      "body": [
-       "NativeTensorHandle 构造时把 State 注册到静态 Cleaner，close() 与不可达回收都落到 run；指针先被 getAndSet(0)，因此重复关闭不会二次释放。",
-       "释放委托给 context.releaseTensorQuietly：上下文仍打开时经 Guard 转发到 NativeBindings.releaseTensor，上下文已关闭时直接返回，因为原生销毁上下文时已回收其全部张量。"
-      ]
-     }
-    }
-   ]
-  },
-  {
-   "name": "jsl.nn",
-   "types": [
-    {
-     "qualified": "jsl.nn.Parameter",
-     "simple_qualified": "Parameter",
-     "kind": "class",
-     "modifiers": [
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/Parameter.java",
-     "line": 8,
-     "javadoc": "Trainable array with private SGD/Adam state; both updates run through SIMD loops.",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "带私有 SGD/Adam 状态的训练参数数组",
-      "body": [
-       "每个实例持有一份 double[] 权重与两份同长的一阶、二阶矩缓冲，Dense、Conv2D、GRU、LSTM 等层在构造时创建，训练循环里调用 update 原地更新。",
-       "update 按 OptimizerConfig 选择 SGD 或 Adam：两者都用 VectorSpecies 做向量化循环并以标量循环收尾；Adam 路径每更新一次把 step 加一，并按 1 - beta^step 做偏差校正。",
-       "层的 parameters() 通过 ParameterRef 暴露 values() 数组，因此这一类型会出现在参数列表相关的签名链上，调用方据此读取或检查权重。"
-      ]
-     }
-    }
-   ]
-  }
- ]
+  ]
 }

@@ -1,4 +1,4 @@
-//! JSL native runtime.
+//! Basalt native runtime.
 //!
 //! `classic` keeps the original array-based kernels (f64 GEMM, K-Means assignment, forest
 //! prediction, histogram accumulation) used by the classical estimators. The tensor engine lives

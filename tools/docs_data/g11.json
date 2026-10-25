@@ -3,10 +3,10 @@
  "title": "经典机器学习（6/9）",
  "modules": [
   {
-   "name": "jsl.ml",
+   "name": "basalt.ml",
    "types": [
     {
-     "qualified": "jsl.ml.GridSearchCV.CandidateResult",
+     "qualified": "basalt.ml.GridSearchCV.CandidateResult",
      "simple_qualified": "GridSearchCV.CandidateResult",
      "kind": "record",
      "modifiers": [
@@ -31,13 +31,13 @@
        "记录本身不校验 params 与估计器配置是否匹配，也不校验 foldScores 长度"
       ],
       "see": [
-       "jsl.ml.GridSearchCV",
-       "jsl.ml.GridSearchCV.cvResults()"
+       "basalt.ml.GridSearchCV",
+       "basalt.ml.GridSearchCV.cvResults()"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.HistogramGradientBoosting.Builder",
+     "qualified": "basalt.ml.HistogramGradientBoosting.Builder",
      "simple_qualified": "HistogramGradientBoosting.Builder",
      "kind": "class",
      "modifiers": [
@@ -428,14 +428,14 @@
       ],
       "example": "HistogramGradientBoosting model = HistogramGradientBoosting.builder()\n        .algorithm(BoostingAlgorithm.LIGHTGBM)\n        .objective(BoostingObjective.SQUARED_ERROR)\n        .iterations(300)\n        .learningRate(0.05)\n        .maxLeaves(31)\n        .minChildWeight(1e-3)\n        .lambda(1.0)\n        .gamma(0.0)\n        .featureFraction(0.8)\n        .validationFraction(0.2)\n        .earlyStoppingRounds(20)\n        .threads(4)\n        .seed(42L)\n        .build();",
       "see": [
-       "jsl.ml.HistogramGradientBoosting",
-       "jsl.ml.BoostingAlgorithm",
-       "jsl.ml.BoostingObjective"
+       "basalt.ml.HistogramGradientBoosting",
+       "basalt.ml.BoostingAlgorithm",
+       "basalt.ml.BoostingObjective"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.IsolationForest.Builder",
+     "qualified": "basalt.ml.IsolationForest.Builder",
      "simple_qualified": "IsolationForest.Builder",
      "kind": "class",
      "modifiers": [
@@ -575,14 +575,14 @@
       ],
       "example": "IsolationForest model = IsolationForest.builder()\n        .trees(200)\n        .maxSamples(128)\n        .contamination(0.05)\n        .seed(7L)\n        .build();",
       "see": [
-       "jsl.ml.IsolationForest",
-       "jsl.ml.IsolationForest.anomalyScore(Matrix)"
+       "basalt.ml.IsolationForest",
+       "basalt.ml.IsolationForest.anomalyScore(Matrix)"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.JSL.Algorithm",
-     "simple_qualified": "JSL.Algorithm",
+     "qualified": "basalt.ml.Estimators.Algorithm",
+     "simple_qualified": "Basalt.Algorithm",
      "kind": "enum",
      "modifiers": [
       "public"
@@ -590,7 +590,7 @@
      "generic": "",
      "extends": "",
      "implements": [],
-     "file": "jsl/ml/JSL.java",
+     "file": "jsl/ml/Basalt.java",
      "line": 19,
      "javadoc": "",
      "nested": [],
@@ -942,14 +942,14 @@
        "task() 是唯一的实例方法，无参无副作用"
       ],
       "see": [
-       "jsl.ml.JSL.Task",
-       "jsl.ml.JSL"
+       "basalt.ml.Estimators.Task",
+       "basalt.ml.Estimators"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.JSL.Metric",
-     "simple_qualified": "JSL.Metric",
+     "qualified": "basalt.ml.Estimators.Metric",
+     "simple_qualified": "Estimators.Metric",
      "kind": "enum",
      "modifiers": [
       "public"
@@ -957,7 +957,7 @@
      "generic": "",
      "extends": "",
      "implements": [],
-     "file": "jsl/ml/JSL.java",
+     "file": "jsl/ml/Basalt.java",
      "line": 55,
      "javadoc": "",
      "nested": [],
@@ -1014,14 +1014,14 @@
        "指标在每折测试集上独立计算，不做加权平均"
       ],
       "see": [
-       "jsl.ml.Metrics",
-       "jsl.ml.JSL.crossValidate(Algorithm, Matrix, double[], int, Metric)"
+       "basalt.ml.Metrics",
+       "basalt.ml.Estimators.crossValidate(Algorithm, Matrix, double[], int, Metric)"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.JSL.Task",
-     "simple_qualified": "JSL.Task",
+     "qualified": "basalt.ml.Estimators.Task",
+     "simple_qualified": "Basalt.Task",
      "kind": "enum",
      "modifiers": [
       "public"
@@ -1029,7 +1029,7 @@
      "generic": "",
      "extends": "",
      "implements": [],
-     "file": "jsl/ml/JSL.java",
+     "file": "jsl/ml/Basalt.java",
      "line": 13,
      "javadoc": "",
      "nested": [],
@@ -1075,12 +1075,12 @@
        "三个常量之间没有层级关系，判断一律用相等比较"
       ],
       "see": [
-       "jsl.ml.JSL.Algorithm"
+       "basalt.ml.Estimators.Algorithm"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.KBinsDiscretizer.Builder",
+     "qualified": "basalt.ml.KBinsDiscretizer.Builder",
      "simple_qualified": "KBinsDiscretizer.Builder",
      "kind": "class",
      "modifiers": [
@@ -1194,14 +1194,14 @@
       ],
       "example": "KBinsDiscretizer discretizer = KBinsDiscretizer.builder()\n        .nBins(10)\n        .strategy(KBinsDiscretizer.Strategy.QUANTILE)\n        .encode(KBinsDiscretizer.Encode.ONEHOT_DENSE)\n        .build();",
       "see": [
-       "jsl.ml.KBinsDiscretizer",
-       "jsl.ml.KBinsDiscretizer.Strategy",
-       "jsl.ml.KBinsDiscretizer.Encode"
+       "basalt.ml.KBinsDiscretizer",
+       "basalt.ml.KBinsDiscretizer.Strategy",
+       "basalt.ml.KBinsDiscretizer.Encode"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.KBinsDiscretizer.Encode",
+     "qualified": "basalt.ml.KBinsDiscretizer.Encode",
      "simple_qualified": "KBinsDiscretizer.Encode",
      "kind": "enum",
      "modifiers": [
@@ -1247,13 +1247,13 @@
        "predict 返回 transform 结果的展平数组，维度取决于当前编码"
       ],
       "see": [
-       "jsl.ml.KBinsDiscretizer",
-       "jsl.ml.KBinsDiscretizer.Strategy"
+       "basalt.ml.KBinsDiscretizer",
+       "basalt.ml.KBinsDiscretizer.Strategy"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.KBinsDiscretizer.Strategy",
+     "qualified": "basalt.ml.KBinsDiscretizer.Strategy",
      "simple_qualified": "KBinsDiscretizer.Strategy",
      "kind": "enum",
      "modifiers": [
@@ -1309,14 +1309,14 @@
        "QUANTILE 的边界由训练数据决定，transform 时低于首边界或高于末边界恒落入首箱或末箱"
       ],
       "see": [
-       "jsl.ml.KBinsDiscretizer",
-       "jsl.ml.KBinsDiscretizer.Encode",
-       "jsl.ml.KMeans"
+       "basalt.ml.KBinsDiscretizer",
+       "basalt.ml.KBinsDiscretizer.Encode",
+       "basalt.ml.KMeans"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.KMeans.Builder",
+     "qualified": "basalt.ml.KMeans.Builder",
      "simple_qualified": "KMeans.Builder",
      "kind": "class",
      "modifiers": [
@@ -1485,7 +1485,7 @@
      }
     },
     {
-     "qualified": "jsl.ml.KNearestNeighbors.Builder",
+     "qualified": "basalt.ml.KNearestNeighbors.Builder",
      "simple_qualified": "KNearestNeighbors.Builder",
      "kind": "class",
      "modifiers": [
@@ -1568,7 +1568,7 @@
       "summary": "KNearestNeighbors 的流式构建器。",
       "body": [
        "两个字段在构建器内可变，setter 返回 this 以便串联。metric 在 setter 中立即做非空检查，k 的合法性推迟到 build() 校验。",
-       "默认 k=5、metric=DistanceMetric.EUCLIDEAN，与门面 JSL.Algorithm.KNN 使用的配置一致。"
+       "默认 k=5、metric=DistanceMetric.EUCLIDEAN，与门面 Basalt.Algorithm.KNN 使用的配置一致。"
       ],
       "notes": [
        "构建器不是线程安全的，配置完成后应尽快 build()",
@@ -1576,13 +1576,13 @@
       ],
       "example": "KNearestNeighbors model = KNearestNeighbors.builder()\n        .k(3)\n        .metric(DistanceMetric.EUCLIDEAN)\n        .build();",
       "see": [
-       "jsl.ml.KNearestNeighbors",
-       "jsl.ml.DistanceMetric"
+       "basalt.ml.KNearestNeighbors",
+       "basalt.ml.DistanceMetric"
       ]
      }
     },
     {
-     "qualified": "jsl.ml.KNeighborsRegressor.Builder",
+     "qualified": "basalt.ml.KNeighborsRegressor.Builder",
      "simple_qualified": "KNeighborsRegressor.Builder",
      "kind": "class",
      "modifiers": [
@@ -1671,8 +1671,8 @@
       ],
       "example": "KNeighborsRegressor model = KNeighborsRegressor.builder()\n        .k(5)\n        .metric(DistanceMetric.MANHATTAN)\n        .build();",
       "see": [
-       "jsl.ml.KNeighborsRegressor",
-       "jsl.ml.DistanceMetric"
+       "basalt.ml.KNeighborsRegressor",
+       "basalt.ml.DistanceMetric"
       ]
      }
     }
