@@ -1,6 +1,6 @@
 # JSL — Java + Rust PyTorch-Class Runtime
 
-> **Maven coordinates** — `io.github.jsl:jsl-runtime:2.4.0`  
+> **Maven coordinates** — `io.github.jsl:jsl-runtime:3.4.0`  
 > **Runtime** — Java 21 (`--add-modules jdk.incubator.vector`) + bundled Rust native library  
 > **One dependency, no Python, no GIL, no manual native build on Windows x86_64.**  
 > **Docs** — <https://9178nekomc.github.io/java-scikit-learn/>
@@ -13,7 +13,7 @@
 <dependency>
     <groupId>io.github.jsl</groupId>
     <artifactId>jsl-runtime</artifactId>
-    <version>2.4.0</version>
+    <version>3.4.0</version>
 </dependency>
 ```
 
@@ -23,7 +23,7 @@ Build and install locally from source:
 mvn clean install
 ```
 
-The shaded, self-contained artifact is `jsl-runtime-2.4.0-all.jar` (classifier `all`).
+The shaded, self-contained artifact is `jsl-runtime-3.4.0-all.jar` (classifier `all`).
 It contains the Windows x86_64 native runtime; other platforms can add their own
 `native/<os>-<arch>/` library or point `-Djsl.native.path` at a locally built one.
 
@@ -119,15 +119,15 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 
 ## 下载
 
-发布资产见 [Releases · v2.4.0](https://github.com/9178nekomc/java-scikit-learn/releases/tag/v2.4.0)：
+发布资产见 [Releases · v3.4.0](https://github.com/9178nekomc/java-scikit-learn/releases/tag/v3.4.0)：
 
 | 文件 | 说明 |
 |---|---|
-| `jsl-runtime-2.4.0-all.jar` | Fat Jar（classifier `all`），含 Windows x86_64 原生库，可直接 `java -cp` |
-| `jsl-runtime-2.4.0.jar` | 标准 jar，原生库在 `native/windows-x86_64/` 资源目录内 |
-| `jsl-runtime-2.4.0-sources.jar` | 源码包 |
+| `jsl-runtime-3.4.0-all.jar` | Fat Jar（classifier `all`），含 Windows x86_64 原生库，可直接 `java -cp` |
+| `jsl-runtime-3.4.0.jar` | 标准 jar，原生库在 `native/windows-x86_64/` 资源目录内 |
+| `jsl-runtime-3.4.0-sources.jar` | 源码包 |
 | `jsl_native.dll` | Windows x86_64 原生库，独立分发用 |
-| `jsl-docs-2.4.0.zip` | 离线文档站（13 页 HTML + 2 个基准报告），解压后双击 `index.html` |
+| `jsl-docs-3.4.0.zip` | 离线文档站（13 页 HTML + 2 个基准报告），解压后双击 `index.html` |
 
 ---
 
@@ -147,7 +147,7 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 | `docs/api/jsl.html` | `jsl` 门面与异常 |
 | `docs/api/jsl_core.html` | 布局标记、`Matrix`、`MatMul`、`VectorMath`、`NativeKernels`、模型容器原语 |
 | `docs/api/jsl_data.html` | `DataLoader`（JSLD 流式 / 内存映射）、`Normalization` |
-| `docs/api/jsl_io.html` | `ModelCodec`（`.jsl` v2） |
+| `docs/api/jsl_io.html` | `ModelCodec`（`.jsl` v2）、`OnnxModel` / `OnnxConverter` |
 | `docs/api/jsl_ml.html` | 经典估计器、树、梯度提升、聚类、降维、指标、切分 |
 | `docs/api/jsl_nn.html` | 手写层、LSTM/GRU/RNN、注意力、序列训练、序列化 |
 | `docs/api/jsl_nativebridge.html` | `NativeContext`、`NativeTensorHandle`、`CommandQueueBuilder`、`NativeMLP` |
@@ -155,8 +155,8 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 | `docs/genindex.html` | 总索引（按首字母） |
 | `docs/readme.html` | 本 README 的 HTML 版（同一版式，静态托管下不会退化成纯文本） |
 
-覆盖范围：**136 个公开类型、826 个公开成员**，其中 826 个成员全部带逐参数说明
-（共 883 条参数条目、722 组 `参数/返回/抛出` 字段列表），另有 18 个包内可见类型
+覆盖范围：**225 个公开类型、1392 个公开成员**，其中 1392 个成员全部带逐参数说明
+（共 1419 条参数条目、1230 组 `参数/返回/抛出` 字段列表），另有 23 个包内可见类型
 单列在各模块页末尾，并明确标注为非稳定 API。
 
 ### 文档是怎么生成的
@@ -191,7 +191,7 @@ python tools/check_docs.py --root docs
   嵌套列表、引用块、行内标记），CJK 换行不插空格，`java` 代码块复用同一套高亮。
 - `tools/check_docs.py`：退出码非 0 即视为文档损坏，可用于 CI 门禁。
 
-当前 `check_docs.py` 结果：12 页、154 个类型块、724 个方法块、722 组字段列表、
+当前 `check_docs.py` 结果：13 页、248 个类型块、1204 个方法块、1230 组字段列表、
 0 个占位符、0 个断链。
 
 ---
@@ -202,7 +202,7 @@ python tools/check_docs.py --root docs
 <dependency>
     <groupId>io.github.jsl</groupId>
     <artifactId>jsl-runtime</artifactId>
-    <version>2.4.0</version>
+    <version>3.4.0</version>
 </dependency>
 ```
 
@@ -213,9 +213,9 @@ mvn clean install
 ```
 
 产物：
-- `target/jsl-runtime-2.4.0.jar`：标准 jar（含 `native/windows-x86_64/jsl_native.dll` 资源）
-- `target/jsl-runtime-2.4.0-all.jar`：Fat Jar（classifier `all`，可直接 `java -cp`）
-- `target/jsl-runtime-2.4.0-sources.jar`：源码包
+- `target/jsl-runtime-3.4.0.jar`：标准 jar（含 `native/windows-x86_64/jsl_native.dll` 资源）
+- `target/jsl-runtime-3.4.0-all.jar`：Fat Jar（classifier `all`，可直接 `java -cp`）
+- `target/jsl-runtime-3.4.0-sources.jar`：源码包
 
 10 行完成一次前向 + 反向：
 
@@ -809,3 +809,41 @@ report/                 报告、图表生成脚本、figures/
 ## 10. 许可
 
 本仓库为教学/研究用途的独立实现，未复制任何第三方库代码。
+
+---
+
+## 11. v3.4.0 三期演进全景（Tribuo / DL4J / scikit-learn 对标升级）
+
+### 第一阶段：夯实工程底座（Phase 1）
+1. **JNI / Rust 底层核心工程强化**
+   - **双重内存安全 (`Cleaner` + `AutoCloseable`)**：`NativeContext`、`NativeTensorHandle` 与 `NativeKernels.HistogramSessionHandle` 均支持 `try-with-resources` 确定性释放与 `Cleaner` 兜底回收。
+   - **代数句柄校验（Generation-Tagged Handle）**：原生层句柄采用 `(generation << 32) | slot_index` 编码，释放后 slot 递增代数，彻底杜绝悬垂指针与 ABA 复用引发的 JVM 崩溃。
+   - **跨平台预编译与 CI/CD**：`NativeKernels` 自动识别 `windows-x86_64`、`linux-x86_64`、`linux-aarch64`、`macos-x86_64`、`macos-aarch64` 并从 Classpath 提取原生库；配备 `.github/workflows/ci-release.yml` 多平台自动构建流水线。
+   - **线程安全与异常体系**：`CommandQueueBuilder` 全方法同步化保护；JNI 边界捕获所有 panic 并映射为结构化异常体系（`JSLExceptionCode`、`JSLParameterException`、`JSLShapeException`、`JSLMemoryException`、`JSLUnsupportedOperationException`）。
+2. **ML 基础设施工具（对标 `sklearn.preprocessing` / `model_selection` / `pipeline`）**
+   - **数据预处理**：`Transformer` 接口、`StandardScaler`、`MinMaxScaler`、`OneHotEncoder`、`LabelEncoder`、`SimpleImputer`（支持 `MEAN` / `MEDIAN` / `MOST_FREQUENT` / `CONSTANT`），全部支持 `inverseTransform` 与 `.jsl` 序列化。
+   - **模型选择与超参搜索**：`DataSplit`（`JSL.trainTestSplit` 含分层抽样）、`KFold`、`StratifiedKFold`、`GridSearchCV`、`RandomizedSearchCV`。
+   - **Pipeline 管线**：`jsl.ml.Pipeline` 支持任意 `Transformer` 序列串联终端 `Estimator`，一键完成训练、推理、评分及 `.jsl` 原子二进制持久化。
+3. **质量保障体系**
+   - 9 大测试套件（含 `Phase1TestSuite`、`Phase2TestSuite`、`Phase3TestSuite`）+ 6 个编译期安全拒绝测试 + 2,000 次循环张量分配/释放零泄漏验证 + `./benchmark.sh` 可复现基准。
+
+### 第二阶段：补齐核心能力（Phase 2）
+1. **经典 ML 算法扩展**
+   - **核方法**：`Kernel`（`LINEAR` / `RBF` / `POLY` / `SIGMOID`）、非线性 `SVC`（SMO 求解器 + Platt 概率校准）、`KernelRidge`（Cholesky 对偶求解）、`KernelPCA`（双中心核特征分解）。
+   - **无监督学习**：`GaussianMixture`（全协方差 EM + log-likelihood / AIC / BIC）、`AgglomerativeClustering`（`WARD` / `COMPLETE` / `AVERAGE` / `SINGLE`）、`IsolationForest`（异常分数与离群点检测）、`KernelDensity`（Gaussian / Tophat / Epanechnikov 核密度估计）。
+   - **特征工程**：`SelectKBest`（`ANOVA_F` / `PEARSON_CORR` / `MUTUAL_INFO`）、`RFE`（递归特征消除）、`PolynomialFeatures`（任意阶多项式与交互项）、`KBinsDiscretizer`（等宽 / 分位数分箱，支持序号与独热输出）。
+2. **深度学习能力升级**
+   - **算子与层**：`Conv2d` 支持分组卷积（`groups`）与空洞卷积（`dilation`）；新增 `DepthwiseSeparableConv2d`、`GroupNorm`；新增 `L1Loss`、`SmoothL1Loss`、`BCEWithLogitsLoss` 及 `LEAKY_RELU`、`ELU` 激活函数；完善 `Dropout` / `BatchNorm2d` 的 `train()` / `eval()` 状态切换。
+   - **DAG 计算图 (`ComputationGraph`)**：突破 `Sequential` 线性限制，支持残差连接（`addAddVertex` / `addSubVertex` / `addMulVertex`）及多输入多输出拓扑排序前向与反向传播。
+   - **训练基础设施**：`LRScheduler`（`CosineAnnealingLR`、`StepLR`）、全局梯度裁剪 `clipGradNorm`、梯度累积 `Optimizer.stepAccumulated(accumulationSteps)`、以及包含模型权重+优化器动量+调度器状态的 `Checkpoint` 断点续训。
+3. **生态互通（ONNX 导入与导出）**
+   - `OnnxModel` 与 `OnnxConverter` 提供零外部依赖的 `onnx.proto3`（IR v8, Opset 17）解析与编码器，支持导出 JSL 经典模型/管线与深度学习模块至标准 `.onnx` 文件（可直接被 Python `onnxruntime` 加载推理，误差 `< 2e-6`），并支持将外部 `.onnx` 模型直接加载进 JVM 原生执行。
+
+### 第三阶段：打造差异化竞争力（Phase 3）
+1. **模型可解释性（Explainable AI）**
+   - `FeatureImportance`：树模型杂质重要度、线性模型归一化权重重要度、以及模型无关的置换特征重要度（`permutationImportance`）。
+   - `ShapExplainer`：精确 LinearSHAP 与基于联盟采样的 TreeSHAP / KernelSHAP，严格满足局部可加性公理 $\sum_{j=1}^p \phi_j(x) + \phi_0 = f(x)$。
+   - `LimeExplainer`：局部指数核加权 Ridge 代理模型，输出局部特征归因权重与局部拟合优度 $R^2$。
+2. **可观测性增强（JFR + 标准指标输出）**
+   - 新增 JFR 事件：`NativeQueueEvent`、`OperatorExecutionEvent`、`NativeMemoryEvent`。
+   - `JslMetrics`：无锁记录算子调用次数、耗时分位数（p50 / p95 / p99）、吞吐量（ops/s、elements/s）与堆外/JVM 内存占用，支持一键导出 JSON 与 Prometheus 文本格式。

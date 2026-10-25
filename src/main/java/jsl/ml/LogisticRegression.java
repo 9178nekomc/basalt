@@ -1,10 +1,15 @@
 package jsl.ml;
 
 import jsl.core.Matrix;
+import jsl.core.ModelFormatException;
+import jsl.core.ModelKind;
+import jsl.core.ModelReader;
+import jsl.core.ModelWriter;
+import jsl.core.Persistable;
 import java.util.Arrays;
 
 /** Binary logistic regression trained with numerically stable cross-entropy. */
-public final class LogisticRegression implements Estimator {
+public final class LogisticRegression implements Estimator, Persistable {
     private final double learningRate;
     private final int epochs;
     private final double l2;
@@ -103,6 +108,51 @@ public final class LogisticRegression implements Estimator {
 
     public double[] lossHistory() {
         return lossHistory.clone();
+    }
+
+
+    public double[] weights() {
+        return weights == null ? new double[0] : weights.clone();
+    }
+
+    public double intercept() {
+        return intercept;
+    }
+
+    @Override
+    public ModelKind kind() {
+        return ModelKind.LOGISTIC_REGRESSION;
+    }
+
+    @Override
+    public void write(ModelWriter writer) {
+        if (!fitted) {
+            throw new IllegalStateException("LogisticRegression must be fitted before serialization");
+        }
+        writer.putDouble(learningRate);
+        writer.putInt(epochs);
+        writer.putDouble(l2);
+        writer.putInt(featureCount);
+        writer.putDouble(intercept);
+        writer.putDoubles(weights);
+    }
+
+    public static LogisticRegression read(ModelReader reader) {
+        double lr = reader.getDouble();
+        int epochs = reader.getInt();
+        double l2 = reader.getDouble();
+        int features = reader.getInt();
+        if (features <= 0) {
+            throw new ModelFormatException("Invalid LogisticRegression feature count");
+        }
+        double intercept = reader.getDouble();
+        double[] weights = reader.getDoubles(features);
+        LogisticRegression model = new Builder().learningRate(lr).epochs(epochs).l2(l2).build();
+        model.featureCount = features;
+        model.intercept = intercept;
+        model.weights = weights;
+        model.fitted = true;
+        return model;
     }
 
     public static final class Builder {

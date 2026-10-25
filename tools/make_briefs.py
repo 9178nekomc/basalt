@@ -6,6 +6,10 @@ the ``doc`` objects; the renderer merges skeleton + doc and never trusts the wri
 for signatures.  Keeping the split mechanical is what makes "documented API" and
 "compiled API" impossible to drift apart.
 
+Groups are produced automatically: every module is cut into slices of at most
+``--size`` public types, so the split keeps working as the API grows (2.4.0 had
+154 types, 3.4.0 has 248).
+
 Usage:
     python tools/make_briefs.py --api build/api/api.json --out build/api/briefs
 """
@@ -16,158 +20,106 @@ import argparse
 import json
 import os
 
-# group id -> (title, module -> list of type names, or "*" for the whole module)
-GROUPS: list[tuple[str, str, dict[str, list[str] | str]]] = [
-    ("g01", "门面与并发", {"jsl": "*", "jsl.concurrent": "*"}),
-    ("g02a", "核心数据：布局与矩阵", {"jsl.core": [
-        "Layout", "BC", "BCHW", "BHW", "BSF",
-        "Matrix", "MatMul", "MatMul.RowTask", "Tensor", "VectorMath",
-    ]}),
-    ("g02b", "核心数据：原生核与模型 I/O", {"jsl.core": [
-        "NativeKernels", "ModelKind", "ModelReader", "ModelWriter",
-        "Persistable", "ModelFormatException",
-    ]}),
-    ("g03", "数据管线与持久化", {"jsl.data": "*", "jsl.io": "*"}),
-    ("g04", "线性模型 · 近邻 · 指标", {"jsl.ml": [
-        "Estimator", "LinearRegression", "LinearRegression.Builder",
-        "LogisticRegression", "LogisticRegression.Builder",
-        "Ridge", "Ridge.Builder", "Lasso", "Lasso.Builder",
-        "KNearestNeighbors", "KNearestNeighbors.Builder", "KNearestNeighbors.Neighbor",
-        "KNeighborsRegressor", "KNeighborsRegressor.Builder", "KNeighborsRegressor.Neighbor",
-        "DistanceMetric", "LinearSVM", "LinearSVM.Builder",
-        "Metrics", "DataSplit", "DataSplit.Fold", "DataSplit.Holdout",
-        "MlChecks", "JSL", "JSL.Algorithm", "JSL.Metric", "JSL.Task",
-    ]}),
-    ("g05", "树模型与梯度提升", {"jsl.ml": [
-        "DecisionTree", "DecisionTree.Builder", "DecisionTree.Workspace",
-        "RandomForest", "RandomForest.Builder",
-        "TreeModel", "TreeTask", "ImpurityCriterion", "PackedTrees", "BinnedFeatures",
-        "HistogramGradientBoosting", "HistogramGradientBoosting.Builder",
-        "HistogramGradientBoosting.HistogramWorkspace",
-        "HistogramGradientBoosting.LeafCandidate",
-        "HistogramGradientBoosting.NodeHistogram",
-        "HistogramGradientBoosting.SplitDecision",
-        "BoostingAlgorithm", "BoostingObjective",
-    ]}),
-    ("g06", "聚类 · 降维 · 朴素贝叶斯", {"jsl.ml": [
-        "KMeans", "KMeans.Builder", "KMeans.Run",
-        "DBSCAN", "DBSCAN.Builder",
-        "PCA", "PCA.Builder", "PCA.EigenDecomposition", "EigenSolver",
-        "GaussianNaiveBayes", "GaussianNaiveBayes.Builder",
-    ]}),
-    ("g07a", "神经网络：层与卷积", {"jsl.nn": [
-        "Layer", "Activation", "Dense", "Dense.Builder",
-        "Conv2D", "Conv2D.Builder", "MaxPooling2D", "MaxPooling2D.Builder",
-        "Flatten", "Flatten.Builder", "Padding",
-    ]}),
-    ("g07b", "神经网络：损失、优化器与训练", {"jsl.nn": [
-        "Loss", "LossEvaluation", "Optimizer", "OptimizerConfig", "TrainingHistory",
-        "Parameter", "ParameterRef",
-        "NeuralNetwork", "NeuralNetwork.ImageBuilder", "NeuralNetwork.VectorBuilder",
-        "CNN", "ModelSerializer", "GradientCheck", "GradientCheck.Report",
-    ]}),
-    ("g08", "序列模型与注意力", {"jsl.nn": [
-        "LSTM", "LSTM.Builder", "GRU", "GRU.Builder", "VanillaRNN", "VanillaRNN.Builder",
-        "SelfAttention", "SelfAttention.Builder",
-        "SequenceNetwork", "SequenceNetwork.Builder",
-        "SequencePool", "SequencePool.Pooling",
-    ]}),
-    ("g09a", "原生桥接：上下文与句柄", {"jsl.nativebridge": [
-        "NativeContext", "NativeContext.Guard", "NativeContext.State",
-        "NativeTensorHandle", "NativeTensorHandle.State",
-        "NativeLibrary", "NativeBindings",
-    ]}),
-    ("g09b", "原生桥接：指令队列与参考实现", {"jsl.nativebridge": [
-        "CommandQueueBuilder", "NativeMLP", "NativeMLP.Activation",
-        "NativeMLP.OutputActivation",
-    ]}),
-    ("g10a", "eager 张量：核心与自动求导", {"jsl.torch": [
-        "Tensor", "Module", "Sequential", "Graph", "NativeQueueEvent",
-        "Optimizer", "AdamW", "SGD", "Loss", "MSELoss", "CrossEntropyLoss",
-    ]}),
-    ("g10b", "eager 张量：模块与 Transformer", {"jsl.torch": [
-        "Linear", "Conv2d", "MaxPool2d", "BatchNorm2d", "LayerNorm", "Dropout",
-        "Embedding", "Flatten", "Activation", "Activation.Kind",
-        "MultiheadAttention", "TransformerBlock", "SelfAttention",
-    ]}),
+MODULE_ORDER = [
+    "jsl", "jsl.core", "jsl.data", "jsl.io", "jsl.ml", "jsl.nn",
+    "jsl.nativebridge", "jsl.torch", "jsl.concurrent",
 ]
 
+MODULE_TITLE = {
+    "jsl": "门面与异常",
+    "jsl.core": "核心数据与模型 I/O",
+    "jsl.data": "数据管线",
+    "jsl.io": "持久化与 ONNX",
+    "jsl.ml": "经典机器学习",
+    "jsl.nn": "神经网络层与序列",
+    "jsl.nativebridge": "原生桥接层",
+    "jsl.torch": "eager 张量与模块",
+    "jsl.concurrent": "并发推理",
+}
 
-def build_brief(group_id: str, title: str, selection: dict, api: dict) -> dict:
-    modules = []
-    for module in api["modules"]:
-        name = module["name"]
-        if name not in selection:
-            continue
-        wanted = selection[name]
-        types = []
-        for t in module["types"]:
-            if wanted != "*" and t["simple_qualified"] not in wanted:
+
+def build_brief(group_id: str, title: str, module: dict, types: list[dict]) -> dict:
+    kept = []
+    for t in types:
+        members = []
+        for m in t["members"]:
+            mods = set(m.get("modifiers") or [])
+            if "private" in mods:
                 continue
-            members = []
-            for m in t["members"]:
-                if "private" in m["modifiers"]:
-                    continue
-                if m["kind"] == "constructor" and "public" not in m["modifiers"] \
-                        and "protected" not in m["modifiers"]:
-                    continue
-                members.append({
-                    "kind": m["kind"],
-                    "key": m["key"],
-                    "signature": m["signature"],
-                    "params": m["params"],
-                    "throws": m["throws"],
-                    "javadoc": (m["javadoc"] or {}).get("text", ""),
-                })
-            types.append({
-                "qualified": t["qualified"],
-                "simple_qualified": t["simple_qualified"],
-                "kind": t["kind"],
-                "modifiers": t["modifiers"],
-                "generic": t["generic"],
-                "extends": t["extends"],
-                "implements": t["implements"],
-                "file": t["file"],
-                "line": t["line"],
-                "javadoc": (t["javadoc"] or {}).get("text", ""),
-                "nested": t["nested"],
-                "members": members,
+            if m["kind"] == "constructor" and not (mods & {"public", "protected"}):
+                continue
+            if m["kind"] in ("method", "field") and not (mods & {"public", "protected"}):
+                continue
+            members.append({
+                "kind": m["kind"],
+                "key": m["key"],
+                "signature": m["signature"],
+                "params": m["params"],
+                "throws": m["throws"],
+                "javadoc": (m["javadoc"] or {}).get("text", ""),
             })
-        if types:
-            modules.append({"name": name, "types": types})
-    return {"group": group_id, "title": title, "modules": modules}
+        kept.append({
+            "qualified": t["qualified"],
+            "simple_qualified": t["simple_qualified"],
+            "kind": t["kind"],
+            "modifiers": t["modifiers"],
+            "generic": t["generic"],
+            "extends": t["extends"],
+            "implements": t["implements"],
+            "file": t["file"],
+            "line": t["line"],
+            "javadoc": (t["javadoc"] or {}).get("text", ""),
+            "nested": t["nested"],
+            "members": members,
+        })
+    return {"group": group_id, "title": title,
+            "modules": [{"name": module["name"], "types": kept}]}
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--api", default="build/api/api.json")
     ap.add_argument("--out", default="build/api/briefs")
+    ap.add_argument("--size", type=int, default=12,
+                    help="max public types per group")
     args = ap.parse_args()
 
     api = json.load(open(args.api, encoding="utf-8"))
     os.makedirs(args.out, exist_ok=True)
+    for stale in os.listdir(args.out):
+        if stale.endswith(".json"):
+            os.unlink(os.path.join(args.out, stale))
 
-    covered: set[str] = set()
+    modules = sorted(api["modules"],
+                     key=lambda m: (MODULE_ORDER.index(m["name"])
+                                    if m["name"] in MODULE_ORDER else 99, m["name"]))
+
+    index = 0
     total_types = total_members = 0
-    for group_id, title, selection in GROUPS:
-        brief = build_brief(group_id, title, selection, api)
-        path = os.path.join(args.out, f"{group_id}.json")
-        with open(path, "w", encoding="utf-8") as fh:
-            json.dump(brief, fh, ensure_ascii=False, indent=1)
-        types = sum(len(m["types"]) for m in brief["modules"])
-        members = sum(len(t["members"]) for m in brief["modules"] for t in m["types"])
-        total_types += types
-        total_members += members
-        for m in brief["modules"]:
-            for t in m["types"]:
-                covered.add(t["qualified"])
-        print(f"{group_id}  {title:22s} types={types:3d} members={members:4d}")
+    plan = []
+    for module in modules:
+        public = [t for t in module["types"] if "public" in t["modifiers"]]
+        if not public:
+            continue
+        chunks = (len(public) + args.size - 1) // args.size
+        for start in range(0, len(public), args.size):
+            chunk = public[start:start + args.size]
+            index += 1
+            gid = f"g{index:02d}"
+            title = MODULE_TITLE.get(module["name"], module["name"])
+            if chunks > 1:
+                title = f"{title}（{start // args.size + 1}/{chunks}）"
+            brief = build_brief(gid, title, module, chunk)
+            with open(os.path.join(args.out, f"{gid}.json"), "w", encoding="utf-8") as fh:
+                json.dump(brief, fh, ensure_ascii=False, indent=1)
+            members = sum(len(t["members"]) for t in chunk)
+            total_types += len(chunk)
+            total_members += members
+            plan.append((gid, module["name"], len(chunk), members, title))
 
-    all_types = {t["qualified"] for m in api["modules"] for t in m["types"]}
-    missing = sorted(all_types - covered)
-    print(f"\ntotal types={total_types} members={total_members}")
-    if missing:
-        print(f"NOT ASSIGNED ({len(missing)}): {', '.join(missing)}")
+    print(f"groups={len(plan)} types={total_types} members={total_members}")
+    for gid, mod, nt, nm, title in plan:
+        print(f"  {gid}  {mod:20s} {nt:3d} types {nm:4d} members  {title}")
     return 0
 
 

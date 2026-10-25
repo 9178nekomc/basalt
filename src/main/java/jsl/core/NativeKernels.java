@@ -274,4 +274,34 @@ public final class NativeKernels {
         return binFeatures(data, rows, columns, maxBins, outBins, outThresholds, outCounts) == 0;
     }
 
+
+    /**
+     * AutoCloseable + Cleaner-backed handle for a native histogram session, preventing native
+     * memory leaks even if an exception aborts tree construction.
+     */
+    public static final class HistogramSessionHandle implements AutoCloseable {
+        private static final java.lang.ref.Cleaner CLEANER = java.lang.ref.Cleaner.create();
+        private final java.util.concurrent.atomic.AtomicLong handle;
+        private final java.lang.ref.Cleaner.Cleanable cleanable;
+
+        public HistogramSessionHandle(long sessionPointer) {
+            this.handle = new java.util.concurrent.atomic.AtomicLong(sessionPointer);
+            final java.util.concurrent.atomic.AtomicLong ref = this.handle;
+            this.cleanable = CLEANER.register(this, () -> {
+                long ptr = ref.getAndSet(0L);
+                if (ptr != 0L) {
+                    destroyHistogramSession(ptr);
+                }
+            });
+        }
+
+        public long handle() {
+            return handle.get();
+        }
+
+        @Override
+        public void close() {
+            cleanable.clean();
+        }
+    }
 }

@@ -5,34 +5,27 @@ import jsl.core.Matrix;
 import jsl.ml.Estimator;
 import jsl.nativebridge.NativeContext;
 import jsl.torch.AdamW;
+import jsl.torch.BCEWithLogitsLoss;
+import jsl.torch.ComputationGraph;
 import jsl.torch.Conv2d;
+import jsl.torch.CosineAnnealingLR;
 import jsl.torch.CrossEntropyLoss;
+import jsl.torch.DepthwiseSeparableConv2d;
 import jsl.torch.Graph;
+import jsl.torch.GroupNorm;
+import jsl.torch.L1Loss;
 import jsl.torch.Linear;
 import jsl.torch.MSELoss;
 import jsl.torch.SGD;
 import jsl.torch.Sequential;
+import jsl.torch.SmoothL1Loss;
+import jsl.torch.StepLR;
 import jsl.torch.Tensor;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Unified SDK entry point.
- *
- * <pre>{@code
- * try (JSL jsl = JSL.create()) {
- *     Tensor x = jsl.randn(32, 8);
- *     Tensor y = jsl.randn(32, 1);
- *     Linear hidden = jsl.linear(8, 16);
- *     Linear output = jsl.linear(16, 1);
- *     Tensor loss = output.forward(hidden.forward(x).relu()).mse(y);
- *     loss.backward();
- * }
- * }</pre>
- *
- * <p>The instance owns one {@link NativeContext}; closing it releases every tensor and graph.
- * Individual tensors are also {@link AutoCloseable}, but the {@link java.lang.ref.Cleaner}
- * behind them makes explicit {@code close()} optional for short-lived code.</p>
+ * Unified SDK entry point for JSL (Java Scikit-Learn + PyTorch-style native runtime).
  */
 public final class JSL implements AutoCloseable {
     private final NativeContext context;
@@ -93,8 +86,29 @@ public final class JSL implements AutoCloseable {
                 stride, stride, padding, padding, true, seed.getAndAdd(0x9E3779B97F4A7C15L));
     }
 
+    public Conv2d conv2d(int inputChannels, int outputChannels, int kernelSize, int stride,
+                         int padding, int dilation, int groups) {
+        return new Conv2d(context, inputChannels, outputChannels, kernelSize, kernelSize,
+                stride, stride, padding, padding, dilation, dilation, groups, true,
+                seed.getAndAdd(0x9E3779B97F4A7C15L));
+    }
+
+    public DepthwiseSeparableConv2d depthwiseSeparableConv2d(
+            int inputChannels, int outputChannels, int kernelSize, int stride, int padding) {
+        return new DepthwiseSeparableConv2d(context, inputChannels, outputChannels,
+                kernelSize, stride, padding, seed.getAndAdd(0x9E3779B97F4A7C15L));
+    }
+
+    public <L extends Layout> GroupNorm<L> groupNorm(int numGroups, int numChannels) {
+        return new GroupNorm<>(context, numGroups, numChannels);
+    }
+
     public <L extends Layout> Sequential<L, L> sequential() {
         return Sequential.start();
+    }
+
+    public ComputationGraph.Builder computationGraph() {
+        return ComputationGraph.builder();
     }
 
     public <L extends Layout> jsl.torch.Activation<L> activation(jsl.nn.Activation activation) {
@@ -131,12 +145,33 @@ public final class JSL implements AutoCloseable {
         return new SGD(parameters, learningRate);
     }
 
+    public CosineAnnealingLR cosineAnnealingLR(jsl.torch.Optimizer optimizer, int tMax,
+                                               float etaMin) {
+        return new CosineAnnealingLR(optimizer, tMax, etaMin);
+    }
+
+    public StepLR stepLR(jsl.torch.Optimizer optimizer, int stepSize, float gamma) {
+        return new StepLR(optimizer, stepSize, gamma);
+    }
+
     public CrossEntropyLoss crossEntropy() {
         return new CrossEntropyLoss();
     }
 
     public MSELoss mse() {
         return new MSELoss();
+    }
+
+    public L1Loss l1Loss() {
+        return new L1Loss();
+    }
+
+    public SmoothL1Loss smoothL1Loss(float beta) {
+        return new SmoothL1Loss(beta);
+    }
+
+    public BCEWithLogitsLoss bceWithLogitsLoss() {
+        return new BCEWithLogitsLoss();
     }
 
     public Graph graph() {
@@ -149,6 +184,10 @@ public final class JSL implements AutoCloseable {
 
     public long[] stats() {
         return context.stats();
+    }
+
+    public JslMetrics.MetricsSnapshot metrics() {
+        return JslMetrics.snapshot(context);
     }
 
     /** Classical-model facade; delegates to {@link jsl.ml.JSL}. */

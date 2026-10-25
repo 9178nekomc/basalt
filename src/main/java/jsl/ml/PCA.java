@@ -25,7 +25,7 @@ import java.util.Objects;
  * outputs agree up to sign and numerical noise. Whitening divides each projection by the component
  * standard deviation.</p>
  */
-public final class PCA implements Estimator, Persistable {
+public final class PCA implements Estimator, Transformer, Persistable {
     private static final int GRAM_ROW_LIMIT = 20_000;
 
     private final int componentCount;

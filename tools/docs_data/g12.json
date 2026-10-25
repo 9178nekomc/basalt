@@ -1,0 +1,1234 @@
+{
+ "group": "g12",
+ "title": "经典机器学习（7/9）",
+ "modules": [
+  {
+   "name": "jsl.ml",
+   "types": [
+    {
+     "qualified": "jsl.ml.Kernel.Type",
+     "simple_qualified": "Kernel.Type",
+     "kind": "enum",
+     "modifiers": [
+      "public"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/ml/Kernel.java",
+     "line": 21,
+     "javadoc": "",
+     "nested": [],
+     "members": [],
+     "doc": {
+      "summary": "Kernel 支持的四种半正定核函数类型。",
+      "body": [
+       "LINEAR 对应 x·y，RBF 对应 exp(-gamma·||x-y||²)，POLY 对应 (gamma·x·y + coef0)^degree，SIGMOID 对应 tanh(gamma·x·y + coef0)。",
+       "枚举本身只标记求值分支，gamma、degree、coef0 三个参数由 Kernel 实例持有，通过 linear()/rbf()/poly()/sigmoid() 四个工厂方法装配。"
+      ],
+      "notes": [
+       "gamma 为 0 时 evaluate 会退化为 1/max(1, length)，即按特征数自动取尺度",
+       "POLY 的 degree 由 Kernel 构造器校验为不小于 1",
+       "SIGMOID 并不保证半正定，使用时需自行确认适用性"
+      ],
+      "see": [
+       "jsl.ml.Kernel"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.KernelDensity.Builder",
+     "simple_qualified": "KernelDensity.Builder",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "static",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/ml/KernelDensity.java",
+     "line": 175,
+     "javadoc": "",
+     "nested": [],
+     "members": [
+      {
+       "kind": "method",
+       "key": "bandwidth(double)",
+       "signature": "Builder bandwidth(double bandwidth)",
+       "params": [
+        {
+         "type": "double",
+         "name": "bandwidth"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置核密度估计的带宽。",
+        "params": {
+         "bandwidth": "平滑尺度，必须为正的有限值；默认 1.0"
+        },
+        "returns": "this",
+        "throws": {
+         "IllegalArgumentException": "bandwidth 非有限或小于等于 0，在 setter 内立即抛出"
+        },
+        "notes": [
+         "带宽越小分布越尖锐，GAUSSIAN 与 TOPHAT 共用同一个带宽"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "kernel(KernelType)",
+       "signature": "Builder kernel(KernelType kernel)",
+       "params": [
+        {
+         "type": "KernelType",
+         "name": "kernel"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置核函数类型。",
+        "params": {
+         "kernel": "GAUSSIAN 为高斯核，TOPHAT 为超立方体核；默认 KernelType.GAUSSIAN"
+        },
+        "returns": "this",
+        "throws": {
+         "NullPointerException": "kernel 为 null"
+        },
+        "notes": [
+         "同时决定 sample 的噪声形式：GAUSSIAN 用正态噪声，TOPHAT 用均匀噪声"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "build()",
+       "signature": "KernelDensity build()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建核密度估计器。",
+        "returns": "新的 KernelDensity，尚未拟合",
+        "notes": [
+         "参数已在 setter 内校验，build() 不再抛异常"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "KernelDensity 的流式构建器。",
+      "body": [
+       "只有带宽与核函数两个字段，且两个 setter 都在调用时立刻校验：bandwidth 必须是正的有限值，kernel 不可为 null。",
+       "默认 bandwidth=1.0、kernel=KernelType.GAUSSIAN，因此 builder().build() 直接得到一个可用配置，没有必填项；build() 只做字段拷贝，不做任何额外校验。"
+      ],
+      "notes": [
+       "setter 级校验意味着非法参数在链式调用中就会失败，而不是延后到 build()",
+       "构建器不是线程安全的"
+      ],
+      "example": "KernelDensity model = KernelDensity.builder()\n        .bandwidth(0.5)\n        .kernel(KernelDensity.KernelType.TOPHAT)\n        .build();",
+      "see": [
+       "jsl.ml.KernelDensity"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.KernelDensity.KernelType",
+     "simple_qualified": "KernelDensity.KernelType",
+     "kind": "enum",
+     "modifiers": [
+      "public"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/ml/KernelDensity.java",
+     "line": 18,
+     "javadoc": "",
+     "nested": [],
+     "members": [],
+     "doc": {
+      "summary": "核密度估计可用的核函数类型。",
+      "body": [
+       "GAUSSIAN 用多元高斯核，评分时按带宽归一化并做对数域稳定化；TOPHAT 用半径等于 bandwidth 的超球指示核，落在球内的样本计入密度。",
+       "类型同时影响 sample 的采样噪声：GAUSSIAN 取正态随机数乘带宽，TOPHAT 取 [-1, 1] 均匀随机数乘带宽。"
+      ],
+      "notes": [
+       "TOPHAT 在球内无样本可命中时，scoreSamples 返回负无穷",
+       "枚举序号会写入模型文件，取值顺序参与序列化格式"
+      ],
+      "see": [
+       "jsl.ml.KernelDensity"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.KernelPCA.Builder",
+     "simple_qualified": "KernelPCA.Builder",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "static",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/ml/KernelPCA.java",
+     "line": 252,
+     "javadoc": "",
+     "nested": [],
+     "members": [
+      {
+       "kind": "method",
+       "key": "components(int)",
+       "signature": "Builder components(int components)",
+       "params": [
+        {
+         "type": "int",
+         "name": "components"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置保留的主成分个数。",
+        "params": {
+         "components": "降维后的维度，必须为正；默认 2"
+        },
+        "returns": "this",
+        "throws": {
+         "IllegalArgumentException": "components 小于等于 0，在 setter 内立即抛出"
+        },
+        "notes": [
+         "上限由训练样本数决定，超过时在 fit() 中抛 IllegalArgumentException"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "kernel(Kernel)",
+       "signature": "Builder kernel(Kernel kernel)",
+       "params": [
+        {
+         "type": "Kernel",
+         "name": "kernel"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "直接指定核函数对象。",
+        "params": {
+         "kernel": "核函数实例，不可为 null；默认 Kernel.rbf(1.0)"
+        },
+        "returns": "this",
+        "throws": {
+         "NullPointerException": "kernel 为 null"
+        },
+        "notes": [
+         "会覆盖此前通过 rbf 或 poly 设置的核"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "rbf(double)",
+       "signature": "Builder rbf(double gamma)",
+       "params": [
+        {
+         "type": "double",
+         "name": "gamma"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "改用 RBF 核的便捷方法。",
+        "params": {
+         "gamma": "高斯核的缩放系数，必须为正的有限值"
+        },
+        "returns": "this",
+        "throws": {
+         "IllegalArgumentException": "gamma 非有限或小于等于 0"
+        },
+        "notes": [
+         "等价于 kernel(Kernel.rbf(gamma))"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "poly(int, double, double)",
+       "signature": "Builder poly(int degree, double gamma, double coef0)",
+       "params": [
+        {
+         "type": "int",
+         "name": "degree"
+        },
+        {
+         "type": "double",
+         "name": "gamma"
+        },
+        {
+         "type": "double",
+         "name": "coef0"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "改用多项式核的便捷方法。",
+        "params": {
+         "degree": "多项式次数，必须大于等于 1",
+         "gamma": "缩放系数，必须为正的有限值",
+         "coef0": "常数项，必须为有限值"
+        },
+        "returns": "this",
+        "throws": {
+         "IllegalArgumentException": "gamma 非有限或小于等于 0、degree 小于 1、coef0 非有限"
+        },
+        "notes": [
+         "等价于 kernel(Kernel.poly(degree, gamma, coef0))"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "build()",
+       "signature": "KernelPCA build()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建核主成分分析估计器。",
+        "returns": "新的 KernelPCA，尚未拟合",
+        "notes": [
+         "build() 不做校验，components 与样本数的关系在 fit() 时检查"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "KernelPCA 的流式构建器。",
+      "body": [
+       "components 与 kernel 有默认值 2 与 Kernel.rbf(1.0)，两个字段都无需显式设置；rbf 与 poly 是 kernel 的便捷写法，直接替换核字段，最后调用者生效。",
+       "maxIterations=60 与 tolerance=1e-12 是 Jacobi 特征分解的内部字段，构建器没有提供对应 setter，无法从外部调整。build() 只做字段拷贝，components 不得超过样本数这一约束在 fit() 中检查。"
+      ],
+      "notes": [
+       "components 在 setter 内校验为正，越界（大于训练样本数）在 fit() 才报错",
+       "poly 的 degree 小于 1 由 Kernel 构造器拒绝",
+       "构建器不是线程安全的"
+      ],
+      "example": "KernelPCA pca = KernelPCA.builder()\n        .components(3)\n        .rbf(0.5)\n        .build();",
+      "see": [
+       "jsl.ml.KernelPCA",
+       "jsl.ml.Kernel"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.KernelRidge.Builder",
+     "simple_qualified": "KernelRidge.Builder",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "static",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/ml/KernelRidge.java",
+     "line": 144,
+     "javadoc": "",
+     "nested": [],
+     "members": [
+      {
+       "kind": "method",
+       "key": "kernel(Kernel)",
+       "signature": "Builder kernel(Kernel kernel)",
+       "params": [
+        {
+         "type": "Kernel",
+         "name": "kernel"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "直接指定核函数对象。",
+        "params": {
+         "kernel": "核函数实例，不可为 null；默认 Kernel.rbf(1.0)"
+        },
+        "returns": "this",
+        "throws": {
+         "NullPointerException": "kernel 为 null"
+        },
+        "notes": [
+         "会覆盖此前通过 rbf 或 poly 设置的核"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "rbf(double)",
+       "signature": "Builder rbf(double gamma)",
+       "params": [
+        {
+         "type": "double",
+         "name": "gamma"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "改用 RBF 核的便捷方法。",
+        "params": {
+         "gamma": "高斯核的缩放系数，必须为正的有限值"
+        },
+        "returns": "this",
+        "throws": {
+         "IllegalArgumentException": "gamma 非有限或小于等于 0"
+        },
+        "notes": [
+         "等价于 kernel(Kernel.rbf(gamma))"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "poly(int, double, double)",
+       "signature": "Builder poly(int degree, double gamma, double coef0)",
+       "params": [
+        {
+         "type": "int",
+         "name": "degree"
+        },
+        {
+         "type": "double",
+         "name": "gamma"
+        },
+        {
+         "type": "double",
+         "name": "coef0"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "改用多项式核的便捷方法。",
+        "params": {
+         "degree": "多项式次数，必须大于等于 1",
+         "gamma": "缩放系数，必须为正的有限值",
+         "coef0": "常数项，必须为有限值"
+        },
+        "returns": "this",
+        "throws": {
+         "IllegalArgumentException": "gamma 非有限或小于等于 0、degree 小于 1、coef0 非有限"
+        },
+        "notes": [
+         "等价于 kernel(Kernel.poly(degree, gamma, coef0))"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "alpha(double)",
+       "signature": "Builder alpha(double alpha)",
+       "params": [
+        {
+         "type": "double",
+         "name": "alpha"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置岭回归正则强度。",
+        "params": {
+         "alpha": "加到 Gram 矩阵对角线上的系数，必须为正的有限值；默认 1.0"
+        },
+        "returns": "this",
+        "throws": {
+         "IllegalArgumentException": "alpha 非有限或小于等于 0，在 setter 内立即抛出"
+        },
+        "notes": [
+         "alpha 同时起数值稳定作用，过小时对偶系统接近奇异，解对扰动敏感"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "build()",
+       "signature": "KernelRidge build()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建核岭回归模型。",
+        "returns": "新的 KernelRidge，尚未拟合",
+        "notes": [
+         "参数已在 setter 内校验，build() 不再抛异常"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "KernelRidge 的流式构建器。",
+      "body": [
+       "两个字段都有默认值：kernel 为 Kernel.rbf(1.0)，alpha 为 1.0。kernel、rbf、poly 三个 setter 写入同一个核字段，后调用者生效。",
+       "alpha 加到 Gram 矩阵对角线上形成 (K + alpha·I)，由 Cholesky 分解求解对偶系数。alpha 在 setter 内校验为正的有限值，build() 只构造实例、不重复校验。"
+      ],
+      "notes": [
+       "没有必填项，builder().build() 得到 RBF 核、alpha=1.0 的可用模型",
+       "alpha 过小会让对偶系统接近奇异，预测对训练数据扰动敏感",
+       "构建器不是线程安全的"
+      ],
+      "example": "KernelRidge model = KernelRidge.builder()\n        .rbf(0.5)\n        .alpha(0.1)\n        .build();",
+      "see": [
+       "jsl.ml.KernelRidge",
+       "jsl.ml.Kernel"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.Lasso.Builder",
+     "simple_qualified": "Lasso.Builder",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "static",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/ml/Lasso.java",
+     "line": 160,
+     "javadoc": "",
+     "nested": [],
+     "members": [
+      {
+       "kind": "method",
+       "key": "alpha(double)",
+       "signature": "Builder alpha(double alpha)",
+       "params": [
+        {
+         "type": "double",
+         "name": "alpha"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置 L1 正则强度。",
+        "params": {
+         "alpha": "软阈值阈值，作用在按行求和的尺度上；允许 0，默认 0.1"
+        },
+        "returns": "this",
+        "notes": [
+         "非有限或为负在 build() 时抛 IllegalArgumentException",
+         "取 0 时不再收缩系数，退化为无正则坐标下降"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "maxIterations(int)",
+       "signature": "Builder maxIterations(int maxIterations)",
+       "params": [
+        {
+         "type": "int",
+         "name": "maxIterations"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置坐标下降的最大扫描轮数。",
+        "params": {
+         "maxIterations": "整轮扫描次数上限，必须为正；默认 1000"
+        },
+        "returns": "this",
+        "notes": [
+         "达到上限即停止，不报告未收敛"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "tolerance(double)",
+       "signature": "Builder tolerance(double tolerance)",
+       "params": [
+        {
+         "type": "double",
+         "name": "tolerance"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置收敛阈值。",
+        "params": {
+         "tolerance": "单轮坐标更新的最大绝对变化小于该值即停止，默认 1e-8"
+        },
+        "returns": "this",
+        "throws": {
+         "IllegalArgumentException": "build() 时非有限或小于等于 0"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "build()",
+       "signature": "Lasso build()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "校验参数并创建模型。",
+        "returns": "新的 Lasso，尚未拟合",
+        "throws": {
+         "IllegalArgumentException": "alpha 非有限或为负、maxIterations <= 0、tolerance 非有限或 <= 0"
+        }
+       }
+      }
+     ],
+     "doc": {
+      "summary": "Lasso 的流式构建器。",
+      "body": [
+       "三个字段分别控制正则强度、迭代上限与收敛阈值，setter 只赋值，全部校验集中在 build()：alpha 允许 0，maxIterations 必须为正，tolerance 必须为正。",
+       "默认 alpha=0.1、maxIterations=1000、tolerance=1e-8。"
+      ],
+      "notes": [
+       "alpha 的尺度是按行求和的，与按均方误差定义的强度相差 n 倍",
+       "构建器不是线程安全的"
+      ],
+      "example": "Lasso model = Lasso.builder()\n        .alpha(0.05)\n        .maxIterations(1000)\n        .tolerance(1e-8)\n        .build();",
+      "see": [
+       "jsl.ml.Lasso"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.LimeExplainer.LocalExplanation",
+     "simple_qualified": "LimeExplainer.LocalExplanation",
+     "kind": "record",
+     "modifiers": [
+      "public"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/ml/LimeExplainer.java",
+     "line": 16,
+     "javadoc": "",
+     "nested": [],
+     "members": [],
+     "doc": {
+      "summary": "LIME 对单个样本的局部解释结果。",
+      "body": [
+       "explainInstance 在目标样本附近采样高斯扰动、按指数欧氏核加权，拟合带 L2 的加权 Ridge 线性代理模型后返回该记录：intercept 是代理截距，featureWeights 是各特征权重，localPrediction 是代理在目标样本上的取值，modelPrediction 是原模型对该样本的预测。",
+       "r2Fidelity 是加权 R²，衡量代理对黑盒模型局部的贴合程度；topFeatures 是按 |权重 × 特征标准差| 降序排列的特征下标。"
+      ],
+      "notes": [
+       "featureWeights 与 topFeatures 直接引用内部数组，record 不做防御性拷贝",
+       "加权总平方和不超过 1e-15 时 r2Fidelity 取 1.0，其余情况截断到不小于 0",
+       "记录是只读载体，不持有对原模型或训练数据的引用"
+      ],
+      "see": [
+       "jsl.ml.LimeExplainer"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.LinearRegression.Builder",
+     "simple_qualified": "LinearRegression.Builder",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "static",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/ml/LinearRegression.java",
+     "line": 151,
+     "javadoc": "",
+     "nested": [],
+     "members": [
+      {
+       "kind": "method",
+       "key": "learningRate(double)",
+       "signature": "Builder learningRate(double learningRate)",
+       "params": [
+        {
+         "type": "double",
+         "name": "learningRate"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置梯度下降步长。",
+        "params": {
+         "learningRate": "每次整批更新的步长，必须为正；默认 0.05"
+        },
+        "returns": "this",
+        "notes": [
+         "步长过大时 lossHistory 会震荡或发散，特征未标准化时尤其明显"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "epochs(int)",
+       "signature": "Builder epochs(int epochs)",
+       "params": [
+        {
+         "type": "int",
+         "name": "epochs"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置全批量迭代轮数。",
+        "params": {
+         "epochs": "遍历全部样本的次数，必须为正；默认 2000"
+        },
+        "returns": "this",
+        "throws": {
+         "IllegalArgumentException": "build() 时小于等于 0"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "l2(double)",
+       "signature": "Builder l2(double l2)",
+       "params": [
+        {
+         "type": "double",
+         "name": "l2"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置 L2 惩罚系数。",
+        "params": {
+         "l2": "权重惩罚强度，允许 0；默认 0.0（无正则）"
+        },
+        "returns": "this",
+        "notes": [
+         "梯度中加入 2·l2·w，截距不受影响"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fitIntercept(boolean)",
+       "signature": "Builder fitIntercept(boolean fitIntercept)",
+       "params": [
+        {
+         "type": "boolean",
+         "name": "fitIntercept"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置是否拟合截距。",
+        "params": {
+         "fitIntercept": "true 时更新截距，false 时截距恒为 0；默认 true"
+        },
+        "returns": "this"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "build()",
+       "signature": "LinearRegression build()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "校验参数并创建模型。",
+        "returns": "新的 LinearRegression，尚未拟合",
+        "throws": {
+         "IllegalArgumentException": "learningRate 非有限或 <= 0、l2 非有限或为负、epochs <= 0"
+        }
+       }
+      }
+     ],
+     "doc": {
+      "summary": "LinearRegression 的流式构建器。",
+      "body": [
+       "四个字段控制梯度下降的步长、轮数、正则强度与是否拟合截距。setter 只赋值，校验集中在 build()：learningRate 必须为正，l2 允许 0，epochs 必须为正。",
+       "默认 learningRate=0.05、epochs=2000、l2=0.0、fitIntercept=true。"
+      ],
+      "notes": [
+       "epochs 直接决定 lossHistory 的长度与 fit 的耗时",
+       "构建器不是线程安全的"
+      ],
+      "example": "LinearRegression model = LinearRegression.builder()\n        .learningRate(0.01)\n        .epochs(500)\n        .l2(0.001)\n        .fitIntercept(true)\n        .build();",
+      "see": [
+       "jsl.ml.LinearRegression"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.LinearSVM.Builder",
+     "simple_qualified": "LinearSVM.Builder",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "static",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/ml/LinearSVM.java",
+     "line": 161,
+     "javadoc": "",
+     "nested": [],
+     "members": [
+      {
+       "kind": "method",
+       "key": "lambda(double)",
+       "signature": "Builder lambda(double lambda)",
+       "params": [
+        {
+         "type": "double",
+         "name": "lambda"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置正则强度。",
+        "params": {
+         "lambda": "L2 正则系数，步长按 1/(lambda*t) 计算，必须为正；默认 0.01"
+        },
+        "returns": "this",
+        "notes": [
+         "值越小正则越弱、早期有效步长越大，收敛更快但更易震荡"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "epochs(int)",
+       "signature": "Builder epochs(int epochs)",
+       "params": [
+        {
+         "type": "int",
+         "name": "epochs"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置遍历训练集的轮数。",
+        "params": {
+         "epochs": "完整扫描次数，必须为正；默认 20"
+        },
+        "returns": "this",
+        "throws": {
+         "IllegalArgumentException": "build() 时小于等于 0"
+        },
+        "notes": [
+         "累计步数 t 跨轮递增，不随 epoch 重置"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "seed(long)",
+       "signature": "Builder seed(long seed)",
+       "params": [
+        {
+         "type": "long",
+         "name": "seed"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置洗牌随机种子。",
+        "params": {
+         "seed": "每轮洗牌所用 Random 的种子；默认 42"
+        },
+        "returns": "this",
+        "notes": [
+         "只影响样本访问顺序，不影响权重初值（恒为零）"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "build()",
+       "signature": "LinearSVM build()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "校验参数并创建模型。",
+        "returns": "新的 LinearSVM，尚未拟合",
+        "throws": {
+         "IllegalArgumentException": "lambda 非有限或 <= 0、epochs <= 0"
+        }
+       }
+      }
+     ],
+     "doc": {
+      "summary": "LinearSVM 的流式构建器。",
+      "body": [
+       "lambda 控制正则强度并间接决定步长 1/(λ·t)，epochs 是遍历轮数，seed 固定洗牌随机源。setter 只赋值，build() 校验 lambda 为正、epochs 为正。",
+       "默认 lambda=0.01、epochs=20、seed=42。"
+      ],
+      "notes": [
+       "相同 seed 与相同数据得到完全一致的训练轨迹",
+       "构建器不是线程安全的"
+      ],
+      "example": "LinearSVM model = LinearSVM.builder()\n        .lambda(0.001)\n        .epochs(50)\n        .seed(7L)\n        .build();",
+      "see": [
+       "jsl.ml.LinearSVM"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.LogisticRegression.Builder",
+     "simple_qualified": "LogisticRegression.Builder",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "static",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/ml/LogisticRegression.java",
+     "line": 158,
+     "javadoc": "",
+     "nested": [],
+     "members": [
+      {
+       "kind": "method",
+       "key": "learningRate(double)",
+       "signature": "Builder learningRate(double learningRate)",
+       "params": [
+        {
+         "type": "double",
+         "name": "learningRate"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置梯度下降步长。",
+        "params": {
+         "learningRate": "每次整批更新的步长，必须为正；默认 0.1"
+        },
+        "returns": "this",
+        "notes": [
+         "步长过大时交叉熵可能不降反升"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "epochs(int)",
+       "signature": "Builder epochs(int epochs)",
+       "params": [
+        {
+         "type": "int",
+         "name": "epochs"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置全批量迭代轮数。",
+        "params": {
+         "epochs": "遍历全部样本的次数，必须为正；默认 2000"
+        },
+        "returns": "this",
+        "throws": {
+         "IllegalArgumentException": "build() 时小于等于 0"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "l2(double)",
+       "signature": "Builder l2(double l2)",
+       "params": [
+        {
+         "type": "double",
+         "name": "l2"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置 L2 惩罚系数。",
+        "params": {
+         "l2": "权重惩罚强度，允许 0；默认 0.0（无正则）"
+        },
+        "returns": "this",
+        "notes": [
+         "以 2·l2·w 加入权重梯度，截距不受惩罚"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "build()",
+       "signature": "LogisticRegression build()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "校验参数并创建模型。",
+        "returns": "新的 LogisticRegression，尚未拟合",
+        "throws": {
+         "IllegalArgumentException": "learningRate 非有限或 <= 0、l2 非有限或为负、epochs <= 0"
+        }
+       }
+      }
+     ],
+     "doc": {
+      "summary": "LogisticRegression 的流式构建器。",
+      "body": [
+       "三个字段控制步长、轮数与 L2 强度。setter 只赋值，build() 校验 learningRate 为正、l2 非负、epochs 为正。",
+       "默认 learningRate=0.1、epochs=2000、l2=0.0。"
+      ],
+      "notes": [
+       "没有 fitIntercept 开关，截距始终参与训练且不受正则",
+       "构建器不是线程安全的"
+      ],
+      "example": "LogisticRegression model = LogisticRegression.builder()\n        .learningRate(0.1)\n        .epochs(2000)\n        .l2(0.001)\n        .build();",
+      "see": [
+       "jsl.ml.LogisticRegression"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.MinMaxScaler.Builder",
+     "simple_qualified": "MinMaxScaler.Builder",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "static",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/ml/MinMaxScaler.java",
+     "line": 171,
+     "javadoc": "",
+     "nested": [],
+     "members": [
+      {
+       "kind": "method",
+       "key": "featureRange(double, double)",
+       "signature": "Builder featureRange(double min, double max)",
+       "params": [
+        {
+         "type": "double",
+         "name": "min"
+        },
+        {
+         "type": "double",
+         "name": "max"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置缩放的目标区间。",
+        "params": {
+         "min": "目标区间下界，必须为有限值；默认 0.0",
+         "max": "目标区间上界，必须为有限值且大于 min；默认 1.0"
+        },
+        "returns": "this",
+        "throws": {
+         "IllegalArgumentException": "min 或 max 非有限，或 max 不大于 min，在 setter 内立即抛出"
+        },
+        "notes": [
+         "区间可取负值或跨越 0，只要求 max > min"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "clip(boolean)",
+       "signature": "Builder clip(boolean clip)",
+       "params": [
+        {
+         "type": "boolean",
+         "name": "clip"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置是否把结果裁剪到目标区间。",
+        "params": {
+         "clip": "true 时 transform 将每个值截断到 [featureMin, featureMax]；默认 false"
+        },
+        "returns": "this",
+        "notes": [
+         "只在 transform 生效，inverseTransform 直接按逆公式还原"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "build()",
+       "signature": "MinMaxScaler build()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建最小最大缩放器。",
+        "returns": "新的 MinMaxScaler，尚未拟合",
+        "notes": [
+         "featureRange 已在 setter 内校验，build() 不再检查"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "MinMaxScaler 的流式构建器。",
+      "body": [
+       "featureRange 决定缩放的目标区间，clip 决定是否把越界值截断回该区间。两个字段都有默认值，没有必填项。",
+       "默认 featureMin=0.0、featureMax=1.0、clip=false。featureRange 在 setter 内校验两端有限且 max > min，build() 只做字段拷贝。"
+      ],
+      "notes": [
+       "常数特征列（极差不超过 1e-12）在 fit 时以 1.0 作分母，输出恒等于 featureMin",
+       "clip 只影响 transform，不改变 fit 得到的 scale 与 minOffset",
+       "构建器不是线程安全的"
+      ],
+      "example": "MinMaxScaler scaler = MinMaxScaler.builder()\n        .featureRange(-1.0, 1.0)\n        .clip(true)\n        .build();",
+      "see": [
+       "jsl.ml.MinMaxScaler"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.OneHotEncoder.Builder",
+     "simple_qualified": "OneHotEncoder.Builder",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "static",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/ml/OneHotEncoder.java",
+     "line": 217,
+     "javadoc": "",
+     "nested": [],
+     "members": [
+      {
+       "kind": "method",
+       "key": "handleUnknown(HandleUnknown)",
+       "signature": "Builder handleUnknown(HandleUnknown handleUnknown)",
+       "params": [
+        {
+         "type": "HandleUnknown",
+         "name": "handleUnknown"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置未见类别的处理策略。",
+        "params": {
+         "handleUnknown": "ERROR 抛异常，IGNORE 输出全零指示；默认 HandleUnknown.ERROR"
+        },
+        "returns": "this",
+        "throws": {
+         "NullPointerException": "handleUnknown 为 null"
+        },
+        "notes": [
+         "只在 transform 阶段生效，fit 不受影响"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "categoricalColumns(int...)",
+       "signature": "Builder categoricalColumns(int... columns)",
+       "params": [
+        {
+         "type": "int...",
+         "name": "columns"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "指定按类别编码的列下标。",
+        "params": {
+         "columns": "类别列下标，从 0 开始；不调用或传 null 表示所有列都按类别处理"
+        },
+        "returns": "this",
+        "notes": [
+         "setter 内克隆数组，调用方后续修改入参不影响构建器",
+         "下标越界在 fit() 时抛 IllegalArgumentException，未指定的列原样透传"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "build()",
+       "signature": "OneHotEncoder build()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建独热编码器。",
+        "returns": "新的 OneHotEncoder，尚未拟合",
+        "notes": [
+         "类别集合在 fit() 时按取值升序收集"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "OneHotEncoder 的流式构建器。",
+      "body": [
+       "handleUnknown 决定 transform 遇到训练时未见类别怎么办，categoricalColumns 指定哪些列按类别展开，其余列原样透传。",
+       "默认 handleUnknown=ERROR、categoricalColumns=null，后者表示所有列都按类别处理。两个字段都可省略；build() 不做校验，列下标是否越界要到 fit() 才检查。"
+      ],
+      "notes": [
+       "categoricalColumns 在 setter 内克隆，调用方之后修改原数组不会影响编码器",
+       "IGNORE 下未见类别输出全零指示向量，inverseTransform 会把它还原为 NaN",
+       "构建器不是线程安全的"
+      ],
+      "example": "OneHotEncoder encoder = OneHotEncoder.builder()\n        .handleUnknown(OneHotEncoder.HandleUnknown.IGNORE)\n        .categoricalColumns(0, 2)\n        .build();",
+      "see": [
+       "jsl.ml.OneHotEncoder"
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

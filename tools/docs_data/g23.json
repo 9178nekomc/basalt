@@ -1,0 +1,178 @@
+{
+ "group": "g23",
+ "title": "并发推理",
+ "modules": [
+  {
+   "name": "jsl.concurrent",
+   "types": [
+    {
+     "qualified": "jsl.concurrent.InferenceEngine",
+     "simple_qualified": "InferenceEngine",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [
+      "AutoCloseable"
+     ],
+     "file": "jsl/concurrent/InferenceEngine.java",
+     "line": 20,
+     "javadoc": "Virtual-thread fan-out for batch inference and request orchestration (with automatic fallback\nto cached daemon threads on JDK 17 runtimes where virtual threads are not present).",
+     "nested": [],
+     "members": [
+      {
+       "kind": "constructor",
+       "key": "InferenceEngine(int)",
+       "signature": "InferenceEngine(int parallelism)",
+       "params": [
+        {
+         "type": "int",
+         "name": "parallelism"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "按并行度创建推理引擎",
+        "body": [
+         "parallelism 决定信号量许可总数，即同时执行的内核调用上限；执行器本身不设线程上限，每个任务各占一个虚拟线程。"
+        ],
+        "params": {
+         "parallelism": "并发许可数，必须为正，通常取 CPU 核数"
+        },
+        "throws": {
+         "IllegalArgumentException": "parallelism 小于等于 0"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "predict(Estimator, List<Matrix>)",
+       "signature": "List<double[]> predict(Estimator model, List<Matrix> batches)",
+       "params": [
+        {
+         "type": "Estimator",
+         "name": "model"
+        },
+        {
+         "type": "List<Matrix>",
+         "name": "batches"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "并发预测多个独立批次",
+        "body": [
+         "每个批次包装为一个任务，任务在调用 model.predict 前后成对获取与释放许可，释放放在 finally 中以保证异常路径不泄漏许可。批次之间必须相互独立，同一模型被并发读取。"
+        ],
+        "params": {
+         "model": "已训练的估计器；其 predict 会被多个虚拟线程同时调用",
+         "batches": "待预测批次列表，每个元素对应一个结果"
+        },
+        "returns": "与 batches 等长且同序的预测结果列表",
+        "throws": {
+         "IllegalStateException": "引擎已关闭，或某个批次预测失败（cause 为原始异常）"
+        },
+        "notes": [
+         "许可不足时任务阻塞等待，不会拒绝提交。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "runIo(List<Callable<T>>)",
+       "signature": "<T> List<T> runIo(List<Callable<T>> tasks)",
+       "params": [
+        {
+         "type": "List<Callable<T>>",
+         "name": "tasks"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "不限流地并发执行 I/O 型任务",
+        "body": [
+         "实现上直接委托 runAll，不获取信号量许可；适用于阻塞等待网络或磁盘的场景，任务数可以远大于核数。"
+        ],
+        "params": {
+         "tasks": "待执行任务列表，每个任务一个虚拟线程"
+        },
+        "returns": "与 tasks 等长且同序的结果列表",
+        "throws": {
+         "IllegalStateException": "引擎已关闭，或某个任务执行失败"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "runAll(List<Callable<T>>)",
+       "signature": "<T> List<T> runAll(List<Callable<T>> tasks)",
+       "params": [
+        {
+         "type": "List<Callable<T>>",
+         "name": "tasks"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "提交全部任务并按提交顺序收集结果",
+        "body": [
+         "先一次性提交所有任务，再按 futures 顺序逐个 get，因此返回顺序与输入顺序一致，但等待是串行的：前面的任务未完成时不会读取后面的结果。首个失败会立即中断收集。"
+        ],
+        "params": {
+         "tasks": "待执行任务列表"
+        },
+        "returns": "与 tasks 等长且同序的结果列表",
+        "throws": {
+         "IllegalStateException": "引擎已关闭；或任务抛出异常，消息为 \"Inference task failed\" 且 cause 为原始异常；或等待时被中断，此时中断标志已恢复"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "close()",
+       "signature": "void close()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "关闭执行器并等待任务结束",
+        "body": [
+         "首次调用把 closed 置为 true 并关闭执行器，后续调用无副作用。关闭后提交任务会抛出 IllegalStateException。"
+        ],
+        "notes": [
+         "ExecutorService.close() 会阻塞至已提交任务全部完成，长任务会延长关闭时间。"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "虚拟线程扇出：带许可限流的批量推理与不限流的任务编排",
+      "body": [
+       "每个实例持有一个 virtual-thread-per-task 执行器与一组信号量许可。predict 为每个批次提交一个任务，任务先获取许可再调用模型的 predict，从而把并发的原生/Java 内核数量压在许可数以内。",
+       "runIo 与 runAll 不消耗许可，适用于等待外部 I/O 的任务：此时虚拟线程的优势在于避免每个请求占用一个平台线程，而不是提高算力。",
+       "两条路径共用同一套提交与收集逻辑，因此异常语义、结果顺序与关闭行为完全一致。"
+      ],
+      "notes": [
+       "结果列表严格按输入列表顺序返回，与任务完成顺序无关。",
+       "任一任务失败即抛出 IllegalStateException 并携带原始 cause，其余已提交任务不会被取消。",
+       "closed 标志是普通 boolean 字段，关闭与并发提交之间没有额外同步，不建议跨线程关闭。",
+       "close() 调用 ExecutorService.close()，会等待已提交任务结束。"
+      ],
+      "example": "Matrix train = Matrix.fromRows(new double[][]{{1.0, 2.0}, {3.0, 4.0}, {5.0, 7.0}});\nEstimator model = jsl.ml.JSL.fit(jsl.ml.JSL.Algorithm.RIDGE, train, new double[]{1.0, 2.0, 3.0});\ntry (InferenceEngine engine = new InferenceEngine(4)) {\n    List<double[]> out = engine.predict(model, List.of(train, train));\n    System.out.println(out.size());\n}",
+      "see": [
+       "jsl.ml.Estimator",
+       "jsl.core.Matrix"
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

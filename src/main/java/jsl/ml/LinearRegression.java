@@ -1,10 +1,15 @@
 package jsl.ml;
 
 import jsl.core.Matrix;
+import jsl.core.ModelFormatException;
+import jsl.core.ModelKind;
+import jsl.core.ModelReader;
+import jsl.core.ModelWriter;
+import jsl.core.Persistable;
 import java.util.Arrays;
 
 /** Ordinary linear regression trained by full-batch gradient descent. */
-public final class LinearRegression implements Estimator {
+public final class LinearRegression implements Estimator, Persistable {
     private final double learningRate;
     private final int epochs;
     private final double l2;
@@ -102,6 +107,45 @@ public final class LinearRegression implements Estimator {
 
     public double[] lossHistory() {
         return lossHistory.clone();
+    }
+
+
+    @Override
+    public ModelKind kind() {
+        return ModelKind.LINEAR_REGRESSION;
+    }
+
+    @Override
+    public void write(ModelWriter writer) {
+        if (!fitted) {
+            throw new IllegalStateException("LinearRegression must be fitted before serialization");
+        }
+        writer.putDouble(learningRate);
+        writer.putInt(epochs);
+        writer.putDouble(l2);
+        writer.putByte(fitIntercept ? 1 : 0);
+        writer.putInt(featureCount);
+        writer.putDouble(intercept);
+        writer.putDoubles(weights);
+    }
+
+    public static LinearRegression read(ModelReader reader) {
+        double lr = reader.getDouble();
+        int epochs = reader.getInt();
+        double l2 = reader.getDouble();
+        boolean fitInt = reader.getByte() != 0;
+        int features = reader.getInt();
+        if (features <= 0) {
+            throw new ModelFormatException("Invalid LinearRegression feature count");
+        }
+        double intercept = reader.getDouble();
+        double[] weights = reader.getDoubles(features);
+        LinearRegression model = new Builder().learningRate(lr).epochs(epochs).l2(l2).fitIntercept(fitInt).build();
+        model.featureCount = features;
+        model.intercept = intercept;
+        model.weights = weights;
+        model.fitted = true;
+        return model;
     }
 
     public static final class Builder {

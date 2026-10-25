@@ -32,7 +32,7 @@ import sys
 
 from md_render import render_markdown, set_java_highlighter
 
-VERSION = "2.4.0"
+VERSION = "3.4.0"
 TITLE = f"JSL {VERSION} 文档"
 REPO = "https://github.com/9178nekomc/java-scikit-learn"
 
@@ -1015,7 +1015,7 @@ def render_readme_page(stats: dict) -> str:
         f'<a href="{REPO}/blob/main/README.md" rel="noopener">README</a> 一致。'
         f'生成于 {stats["generated"]}。</p>'
         + body_html +
-        '<div class="relbar"><a class="prev" href="index.html">JSL 2.4.0 文档</a>'
+        '<div class="relbar"><a class="prev" href="index.html">JSL 3.4.0 文档</a>'
         '<span class="spacer"></span><a class="next" href="api/index.html">模块索引</a></div>'
     )
     return page(f"README — {TITLE}",
@@ -1073,7 +1073,7 @@ def render_genindex(modules: list[dict]) -> str:
             f'<p class="welcome">按类型名首字母排列，共 {sum(len(v) for v in entries.values())} '
             "个公开类型。方法请在各模块页内查找，或用顶部快速搜索（Ctrl+K）。</p>"
             f'<div class="genindex-jumpbox">跳转：{jump}</div>' + "".join(sections) +
-            '<div class="relbar"><a class="prev" href="index.html">JSL 2.4.0 文档</a>'
+            '<div class="relbar"><a class="prev" href="index.html">JSL 3.4.0 文档</a>'
             '<span class="spacer"></span><a class="next" href="api/index.html">模块索引</a></div>')
     return page(f"总索引 — {TITLE}",
                 [("JSL", "index.html"), ("2.4.0", None), ("总索引", None)],
@@ -1177,7 +1177,7 @@ def main() -> int:
         prev_mod = modules[i - 1] if i > 0 else None
         next_mod = modules[i + 1] if i + 1 < len(modules) else None
         prev_link = ((prev_mod["name"], os.path.basename(page_name(prev_mod["name"])))
-                     if prev_mod else ("JSL 2.4.0 文档", "../index.html"))
+                     if prev_mod else ("JSL 3.4.0 文档", "../index.html"))
         next_link = ((next_mod["name"], os.path.basename(page_name(next_mod["name"])))
                      if next_mod else ("模块索引", "index.html"))
         crumbs = [("JSL", "../index.html"), ("2.4.0", None),

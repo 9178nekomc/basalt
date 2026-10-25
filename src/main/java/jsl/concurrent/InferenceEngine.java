@@ -2,6 +2,7 @@ package jsl.concurrent;
 
 import jsl.core.Matrix;
 import jsl.ml.Estimator;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -10,25 +11,35 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Virtual-thread fan-out for batch inference and request orchestration.
- *
- * <p>Virtual threads are cheap enough to create one per request, but CPU-bound work still has to
- * be bounded by the number of cores; {@link #predict} therefore gates native/Java kernels with a
- * semaphore. I/O-heavy work uses {@link #runIo} without a gate, where virtual threads win by
- * avoiding one platform thread per request.</p>
+ * Virtual-thread fan-out for batch inference and request orchestration (with automatic fallback
+ * to cached daemon threads on JDK 17 runtimes where virtual threads are not present).
  */
 public final class InferenceEngine implements AutoCloseable {
-    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+    private final ExecutorService executor = createExecutor();
     private final Semaphore permits;
-    private boolean closed;
+    private volatile boolean closed;
 
     public InferenceEngine(int parallelism) {
         if (parallelism <= 0) {
             throw new IllegalArgumentException("parallelism must be positive");
         }
         permits = new Semaphore(parallelism);
+    }
+
+    private static ExecutorService createExecutor() {
+        try {
+            Method method = Executors.class.getMethod("newVirtualThreadPerTaskExecutor");
+            return (ExecutorService) method.invoke(null);
+        } catch (ReflectiveOperationException | SecurityException ignored) {
+            return Executors.newCachedThreadPool(runnable -> {
+                Thread thread = new Thread(runnable, "jsl-inference-worker");
+                thread.setDaemon(true);
+                return thread;
+            });
+        }
     }
 
     /** Predicts independent batches concurrently, bounded by the configured parallelism. */
@@ -47,7 +58,7 @@ public final class InferenceEngine implements AutoCloseable {
         return runAll(tasks);
     }
 
-    /** Runs I/O-bound tasks without a CPU permit; one virtual thread per task. */
+    /** Runs I/O-bound tasks without a CPU permit. */
     public <T> List<T> runIo(List<Callable<T>> tasks) {
         return runAll(tasks);
     }
@@ -78,7 +89,15 @@ public final class InferenceEngine implements AutoCloseable {
     public void close() {
         if (!closed) {
             closed = true;
-            executor.close();
+            executor.shutdown();
+            try {
+                if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+                    executor.shutdownNow();
+                }
+            } catch (InterruptedException interrupted) {
+                executor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         }
     }
 }

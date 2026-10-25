@@ -30,6 +30,7 @@ pub enum Op {
     BatchedMatMul,
     Permute,
     Reshape,
+    GroupNorm,
 }
 
 impl Op {
@@ -56,8 +57,9 @@ impl Op {
             19 => Ok(Self::BatchedMatMul),
             20 => Ok(Self::Permute),
             21 => Ok(Self::Reshape),
-            other => Err(NativeError::invalid(format!(
-                "unknown op code {other}; expected 1..=21"
+            22 => Ok(Self::GroupNorm),
+            other => Err(NativeError::unsupported(format!(
+                "unknown op code {other}; expected 1..=22"
             ))),
         }
     }
@@ -85,6 +87,7 @@ impl Op {
             Self::BatchedMatMul => "BatchedMatMul",
             Self::Permute => "Permute",
             Self::Reshape => "Reshape",
+            Self::GroupNorm => "GroupNorm",
         }
     }
 
@@ -109,7 +112,7 @@ impl Op {
             | Self::Conv2d
             | Self::Embedding
             | Self::BatchedMatMul => 2,
-            Self::LayerNorm => 3,
+            Self::LayerNorm | Self::GroupNorm => 3,
             Self::BatchNorm2d => 5,
         }
     }
@@ -146,6 +149,7 @@ pub enum Attrs {
         h: usize,
         w: usize,
         eps: f32,
+        #[allow(dead_code)]
         momentum: f32,
         training: bool,
     },
@@ -161,8 +165,18 @@ pub enum Attrs {
         sw: usize,
         ph: usize,
         pw: usize,
+        dh: usize,
+        dw: usize,
+        groups: usize,
         oh: usize,
         ow: usize,
+    },
+    GroupNorm {
+        n: usize,
+        c: usize,
+        spatial: usize,
+        groups: usize,
+        eps: f32,
     },
     MaxPool2d {
         n: usize,
@@ -177,6 +191,7 @@ pub enum Attrs {
         ow: usize,
     },
     Dropout {
+        #[allow(dead_code)]
         length: usize,
         probability: f32,
         training: bool,
@@ -198,6 +213,7 @@ pub enum Attrs {
     },
     Reshape {
         in_shape: Vec<usize>,
+        #[allow(dead_code)]
         out_shape: Vec<usize>,
     },
 }

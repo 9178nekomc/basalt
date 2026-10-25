@@ -48,6 +48,26 @@ public final class BatchNorm2d extends Module<BCHW, BCHW> {
         return parameters;
     }
 
+    public float epsilon() {
+        return epsilon;
+    }
+
+    public Tensor gamma() {
+        return gamma;
+    }
+
+    public Tensor beta() {
+        return beta;
+    }
+
+    public Tensor runningMean() {
+        return runningMean;
+    }
+
+    public Tensor runningVar() {
+        return runningVar;
+    }
+
     @Override
     public List<Map.Entry<String, Tensor>> namedParameters() {
         List<Map.Entry<String, Tensor>> entries = new ArrayList<>();

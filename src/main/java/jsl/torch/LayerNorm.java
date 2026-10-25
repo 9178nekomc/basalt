@@ -40,6 +40,18 @@ public final class LayerNorm<L extends Layout> extends Module<L, L> {
         return parameters;
     }
 
+    public float epsilon() {
+        return epsilon;
+    }
+
+    public Tensor gamma() {
+        return gamma;
+    }
+
+    public Tensor beta() {
+        return beta;
+    }
+
     @Override
     public List<Map.Entry<String, Tensor>> namedParameters() {
         List<Map.Entry<String, Tensor>> entries = new ArrayList<>();

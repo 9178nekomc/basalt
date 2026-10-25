@@ -476,15 +476,20 @@ fn execute_command(
             let sw = command.attrs[3].max(1) as usize;
             let ph = command.attrs[4].max(0) as usize;
             let pw = command.attrs[5].max(0) as usize;
-            if cin != weight_cin || kh == 0 || kw == 0 {
-                return Err(NativeError::shape("conv2d channel/kernel mismatch"));
+            let dh = command.attrs[6].max(1) as usize;
+            let dw = command.attrs[7].max(1) as usize;
+            let groups = command.attrs[8].max(1) as usize;
+            if cin % groups != 0 || cout % groups != 0 || cin / groups != weight_cin || kh == 0 || kw == 0 {
+                return Err(NativeError::shape("conv2d channel/group/kernel mismatch"));
             }
-            let oh = (h + 2 * ph).checked_sub(kh).ok_or_else(|| {
-                NativeError::shape("conv2d kernel is larger than the padded input")
+            let eff_kh = dh * (kh - 1) + 1;
+            let eff_kw = dw * (kw - 1) + 1;
+            let oh = (h + 2 * ph).checked_sub(eff_kh).ok_or_else(|| {
+                NativeError::shape("conv2d dilated kernel is larger than the padded input")
             })? / sh
                 + 1;
-            let ow = (w + 2 * pw).checked_sub(kw).ok_or_else(|| {
-                NativeError::shape("conv2d kernel is larger than the padded input")
+            let ow = (w + 2 * pw).checked_sub(eff_kw).ok_or_else(|| {
+                NativeError::shape("conv2d dilated kernel is larger than the padded input")
             })? / sw
                 + 1;
             if output_shape != vec![n, cout, oh, ow] || output_len != n * cout * oh * ow {
@@ -517,6 +522,9 @@ fn execute_command(
                 sw,
                 ph,
                 pw,
+                dh,
+                dw,
+                groups,
                 oh,
                 ow,
                 Some(pool),
@@ -537,8 +545,67 @@ fn execute_command(
                     sw,
                     ph,
                     pw,
+                    dh,
+                    dw,
+                    groups,
                     oh,
                     ow,
+                },
+            });
+        }
+        Op::GroupNorm => {
+            let input = context.tensor(command.input_a)?;
+            let gamma = context.tensor(command.input_b)?;
+            let beta = context.tensor(command.input_c)?;
+            let input_shape = tensor_shape_of(&input)?;
+            if input_shape.len() < 2 {
+                return Err(NativeError::shape("group-norm expects rank >= 2 input [N, C, ...]"));
+            }
+            let n = input_shape[0];
+            let c = input_shape[1];
+            let spatial: usize = input_shape[2..].iter().product::<usize>().max(1);
+            let groups = command.attrs[0].max(1) as usize;
+            let eps = attr_f32(&command, 1);
+            if c % groups != 0
+                || output_shape != input_shape
+                || tensor_shape_of(&gamma)? != vec![c]
+                || tensor_shape_of(&beta)? != vec![c]
+            {
+                return Err(NativeError::shape("group-norm parameter/channel shape mismatch"));
+            }
+            let input_guard = input
+                .read()
+                .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+            let gamma_guard = gamma
+                .read()
+                .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+            let beta_guard = beta
+                .read()
+                .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+            let mut output_guard = output
+                .write()
+                .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+            nn_ops::group_norm_forward(
+                &input_guard.data,
+                &gamma_guard.data,
+                &beta_guard.data,
+                &mut output_guard.data,
+                n,
+                c,
+                spatial,
+                groups,
+                eps,
+            )?;
+            graph.push_unchecked(Node {
+                op,
+                inputs,
+                output: command.output,
+                attrs: Attrs::GroupNorm {
+                    n,
+                    c,
+                    spatial,
+                    groups,
+                    eps,
                 },
             });
         }
@@ -1083,6 +1150,9 @@ pub fn backward(context: &Context, root: jlong, threads: jint) -> Result<()> {
                     sw,
                     ph,
                     pw,
+                    dh,
+                    dw,
+                    groups,
                     oh,
                     ow,
                 } = node.attrs
@@ -1098,7 +1168,7 @@ pub fn backward(context: &Context, root: jlong, threads: jint) -> Result<()> {
                     .read()
                     .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
                 let mut grad_input = vec![0.0f32; n * cin * h * w];
-                let mut grad_weight = vec![0.0f32; cout * cin * kh * kw];
+                let mut grad_weight = vec![0.0f32; cout * (cin / groups.max(1)) * kh * kw];
                 nn_ops::conv2d_backward_input(
                     &input_guard.data,
                     &weight_guard.data,
@@ -1115,6 +1185,9 @@ pub fn backward(context: &Context, root: jlong, threads: jint) -> Result<()> {
                     sw,
                     ph,
                     pw,
+                    dh,
+                    dw,
+                    groups,
                     oh,
                     ow,
                     Some(&pool),
@@ -1134,6 +1207,9 @@ pub fn backward(context: &Context, root: jlong, threads: jint) -> Result<()> {
                     sw,
                     ph,
                     pw,
+                    dh,
+                    dw,
+                    groups,
                     oh,
                     ow,
                     Some(&pool),
@@ -1142,6 +1218,47 @@ pub fn backward(context: &Context, root: jlong, threads: jint) -> Result<()> {
                 drop(weight_guard);
                 accumulate(&mut gradients, node.inputs[0], grad_input);
                 accumulate(&mut gradients, node.inputs[1], grad_weight);
+            }
+            Op::GroupNorm => {
+                let Attrs::GroupNorm {
+                    n,
+                    c,
+                    spatial,
+                    groups,
+                    eps,
+                } = node.attrs
+                else {
+                    return Err(NativeError::graph("group-norm node is missing metadata"));
+                };
+                let input = context.tensor(node.inputs[0])?;
+                let gamma = context.tensor(node.inputs[1])?;
+                let input_guard = input
+                    .read()
+                    .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+                let gamma_guard = gamma
+                    .read()
+                    .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+                let mut grad_input = vec![0.0f32; n * c * spatial];
+                let mut grad_gamma = vec![0.0f32; c];
+                let mut grad_beta = vec![0.0f32; c];
+                nn_ops::group_norm_backward(
+                    &input_guard.data,
+                    &gamma_guard.data,
+                    &grad_output,
+                    &mut grad_input,
+                    &mut grad_gamma,
+                    &mut grad_beta,
+                    n,
+                    c,
+                    spatial,
+                    groups,
+                    eps,
+                );
+                drop(input_guard);
+                drop(gamma_guard);
+                accumulate(&mut gradients, node.inputs[0], grad_input);
+                accumulate(&mut gradients, node.inputs[1], grad_gamma);
+                accumulate(&mut gradients, node.inputs[2], grad_beta);
             }
             Op::MaxPool2d => {
                 let Attrs::MaxPool2d {

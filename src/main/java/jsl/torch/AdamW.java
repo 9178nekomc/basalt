@@ -34,4 +34,9 @@ public final class AdamW extends Optimizer {
     public long stepCount() {
         return step;
     }
+
+    public void setStepCount(long step) {
+        if (step < 0) throw new IllegalArgumentException("step must be non-negative");
+        this.step = step;
+    }
 }

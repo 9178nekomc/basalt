@@ -427,23 +427,72 @@ pub fn conv2d_forward(
     sw: usize,
     ph: usize,
     pw: usize,
+    dh: usize,
+    dw: usize,
+    groups: usize,
     oh: usize,
     ow: usize,
     pool: Option<&ThreadPool>,
 ) -> Result<()> {
-    let kernel = cin * kh * kw;
+    let groups = groups.max(1);
+    if cin % groups != 0 || cout % groups != 0 {
+        return Err(NativeError::shape("conv2d channels must be divisible by groups"));
+    }
+    let cin_per_group = cin / groups;
+    let cout_per_group = cout / groups;
+    let kernel = cin_per_group * kh * kw;
     if input.len() != n * cin * h * w
         || weight.len() != cout * kernel
         || out.len() != n * cout * oh * ow
     {
         return Err(NativeError::shape("conv2d shape mismatch"));
     }
-    let rows = n * oh * ow;
-    let mut column = vec![0.0f32; rows * kernel];
-    im2col(
-        input, &mut column, n, cin, h, w, kh, kw, sh, sw, ph, pw, oh, ow,
-    );
-    gemm_forward_nt(&column, weight, out, rows, cout, kernel, pool);
+    if groups == 1 && dh == 1 && dw == 1 {
+        let rows = n * oh * ow;
+        let mut column = vec![0.0f32; rows * kernel];
+        im2col(
+            input, &mut column, n, cin, h, w, kh, kw, sh, sw, ph, pw, oh, ow,
+        );
+        gemm_forward_nt(&column, weight, out, rows, cout, kernel, pool);
+        return Ok(());
+    }
+    for batch in 0..n {
+        for g in 0..groups {
+            for oc in 0..cout_per_group {
+                let cout_idx = g * cout_per_group + oc;
+                let w_base = cout_idx * kernel;
+                for out_r in 0..oh {
+                    for out_c in 0..ow {
+                        let mut sum = 0.0f32;
+                        for ic in 0..cin_per_group {
+                            let cin_idx = g * cin_per_group + ic;
+                            let in_base = ((batch * cin + cin_idx) * h) * w;
+                            let w_ic_base = w_base + ic * kh * kw;
+                            for kr in 0..kh {
+                                let in_r = out_r as isize * sh as isize
+                                    + kr as isize * dh as isize
+                                    - ph as isize;
+                                if in_r < 0 || in_r >= h as isize {
+                                    continue;
+                                }
+                                for kc in 0..kw {
+                                    let in_c = out_c as isize * sw as isize
+                                        + kc as isize * dw as isize
+                                        - pw as isize;
+                                    if in_c < 0 || in_c >= w as isize {
+                                        continue;
+                                    }
+                                    sum += input[in_base + in_r as usize * w + in_c as usize]
+                                        * weight[w_ic_base + kr * kw + kc];
+                                }
+                            }
+                        }
+                        out[((batch * cout + cout_idx) * oh + out_r) * ow + out_c] = sum;
+                    }
+                }
+            }
+        }
+    }
     Ok(())
 }
 
@@ -464,17 +513,63 @@ pub fn conv2d_backward_input(
     sw: usize,
     ph: usize,
     pw: usize,
+    dh: usize,
+    dw: usize,
+    groups: usize,
     oh: usize,
     ow: usize,
     pool: Option<&ThreadPool>,
 ) -> Result<()> {
-    let kernel = cin * kh * kw;
-    let rows = n * oh * ow;
-    let mut grad_column = vec![0.0f32; rows * kernel];
-    gemm_forward_nn(grad_out, weight, &mut grad_column, rows, kernel, cout, pool);
-    col2im(
-        &grad_column, grad_input, n, cin, h, w, kh, kw, sh, sw, ph, pw, oh, ow,
-    );
+    let groups = groups.max(1);
+    let cin_per_group = cin / groups;
+    let cout_per_group = cout / groups;
+    let kernel = cin_per_group * kh * kw;
+    if groups == 1 && dh == 1 && dw == 1 {
+        let rows = n * oh * ow;
+        let mut grad_column = vec![0.0f32; rows * kernel];
+        gemm_forward_nn(grad_out, weight, &mut grad_column, rows, kernel, cout, pool);
+        col2im(
+            &grad_column, grad_input, n, cin, h, w, kh, kw, sh, sw, ph, pw, oh, ow,
+        );
+        let _ = input;
+        return Ok(());
+    }
+    for batch in 0..n {
+        for g in 0..groups {
+            for oc in 0..cout_per_group {
+                let cout_idx = g * cout_per_group + oc;
+                let w_base = cout_idx * kernel;
+                for out_r in 0..oh {
+                    for out_c in 0..ow {
+                        let go = grad_out[((batch * cout + cout_idx) * oh + out_r) * ow + out_c];
+                        for ic in 0..cin_per_group {
+                            let cin_idx = g * cin_per_group + ic;
+                            let in_base = ((batch * cin + cin_idx) * h) * w;
+                            let w_ic_base = w_base + ic * kh * kw;
+                            for kr in 0..kh {
+                                let in_r = out_r as isize * sh as isize
+                                    + kr as isize * dh as isize
+                                    - ph as isize;
+                                if in_r < 0 || in_r >= h as isize {
+                                    continue;
+                                }
+                                for kc in 0..kw {
+                                    let in_c = out_c as isize * sw as isize
+                                        + kc as isize * dw as isize
+                                        - pw as isize;
+                                    if in_c < 0 || in_c >= w as isize {
+                                        continue;
+                                    }
+                                    grad_input[in_base + in_r as usize * w + in_c as usize] +=
+                                        go * weight[w_ic_base + kr * kw + kc];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     let _ = input;
     Ok(())
 }
@@ -495,40 +590,208 @@ pub fn conv2d_backward_weight(
     sw: usize,
     ph: usize,
     pw: usize,
+    dh: usize,
+    dw: usize,
+    groups: usize,
     oh: usize,
     ow: usize,
     pool: Option<&ThreadPool>,
 ) -> Result<()> {
-    let kernel = cin * kh * kw;
-    let rows = n * oh * ow;
-    let mut column = vec![0.0f32; rows * kernel];
-    im2col(
-        input, &mut column, n, cin, h, w, kh, kw, sh, sw, ph, pw, oh, ow,
-    );
-    let update = |channel: usize, target: &mut [f32]| {
-        for inner in 0..kernel {
-            let mut sum = 0.0f32;
-            for row in 0..rows {
-                sum += grad_out[row * cout + channel] * column[row * kernel + inner];
+    let groups = groups.max(1);
+    let cin_per_group = cin / groups;
+    let cout_per_group = cout / groups;
+    let kernel = cin_per_group * kh * kw;
+    if groups == 1 && dh == 1 && dw == 1 {
+        let rows = n * oh * ow;
+        let mut column = vec![0.0f32; rows * kernel];
+        im2col(
+            input, &mut column, n, cin, h, w, kh, kw, sh, sw, ph, pw, oh, ow,
+        );
+        let update = |channel: usize, target: &mut [f32]| {
+            for inner in 0..kernel {
+                let mut sum = 0.0f32;
+                for row in 0..rows {
+                    sum += grad_out[row * cout + channel] * column[row * kernel + inner];
+                }
+                target[inner] += sum;
             }
-            target[inner] += sum;
+        };
+        if let Some(pool) = pool {
+            if rows * kernel * cout > 262_144 && cout >= 2 {
+                pool.install(|| {
+                    grad_weight
+                        .par_chunks_mut(kernel)
+                        .enumerate()
+                        .for_each(|(channel, target)| update(channel, target));
+                });
+                return Ok(());
+            }
         }
-    };
-    if let Some(pool) = pool {
-        if rows * kernel * cout > 262_144 && cout >= 2 {
-            pool.install(|| {
-                grad_weight
-                    .par_chunks_mut(kernel)
-                    .enumerate()
-                    .for_each(|(channel, target)| update(channel, target));
-            });
-            return Ok(());
+        for channel in 0..cout {
+            update(channel, &mut grad_weight[channel * kernel..(channel + 1) * kernel]);
         }
+        return Ok(());
     }
-    for channel in 0..cout {
-        update(channel, &mut grad_weight[channel * kernel..(channel + 1) * kernel]);
+    for batch in 0..n {
+        for g in 0..groups {
+            for oc in 0..cout_per_group {
+                let cout_idx = g * cout_per_group + oc;
+                let w_base = cout_idx * kernel;
+                for out_r in 0..oh {
+                    for out_c in 0..ow {
+                        let go = grad_out[((batch * cout + cout_idx) * oh + out_r) * ow + out_c];
+                        for ic in 0..cin_per_group {
+                            let cin_idx = g * cin_per_group + ic;
+                            let in_base = ((batch * cin + cin_idx) * h) * w;
+                            let w_ic_base = w_base + ic * kh * kw;
+                            for kr in 0..kh {
+                                let in_r = out_r as isize * sh as isize
+                                    + kr as isize * dh as isize
+                                    - ph as isize;
+                                if in_r < 0 || in_r >= h as isize {
+                                    continue;
+                                }
+                                for kc in 0..kw {
+                                    let in_c = out_c as isize * sw as isize
+                                        + kc as isize * dw as isize
+                                        - pw as isize;
+                                    if in_c < 0 || in_c >= w as isize {
+                                        continue;
+                                    }
+                                    grad_weight[w_ic_base + kr * kw + kc] +=
+                                        go * input[in_base + in_r as usize * w + in_c as usize];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn group_norm_forward(
+    input: &[f32],
+    gamma: &[f32],
+    beta: &[f32],
+    out: &mut [f32],
+    n: usize,
+    c: usize,
+    spatial: usize,
+    groups: usize,
+    eps: f32,
+) -> Result<()> {
+    if groups == 0 || c % groups != 0 || spatial == 0 || input.len() != n * c * spatial
+        || gamma.len() != c || beta.len() != c
+    {
+        return Err(NativeError::shape("group-norm shape mismatch"));
+    }
+    let channels_per_group = c / groups;
+    let group_elems = channels_per_group * spatial;
+    for batch in 0..n {
+        for g in 0..groups {
+            let c_start = g * channels_per_group;
+            let mut mean = 0.0f64;
+            for ch in 0..channels_per_group {
+                let base = ((batch * c) + c_start + ch) * spatial;
+                for s in 0..spatial {
+                    mean += input[base + s] as f64;
+                }
+            }
+            mean /= group_elems as f64;
+            let mut var = 0.0f64;
+            for ch in 0..channels_per_group {
+                let base = ((batch * c) + c_start + ch) * spatial;
+                for s in 0..spatial {
+                    let d = input[base + s] as f64 - mean;
+                    var += d * d;
+                }
+            }
+            var /= group_elems as f64;
+            let inv_std = 1.0 / (var + eps as f64).sqrt();
+            for ch in 0..channels_per_group {
+                let channel = c_start + ch;
+                let base = ((batch * c) + channel) * spatial;
+                let gm = gamma[channel];
+                let bt = beta[channel];
+                for s in 0..spatial {
+                    let x_hat = ((input[base + s] as f64 - mean) * inv_std) as f32;
+                    out[base + s] = x_hat * gm + bt;
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn group_norm_backward(
+    input: &[f32],
+    gamma: &[f32],
+    grad_out: &[f32],
+    grad_input: &mut [f32],
+    grad_gamma: &mut [f32],
+    grad_beta: &mut [f32],
+    n: usize,
+    c: usize,
+    spatial: usize,
+    groups: usize,
+    eps: f32,
+) {
+    let channels_per_group = c / groups;
+    let group_elems = channels_per_group * spatial;
+    for batch in 0..n {
+        for g in 0..groups {
+            let c_start = g * channels_per_group;
+            let mut mean = 0.0f64;
+            for ch in 0..channels_per_group {
+                let base = ((batch * c) + c_start + ch) * spatial;
+                for s in 0..spatial {
+                    mean += input[base + s] as f64;
+                }
+            }
+            mean /= group_elems as f64;
+            let mut var = 0.0f64;
+            for ch in 0..channels_per_group {
+                let base = ((batch * c) + c_start + ch) * spatial;
+                for s in 0..spatial {
+                    let d = input[base + s] as f64 - mean;
+                    var += d * d;
+                }
+            }
+            var /= group_elems as f64;
+            let inv_std = (1.0 / (var + eps as f64).sqrt()) as f32;
+            let mut sum_dy_gamma = 0.0f32;
+            let mut sum_dy_gamma_xhat = 0.0f32;
+            for ch in 0..channels_per_group {
+                let channel = c_start + ch;
+                let base = ((batch * c) + channel) * spatial;
+                let gm = gamma[channel];
+                for s in 0..spatial {
+                    let x_hat = ((input[base + s] as f64 - mean) as f32) * inv_std;
+                    let dy = grad_out[base + s];
+                    grad_gamma[channel] += dy * x_hat;
+                    grad_beta[channel] += dy;
+                    sum_dy_gamma += dy * gm;
+                    sum_dy_gamma_xhat += dy * gm * x_hat;
+                }
+            }
+            let scale = inv_std / (group_elems as f32);
+            for ch in 0..channels_per_group {
+                let channel = c_start + ch;
+                let base = ((batch * c) + channel) * spatial;
+                let gm = gamma[channel];
+                for s in 0..spatial {
+                    let x_hat = ((input[base + s] as f64 - mean) as f32) * inv_std;
+                    let dy = grad_out[base + s];
+                    grad_input[base + s] += scale
+                        * ((group_elems as f32) * dy * gm - sum_dy_gamma - x_hat * sum_dy_gamma_xhat);
+                }
+            }
+        }
+    }
 }
 
 #[allow(clippy::too_many_arguments)]

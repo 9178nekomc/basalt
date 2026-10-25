@@ -1,1844 +1,901 @@
 {
-  "group": "g04",
-  "title": "线性模型 · 近邻 · 指标",
-  "modules": [
+ "group": "g04",
+ "title": "数据管线",
+ "modules": [
+  {
+   "name": "jsl.data",
+   "types": [
     {
-      "name": "jsl.ml",
-      "intro": [
-        "经典估计器层：所有模型共享 Estimator 契约，输入是行主序的 Matrix 与等长 double[] 目标，输出是逐样本预测数组。实现类在 fit 期间可变，predict 只读，不涉及张量句柄或计算图。",
-        "本组覆盖线性/逻辑回归、Ridge、Lasso、线性 SVM、KNN 分类与回归，以及评估与切分工具 Metrics、DataSplit。jsl.ml.JSL 是同一批估计器的枚举门面，用算法名选择实现并复用默认超参数。"
-      ],
-      "types": [
+     "qualified": "jsl.data.DataLoader",
+     "simple_qualified": "DataLoader",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/data/DataLoader.java",
+     "line": 32,
+     "javadoc": "Allocation-stable streaming over JSLD records. Every record is {@code featureCount} doubles\nfollowed by one label double.\n\n<p>Two readers share one {@link Batch} contract:</p>\n<ul>\n<li>{@link BatchStream} performs sequential channel reads into a direct buffer and decodes\nwith a {@link DoubleBuffer} view. The batch, its feature array, its label array and the\nbyte buffer are allocated once per stream.</li>\n<li>{@link MappedBatchStream} memory-maps the file and gathers rows with absolute bulk\n{@code DoubleBuffer.get(index, dst, off, len)} calls, so an epoch performs zero syscalls\nafter the initial map. Optional shuffling permutes an {@code int[]} row index, not the\ndata.</li>\n</ul>",
+     "nested": [
+      "Builder",
+      "Batch",
+      "BatchStream",
+      "MappedBatchStream"
+     ],
+     "members": [
+      {
+       "kind": "method",
+       "key": "builder(Path)",
+       "signature": "Builder builder(Path source)",
+       "params": [
         {
-          "qualified": "jsl.ml.DataSplit",
-          "doc": {
-            "summary": "基于行下标的确定性 holdout 与 k 折划分。",
-            "body": [
-              "两个入口都先用 seed 构造 Random，对行下标数组做 Fisher-Yates 洗牌，再按洗牌后的顺序切片。相同 seed 与相同输入必然产生相同切分，与标签分布无关。",
-              "返回的特征与标签都是新建副本，调用方修改切分结果不会影响原始数据。holdout 的测试行数取 round(rows*testFraction) 后夹到 [1, rows-1]；kFold 的每折测试块是洗牌顺序上的连续区间，各折大小相差不超过 1。"
-            ],
-            "notes": [
-              "不做分层抽样，类别偏斜时小测试块可能缺少某一类",
-              "洗牌只重排行，不改变列顺序与数值",
-              "两个入口都会先做非空、行数一致与非有限值校验"
-            ],
-            "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}, {2, 2}, {2, 1}});\ndouble[] y = {0, 0, 1, 1, 1, 1};\nDataSplit.Holdout split = DataSplit.holdout(x, y, 0.25, 42L);\nLinearRegression model = LinearRegression.builder().build()\n        .fit(split.trainFeatures(), split.trainTargets());\ndouble[] predicted = model.predict(split.testFeatures());",
-            "see": ["jsl.ml.DataSplit.Holdout", "jsl.ml.DataSplit.Fold", "jsl.ml.JSL"]
-          },
-          "members": [
-            {
-              "key": "holdout(Matrix, double[], double, long)",
-              "doc": {
-                "summary": "按比例切出一份测试集，其余作为训练集。",
-                "body": [
-                  "洗牌后取前 testSize 行为测试集，其余行为训练集，因此测试集在原始数据中并不连续。"
-                ],
-                "params": {
-                  "features": "样本矩阵，行数即样本数",
-                  "targets": "目标数组，长度必须等于 features.rows()",
-                  "testFraction": "测试集比例，必须落在开区间 (0, 1)",
-                  "seed": "洗牌随机源种子，决定具体划分"
-                },
-                "returns": "持有 trainFeatures、trainTargets、testFeatures、testTargets 四个副本的 Holdout",
-                "throws": {
-                  "NullPointerException": "features 或 targets 为 null",
-                  "IllegalArgumentException": "targets 长度与行数不符、数据含 NaN/无穷，或 testFraction 不在 (0, 1)"
-                },
-                "notes": [
-                  "实际测试行数被夹到 [1, rows-1]，样本极少时也不会产生空的一侧"
-                ]
-              }
-            },
-            {
-              "key": "kFold(Matrix, double[], int, long)",
-              "doc": {
-                "summary": "按折数切分为互不重叠的测试块。",
-                "body": [
-                  "第 i 折的测试区间为 [i*rows/folds, (i+1)*rows/folds)，训练集由其余折按洗牌顺序拼接而成，因此各折训练集大小同样只相差至多 1。"
-                ],
-                "params": {
-                  "features": "样本矩阵",
-                  "targets": "目标数组，长度必须等于 features.rows()",
-                  "folds": "折数，必须满足 2 <= folds <= features.rows()",
-                  "seed": "洗牌随机源种子"
-                },
-                "returns": "长度为 folds 的 Fold 列表，测试块并集覆盖全部行",
-                "throws": {
-                  "NullPointerException": "features 或 targets 为 null",
-                  "IllegalArgumentException": "folds 越界，或 targets 长度不符、数据含非有限值"
-                },
-                "notes": [
-                  "列表顺序即折编号顺序，可直接顺序遍历做交叉验证"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.DistanceMetric",
-          "doc": {
-            "summary": "KNN 使用的距离函数枚举。",
-            "body": [
-              "EUCLIDEAN 返回平方欧氏距离开方，MANHATTAN 返回逐元素绝对差之和；两者都调用 VectorMath 的 SIMD 内核，按扁平数组上的偏移窗口计算。",
-              "distance 直接接收两个 double[] 与起始偏移，因此可以在 Matrix.data() 上按行取窗口，不必为每一行构造临时数组。"
-            ],
-            "notes": [
-              "偏移以元素为单位，不是字节",
-              "不做越界检查，调用方需保证 offset + length 不超出数组长度",
-              "两个常量都在枚举体内覆写 distance，没有默认实现"
-            ],
-            "example": "double[] a = {1.0, 2.0, 3.0};\ndouble[] b = {1.0, 4.0, 3.0};\ndouble euclidean = DistanceMetric.EUCLIDEAN.distance(a, 0, b, 0, 3);\ndouble manhattan = DistanceMetric.MANHATTAN.distance(a, 0, b, 0, 3);",
-            "see": ["jsl.ml.KNearestNeighbors", "jsl.ml.KNeighborsRegressor"]
-          },
-          "members": [
-            {
-              "key": "MANHATTAN",
-              "doc": {
-                "summary": "L1 距离，逐元素绝对差之和。",
-                "notes": [
-                  "对特征量纲敏感，未标准化时大尺度特征会主导结果"
-                ]
-              }
-            },
-            {
-              "key": "distance(double[], int, double[], int, int)",
-              "doc": {
-                "summary": "计算两段等长向量在该度量下的距离。",
-                "params": {
-                  "a": "第一个向量的扁平存储",
-                  "aOffset": "a 中参与计算的起始元素下标",
-                  "b": "第二个向量的扁平存储",
-                  "bOffset": "b 中参与计算的起始元素下标",
-                  "length": "参与计算的元素个数，即特征维数"
-                },
-                "returns": "按枚举常量定义的距离，非负；相同位置返回 0.0",
-                "notes": [
-                  "越界与 length 为负都不检查，由调用方保证"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.Estimator",
-          "doc": {
-            "summary": "经典估计器的统一契约。",
-            "body": [
-              "fit 消费特征矩阵与目标数组，就地更新估计器状态并返回 this，便于链式调用；predict 返回与输入行数等长的预测数组，顺序与输入行一一对应。",
-              "接口不规定重复 fit 的语义、也不声明线程安全：实现类在 fit 期间可变，predict 只读，因此同一实例的并发 predict 依赖实现是否持有可变临时状态。无监督实现可忽略 targets。"
-            ],
-            "notes": [
-              "predict 前必须先 fit，实现类通过内部标记抛出 IllegalStateException",
-              "不同实现的 predict 返回语义不同：分类器返回原始类别标签，回归器返回连续值"
-            ],
-            "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}});\ndouble[] y = {0, 1, 1, 0};\nEstimator model = KNearestNeighbors.builder().k(3).build().fit(x, y);\ndouble[] prediction = model.predict(x);",
-            "see": ["jsl.ml.JSL", "jsl.ml.Metrics"]
-          },
-          "members": [
-            {
-              "key": "fit(Matrix, double[])",
-              "doc": {
-                "summary": "用训练数据拟合模型并返回自身。",
-                "params": {
-                  "features": "n 行 d 列的特征矩阵，行是样本、列是特征",
-                  "targets": "长度 n 的目标数组；无监督实现可传 null"
-                },
-                "returns": "this，便于与 predict 链式书写",
-                "notes": [
-                  "会覆盖上一次拟合得到的全部参数"
-                ]
-              }
-            },
-            {
-              "key": "predict(Matrix)",
-              "doc": {
-                "summary": "对给定样本批量预测。",
-                "params": {
-                  "features": "待预测特征矩阵，列数必须与训练时一致"
-                },
-                "returns": "长度等于 features.rows() 的预测值数组",
-                "throws": {
-                  "IllegalStateException": "实现类尚未 fit",
-                  "IllegalArgumentException": "列数与训练特征数不符，或含 NaN/无穷"
-                }
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.JSL",
-          "doc": {
-            "summary": "按枚举选择算法的一行式门面。",
-            "body": [
-              "fit 按 Algorithm 分支构造对应估计器并立即训练，超参数一律取各 Builder 的默认值；需要调参时改用具体类的 builder()。有监督算法传入 null targets 会被拒绝，无监督算法则忽略 targets 并以 null 调用。",
-              "crossValidate 用 DataSplit.kFold 做种子固定为 42 的 k 折划分，逐折训练、预测、计分，返回各折算术平均。RMSE 在累加前取负号，使所有 Metric 都满足越大越好。"
-            ],
-            "notes": [
-              "门面不缓存模型也不管理生命周期，返回的 Estimator 由调用方持有",
-              "交叉验证的划分种子固定为 42，相同输入的结果可复现",
-              "folds 的合法范围沿用 DataSplit.kFold 的约束（2 到样本数）",
-              "门面本身无状态，全部方法为 static"
-            ],
-            "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}, {2, 2}, {2, 1}});\ndouble[] y = {0.5, 1.0, 1.5, 2.0, 2.5, 2.2};\nEstimator model = JSL.fit(JSL.Algorithm.RIDGE, x, y);\ndouble[] prediction = JSL.predict(model, x);\ndouble score = JSL.crossValidate(JSL.Algorithm.RIDGE, x, y, 3, JSL.Metric.R2);",
-            "see": ["jsl.ml.JSL.Algorithm", "jsl.ml.JSL.Metric", "jsl.ml.Estimator", "jsl.ml.DataSplit"]
-          },
-          "members": [
-            {
-              "key": "fit(Algorithm, Matrix, double[])",
-              "doc": {
-                "summary": "按算法枚举训练一个默认配置的估计器。",
-                "body": [
-                  "分支覆盖 16 个算法常量，其中 RANDOM_FOREST_REGRESSOR 复用 RandomForest 并切换 task，两个梯度提升常量分别绑定 LOGISTIC 与 SQUARED_ERROR 目标。"
-                ],
-                "params": {
-                  "algorithm": "算法枚举，同时决定实现类与默认超参数",
-                  "features": "训练特征矩阵",
-                  "targets": "训练目标；有监督算法不可为 null"
-                },
-                "returns": "已拟合的估计器实例，静态类型为 Estimator",
-                "throws": {
-                  "NullPointerException": "algorithm 为 null",
-                  "IllegalArgumentException": "有监督算法传入 null targets，或训练数据未通过估计器自身的校验"
-                },
-                "notes": [
-                  "KNN 与 KNN_REGRESSOR 固定 k=5、欧氏距离",
-                  "KMEANS、PCA 调用只接收特征的 fit 重载；DBSCAN 以 null targets 调用 fit"
-                ]
-              }
-            },
-            {
-              "key": "predict(Estimator, Matrix)",
-              "doc": {
-                "summary": "委托给估计器自身的 predict。",
-                "params": {
-                  "model": "已拟合的估计器",
-                  "features": "待预测特征矩阵"
-                },
-                "returns": "估计器返回的预测数组，不做转换",
-                "throws": {
-                  "NullPointerException": "model 为 null",
-                  "IllegalStateException": "model 尚未 fit"
-                },
-                "notes": [
-                  "门面不追加任何校验，全部检查由估计器完成"
-                ]
-              }
-            },
-            {
-              "key": "crossValidate(Algorithm, Matrix, double[], int, Metric)",
-              "doc": {
-                "summary": "k 折交叉验证并返回各折指标均值。",
-                "body": [
-                  "每折独立调用 fit 重新训练，模型之间不共享状态；指标在折内测试集上计算后累加，最后除以折数。"
-                ],
-                "params": {
-                  "algorithm": "待评估算法，必须是有监督算法",
-                  "features": "全部样本特征",
-                  "targets": "全部样本目标，长度等于特征行数",
-                  "folds": "折数，2 <= folds <= 样本数",
-                  "metric": "评估指标枚举"
-                },
-                "returns": "各折指标的算术平均；RMSE 以负值参与平均，故越大越好",
-                "throws": {
-                  "IllegalArgumentException": "算法属于 UNSUPERVISED，或 folds 越界、数据校验失败"
-                },
-                "notes": [
-                  "划分种子固定为 42，重复调用结果一致",
-                  "ACCURACY 与 MACRO_F1 要求预测是类别码，R2 与 RMSE 要求连续值，错配不报错"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.KNearestNeighbors",
-          "doc": {
-            "summary": "统一权重的 KNN 分类器。",
-            "body": [
-              "fit 只保存训练集的副本（特征 copy、标签 clone），不做归一化或索引结构；predict 对每个查询样本线性扫描全部训练行，用距离度量维护容量为 k 的最大堆，堆中即 k 个最近邻，再按标签多数投票。",
-              "投票是统一权重，距离不参与加权；票数相同时选择数值更小的标签，因此结果与 HashMap 迭代顺序无关，完全可复现。单次查询的时间为 O(n·d)，额外内存为 O(k) 加上训练集副本。"
-            ],
-            "notes": [
-              "k 在 build() 时校验为正，fit 时再校验不超过训练样本数",
-              "特征未标准化，量纲差异会主导欧氏距离",
-              "训练集在 fit 时复制，之后修改原 Matrix 不影响模型"
-            ],
-            "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}});\ndouble[] y = {0, 1, 1, 0};\nKNearestNeighbors knn = KNearestNeighbors.builder()\n        .k(3)\n        .metric(DistanceMetric.MANHATTAN)\n        .build()\n        .fit(x, y);\ndouble[] labels = knn.predict(x);",
-            "see": ["jsl.ml.KNeighborsRegressor", "jsl.ml.DistanceMetric", "jsl.ml.KNearestNeighbors.Builder"]
-          },
-          "members": [
-            {
-              "key": "builder()",
-              "doc": {
-                "summary": "创建构建器，默认 k=5、欧氏距离。",
-                "returns": "新的 Builder，字段取默认值",
-                "notes": [
-                  "每次调用都返回独立实例，可安全地分别配置"
-                ]
-              }
-            },
-            {
-              "key": "fit(Matrix, double[])",
-              "doc": {
-                "summary": "保存训练集副本，不做任何预计算。",
-                "params": {
-                  "features": "训练特征矩阵，列数即特征维数",
-                  "targets": "训练标签数组，取值可以是任意 double"
-                },
-                "returns": "this",
-                "throws": {
-                  "NullPointerException": "features 或 targets 为 null",
-                  "IllegalArgumentException": "k 大于训练样本数，或行数与标签长度不符、数据含非有限值"
-                },
-                "notes": [
-                  "重复 fit 会用新数据覆盖旧训练集"
-                ]
-              }
-            },
-            {
-              "key": "predict(Matrix)",
-              "doc": {
-                "summary": "对每个样本取 k 近邻多数投票。",
-                "params": {
-                  "features": "待预测特征矩阵，列数须等于训练特征数"
-                },
-                "returns": "每行一个训练集中出现过的标签值",
-                "throws": {
-                  "IllegalStateException": "尚未 fit",
-                  "IllegalArgumentException": "列数不匹配或含非有限值"
-                },
-                "notes": [
-                  "平票时返回数值更小的标签，保证确定性"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.KNeighborsRegressor",
-          "doc": {
-            "summary": "统一权重的 KNN 回归器。",
-            "body": [
-              "与分类版共享同一套流程：fit 只复制训练集，predict 逐样本线性扫描并用容量为 k 的最大堆保留最近邻。区别在聚合方式——对 k 个邻居的目标值取算术平均，不做距离加权。",
-              "单次查询的时间为 O(n·d)，额外内存为 O(k) 加上训练集副本。目标值未做任何变换，因此预测结果始终落在训练目标的最小值与最大值之间，不会外推。"
-            ],
-            "notes": [
-              "k 在 fit 时校验不超过训练样本数",
-              "距离加权、叶节点裁剪等加速结构均未实现"
-            ],
-            "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}});\ndouble[] y = {0.0, 1.0, 1.0, 2.0};\nKNeighborsRegressor regressor = KNeighborsRegressor.builder().k(2).build().fit(x, y);\ndouble[] predictions = regressor.predict(x);",
-            "see": ["jsl.ml.KNearestNeighbors", "jsl.ml.DistanceMetric"]
-          },
-          "members": [
-            {
-              "key": "builder()",
-              "doc": {
-                "summary": "创建构建器，默认 k=5、欧氏距离。",
-                "returns": "新的 Builder，字段取默认值"
-              }
-            },
-            {
-              "key": "fit(Matrix, double[])",
-              "doc": {
-                "summary": "保存训练集副本，不做预计算。",
-                "params": {
-                  "features": "训练特征矩阵",
-                  "targets": "训练目标数组，长度等于行数"
-                },
-                "returns": "this",
-                "throws": {
-                  "NullPointerException": "features 或 targets 为 null",
-                  "IllegalArgumentException": "k 大于训练样本数，或形状不符、数据含非有限值"
-                }
-              }
-            },
-            {
-              "key": "predict(Matrix)",
-              "doc": {
-                "summary": "对 k 个最近邻的目标值取平均。",
-                "params": {
-                  "features": "待预测特征矩阵，列数须等于训练特征数"
-                },
-                "returns": "每行一个连续预测值，为 k 个邻居目标的算术平均",
-                "throws": {
-                  "IllegalStateException": "尚未 fit",
-                  "IllegalArgumentException": "列数不匹配或含非有限值"
-                }
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.Lasso",
-          "doc": {
-            "summary": "坐标下降求解的 L1 正则最小二乘。",
-            "body": [
-              "fit 先令截距等于目标均值、残差为零均值化后的目标，再循环坐标下降：对每个特征计算 rho = Σ x_i·(r_i + w_j·x_i)，用软阈值把 rho 向零收缩 alpha，再除以该特征的平方和得到新系数，并把变化量即时回写到残差。",
-              "每轮扫描结束后把残差均值并入截距，使残差保持零均值。alpha 作用在按行求和的尺度上（rho 与 norms 都未除以样本数），与按均方误差定义的 alpha 相差 n 倍，取值需相应放大。"
-            ],
-            "notes": [
-              "alpha 允许为 0，此时退化为无正则的坐标下降最小二乘",
-              "收敛判据是本轮坐标更新的最大绝对变化小于 tolerance；达到 maxIterations 时静默停止，不抛异常",
-              "各特征的平方和只在 fit 开始时计算一次",
-              "特征未中心化或标准化，列尺度直接决定收缩强度"
-            ],
-            "example": "Matrix x = Matrix.fromRows(new double[][]{{1, 0}, {0, 1}, {1, 1}, {2, 2}});\ndouble[] y = {1.0, 2.0, 3.0, 5.0};\nLasso lasso = Lasso.builder()\n        .alpha(0.1)\n        .maxIterations(500)\n        .build()\n        .fit(x, y);\ndouble[] coefficients = lasso.weights();\ndouble bias = lasso.intercept();",
-            "see": ["jsl.ml.Ridge", "jsl.ml.LinearRegression", "jsl.ml.Lasso.Builder"]
-          },
-          "members": [
-            {
-              "key": "builder()",
-              "doc": {
-                "summary": "创建构建器，默认 alpha=0.1、1000 轮、1e-8。",
-                "returns": "新的 Builder，字段取默认值"
-              }
-            },
-            {
-              "key": "fit(Matrix, double[])",
-              "doc": {
-                "summary": "用循环坐标下降拟合 L1 正则模型。",
-                "params": {
-                  "features": "训练特征矩阵，n 行 d 列",
-                  "targets": "训练目标数组，长度等于 n"
-                },
-                "returns": "this",
-                "throws": {
-                  "NullPointerException": "features 或 targets 为 null",
-                  "IllegalArgumentException": "行数与目标长度不符，或数据含 NaN/无穷"
-                },
-                "notes": [
-                  "系数初值全为零，相同输入的迭代轨迹完全确定",
-                  "平方和为零的常数列会被跳过，系数保持 0"
-                ]
-              }
-            },
-            {
-              "key": "predict(Matrix)",
-              "doc": {
-                "summary": "计算截距与系数的线性组合。",
-                "params": {
-                  "features": "待预测特征矩阵，列数须等于训练特征数"
-                },
-                "returns": "每行一个连续预测值",
-                "throws": {
-                  "IllegalStateException": "尚未 fit",
-                  "IllegalArgumentException": "列数不匹配或含非有限值"
-                }
-              }
-            },
-            {
-              "key": "weights()",
-              "doc": {
-                "summary": "返回回归系数副本。",
-                "returns": "长度为特征数的系数数组副本，稀疏结果中不重要的特征为 0.0",
-                "throws": {
-                  "NullPointerException": "尚未 fit，内部数组为 null"
-                }
-              }
-            },
-            {
-              "key": "intercept()",
-              "doc": {
-                "summary": "返回截距项。",
-                "returns": "标量截距；未 fit 时为 0.0",
-                "notes": [
-                  "截距不受 L1 惩罚，每轮扫描后按残差均值修正"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.LinearRegression",
-          "doc": {
-            "summary": "全批量梯度下降的普通最小二乘。",
-            "body": [
-              "fit 从全零权重与零截距出发，每个 epoch 用全部样本累加 MSE 梯度（缩放因子 2/n），加上 2·l2·w 后按 learningRate 做一次整批更新；fitIntercept 为 true 时截距同步更新，且不受 l2 惩罚。",
-              "lossHistory 记录每个 epoch 更新前算出的均方误差，可用于判断是否收敛。算法对特征尺度敏感：未标准化时应降低 learningRate，否则梯度下降可能震荡或发散。"
-            ],
-            "notes": [
-              "权重初值恒为零，同一输入的拟合结果完全确定",
-              "l2 以 2·l2·w 加入梯度，只作用于权重",
-              "不对特征做中心化或标准化，也不做特征筛选"
-            ],
-            "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 1}, {1, 1}, {2, 1}, {3, 1}});\ndouble[] y = {1.0, 3.0, 5.0, 7.0};\nLinearRegression model = LinearRegression.builder()\n        .learningRate(0.05)\n        .epochs(2000)\n        .fitIntercept(true)\n        .build()\n        .fit(x, y);\ndouble[] predictions = model.predict(x);\ndouble one = model.predictOne(new double[]{4.0, 1.0}, 0);",
-            "see": ["jsl.ml.Ridge", "jsl.ml.LogisticRegression", "jsl.ml.LinearRegression.Builder"]
-          },
-          "members": [
-            {
-              "key": "builder()",
-              "doc": {
-                "summary": "创建构建器，默认 lr=0.05、2000 轮、无正则。",
-                "returns": "新的 Builder，字段取默认值"
-              }
-            },
-            {
-              "key": "fit(Matrix, double[])",
-              "doc": {
-                "summary": "用全批量梯度下降最小化均方误差。",
-                "params": {
-                  "features": "训练特征矩阵，n 行 d 列",
-                  "targets": "训练目标数组，长度等于 n"
-                },
-                "returns": "this",
-                "throws": {
-                  "NullPointerException": "features 或 targets 为 null",
-                  "IllegalArgumentException": "行数与目标长度不符，或数据含 NaN/无穷"
-                },
-                "notes": [
-                  "epochs 轮内不做提前停止，lossHistory 长度恒为 epochs"
-                ]
-              }
-            },
-            {
-              "key": "predict(Matrix)",
-              "doc": {
-                "summary": "批量计算线性预测值。",
-                "params": {
-                  "features": "待预测特征矩阵，列数须等于训练特征数"
-                },
-                "returns": "长度等于行数的连续预测值",
-                "throws": {
-                  "IllegalStateException": "尚未 fit",
-                  "IllegalArgumentException": "列数不匹配或含非有限值"
-                }
-              }
-            },
-            {
-              "key": "predictOne(double[], int)",
-              "doc": {
-                "summary": "对扁平数组中的单个样本预测。",
-                "body": [
-                  "适合在已经展开的批量缓冲区上按偏移逐行调用，避免为单行构造 Matrix。"
-                ],
-                "params": {
-                  "features": "扁平特征数组",
-                  "offset": "该样本第一个特征在数组中的下标"
-                },
-                "returns": "单样本的预测值",
-                "throws": {
-                  "IllegalStateException": "尚未 fit",
-                  "IndexOutOfBoundsException": "offset 为负，或 offset 加特征数超过数组长度"
-                },
-                "notes": [
-                  "只检查长度，不检查取值是否有限"
-                ]
-              }
-            },
-            {
-              "key": "weights()",
-              "doc": {
-                "summary": "返回权重副本。",
-                "returns": "长度为特征数的权重副本；未 fit 时返回空数组",
-                "notes": [
-                  "返回副本，修改它不影响模型"
-                ]
-              }
-            },
-            {
-              "key": "intercept()",
-              "doc": {
-                "summary": "返回截距项。",
-                "returns": "标量截距；未 fit 时为 0.0",
-                "notes": [
-                  "fitIntercept 为 false 时该值恒为 0.0"
-                ]
-              }
-            },
-            {
-              "key": "lossHistory()",
-              "doc": {
-                "summary": "返回每个 epoch 的均方误差。",
-                "returns": "长度为 epochs 的数组，元素是当轮更新前的 MSE",
-                "notes": [
-                  "返回副本；未 fit 时为空数组",
-                  "曲线单调下降说明学习率合适，震荡说明步长偏大"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.LinearSVM",
-          "doc": {
-            "summary": "PEGASOS 次梯度法训练的二分类线性 SVM。",
-            "body": [
-              "fit 要求标签恰好取两个不同值，按升序映射为负类与正类（较大者记 +1）。每个 epoch 先洗牌样本顺序，再逐样本判断 margin：小于 1 时做 hinge 更新 w ← (1-ηλ)w + η·y·x、b ← b + η·y，否则只做收缩 w ← (1-ηλ)w。",
-              "步长 η = 1/(λ·t)，t 是跨 epoch 累计的样本计数，因此收缩因子 1-ηλ 等于 1-1/t。偏置只累加 η·y，不受 L2 正则。predict 取 w·x + b 的符号，返回原始标签值而非 ±1。"
-            ],
-            "notes": [
-              "lambda 越小正则越弱、早期有效步长越大",
-              "洗牌由 seed 驱动的 Random 完成，默认 42，结果可复现",
-              "单类别或三分类以上的数据会在 fit 时被拒绝",
-              "目标值只用于确定两个类别，不做 0/1 之外的假设"
-            ],
-            "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}});\ndouble[] y = {0, 0, 1, 1};\nLinearSVM svm = LinearSVM.builder()\n        .lambda(0.01)\n        .epochs(20)\n        .seed(42L)\n        .build()\n        .fit(x, y);\ndouble[] labels = svm.predict(x);\ndouble[] w = svm.weights();\ndouble b = svm.bias();",
-            "see": ["jsl.ml.LogisticRegression", "jsl.ml.LinearSVM.Builder"]
-          },
-          "members": [
-            {
-              "key": "builder()",
-              "doc": {
-                "summary": "创建构建器，默认 lambda=0.01、20 轮、种子 42。",
-                "returns": "新的 Builder，字段取默认值"
-              }
-            },
-            {
-              "key": "fit(Matrix, double[])",
-              "doc": {
-                "summary": "用 PEGASOS 迭代训练二分类线性模型。",
-                "params": {
-                  "features": "训练特征矩阵，n 行 d 列",
-                  "targets": "训练标签，必须恰好包含两个不同取值"
-                },
-                "returns": "this",
-                "throws": {
-                  "NullPointerException": "features 或 targets 为 null",
-                  "IllegalArgumentException": "类别数不等于 2，或形状不符、数据含非有限值"
-                },
-                "notes": [
-                  "类别按升序决定符号：较大值为正类",
-                  "每轮重新洗牌，累计步数 t 不随 epoch 重置"
-                ]
-              }
-            },
-            {
-              "key": "predict(Matrix)",
-              "doc": {
-                "summary": "按判别值的符号输出原始标签。",
-                "params": {
-                  "features": "待预测特征矩阵，列数须等于训练特征数"
-                },
-                "returns": "每行一个训练集中出现过的标签值",
-                "throws": {
-                  "IllegalStateException": "尚未 fit",
-                  "IllegalArgumentException": "列数不匹配或含非有限值"
-                },
-                "notes": [
-                  "判别值恰为 0 时判为正类"
-                ]
-              }
-            },
-            {
-              "key": "weights()",
-              "doc": {
-                "summary": "返回权重向量副本。",
-                "returns": "长度为特征数的权重副本",
-                "throws": {
-                  "NullPointerException": "尚未 fit，内部数组为 null"
-                }
-              }
-            },
-            {
-              "key": "bias()",
-              "doc": {
-                "summary": "返回偏置项。",
-                "returns": "标量偏置 b；未 fit 时为 0.0",
-                "notes": [
-                  "偏置不参与正则化，只按 η·y 累加"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.LogisticRegression",
-          "doc": {
-            "summary": "全批量梯度下降的二分类逻辑回归。",
-            "body": [
-              "fit 要求标签严格等于 0.0 或 1.0，其他取值直接拒绝。每个 epoch 用全部样本计算交叉熵梯度；损失按 max(z,0) - z·y + log1p(exp(-|z|)) 计算，在 logit 绝对值很大时也不会溢出。",
-              "l2 以 2·l2·w 加入权重梯度，截距不受惩罚。predictProbability 用分段 sigmoid 输出概率，predict 再以固定阈值 0.5 转成 0/1 硬标签。"
-            ],
-            "notes": [
-              "概率阈值硬编码为 0.5，不可配置",
-              "特征未标准化时需按尺度调整 learningRate",
-              "类别必须是 0 与 1，不做任意标签的自动映射"
-            ],
-            "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}});\ndouble[] y = {0, 0, 1, 1};\nLogisticRegression model = LogisticRegression.builder()\n        .learningRate(0.1)\n        .epochs(2000)\n        .build()\n        .fit(x, y);\ndouble[] probability = model.predictProbability(x);\ndouble[] labels = model.predict(x);",
-            "see": ["jsl.ml.LinearSVM", "jsl.ml.Metrics", "jsl.ml.LogisticRegression.Builder"]
-          },
-          "members": [
-            {
-              "key": "builder()",
-              "doc": {
-                "summary": "创建构建器，默认 lr=0.1、2000 轮、无正则。",
-                "returns": "新的 Builder，字段取默认值"
-              }
-            },
-            {
-              "key": "fit(Matrix, double[])",
-              "doc": {
-                "summary": "用全批量梯度下降最小化交叉熵。",
-                "params": {
-                  "features": "训练特征矩阵，n 行 d 列",
-                  "targets": "训练标签，每个元素必须是 0.0 或 1.0"
-                },
-                "returns": "this",
-                "throws": {
-                  "NullPointerException": "features 或 targets 为 null",
-                  "IllegalArgumentException": "标签不是 0/1，或行数与标签长度不符、数据含非有限值"
-                },
-                "notes": [
-                  "标签校验在形状校验之后进行，逐元素扫描"
-                ]
-              }
-            },
-            {
-              "key": "predictProbability(Matrix)",
-              "doc": {
-                "summary": "输出每行属于正类的概率。",
-                "params": {
-                  "features": "待预测特征矩阵，列数须等于训练特征数"
-                },
-                "returns": "长度等于行数的概率数组，取值在 [0,1]",
-                "throws": {
-                  "IllegalStateException": "尚未 fit",
-                  "IllegalArgumentException": "列数不匹配或含非有限值"
-                }
-              }
-            },
-            {
-              "key": "predict(Matrix)",
-              "doc": {
-                "summary": "以 0.5 为阈值输出 0/1 标签。",
-                "params": {
-                  "features": "待预测特征矩阵"
-                },
-                "returns": "每行 1.0 或 0.0，概率大于等于 0.5 判为 1.0",
-                "throws": {
-                  "IllegalStateException": "尚未 fit",
-                  "IllegalArgumentException": "列数不匹配或含非有限值"
-                },
-                "notes": [
-                  "内部先算概率再阈值化，与 predictProbability 结果一致"
-                ]
-              }
-            },
-            {
-              "key": "lossHistory()",
-              "doc": {
-                "summary": "返回每个 epoch 的平均交叉熵。",
-                "returns": "长度为 epochs 的数组，元素是当轮更新前的平均损失",
-                "notes": [
-                  "返回副本；未 fit 时为空数组"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.Metrics",
-          "doc": {
-            "summary": "分类与回归指标，纯 Java 实现。",
-            "body": [
-              "全部方法为静态方法，输入是两个等长 double[]；长度不等或为空时抛 IllegalArgumentException。分类指标按 double 精确相等比较标签，因此预测必须是类别码（例如 0/1），传入概率会得到无意义的结果。",
-              "precision、recall、f1 用 positive 参数指定正类，分母为零时返回 0.0 而不是 NaN。rocAuc 单独约定输入：标签必须只含 0/1，分数可以是任意实数，采用并列取平均秩的 Mann-Whitney 统计量，等价于梯形法 ROC 面积。"
-            ],
-            "notes": [
-              "不修改输入数组",
-              "macroF1 与 confusionMatrix 的类别集合取自 expected 的升序唯一值",
-              "回归指标不做样本数之外的归一化，量纲随目标值"
-            ],
-            "example": "double[] expected = {1, 0, 1, 1, 0};\ndouble[] predicted = {1, 0, 0, 1, 0};\ndouble accuracy = Metrics.accuracy(expected, predicted);\ndouble f1 = Metrics.f1(expected, predicted, 1.0);\nint[][] matrix = Metrics.confusionMatrix(expected, predicted);\ndouble auc = Metrics.rocAuc(expected, new double[]{0.9, 0.1, 0.4, 0.8, 0.2});",
-            "see": ["jsl.ml.JSL.Metric", "jsl.ml.Estimator"]
-          },
-          "members": [
-            {
-              "key": "accuracy(double[], double[])",
-              "doc": {
-                "summary": "预测与期望完全相等的比例。",
-                "params": {
-                  "expected": "真实标签",
-                  "predicted": "预测标签，长度须与 expected 相同"
-                },
-                "returns": "[0,1] 的准确率，即相等元素数除以样本数",
-                "throws": {
-                  "IllegalArgumentException": "两个数组长度不一致或为空"
-                },
-                "notes": [
-                  "用 == 比较 double，浮点近似值不会被判为相等"
-                ]
-              }
-            },
-            {
-              "key": "precision(double[], double[], double)",
-              "doc": {
-                "summary": "指定正类的精确率。",
-                "params": {
-                  "expected": "真实标签",
-                  "predicted": "预测标签",
-                  "positive": "被视为正类的标签值"
-                },
-                "returns": "TP/(TP+FP)；没有任何预测为正类时返回 0.0",
-                "throws": {
-                  "IllegalArgumentException": "两个数组长度不一致或为空"
-                }
-              }
-            },
-            {
-              "key": "recall(double[], double[], double)",
-              "doc": {
-                "summary": "指定正类的召回率。",
-                "params": {
-                  "expected": "真实标签",
-                  "predicted": "预测标签",
-                  "positive": "被视为正类的标签值"
-                },
-                "returns": "TP/(TP+FN)；expected 中没有正类时返回 0.0",
-                "throws": {
-                  "IllegalArgumentException": "两个数组长度不一致或为空"
-                }
-              }
-            },
-            {
-              "key": "f1(double[], double[], double)",
-              "doc": {
-                "summary": "精确率与召回率的调和平均。",
-                "params": {
-                  "expected": "真实标签",
-                  "predicted": "预测标签",
-                  "positive": "被视为正类的标签值"
-                },
-                "returns": "2PR/(P+R)；P 与 R 同时为 0 时返回 0.0",
-                "throws": {
-                  "IllegalArgumentException": "两个数组长度不一致或为空"
-                }
-              }
-            },
-            {
-              "key": "macroF1(double[], double[])",
-              "doc": {
-                "summary": "按类别取 F1 的算术平均。",
-                "body": [
-                  "类别集合来自 expected 的升序唯一值，对每个类别分别作为正类计算 F1，再求平均。多分类问题常用该指标，可避免多数类主导。"
-                ],
-                "params": {
-                  "expected": "真实标签，决定类别集合",
-                  "predicted": "预测标签"
-                },
-                "returns": "[0,1] 的宏平均 F1",
-                "throws": {
-                  "IllegalArgumentException": "两个数组长度不一致或为空"
-                },
-                "notes": [
-                  "predicted 中若出现 expected 之外的新标签，不会被单独计为一类"
-                ]
-              }
-            },
-            {
-              "key": "confusionMatrix(double[], double[])",
-              "doc": {
-                "summary": "返回以类别为行列的混淆矩阵。",
-                "body": [
-                  "行对应真实类别，列对应预测类别，行列顺序都是 expected 唯一值的升序，因此 matrix[i][j] 表示真实为第 i 类且被预测为第 j 类的样本数。"
-                ],
-                "params": {
-                  "expected": "真实标签，决定矩阵维度与类别顺序",
-                  "predicted": "预测标签"
-                },
-                "returns": "k×k 的 int 矩阵，k 为 expected 的唯一值个数",
-                "throws": {
-                  "IllegalArgumentException": "predicted 含 expected 之外的类别，或两数组长度不一致、为空"
-                },
-                "notes": [
-                  "对角线元素之和等于 accuracy 的分子"
-                ]
-              }
-            },
-            {
-              "key": "rocAuc(double[], double[])",
-              "doc": {
-                "summary": "二分类 ROC 曲线下面积。",
-                "body": [
-                  "先按分数升序排序并给出秩，同分样本取平均秩，再用正类秩和减去 positives·(positives+1)/2 得到 U 统计量，最后除以 positives·negatives。"
-                ],
-                "params": {
-                  "labels": "真实标签，必须只含 0.0 与 1.0，其中 1 为正类",
-                  "scores": "实数打分，越大越倾向正类，可以是 logit 或概率"
-                },
-                "returns": "[0,1] 的 AUC，0.5 相当于随机排序",
-                "throws": {
-                  "IllegalArgumentException": "标签含 0/1 之外的值、缺少某一类，或两数组长度不一致、为空"
-                },
-                "notes": [
-                  "并列分数按平均秩处理，结果与样本顺序无关",
-                  "只支持二分类；多分类需先做 one-vs-rest 拆分"
-                ]
-              }
-            },
-            {
-              "key": "mse(double[], double[])",
-              "doc": {
-                "summary": "均方误差。",
-                "params": {
-                  "expected": "真实值",
-                  "predicted": "预测值"
-                },
-                "returns": "Σ(expected-predicted)²/n，非负",
-                "throws": {
-                  "IllegalArgumentException": "两个数组长度不一致或为空"
-                }
-              }
-            },
-            {
-              "key": "rmse(double[], double[])",
-              "doc": {
-                "summary": "均方根误差。",
-                "params": {
-                  "expected": "真实值",
-                  "predicted": "预测值"
-                },
-                "returns": "mse 的平方根，与目标值同量纲",
-                "throws": {
-                  "IllegalArgumentException": "两个数组长度不一致或为空"
-                },
-                "notes": [
-                  "门面 crossValidate 会对其取负号，使指标统一为越大越好"
-                ]
-              }
-            },
-            {
-              "key": "mae(double[], double[])",
-              "doc": {
-                "summary": "平均绝对误差。",
-                "params": {
-                  "expected": "真实值",
-                  "predicted": "预测值"
-                },
-                "returns": "Σ|expected-predicted|/n，非负",
-                "throws": {
-                  "IllegalArgumentException": "两个数组长度不一致或为空"
-                }
-              }
-            },
-            {
-              "key": "r2(double[], double[])",
-              "doc": {
-                "summary": "决定系数。",
-                "body": [
-                  "以 expected 的均值为基准计算总平方和，返回 1 - SSres/SStot；模型比常数均值预测更差时结果为负。"
-                ],
-                "params": {
-                  "expected": "真实值",
-                  "predicted": "预测值"
-                },
-                "returns": "1 - SSres/SStot，上界为 1，可以为负",
-                "throws": {
-                  "IllegalArgumentException": "两个数组长度不一致或为空"
-                },
-                "notes": [
-                  "SStot 为 0（所有真实值相同）时：残差也为 0 返回 1.0，否则返回 0.0"
-                ]
-              }
-            },
-            {
-              "key": "unique(double[])",
-              "doc": {
-                "summary": "返回升序去重的标签集合。",
-                "params": {
-                  "values": "待去重的数组，不会被修改"
-                },
-                "returns": "升序排列的唯一值数组",
-                "notes": [
-                  "包级可见，仅在本包内被 macroF1 与 confusionMatrix 使用，不属于对外 API"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.MlChecks",
-          "doc": {
-            "summary": "包级参数校验工具。",
-            "body": [
-              "final 工具类，构造器私有，所有方法为 static 且包级可见，不构成对外 API。估计器在 fit 与 predict 入口统一调用它，集中完成非空、维度、有限性与取值范围检查。",
-              "finite 逐元素检查 Double.isFinite，异常消息带上出错下标；positiveFinite 要求严格大于 0，nonNegativeFinite 允许 0。所有校验失败都抛 IllegalArgumentException，只有空引用抛 NullPointerException。"
-            ],
-            "notes": [
-              "不在公共 API 中暴露，第三方实现如需相同语义应自行复制校验逻辑",
-              "校验不检查列数是否为零，也不检查数值范围（如标签合法性）"
-            ],
-            "see": ["jsl.ml.Estimator"]
-          },
-          "members": [
-            {
-              "key": "features(Matrix)",
-              "doc": {
-                "summary": "校验特征矩阵非空且元素有限。",
-                "params": {
-                  "features": "待校验矩阵"
-                },
-                "throws": {
-                  "NullPointerException": "features 为 null",
-                  "IllegalArgumentException": "任一元素为 NaN 或无穷"
-                },
-                "notes": [
-                  "只检查取值，不检查行列数"
-                ]
-              }
-            },
-            {
-              "key": "trainingData(Matrix, double[])",
-              "doc": {
-                "summary": "校验训练特征与目标的形状和取值。",
-                "params": {
-                  "features": "训练特征矩阵",
-                  "targets": "训练目标数组"
-                },
-                "throws": {
-                  "NullPointerException": "任一参数为 null",
-                  "IllegalArgumentException": "features.rows() 与 targets.length 不等，或任一数据含 NaN/无穷"
-                }
-              }
-            },
-            {
-              "key": "predictionData(Matrix, int, boolean)",
-              "doc": {
-                "summary": "校验预测输入与模型拟合状态。",
-                "params": {
-                  "features": "待预测特征矩阵",
-                  "expectedFeatures": "模型训练时记录的特征数",
-                  "fitted": "模型是否已拟合"
-                },
-                "throws": {
-                  "NullPointerException": "features 为 null",
-                  "IllegalStateException": "fitted 为 false",
-                  "IllegalArgumentException": "features.columns() 不等于 expectedFeatures，或数据含非有限值"
-                },
-                "notes": [
-                  "先判空、再判拟合状态、最后判列数，异常类型依此顺序确定"
-                ]
-              }
-            },
-            {
-              "key": "finite(double[], String)",
-              "doc": {
-                "summary": "要求数组每个元素都是有限值。",
-                "params": {
-                  "values": "待检查数组",
-                  "name": "用于异常消息的字段名"
-                },
-                "throws": {
-                  "IllegalArgumentException": "存在 NaN 或无穷，消息形如 name[i] must be finite"
-                }
-              }
-            },
-            {
-              "key": "positiveFinite(double, String)",
-              "doc": {
-                "summary": "要求标量为有限正数。",
-                "params": {
-                  "value": "待检查标量",
-                  "name": "用于异常消息的字段名"
-                },
-                "throws": {
-                  "IllegalArgumentException": "非有限或小于等于 0"
-                }
-              }
-            },
-            {
-              "key": "nonNegativeFinite(double, String)",
-              "doc": {
-                "summary": "要求标量为有限非负数。",
-                "params": {
-                  "value": "待检查标量",
-                  "name": "用于异常消息的字段名"
-                },
-                "throws": {
-                  "IllegalArgumentException": "非有限或小于 0"
-                },
-                "notes": [
-                  "允许 0，用于 alpha、l2 这类可以关闭正则的超参数"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.Ridge",
-          "doc": {
-            "summary": "Cholesky 求解的 L2 正则最小二乘。",
-            "body": [
-              "fitIntercept 为 true 时先计算特征均值与目标均值，在中心化后的数据上累加 Gram 矩阵与右端项，对 Gram 对角线加 alpha 后用 Cholesky 分解解正规方程，最后用均值反推截距；为 false 时不中心化，直接对原始矩阵求解。",
-              "alpha 加在按行求和的 Gram 尺度上（未除以样本数），与按均方误差定义的 alpha 相差 n 倍。分解时对角元取 max(sum, 1e-12) 作为抖动，避免半正定退化导致 NaN。"
-            ],
-            "notes": [
-              "样本数不少于 512、特征数不少于 4 且原生内核可用时走 Rust 路径，调用失败则回退到纯 Java 实现",
-              "原生路径的线程数取可用处理器数",
-              "alpha 必须严格为正，0 会在 build() 时被拒绝",
-              "训练与预测都是单次批量运算，不迭代"
-            ],
-            "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}});\ndouble[] y = {0.0, 1.0, 1.0, 2.0};\nRidge ridge = Ridge.builder()\n        .alpha(0.5)\n        .fitIntercept(true)\n        .build()\n        .fit(x, y);\ndouble[] coefficients = ridge.weights();\ndouble bias = ridge.intercept();\ndouble[] predictions = ridge.predict(x);",
-            "see": ["jsl.ml.Lasso", "jsl.ml.LinearRegression", "jsl.ml.Ridge.Builder"]
-          },
-          "members": [
-            {
-              "key": "builder()",
-              "doc": {
-                "summary": "创建构建器，默认 alpha=1.0、拟合截距。",
-                "returns": "新的 Builder，字段取默认值"
-              }
-            },
-            {
-              "key": "fit(Matrix, double[])",
-              "doc": {
-                "summary": "组装正规方程并用 Cholesky 求解。",
-                "body": [
-                  "Gram 矩阵只累加上三角再对称填充，随后逐行加 alpha；Cholesky 得到下三角因子后先前代再回代，得到系数向量。"
-                ],
-                "params": {
-                  "features": "训练特征矩阵，n 行 d 列",
-                  "targets": "训练目标数组，长度等于 n"
-                },
-                "returns": "this",
-                "throws": {
-                  "NullPointerException": "features 或 targets 为 null",
-                  "IllegalArgumentException": "行数与目标长度不符，或数据含 NaN/无穷"
-                },
-                "notes": [
-                  "纯 Java 路径的代价为 O(n·d²) 时间与 O(d²) 额外内存",
-                  "原生路径失败时静默回退，不抛异常"
-                ]
-              }
-            },
-            {
-              "key": "predict(Matrix)",
-              "doc": {
-                "summary": "计算截距与系数的点积。",
-                "params": {
-                  "features": "待预测特征矩阵，列数须等于训练特征数"
-                },
-                "returns": "长度等于行数的连续预测值",
-                "throws": {
-                  "IllegalStateException": "尚未 fit",
-                  "IllegalArgumentException": "列数不匹配或含非有限值"
-                },
-                "notes": [
-                  "逐行调用 VectorMath.dot，不做批量矩阵乘"
-                ]
-              }
-            },
-            {
-              "key": "weights()",
-              "doc": {
-                "summary": "返回回归系数副本。",
-                "returns": "长度为特征数的系数副本",
-                "throws": {
-                  "NullPointerException": "尚未 fit，内部数组为 null"
-                }
-              }
-            },
-            {
-              "key": "intercept()",
-              "doc": {
-                "summary": "返回截距项。",
-                "returns": "标量截距；未 fit 或 fitIntercept 为 false 时为 0.0",
-                "notes": [
-                  "截距不参与正则化，由 targetMean 减去各特征均值与系数的乘积得到"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.DataSplit.Fold",
-          "doc": {
-            "summary": "一折的训练与测试四元组。",
-            "body": [
-              "record 组件依次为 trainFeatures、trainTargets、testFeatures、testTargets，全部由 DataSplit.kFold 新建，与输入数据不共享存储。",
-              "测试块是洗牌顺序上的连续区间，训练块由其余区间按同一顺序拼接，因此训练集与测试集内部的行序都是洗牌后的顺序，而不是原始顺序。"
-            ],
-            "notes": [
-              "记录本身不可变，但持有的 Matrix 内容仍可被修改",
-              "各折测试块互不重叠，并集覆盖全部行"
-            ],
-            "see": ["jsl.ml.DataSplit.kFold(Matrix, double[], int, long)"]
-          },
-          "members": []
-        },
-        {
-          "qualified": "jsl.ml.DataSplit.Holdout",
-          "doc": {
-            "summary": "一次 holdout 划分的四元组。",
-            "body": [
-              "record 组件依次为 trainFeatures、trainTargets、testFeatures、testTargets，由 DataSplit.holdout 生成，四个字段都是独立副本。",
-              "测试集行数被夹到 [1, rows-1]，两侧都保证非空，因此可以直接把四个组件交给 fit 与 predict，无需再判断边界。"
-            ],
-            "notes": [
-              "记录本身不可变，但持有的 Matrix 内容仍可被修改",
-              "划分结果只由 seed 与输入行数决定，与标签分布无关"
-            ],
-            "see": ["jsl.ml.DataSplit.holdout(Matrix, double[], double, long)"]
-          },
-          "members": []
-        },
-        {
-          "qualified": "jsl.ml.JSL.Algorithm",
-          "doc": {
-            "summary": "门面可选算法及其任务类型。",
-            "body": [
-              "每个常量在构造时绑定一个 Task，门面据此判断是否需要 targets，并在交叉验证时拒绝无监督算法。常量覆盖分类 8 个、回归 5 个、无监督 3 个。",
-              "RANDOM_FOREST 与 RANDOM_FOREST_REGRESSOR 共用 RandomForest 实现，靠 task 切换回归模式；两个梯度提升常量分别绑定 LOGISTIC 与 SQUARED_ERROR 目标。"
-            ],
-            "notes": [
-              "枚举常量名即门面的算法名，重命名会破坏调用方编译",
-              "task() 是唯一的实例方法，无参无副作用"
-            ],
-            "see": ["jsl.ml.JSL.Task", "jsl.ml.JSL"]
-          },
-          "members": [
-            {
-              "key": "LINEAR_REGRESSION",
-              "doc": {
-                "summary": "普通最小二乘线性回归，回归任务。",
-                "notes": [
-                  "对应 LinearRegression 的默认配置：lr=0.05、2000 轮"
-                ]
-              }
-            },
-            {
-              "key": "LOGISTIC_REGRESSION",
-              "doc": {
-                "summary": "二分类逻辑回归，分类任务。",
-                "notes": [
-                  "标签必须是 0/1，否则 fit 抛 IllegalArgumentException"
-                ]
-              }
-            },
-            {
-              "key": "RIDGE",
-              "doc": {
-                "summary": "L2 正则最小二乘，回归任务。",
-                "notes": [
-                  "对应 alpha=1.0 的默认配置"
-                ]
-              }
-            },
-            {
-              "key": "LASSO",
-              "doc": {
-                "summary": "L1 正则最小二乘，回归任务。",
-                "notes": [
-                  "对应 alpha=0.1、1000 轮坐标下降的默认配置"
-                ]
-              }
-            },
-            {
-              "key": "KNN",
-              "doc": {
-                "summary": "KNN 分类，分类任务。",
-                "notes": [
-                  "固定 k=5、欧氏距离"
-                ]
-              }
-            },
-            {
-              "key": "KNN_REGRESSOR",
-              "doc": {
-                "summary": "KNN 回归，回归任务。",
-                "notes": [
-                  "固定 k=5、欧氏距离，预测为邻居目标的均值"
-                ]
-              }
-            },
-            {
-              "key": "DECISION_TREE",
-              "doc": {
-                "summary": "单棵决策树分类，分类任务。"
-              }
-            },
-            {
-              "key": "RANDOM_FOREST",
-              "doc": {
-                "summary": "随机森林分类，分类任务。"
-              }
-            },
-            {
-              "key": "RANDOM_FOREST_REGRESSOR",
-              "doc": {
-                "summary": "随机森林回归，回归任务。",
-                "notes": [
-                  "复用 RandomForest 实现，通过 task(REGRESSION) 切换"
-                ]
-              }
-            },
-            {
-              "key": "GRADIENT_BOOSTING",
-              "doc": {
-                "summary": "直方图梯度提升分类，分类任务。",
-                "notes": [
-                  "绑定 LOGISTIC 目标"
-                ]
-              }
-            },
-            {
-              "key": "GRADIENT_BOOSTING_REGRESSOR",
-              "doc": {
-                "summary": "直方图梯度提升回归，回归任务。",
-                "notes": [
-                  "绑定 SQUARED_ERROR 目标"
-                ]
-              }
-            },
-            {
-              "key": "GAUSSIAN_NAIVE_BAYES",
-              "doc": {
-                "summary": "高斯朴素贝叶斯分类，分类任务。"
-              }
-            },
-            {
-              "key": "LINEAR_SVM",
-              "doc": {
-                "summary": "PEGASOS 线性 SVM，分类任务。",
-                "notes": [
-                  "要求标签恰好两类，内部映射为 ±1"
-                ]
-              }
-            },
-            {
-              "key": "KMEANS",
-              "doc": {
-                "summary": "K 均值聚类，无监督任务。",
-                "notes": [
-                  "fit 忽略 targets，交叉验证会拒绝该算法"
-                ]
-              }
-            },
-            {
-              "key": "PCA",
-              "doc": {
-                "summary": "主成分分析，无监督任务。",
-                "notes": [
-                  "fit 只接收特征矩阵"
-                ]
-              }
-            },
-            {
-              "key": "DBSCAN",
-              "doc": {
-                "summary": "密度聚类，无监督任务。",
-                "notes": [
-                  "门面以 null targets 调用 fit"
-                ]
-              }
-            },
-            {
-              "key": "task()",
-              "doc": {
-                "summary": "返回该算法所属的任务类型。",
-                "returns": "构造常量时绑定的 Task",
-                "notes": [
-                  "门面用它在 fit 前判断是否需要 targets"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.JSL.Metric",
-          "doc": {
-            "summary": "交叉验证可选的评估指标。",
-            "body": [
-              "四个常量分别转发到 Metrics.accuracy、Metrics.macroF1、Metrics.r2、Metrics.rmse，是门面与指标工具之间唯一的耦合点。",
-              "门面在累加前对 RMSE 取负号，因此四个指标的返回值都满足越大越好，交叉验证均值可以直接比较。"
-            ],
-            "notes": [
-              "ACCURACY 与 MACRO_F1 面向分类，R2 与 RMSE 面向回归；错配不会报错，只会得到无意义的数值",
-              "指标在每折测试集上独立计算，不做加权平均"
-            ],
-            "see": ["jsl.ml.Metrics", "jsl.ml.JSL.crossValidate(Algorithm, Matrix, double[], int, Metric)"]
-          },
-          "members": []
-        },
-        {
-          "qualified": "jsl.ml.JSL.Task",
-          "doc": {
-            "summary": "算法的任务类型分类。",
-            "body": [
-              "CLASSIFICATION 与 REGRESSION 属于有监督任务，门面 fit 要求 targets 非空；UNSUPERVISED 允许 targets 为 null，但会被 crossValidate 拒绝。",
-              "该枚举只用于门面的分支判断，不参与具体估计器的实现。"
-            ],
-            "notes": [
-              "三个常量之间没有层级关系，判断一律用相等比较"
-            ],
-            "see": ["jsl.ml.JSL.Algorithm"]
-          },
-          "members": []
-        },
-        {
-          "qualified": "jsl.ml.KNearestNeighbors.Builder",
-          "doc": {
-            "summary": "KNearestNeighbors 的流式构建器。",
-            "body": [
-              "两个字段在构建器内可变，setter 返回 this 以便串联。metric 在 setter 中立即做非空检查，k 的合法性推迟到 build() 校验。",
-              "默认 k=5、metric=DistanceMetric.EUCLIDEAN，与门面 JSL.Algorithm.KNN 使用的配置一致。"
-            ],
-            "notes": [
-              "构建器不是线程安全的，配置完成后应尽快 build()",
-              "build() 返回的实例持有字段副本，之后修改构建器不影响已建模型"
-            ],
-            "example": "KNearestNeighbors model = KNearestNeighbors.builder()\n        .k(3)\n        .metric(DistanceMetric.EUCLIDEAN)\n        .build();",
-            "see": ["jsl.ml.KNearestNeighbors", "jsl.ml.DistanceMetric"]
-          },
-          "members": [
-            {
-              "key": "k(int)",
-              "doc": {
-                "summary": "设置近邻个数。",
-                "params": {
-                  "k": "参与投票的邻居数，必须为正；默认 5"
-                },
-                "returns": "this",
-                "notes": [
-                  "此处不校验，k <= 0 在 build() 时才抛异常",
-                  "k 大于训练样本数在 fit 时才被发现"
-                ]
-              }
-            },
-            {
-              "key": "metric(DistanceMetric)",
-              "doc": {
-                "summary": "设置距离度量。",
-                "params": {
-                  "metric": "距离函数常量，默认 DistanceMetric.EUCLIDEAN"
-                },
-                "returns": "this",
-                "throws": {
-                  "NullPointerException": "metric 为 null，在 setter 中立即抛出"
-                }
-              }
-            },
-            {
-              "key": "build()",
-              "doc": {
-                "summary": "校验参数并创建分类器。",
-                "returns": "新的 KNearestNeighbors，尚未拟合",
-                "throws": {
-                  "IllegalArgumentException": "k <= 0"
-                }
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.KNearestNeighbors.Neighbor",
-          "doc": {
-            "summary": "距离与标签的内部持有者。",
-            "body": [
-              "私有 record，只在 predictOne 的优先队列中作为排序元素使用，记录邻居到查询点的距离与其训练标签。"
-            ],
-            "notes": [
-              "不对外暴露，不属于 API 兼容性承诺的一部分"
-            ]
-          },
-          "members": []
-        },
-        {
-          "qualified": "jsl.ml.KNeighborsRegressor.Builder",
-          "doc": {
-            "summary": "KNeighborsRegressor 的流式构建器。",
-            "body": [
-              "字段与分类版一致，metric 在 setter 中做非空检查，k 在 build() 中校验为正。默认 k=5、metric=DistanceMetric.EUCLIDEAN。"
-            ],
-            "notes": [
-              "构建器不是线程安全的",
-              "已建模型持有字段副本，后续修改构建器无影响"
-            ],
-            "example": "KNeighborsRegressor model = KNeighborsRegressor.builder()\n        .k(5)\n        .metric(DistanceMetric.MANHATTAN)\n        .build();",
-            "see": ["jsl.ml.KNeighborsRegressor", "jsl.ml.DistanceMetric"]
-          },
-          "members": [
-            {
-              "key": "k(int)",
-              "doc": {
-                "summary": "设置参与平均的邻居数。",
-                "params": {
-                  "k": "邻居数，必须为正；默认 5"
-                },
-                "returns": "this",
-                "notes": [
-                  "k <= 0 在 build() 时才抛异常"
-                ]
-              }
-            },
-            {
-              "key": "metric(DistanceMetric)",
-              "doc": {
-                "summary": "设置距离度量。",
-                "params": {
-                  "metric": "距离函数常量，默认 DistanceMetric.EUCLIDEAN"
-                },
-                "returns": "this",
-                "throws": {
-                  "NullPointerException": "metric 为 null，在 setter 中立即抛出"
-                }
-              }
-            },
-            {
-              "key": "build()",
-              "doc": {
-                "summary": "校验参数并创建回归器。",
-                "returns": "新的 KNeighborsRegressor，尚未拟合",
-                "throws": {
-                  "IllegalArgumentException": "k <= 0"
-                }
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.KNeighborsRegressor.Neighbor",
-          "doc": {
-            "summary": "距离与目标值的内部持有者。",
-            "body": [
-              "私有 record，在 predict 的优先队列中保存邻居距离与对应训练目标，聚合时只读取 target 字段。"
-            ],
-            "notes": [
-              "不对外暴露，不属于 API 兼容性承诺的一部分"
-            ]
-          },
-          "members": []
-        },
-        {
-          "qualified": "jsl.ml.Lasso.Builder",
-          "doc": {
-            "summary": "Lasso 的流式构建器。",
-            "body": [
-              "三个字段分别控制正则强度、迭代上限与收敛阈值，setter 只赋值，全部校验集中在 build()：alpha 允许 0，maxIterations 必须为正，tolerance 必须为正。",
-              "默认 alpha=0.1、maxIterations=1000、tolerance=1e-8。"
-            ],
-            "notes": [
-              "alpha 的尺度是按行求和的，与按均方误差定义的强度相差 n 倍",
-              "构建器不是线程安全的"
-            ],
-            "example": "Lasso model = Lasso.builder()\n        .alpha(0.05)\n        .maxIterations(1000)\n        .tolerance(1e-8)\n        .build();",
-            "see": ["jsl.ml.Lasso"]
-          },
-          "members": [
-            {
-              "key": "alpha(double)",
-              "doc": {
-                "summary": "设置 L1 正则强度。",
-                "params": {
-                  "alpha": "软阈值阈值，作用在按行求和的尺度上；允许 0，默认 0.1"
-                },
-                "returns": "this",
-                "notes": [
-                  "非有限或为负在 build() 时抛 IllegalArgumentException",
-                  "取 0 时不再收缩系数，退化为无正则坐标下降"
-                ]
-              }
-            },
-            {
-              "key": "maxIterations(int)",
-              "doc": {
-                "summary": "设置坐标下降的最大扫描轮数。",
-                "params": {
-                  "maxIterations": "整轮扫描次数上限，必须为正；默认 1000"
-                },
-                "returns": "this",
-                "notes": [
-                  "达到上限即停止，不报告未收敛"
-                ]
-              }
-            },
-            {
-              "key": "tolerance(double)",
-              "doc": {
-                "summary": "设置收敛阈值。",
-                "params": {
-                  "tolerance": "单轮坐标更新的最大绝对变化小于该值即停止，默认 1e-8"
-                },
-                "returns": "this",
-                "throws": {
-                  "IllegalArgumentException": "build() 时非有限或小于等于 0"
-                }
-              }
-            },
-            {
-              "key": "build()",
-              "doc": {
-                "summary": "校验参数并创建模型。",
-                "returns": "新的 Lasso，尚未拟合",
-                "throws": {
-                  "IllegalArgumentException": "alpha 非有限或为负、maxIterations <= 0、tolerance 非有限或 <= 0"
-                }
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.LinearRegression.Builder",
-          "doc": {
-            "summary": "LinearRegression 的流式构建器。",
-            "body": [
-              "四个字段控制梯度下降的步长、轮数、正则强度与是否拟合截距。setter 只赋值，校验集中在 build()：learningRate 必须为正，l2 允许 0，epochs 必须为正。",
-              "默认 learningRate=0.05、epochs=2000、l2=0.0、fitIntercept=true。"
-            ],
-            "notes": [
-              "epochs 直接决定 lossHistory 的长度与 fit 的耗时",
-              "构建器不是线程安全的"
-            ],
-            "example": "LinearRegression model = LinearRegression.builder()\n        .learningRate(0.01)\n        .epochs(500)\n        .l2(0.001)\n        .fitIntercept(true)\n        .build();",
-            "see": ["jsl.ml.LinearRegression"]
-          },
-          "members": [
-            {
-              "key": "learningRate(double)",
-              "doc": {
-                "summary": "设置梯度下降步长。",
-                "params": {
-                  "learningRate": "每次整批更新的步长，必须为正；默认 0.05"
-                },
-                "returns": "this",
-                "notes": [
-                  "步长过大时 lossHistory 会震荡或发散，特征未标准化时尤其明显"
-                ]
-              }
-            },
-            {
-              "key": "epochs(int)",
-              "doc": {
-                "summary": "设置全批量迭代轮数。",
-                "params": {
-                  "epochs": "遍历全部样本的次数，必须为正；默认 2000"
-                },
-                "returns": "this",
-                "throws": {
-                  "IllegalArgumentException": "build() 时小于等于 0"
-                }
-              }
-            },
-            {
-              "key": "l2(double)",
-              "doc": {
-                "summary": "设置 L2 惩罚系数。",
-                "params": {
-                  "l2": "权重惩罚强度，允许 0；默认 0.0（无正则）"
-                },
-                "returns": "this",
-                "notes": [
-                  "梯度中加入 2·l2·w，截距不受影响"
-                ]
-              }
-            },
-            {
-              "key": "fitIntercept(boolean)",
-              "doc": {
-                "summary": "设置是否拟合截距。",
-                "params": {
-                  "fitIntercept": "true 时更新截距，false 时截距恒为 0；默认 true"
-                },
-                "returns": "this"
-              }
-            },
-            {
-              "key": "build()",
-              "doc": {
-                "summary": "校验参数并创建模型。",
-                "returns": "新的 LinearRegression，尚未拟合",
-                "throws": {
-                  "IllegalArgumentException": "learningRate 非有限或 <= 0、l2 非有限或为负、epochs <= 0"
-                }
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.LinearSVM.Builder",
-          "doc": {
-            "summary": "LinearSVM 的流式构建器。",
-            "body": [
-              "lambda 控制正则强度并间接决定步长 1/(λ·t)，epochs 是遍历轮数，seed 固定洗牌随机源。setter 只赋值，build() 校验 lambda 为正、epochs 为正。",
-              "默认 lambda=0.01、epochs=20、seed=42。"
-            ],
-            "notes": [
-              "相同 seed 与相同数据得到完全一致的训练轨迹",
-              "构建器不是线程安全的"
-            ],
-            "example": "LinearSVM model = LinearSVM.builder()\n        .lambda(0.001)\n        .epochs(50)\n        .seed(7L)\n        .build();",
-            "see": ["jsl.ml.LinearSVM"]
-          },
-          "members": [
-            {
-              "key": "lambda(double)",
-              "doc": {
-                "summary": "设置正则强度。",
-                "params": {
-                  "lambda": "L2 正则系数，步长按 1/(lambda*t) 计算，必须为正；默认 0.01"
-                },
-                "returns": "this",
-                "notes": [
-                  "值越小正则越弱、早期有效步长越大，收敛更快但更易震荡"
-                ]
-              }
-            },
-            {
-              "key": "epochs(int)",
-              "doc": {
-                "summary": "设置遍历训练集的轮数。",
-                "params": {
-                  "epochs": "完整扫描次数，必须为正；默认 20"
-                },
-                "returns": "this",
-                "throws": {
-                  "IllegalArgumentException": "build() 时小于等于 0"
-                },
-                "notes": [
-                  "累计步数 t 跨轮递增，不随 epoch 重置"
-                ]
-              }
-            },
-            {
-              "key": "seed(long)",
-              "doc": {
-                "summary": "设置洗牌随机种子。",
-                "params": {
-                  "seed": "每轮洗牌所用 Random 的种子；默认 42"
-                },
-                "returns": "this",
-                "notes": [
-                  "只影响样本访问顺序，不影响权重初值（恒为零）"
-                ]
-              }
-            },
-            {
-              "key": "build()",
-              "doc": {
-                "summary": "校验参数并创建模型。",
-                "returns": "新的 LinearSVM，尚未拟合",
-                "throws": {
-                  "IllegalArgumentException": "lambda 非有限或 <= 0、epochs <= 0"
-                }
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.LogisticRegression.Builder",
-          "doc": {
-            "summary": "LogisticRegression 的流式构建器。",
-            "body": [
-              "三个字段控制步长、轮数与 L2 强度。setter 只赋值，build() 校验 learningRate 为正、l2 非负、epochs 为正。",
-              "默认 learningRate=0.1、epochs=2000、l2=0.0。"
-            ],
-            "notes": [
-              "没有 fitIntercept 开关，截距始终参与训练且不受正则",
-              "构建器不是线程安全的"
-            ],
-            "example": "LogisticRegression model = LogisticRegression.builder()\n        .learningRate(0.1)\n        .epochs(2000)\n        .l2(0.001)\n        .build();",
-            "see": ["jsl.ml.LogisticRegression"]
-          },
-          "members": [
-            {
-              "key": "learningRate(double)",
-              "doc": {
-                "summary": "设置梯度下降步长。",
-                "params": {
-                  "learningRate": "每次整批更新的步长，必须为正；默认 0.1"
-                },
-                "returns": "this",
-                "notes": [
-                  "步长过大时交叉熵可能不降反升"
-                ]
-              }
-            },
-            {
-              "key": "epochs(int)",
-              "doc": {
-                "summary": "设置全批量迭代轮数。",
-                "params": {
-                  "epochs": "遍历全部样本的次数，必须为正；默认 2000"
-                },
-                "returns": "this",
-                "throws": {
-                  "IllegalArgumentException": "build() 时小于等于 0"
-                }
-              }
-            },
-            {
-              "key": "l2(double)",
-              "doc": {
-                "summary": "设置 L2 惩罚系数。",
-                "params": {
-                  "l2": "权重惩罚强度，允许 0；默认 0.0（无正则）"
-                },
-                "returns": "this",
-                "notes": [
-                  "以 2·l2·w 加入权重梯度，截距不受惩罚"
-                ]
-              }
-            },
-            {
-              "key": "build()",
-              "doc": {
-                "summary": "校验参数并创建模型。",
-                "returns": "新的 LogisticRegression，尚未拟合",
-                "throws": {
-                  "IllegalArgumentException": "learningRate 非有限或 <= 0、l2 非有限或为负、epochs <= 0"
-                }
-              }
-            }
-          ]
-        },
-        {
-          "qualified": "jsl.ml.Ridge.Builder",
-          "doc": {
-            "summary": "Ridge 的流式构建器。",
-            "body": [
-              "alpha 是加在 Gram 矩阵对角线上的正则量，fitIntercept 决定是否中心化并反推截距。setter 只赋值，build() 只校验 alpha 为正。",
-              "默认 alpha=1.0、fitIntercept=true。"
-            ],
-            "notes": [
-              "alpha 不允许为 0；需要无正则解时改用 LinearRegression",
-              "构建器不是线程安全的"
-            ],
-            "example": "Ridge model = Ridge.builder()\n        .alpha(0.1)\n        .fitIntercept(true)\n        .build();",
-            "see": ["jsl.ml.Ridge"]
-          },
-          "members": [
-            {
-              "key": "alpha(double)",
-              "doc": {
-                "summary": "设置 L2 正则强度。",
-                "params": {
-                  "alpha": "加到 Gram 对角线上的值，必须为正；默认 1.0"
-                },
-                "returns": "this",
-                "throws": {
-                  "IllegalArgumentException": "build() 时非有限或小于等于 0"
-                },
-                "notes": [
-                  "尺度是按行求和的，未除以样本数"
-                ]
-              }
-            },
-            {
-              "key": "fitIntercept(boolean)",
-              "doc": {
-                "summary": "设置是否中心化并拟合截距。",
-                "params": {
-                  "fitIntercept": "true 时中心化特征与目标并反推截距，false 时直接解原始正规方程；默认 true"
-                },
-                "returns": "this",
-                "notes": [
-                  "为 false 时截距恒为 0.0，且 alpha 会压缩未中心化的系数"
-                ]
-              }
-            },
-            {
-              "key": "build()",
-              "doc": {
-                "summary": "校验参数并创建模型。",
-                "returns": "新的 Ridge，尚未拟合",
-                "throws": {
-                  "IllegalArgumentException": "alpha 非有限或小于等于 0"
-                }
-              }
-            }
-          ]
+         "type": "Path",
+         "name": "source"
         }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "为指定 JSLD 文件创建读取器配置。",
+        "params": {
+         "source": "JSLD 文件路径；为 null 时构造 Builder 立即抛 NullPointerException"
+        },
+        "returns": "尚未设置 featureCount 的 Builder，后续用 open() 或 openMapped() 打开流",
+        "notes": [
+         "此时不打开文件，路径合法性推迟到 open()/openMapped() 才校验"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "estimateNormalization(Path, int)",
+       "signature": "Normalization estimateNormalization(Path source, int featureCount)",
+       "params": [
+        {
+         "type": "Path",
+         "name": "source"
+        },
+        {
+         "type": "int",
+         "name": "featureCount"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "单遍统计各特征均值与样本标准差。",
+        "body": [
+         "内部以 batchSize 固定为 1024 的顺序读取器遍历全部记录，用 Welford 增量公式累计均值与二阶中心矩，不缓存整份数据；标准差按样本口径计算，即除以 count - 1。",
+         "样本数少于 2 时抛 IllegalArgumentException。读取失败或文件头与 featureCount 不匹配时抛 UncheckedIOException。标准差为 0 的特征在后续应用时只做中心化。"
+        ],
+        "params": {
+         "source": "JSLD 文件路径",
+         "featureCount": "每条记录的特征数，必须为正且与文件头中的值一致"
+        },
+        "returns": "持有均值和标准差副本的不可变 Normalization",
+        "notes": [
+         "只读取特征列，标签列被跳过",
+         "统计过程复用单个批次数组，内存占用与记录数无关"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "write(Path, Matrix, double[])",
+       "signature": "void write(Path target, Matrix features, double[] labels)",
+       "params": [
+        {
+         "type": "Path",
+         "name": "target"
+        },
+        {
+         "type": "Matrix",
+         "name": "features"
+        },
+        {
+         "type": "double[]",
+         "name": "labels"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "将特征矩阵与标签写成 JSLD 文件。",
+        "body": [
+         "以 CREATE、WRITE、TRUNCATE_EXISTING 打开目标文件，先写 16 字节头（magic、version 1、features.columns()、保留位 0），再逐行写出特征与标签。缓冲容量取 1 MiB 与两条记录宽度中的较大者，写满即刷出。",
+         "features 或 labels 为 null 时抛 NullPointerException；labels.length 与 features.rows() 不等时抛 IllegalArgumentException；通道打开或写入失败时抛 UncheckedIOException。记录宽度计算溢出 int 时抛 ArithmeticException。"
+        ],
+        "params": {
+         "target": "输出路径，已存在的文件会被截断覆盖",
+         "features": "特征矩阵，行数即记录数，列数即文件头中的 featureCount",
+         "labels": "标签数组，长度必须等于 features.rows()，逐行写入记录末尾"
+        },
+        "notes": [
+         "每条记录先在复用的一维数组内拼装再整体写入缓冲",
+         "写入的浮点数为 ByteBuffer 默认的大端序"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "rowCount(Path, int)",
+       "signature": "long rowCount(Path source, int featureCount)",
+       "params": [
+        {
+         "type": "Path",
+         "name": "source"
+        },
+        {
+         "type": "int",
+         "name": "featureCount"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "按文件大小推算记录数。",
+        "body": [
+         "取文件字节数减去 16 字节头，再除以 (featureCount + 1) * 8。余数非零或结果载荷为负时视为截断，抛 UncheckedIOException（cause 为 IOException）；文件不存在或不可读同样包装为 UncheckedIOException。",
+         "实现只依赖 Files.size，不打开通道、不读取也不校验 magic、version 与保留位，因此对头部损坏的文件仍可能返回一个数值。"
+        ],
+        "params": {
+         "source": "JSLD 文件路径",
+         "featureCount": "每条记录的特征数，用于推导记录宽度；加一后乘 8 溢出 int 时抛 ArithmeticException"
+        },
+        "returns": "记录条数，未做任何上界限制",
+        "notes": [
+         "需要头部校验时改用 builder(source).featureCount(...).open()，其会比对文件头",
+         "结果以 long 返回，但 openMapped() 只接受不超过 Integer.MAX_VALUE 的行数"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "JSLD 记录的批式读取入口，附带统计与写盘工具。",
+      "body": [
+       "文件头固定 16 字节：magic 0x4A534C44（\"JSLD\"）、version 1、featureCount 与保留位（写入为 0，读取要求为 0）。其后每条记录为 featureCount 个 double 特征加一个 double 标签，记录宽度 (featureCount + 1) * 8 字节。",
+       "两个读取器共享同一 Batch 契约。BatchStream 顺序读入按批大小分配的直接缓冲区，再用 DoubleBuffer 视图解码；MappedBatchStream 映射整个文件，以绝对批量读取汇集行，映射之后一个 epoch 内无系统调用。批次、特征数组、标签数组与字节缓冲只在构造期分配一次。",
+       "除读取器外，类还提供三个静态工具：write 生成 JSLD 文件，estimateNormalization 单遍统计均值与样本标准差，rowCount 由文件大小推算记录数。"
+      ],
+      "notes": [
+       "类本身无实例（构造器私有），Builder、Batch、BatchStream、MappedBatchStream 均为静态嵌套类型。",
+       "读取器只产出 double[]，不构造张量、不涉及计算图；需要矩阵时由调用方转换。",
+       "批次数组在流的生命周期内复用，next() 会覆盖上一批内容，跨批保存须自行拷贝。",
+       "每个流都不是线程安全的，并发读取应为每个线程建立独立的流。"
+      ],
+      "example": "Path file = Path.of(\"dataset.jsld\");\nMatrix features = Matrix.fromRows(new double[][]{\n        {1.0, 2.0}, {3.0, 4.0}, {5.0, 7.0}, {2.0, 1.0}});\nDataLoader.write(file, features, new double[]{0.0, 1.0, 1.0, 0.0});\n\nNormalization normalization = DataLoader.estimateNormalization(file, 2);\ntry (DataLoader.BatchStream stream = DataLoader.builder(file)\n        .featureCount(2)\n        .batchSize(2)\n        .normalization(normalization)\n        .open()) {\n    while (stream.next()) {\n        DataLoader.Batch batch = stream.batch();\n        for (int row = 0; row < batch.rows(); row++) {\n            double label = batch.label(row);\n            double first = batch.feature(row, 0);\n        }\n    }\n}",
+      "see": [
+       "jsl.data.Normalization",
+       "jsl.data.DataLoader.Builder",
+       "jsl.data.DataLoader.Batch",
+       "jsl.data.DataLoader.BatchStream",
+       "jsl.data.DataLoader.MappedBatchStream",
+       "jsl.io.ModelCodec"
       ]
+     }
+    },
+    {
+     "qualified": "jsl.data.Normalization",
+     "simple_qualified": "Normalization",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/data/Normalization.java",
+     "line": 4,
+     "javadoc": "Immutable precomputed standardization parameters; application performs no allocation.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "method",
+       "key": "standardize(double[], double[])",
+       "signature": "Normalization standardize(double[] means, double[] standardDeviations)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "means"
+        },
+        {
+         "type": "double[]",
+         "name": "standardDeviations"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "由均值与标准差构造标准化参数。",
+        "body": [
+         "两个数组长度必须相同且非空，所有元素必须有限，标准差还须非负，否则抛 IllegalArgumentException。通过校验后克隆入参并预计算倒数，返回的实例与入参数组不再共享存储。",
+         "标准差为 0 的位置倒数记为 1.0，使该特征在应用时减去均值后保持原值。"
+        ],
+        "params": {
+         "means": "每个特征的均值，长度即特征数，不能为空",
+         "standardDeviations": "每个特征的标准差，长度须与 means 一致，取值须有限且非负"
+        },
+        "returns": "持有两份副本与倒数表的不可变实例",
+        "notes": [
+         "负数、NaN 与无穷都会被拒绝，不会静默传播到训练数据"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "featureCount()",
+       "signature": "int featureCount()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "特征数，等于均值数组长度。",
+        "returns": "构造时确定的特征数",
+        "notes": [
+         "Builder 用该值校验归一化参数与读取器配置是否匹配"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "means()",
+       "signature": "double[] means()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回均值的防御性副本。",
+        "returns": "长度为 featureCount() 的新数组，修改不影响实例",
+        "notes": [
+         "每次调用都克隆，循环中反复调用会产生额外分配"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "standardDeviations()",
+       "signature": "double[] standardDeviations()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回标准差的防御性副本。",
+        "returns": "长度为 featureCount() 的新数组，元素非负",
+        "notes": [
+         "返回的是标准差本身，不是内部使用的倒数"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "不可变的标准化参数，应用时零分配。",
+      "body": [
+       "实例保存每特征均值、标准差，以及构造时预先算好的标准差倒数。应用公式为 (x - mean) * inverseStd，原地写回传入数组，不产生临时对象。标准差为 0 时倒数取 1.0，该特征只做中心化，不会产生无穷大。",
+       "构造入口只有 standardize 与 DataLoader.estimateNormalization。standardize 会克隆两个入参数组，means() 与 standardDeviations() 也返回副本，因此外部对数组的修改不会影响实例，实例可安全共享。"
+      ],
+      "notes": [
+       "apply 是包级方法，仅由 BatchStream 与 MappedBatchStream 在解码一行后调用，库外无法直接调用。",
+       "实例不可变、无状态，可跨线程共享；但 apply 会就地覆盖调用方数组。",
+       "特征数在构造时固定，不能对长度不同的记录复用同一实例。"
+      ],
+      "example": "Path file = Path.of(\"dataset.jsld\");\nDataLoader.write(file,\n        Matrix.fromRows(new double[][]{{1.0, 2.0}, {3.0, 4.0}, {5.0, 7.0}}),\n        new double[]{0.0, 1.0, 0.0});\n\nNormalization normalization = DataLoader.estimateNormalization(file, 2);\nint features = normalization.featureCount();\ndouble[] means = normalization.means();\ndouble[] deviations = normalization.standardDeviations();",
+      "see": [
+       "jsl.data.DataLoader.estimateNormalization(Path, int)",
+       "jsl.data.DataLoader.Builder.normalization(Normalization)"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.data.DataLoader.Batch",
+     "simple_qualified": "DataLoader.Batch",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "static",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/data/DataLoader.java",
+     "line": 238,
+     "javadoc": "",
+     "nested": [],
+     "members": [
+      {
+       "kind": "method",
+       "key": "rows()",
+       "signature": "int rows()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "当前批的有效行数。",
+        "returns": "本批行数，取值不超过 batchSize；流耗尽后为 0",
+        "notes": [
+         "末批通常小于 batchSize，遍历必须以该值为上界"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "featureCount()",
+       "signature": "int featureCount()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "每条记录的特征数。",
+        "returns": "构造流时指定的特征数，整条流内不变"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "features()",
+       "signature": "double[] features()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回内部特征数组，行优先且复用。",
+        "body": [
+         "数组长度恒为 featureCount() * batchSize，仅前 rows() * featureCount() 个元素属于当前批。已配置归一化时，数组中是标准化后的值，而非文件原始值。"
+        ],
+        "returns": "内部数组本身，不复制",
+        "notes": [
+         "下一次 next() 会覆盖前部内容",
+         "直接传给需要整块特征的 API 时，须按 rows() * featureCount() 截取"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "labels()",
+       "signature": "double[] labels()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回内部标签数组，复用。",
+        "body": [
+         "数组长度恒为 batchSize，仅前 rows() 个元素属于当前批；标签不参与归一化，与文件中的值一致。"
+        ],
+        "returns": "内部数组本身，不复制",
+        "notes": [
+         "下一次 next() 会覆盖前部内容"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "feature(int, int)",
+       "signature": "double feature(int row, int feature)",
+       "params": [
+        {
+         "type": "int",
+         "name": "row"
+        },
+        {
+         "type": "int",
+         "name": "feature"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "读取批内某行某列的特征值。",
+        "body": [
+         "以 row * featureCount() + feature 定位数组元素；越界检查同时约束行与列，row 不小于 rows() 或 feature 不小于 featureCount() 时抛 IndexOutOfBoundsException。"
+        ],
+        "params": {
+         "row": "批内行号，有效范围 [0, rows())",
+         "feature": "特征下标，有效范围 [0, featureCount())"
+        },
+        "returns": "该位置的特征值，已应用归一化（若配置）",
+        "notes": [
+         "逐元素访问有下标运算开销，整批处理时优先取 features() 数组"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "label(int)",
+       "signature": "double label(int row)",
+       "params": [
+        {
+         "type": "int",
+         "name": "row"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "读取批内某行的标签。",
+        "body": [
+         "row 超出 [0, rows()) 时抛 IndexOutOfBoundsException，错误信息与特征越界区分。"
+        ],
+        "params": {
+         "row": "批内行号，有效范围 [0, rows())"
+        },
+        "returns": "该行记录的标签值，未做归一化"
+       }
+      }
+     ],
+     "doc": {
+      "summary": "单批数据的可复用视图，随读取器推进被覆盖。",
+      "body": [
+       "特征以行优先方式存放在长度为 featureCount * batchSize 的一维数组中，标签数组长度为 batchSize。两个数组在构造时按批大小一次性分配，之后每次 next() 只改写前部内容，rows() 指明本批真正有效的行数。",
+       "有效区间为：特征前 rows() * featureCount() 个元素，标签前 rows() 个元素。数组尾部残留上一批的数据，不应读取。实例由读取器创建并长期持有，调用方只做只读访问。"
+      ],
+      "notes": [
+       "features() 与 labels() 返回内部数组本身，不复制，跨批保留引用会读到被覆盖的内容。",
+       "实例与流一一绑定，非线程安全；批次内容在下次 next() 后失效。",
+       "需要跨批留存时，用 System.arraycopy 复制有效区间。"
+      ],
+      "example": "try (DataLoader.BatchStream stream = DataLoader.builder(Path.of(\"dataset.jsld\"))\n        .featureCount(2)\n        .batchSize(64)\n        .open()) {\n    while (stream.next()) {\n        DataLoader.Batch batch = stream.batch();\n        for (int row = 0; row < batch.rows(); row++) {\n            double label = batch.label(row);\n            double first = batch.feature(row, 0);\n        }\n    }\n}",
+      "see": [
+       "jsl.data.DataLoader.BatchStream.batch()",
+       "jsl.data.DataLoader.MappedBatchStream.batch()"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.data.DataLoader.BatchStream",
+     "simple_qualified": "DataLoader.BatchStream",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "static",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [
+      "AutoCloseable"
+     ],
+     "file": "jsl/data/DataLoader.java",
+     "line": 284,
+     "javadoc": "Sequential reader; {@link #rewind()} restarts without reopening the file.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "method",
+       "key": "next()",
+       "signature": "boolean next()",
+       "params": [],
+       "throws": [
+        "IOException"
+       ],
+       "javadoc": "",
+       "doc": {
+        "summary": "解码下一批，流耗尽返回 false。",
+        "body": [
+         "从通道补齐缓冲后按记录宽度切分，最多解码 batchSize 行，逐行写入特征数组、标签数组，并在配置了归一化时就地标准化该行。返回 false 时批次行数被置 0。",
+         "流已关闭时抛 IOException；文件尾剩余字节不是记录宽度的整数倍时抛 EOFException，用于识别截断文件。"
+        ],
+        "returns": "是否读到至少一行",
+        "throws": {
+         "IOException": "流已关闭，或文件尾部存在不完整记录（EOFException）"
+        },
+        "notes": [
+         "每次调用都复用同一 Batch 实例，返回的引用在下次调用后内容改变"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "batch()",
+       "signature": "Batch batch()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回与流绑定的批次视图。",
+        "returns": "构造流时创建并持续复用的 Batch，永不为 null",
+        "notes": [
+         "首次 next() 之前 rows() 为 0"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "rewind()",
+       "signature": "void rewind()",
+       "params": [],
+       "throws": [
+        "IOException"
+       ],
+       "javadoc": "",
+       "doc": {
+        "summary": "回到第一条记录，缓冲保持不变。",
+        "body": [
+         "将通道位置设为 16，清空缓冲并复位结束标志，批次行数归零。缓冲区、批次与数组均保留，因此回绕不产生分配，也不重新解析文件头。"
+        ],
+        "throws": {
+         "IOException": "流已关闭，或通道定位失败"
+        },
+        "notes": [
+         "回绕后仍需重新调用 next() 才能取到第一批",
+         "归一化参数保持不变"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "close()",
+       "signature": "void close()",
+       "params": [],
+       "throws": [
+        "IOException"
+       ],
+       "javadoc": "",
+       "doc": {
+        "summary": "关闭底层文件通道。",
+        "body": [
+         "首次调用置关闭标志并关闭通道，重复调用不做任何事。关闭后 next() 与 rewind() 均抛 IOException，批次数组仍可读取但内容为最后一次解码结果。"
+        ],
+        "throws": {
+         "IOException": "关闭通道时发生 I/O 错误"
+        }
+       }
+      }
+     ],
+     "doc": {
+      "summary": "顺序分批读取 JSLD，可回绕重读。",
+      "body": [
+       "构造时按 recordBytes * batchSize 分配直接缓冲区，并创建批次、特征数组与标签数组，之后不再分配。每次 next() 先压缩缓冲区，从通道循环读取直到缓冲填满或文件结束，再把完整的记录解码进批次；不足一条记录的尾部字节在文件结束时抛 EOFException。",
+       "rewind() 把通道位置重置到 16 字节头之后、清空缓冲区并复位结束标志，缓冲与批次对象继续复用，不重新打开文件。流在关闭后不可再用。"
+      ],
+      "notes": [
+       "必须用 try-with-resources 或显式 close() 释放文件通道。",
+       "shuffle 与 seed 只影响 openMapped()，本读取器始终按文件顺序返回。",
+       "非线程安全，且不支持与另一读取器共享同一批次。"
+      ],
+      "example": "try (DataLoader.BatchStream stream = DataLoader.builder(Path.of(\"dataset.jsld\"))\n        .featureCount(8)\n        .batchSize(128)\n        .open()) {\n    for (int epoch = 0; epoch < 3; epoch++) {\n        while (stream.next()) {\n            DataLoader.Batch batch = stream.batch();\n            int rows = batch.rows();\n        }\n        stream.rewind();\n    }\n}",
+      "see": [
+       "jsl.data.DataLoader.Builder.open()",
+       "jsl.data.DataLoader.MappedBatchStream"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.data.DataLoader.Builder",
+     "simple_qualified": "DataLoader.Builder",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "static",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/data/DataLoader.java",
+     "line": 116,
+     "javadoc": "Shared configuration for both readers.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "method",
+       "key": "featureCount(int)",
+       "signature": "Builder featureCount(int featureCount)",
+       "params": [
+        {
+         "type": "int",
+         "name": "featureCount"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置每条记录的特征数。",
+        "params": {
+         "featureCount": "每条记录的特征数，无默认值（初值 0），必须为正且与文件头一致"
+        },
+        "returns": "this，便于链式调用",
+        "notes": [
+         "未设置时 open()/openMapped() 抛 IllegalArgumentException",
+         "与文件头不一致时读取阶段抛 UncheckedIOException（Invalid or incompatible JSLD header）"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "batchSize(int)",
+       "signature": "Builder batchSize(int batchSize)",
+       "params": [
+        {
+         "type": "int",
+         "name": "batchSize"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置每批最多行数，默认 1024。",
+        "params": {
+         "batchSize": "每批行数上限，默认 1024，必须为正；末批可能更少"
+        },
+        "returns": "this，便于链式调用",
+        "notes": [
+         "同时决定顺序读取器的直接缓冲容量与批次特征数组长度，过大将按 recordBytes * batchSize 一次性分配"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "normalization(Normalization)",
+       "signature": "Builder normalization(Normalization normalization)",
+       "params": [
+        {
+         "type": "Normalization",
+         "name": "normalization"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置读取时应用的标准化参数。",
+        "params": {
+         "normalization": "逐行就地应用的标准化参数；null 表示不归一化，也是默认值"
+        },
+        "returns": "this，便于链式调用",
+        "notes": [
+         "其 featureCount() 必须等于 featureCount 设置，否则 open() 抛 IllegalArgumentException",
+         "只影响特征列，标签原样返回"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "shuffle(boolean)",
+       "signature": "Builder shuffle(boolean shuffle)",
+       "params": [
+        {
+         "type": "boolean",
+         "name": "shuffle"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "是否按 epoch 打乱行序，默认 false。",
+        "params": {
+         "shuffle": "true 时每个 epoch 置换行索引；默认 false 即按文件顺序"
+        },
+        "returns": "this，便于链式调用",
+        "notes": [
+         "仅对 openMapped() 生效，open() 忽略该设置",
+         "打乱只置换 int[] 索引数组，不移动映射区中的数据"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "seed(long)",
+       "signature": "Builder seed(long seed)",
+       "params": [
+        {
+         "type": "long",
+         "name": "seed"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "设置打乱所用随机种子，默认 42。",
+        "params": {
+         "seed": "初始 epoch 的置换种子，默认 42；后续 epoch 使用 seed + epoch * 1000003"
+        },
+        "returns": "this，便于链式调用",
+        "notes": [
+         "仅对 openMapped() 且 shuffle 为 true 时有意义，相同 seed 得到相同的行序"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "open()",
+       "signature": "BatchStream open()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "打开顺序读取器。",
+        "body": [
+         "以只读方式打开通道，读取并校验 16 字节头（magic、version、featureCount、保留位），然后按 recordBytes * batchSize 分配直接缓冲区与批次，返回 BatchStream。头部校验失败时通道被关闭并抛 UncheckedIOException；配置非法时在打开通道前抛 IllegalArgumentException。"
+        ],
+        "returns": "顺序读取器，需由调用方关闭",
+        "notes": [
+         "头部截断会以 EOFException 作为 cause 包装为 UncheckedIOException",
+         "不检查文件长度是否为记录宽度的整数倍，截断要到读取尾部才暴露"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "openMapped()",
+       "signature": "MappedBatchStream openMapped()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "打开内存映射读取器。",
+        "body": [
+         "校验头部后把整个文件映射为只读 MappedByteBuffer，跳过 16 字节头得到 DoubleBuffer 切片，并由 (size - 16) / recordBytes 推出总行数。载荷长度不是记录宽度整数倍、行数超过 Integer.MAX_VALUE、或映射失败时抛 UncheckedIOException。",
+         "与 open() 的差异：数据由操作系统按页装入，不占用用户态缓冲，也不经过通道读取；批次与索引数组仍然分配，但之后每个 epoch 不再产生系统调用。"
+        ],
+        "returns": "内存映射读取器，需由调用方关闭",
+        "notes": [
+         "映射区在流关闭后由 GC 回收，close() 不会立即解除映射",
+         "文件在流使用期间被外部修改会导致内容与校验不一致，加载阶段不做检测"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "两个读取器共享的配置构建器。",
+      "body": [
+       "字段初值：featureCount 为 0（没有默认值，必须显式设置），batchSize 为 1024，normalization 为 null，shuffle 为 false，seed 为 42。所有设置方法返回 this，可链式调用。",
+       "open() 与 openMapped() 先校验配置：featureCount 或 batchSize 非正、归一化特征数不匹配时抛 IllegalArgumentException；随后打开通道并比对 16 字节头，I/O 失败一律包装为 UncheckedIOException。"
+      ],
+      "notes": [
+       "Builder 本身不持有打开的通道，可在多次 open() 之间复用，每次得到独立的流。",
+       "非线程安全，构建完成后不应再修改。",
+       "shuffle 与 seed 只对 openMapped() 生效，open() 会静默忽略。"
+      ],
+      "example": "DataLoader.Builder builder = DataLoader.builder(Path.of(\"dataset.jsld\"))\n        .featureCount(8)\n        .batchSize(256)\n        .shuffle(true)\n        .seed(7);\ntry (DataLoader.MappedBatchStream stream = builder.openMapped()) {\n    while (stream.next()) {\n        int rows = stream.batch().rows();\n    }\n}",
+      "see": [
+       "jsl.data.DataLoader.builder(Path)",
+       "jsl.data.DataLoader.BatchStream",
+       "jsl.data.DataLoader.MappedBatchStream"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.data.DataLoader.MappedBatchStream",
+     "simple_qualified": "DataLoader.MappedBatchStream",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "static",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [
+      "AutoCloseable"
+     ],
+     "file": "jsl/data/DataLoader.java",
+     "line": 373,
+     "javadoc": "Memory-mapped reader with epoch shuffling. Every {@link #next()} gathers rows through\nabsolute bulk reads; no byte buffer, batch, feature array or label array is allocated.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "method",
+       "key": "next()",
+       "signature": "boolean next()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "汇集下一批，耗尽返回 false。",
+        "body": [
+         "取 min(batchSize, totalRows - cursor) 行，按索引数组找到源记录，把特征段批量复制进批次数组并逐行取标签，配置了归一化时就地标准化。行数为 0 时返回 false 并把批次行数置 0。",
+         "本方法不声明受检异常；流已关闭时抛 IllegalStateException。"
+        ],
+        "returns": "是否读到至少一行",
+        "notes": [
+         "不抛出 IOException：映射建立后读取只触及已映射内存"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "batch()",
+       "signature": "Batch batch()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回与流绑定的批次视图。",
+        "returns": "构造时创建并持续复用的 Batch，永不为 null",
+        "notes": [
+         "内容在每次 next() 后被覆盖"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "rewind()",
+       "signature": "void rewind()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "开始新 epoch，必要时重新打乱。",
+        "body": [
+         "游标归零、epoch 加一；shuffle 为 true 时用 seed + epoch * 1000003 新建 Random 并再次做 Fisher-Yates 置换，因此相邻 epoch 的顺序不同，而相同 epoch 号在相同 seed 下可复现。shuffle 为 false 时只重置游标。",
+         "不重新映射文件，也不重新读取文件头；流已关闭时抛 IllegalStateException。"
+        ],
+        "notes": [
+         "epoch 从 0 开始，首次 rewind() 后为 1",
+         "置换就地复用同一 int 数组，不产生分配"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "totalRows()",
+       "signature": "int totalRows()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "映射到的总记录数。",
+        "returns": "由 (文件大小 - 16) / 记录宽度 推出的行数",
+        "notes": [
+         "与 epoch 无关，整个生命周期内不变"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "epoch()",
+       "signature": "int epoch()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "已开始的 epoch 计数。",
+        "returns": "初始为 0，每次 rewind() 加一",
+        "notes": [
+         "该值同时参与下一轮置换种子的计算"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "close()",
+       "signature": "void close()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "置关闭标志并停止后续读取。",
+        "body": [
+         "只把内部标志设为已关闭，不关闭通道、不解除映射；映射区在缓冲区不可达后由 GC 回收。重复调用无副作用，关闭后再调用 next() 或 rewind() 抛 IllegalStateException。"
+        ],
+        "notes": [
+         "不声明受检异常，适合放在 try-with-resources 中使用"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "内存映射读取器，按 epoch 打乱且不重复分配。",
+      "body": [
+       "构造时把整个文件映射为只读缓冲，并跳过 16 字节头取出 DoubleBuffer 视图；同时建立长度为 totalRows 的 int 索引数组，初值为文件顺序，shuffle 开启时立刻做一次 Fisher-Yates 置换。",
+       "每次 next() 用绝对批量读取把记录宽度中的特征段复制进批次，标签单独取一个元素；游标按索引数组推进，一个 epoch 内不再访问通道，也没有字节缓冲。rewind() 让游标归零、epoch 自增，并按 seed + epoch * 1000003 重新置换索引。"
+      ],
+      "notes": [
+       "批次、特征数组与标签数组各分配一次，之后只改写内容。",
+       "打乱作用于索引数组，映射区中的原始顺序不变。",
+       "close() 只置关闭标志，不显式解除映射；关闭后 next()/rewind() 抛 IllegalStateException（与 BatchStream 的 IOException 不同）。",
+       "总行数受 int 索引限制，超过 Integer.MAX_VALUE 的文件在 openMapped() 阶段即被拒绝。"
+      ],
+      "example": "try (DataLoader.MappedBatchStream stream = DataLoader.builder(Path.of(\"dataset.jsld\"))\n        .featureCount(8)\n        .batchSize(256)\n        .shuffle(true)\n        .seed(7)\n        .openMapped()) {\n    for (int epoch = 0; epoch < 5; epoch++) {\n        while (stream.next()) {\n            DataLoader.Batch batch = stream.batch();\n            int rows = batch.rows();\n        }\n        stream.rewind();\n    }\n}",
+      "see": [
+       "jsl.data.DataLoader.Builder.openMapped()",
+       "jsl.data.DataLoader.BatchStream"
+      ]
+     }
     }
-  ]
+   ]
+  }
+ ]
 }

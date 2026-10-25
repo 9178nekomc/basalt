@@ -1,1018 +1,2211 @@
 {
-  "group": "g01",
-  "title": "门面与并发",
-  "modules": [
+ "group": "g01",
+ "title": "门面与异常",
+ "modules": [
+  {
+   "name": "jsl",
+   "types": [
     {
-      "name": "jsl",
-      "intro": [
-        "jsl 包是 SDK 的入口层。jsl.JSL 持有一个 jsl.nativebridge.NativeContext，把张量工厂、模块构造、优化器、损失函数与计算图句柄收拢到同一个对象上，调用方无需直接接触 JNI 绑定。",
-        "该包同时定义统一异常 jsl.JSLRuntimeException，原生 panic、形状校验失败与空参数都会翻译成这一类型，从而在 AutoCloseable 生命周期之上提供一致的失败语义。"
-      ],
-      "types": [
+     "qualified": "jsl.JSL",
+     "simple_qualified": "JSL",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [
+      "AutoCloseable"
+     ],
+     "file": "jsl/JSL.java",
+     "line": 30,
+     "javadoc": "Unified SDK entry point for JSL (Java Scikit-Learn + PyTorch-style native runtime).",
+     "nested": [],
+     "members": [
+      {
+       "kind": "method",
+       "key": "create()",
+       "signature": "JSL create()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以自动线程数创建门面实例",
+        "body": [
+         "等价于 create(0)：线程提示值 0 交由 Rust 侧按可用核数决定并行度，Java 层不做扩缩容。"
+        ],
+        "returns": "持有新建 NativeContext 的门面实例",
+        "throws": {
+         "JSLRuntimeException": "原生张量运行时不可用，或原生上下文分配返回空指针"
+        },
+        "notes": [
+         "返回的实例必须关闭；未关闭时依赖 Cleaner 在回收时释放上下文。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "create(int)",
+       "signature": "JSL create(int threads)",
+       "params": [
         {
-          "qualified": "jsl.JSL",
-          "simple_qualified": "JSL",
-          "kind": "class",
-          "modifiers": [
-            "public",
-            "final"
-          ],
-          "generic": "",
-          "extends": "",
-          "implements": [
-            "AutoCloseable"
-          ],
-          "file": "jsl/JSL.java",
-          "line": 37,
-          "nested": [],
-          "doc": {
-            "summary": "SDK 统一入口：持有单个原生上下文，集中提供张量、模块、优化器与估计器工厂",
-            "body": [
-              "门面把「一个原生上下文 + 一套张量工厂」绑定为单一对象。所有由它创建的张量、模块与图句柄都归属同一个 NativeContext，因此反向传播、清空计算图与内存统计天然共享同一份状态，不存在跨上下文混用的问题。",
-              "实例内部维护一个 AtomicLong 种子计数器，初值为黄金比例常数 0x9E3779B97F4A7C15。randn、linear、conv2d 每次都从计数器取一个新种子，因此同一实例内的随机初始化序列可复现，且不同层不会拿到相同权重。",
-              "经典估计器相关的 fit、predict、crossValidate 是静态方法，仅转发到 jsl.ml.JSL，不读取实例上下文；同一套 API 因此同时覆盖 eager 张量编程与 sklearn 风格的估计器工作流。"
-            ],
-            "notes": [
-              "close() 会级联释放该上下文内的全部张量与图，关闭后任何张量操作都会快速失败而不是访问已释放内存。",
-              "创建过程需要原生库可用；加载失败时构造函数路径抛出 JSLRuntimeException，而非 UnsatisfiedLinkError。",
-              "种子计数器为 AtomicLong，并发调用不会取到重复种子，但调用顺序决定种子分配顺序。"
-            ],
-            "example": "try (JSL jsl = JSL.create(4)) {\n    Tensor x = jsl.randn(32, 8);\n    Tensor y = jsl.randn(32, 1);\n    Linear hidden = jsl.linear(8, 16);\n    Linear output = jsl.linear(16, 1);\n    AdamW optimizer = jsl.adamw(output.parameters(), 1e-3f);\n    Tensor loss = output.forward(hidden.forward(x).relu()).mse(y);\n    loss.backward();\n    optimizer.step();\n}",
-            "see": [
-              "jsl.nativebridge.NativeContext",
-              "jsl.torch.Tensor",
-              "jsl.torch.Graph",
-              "jsl.ml.JSL"
-            ]
-          },
-          "members": [
-            {
-              "kind": "method",
-              "key": "create()",
-              "signature": "JSL create()",
-              "params": [],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "以自动线程数创建门面实例",
-                "body": [
-                  "等价于 create(0)：线程提示值 0 交由 Rust 侧按可用核数决定并行度，Java 层不做扩缩容。"
-                ],
-                "returns": "持有新建 NativeContext 的门面实例",
-                "throws": {
-                  "JSLRuntimeException": "原生张量运行时不可用，或原生上下文分配返回空指针"
-                },
-                "notes": [
-                  "返回的实例必须关闭；未关闭时依赖 Cleaner 在回收时释放上下文。"
-                ]
-              }
-            },
-            {
-              "kind": "method",
-              "key": "create(int)",
-              "signature": "JSL create(int threads)",
-              "params": [
-                {
-                  "type": "int",
-                  "name": "threads"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "以指定线程提示值创建门面实例",
-                "body": [
-                  "线程数只是传给原生内核的提示值，不做线程池预创建。合法区间为 [0, 256]，其中 0 表示自动。"
-                ],
-                "params": {
-                  "threads": "原生内核并行度提示；0 表示交由 Rust 侧决定，合法区间 [0, 256]"
-                },
-                "returns": "持有新建 NativeContext 的门面实例",
-                "throws": {
-                  "IllegalArgumentException": "threads 为负数或大于 256",
-                  "JSLRuntimeException": "原生张量运行时不可用，或原生上下文分配返回空指针"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "key": "context()",
-              "signature": "NativeContext context()",
-              "params": [],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "返回门面持有的原生上下文",
-                "body": [
-                  "用于直接调用上下文级能力，例如 guard()、graphSize() 或 clipGradNorm()。返回的引用与门面共享生命周期，门面关闭后该上下文随之失效。"
-                ],
-                "returns": "门面持有的 NativeContext 实例，永不为 null"
-              }
-            },
-            {
-              "kind": "method",
-              "key": "threads()",
-              "signature": "int threads()",
-              "params": [],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "返回创建时传入的线程提示值",
-                "body": [
-                  "返回值原样透传上下文中的线程提示值，不会解析成实际核数；通过 create() 创建时得到 0。"
-                ],
-                "returns": "线程提示值，0 表示自动"
-              }
-            },
-            {
-              "kind": "method",
-              "key": "tensor(float[], int...)",
-              "signature": "Tensor tensor(float[] data, int... shape)",
-              "params": [
-                {
-                  "type": "float[]",
-                  "name": "data"
-                },
-                {
-                  "type": "int...",
-                  "name": "shape"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "由数据构造不追踪梯度的张量",
-                "body": [
-                  "数据按行优先展平后写入原生缓冲区，requires_grad 固定为 false。元素总数必须与 data 长度严格相等，否则由上下文层拒绝。"
-                ],
-                "params": {
-                  "data": "初始元素，按行优先解释；不能为 null",
-                  "shape": "目标形状，各维必须为正；不能为空"
-                },
-                "returns": "归属当前上下文的张量句柄",
-                "throws": {
-                  "JSLRuntimeException": "data 为 null",
-                  "IllegalArgumentException": "data 长度与 shape 元素数不一致、shape 为空、某维非正，或元素总数超过 Integer.MAX_VALUE"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "key": "parameter(float[], int...)",
-              "signature": "Tensor parameter(float[] data, int... shape)",
-              "params": [
-                {
-                  "type": "float[]",
-                  "name": "data"
-                },
-                {
-                  "type": "int...",
-                  "name": "shape"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "由数据构造可训练张量",
-                "body": [
-                  "与 tensor(float[], int...) 相同的数据校验，但 requires_grad 置为 true，可直接作为优化器的参数列表成员。"
-                ],
-                "params": {
-                  "data": "初始元素，按行优先解释；不能为 null",
-                  "shape": "目标形状，各维必须为正；不能为空"
-                },
-                "returns": "requires_grad 为 true 的张量句柄",
-                "throws": {
-                  "JSLRuntimeException": "data 为 null",
-                  "IllegalArgumentException": "data 长度与 shape 元素数不一致、shape 为空、某维非正，或元素总数超过 Integer.MAX_VALUE"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "key": "zeros(int...)",
-              "signature": "Tensor zeros(int... shape)",
-              "params": [
-                {
-                  "type": "int...",
-                  "name": "shape"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "创建全零且不追踪梯度的张量",
-                "body": [
-                  "常用于占位缓冲区或需要显式填充的累加器；需要参与训练时应改用 parameter(int...)。"
-                ],
-                "params": {
-                  "shape": "目标形状，各维必须为正；不能为空"
-                },
-                "returns": "全零张量句柄，requires_grad 为 false",
-                "throws": {
-                  "IllegalArgumentException": "shape 为空、某维非正，或元素总数超过 Integer.MAX_VALUE"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "key": "randn(int...)",
-              "signature": "Tensor randn(int... shape)",
-              "params": [
-                {
-                  "type": "int...",
-                  "name": "shape"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "创建标准正态随机张量",
-                "body": [
-                  "以缩放系数 1.0 从实例种子计数器取种子后调用原生随机初始化，requires_grad 为 false。同一实例中每次调用消耗一个新种子，序列可复现。"
-                ],
-                "params": {
-                  "shape": "目标形状，各维必须为正；不能为空"
-                },
-                "returns": "标准正态初始化的张量句柄",
-                "throws": {
-                  "IllegalArgumentException": "shape 为空、某维非正，或元素总数超过 Integer.MAX_VALUE"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "key": "parameter(int...)",
-              "signature": "Tensor parameter(int... shape)",
-              "params": [
-                {
-                  "type": "int...",
-                  "name": "shape"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "创建全零的可训练张量",
-                "body": [
-                  "该重载是零初始化而非随机初始化：requires_grad 为 true，但所有元素为 0。需要随机初始化的参数应使用 parameter(float[], int...) 或模块构造器。"
-                ],
-                "params": {
-                  "shape": "目标形状，各维必须为正；不能为空"
-                },
-                "returns": "requires_grad 为 true 的全零张量句柄",
-                "throws": {
-                  "IllegalArgumentException": "shape 为空、某维非正，或元素总数超过 Integer.MAX_VALUE"
-                },
-                "notes": [
-                  "零初始化会让对称权重在首步得到相同梯度；手工搭建网络时通常改用随机初始化。"
-                ]
-              }
-            },
-            {
-              "kind": "method",
-              "key": "linear(int, int)",
-              "signature": "Linear linear(int inputSize, int outputSize)",
-              "params": [
-                {
-                  "type": "int",
-                  "name": "inputSize"
-                },
-                {
-                  "type": "int",
-                  "name": "outputSize"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "构造带偏置的全连接层",
-                "body": [
-                  "权重形状为 [inputSize, outputSize]，按 sqrt(6 / (inputSize + outputSize)) 为界的均匀分布初始化；偏置形状为 [1, outputSize] 并置零。种子由实例计数器推进得到。"
-                ],
-                "params": {
-                  "inputSize": "输入特征维，对应前向时最后一维的大小",
-                  "outputSize": "输出特征维，也是偏置的长度"
-                },
-                "returns": "新建的 Linear 模块，requires_grad 参数已就绪",
-                "throws": {
-                  "IllegalArgumentException": "形状校验失败时由张量创建路径抛出"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "key": "conv2d(int, int, int)",
-              "signature": "Conv2d conv2d(int inputChannels, int outputChannels, int kernelSize)",
-              "params": [
-                {
-                  "type": "int",
-                  "name": "inputChannels"
-                },
-                {
-                  "type": "int",
-                  "name": "outputChannels"
-                },
-                {
-                  "type": "int",
-                  "name": "kernelSize"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "构造默认步长与填充的二维卷积层",
-                "body": [
-                  "等价于 conv2d(inputChannels, outputChannels, kernelSize, 1, 0)，即方形核、步长 1、无填充。"
-                ],
-                "params": {
-                  "inputChannels": "输入通道数，必须为正",
-                  "outputChannels": "输出通道数，必须为正",
-                  "kernelSize": "方形卷积核边长，同时用于高与宽"
-                },
-                "returns": "新建的 Conv2d 模块",
-                "throws": {
-                  "IllegalArgumentException": "任一维参数非正"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "key": "conv2d(int, int, int, int, int)",
-              "signature": "Conv2d conv2d(int inputChannels, int outputChannels, int kernelSize, int stride, int padding)",
-              "params": [
-                {
-                  "type": "int",
-                  "name": "inputChannels"
-                },
-                {
-                  "type": "int",
-                  "name": "outputChannels"
-                },
-                {
-                  "type": "int",
-                  "name": "kernelSize"
-                },
-                {
-                  "type": "int",
-                  "name": "stride"
-                },
-                {
-                  "type": "int",
-                  "name": "padding"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "构造指定步长与填充的二维卷积层",
-                "body": [
-                  "stride 与 padding 同时作用于高度和宽度两个空间维，因此只支持对称配置。权重形状为 [outputChannels, inputChannels, kernelSize, kernelSize]，按 sqrt(6 / (fanIn + fanOut)) 初始化，偏置形状为 [1, outputChannels, 1, 1] 并置零。"
-                ],
-                "params": {
-                  "inputChannels": "输入通道数，必须为正",
-                  "outputChannels": "输出通道数，必须为正",
-                  "kernelSize": "方形卷积核边长，必须为正",
-                  "stride": "高宽共用步长",
-                  "padding": "高宽共用零填充宽度"
-                },
-                "returns": "新建的 Conv2d 模块",
-                "throws": {
-                  "IllegalArgumentException": "通道数或核尺寸非正"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "key": "sequential()",
-              "signature": "<L extends Layout> Sequential<L, L> sequential()",
-              "params": [],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "创建空的顺序容器",
-                "body": [
-                  "返回 Sequential.start() 的空容器，布局类型参数在 add 时逐步推导。容器本身不持有上下文，其中模块的张量仍由调用方所属上下文创建。"
-                ],
-                "returns": "不含任何模块的顺序容器"
-              }
-            },
-            {
-              "kind": "method",
-              "key": "activation(jsl.nn.Activation)",
-              "signature": "<L extends Layout> jsl.torch.Activation<L> activation(jsl.nn.Activation activation)",
-              "params": [
-                {
-                  "type": "jsl.nn.Activation",
-                  "name": "activation"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "把激活枚举映射为可组合的激活模块",
-                "body": [
-                  "支持 RELU、GELU、SILU、SIGMOID、TANH 五种。NONE 与 SOFTMAX 没有对应的张量核：NONE 无意义，SOFTMAX 需沿指定维度归一化，应改用 Tensor.softmax(dimension)。"
-                ],
-                "params": {
-                  "activation": "激活函数枚举；不能为 null"
-                },
-                "returns": "对应种类的 Activation 模块",
-                "throws": {
-                  "JSLRuntimeException": "activation 为 null，或取值为 NONE、SOFTMAX"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "key": "optimizer(jsl.nn.Optimizer, List<Tensor>, float)",
-              "signature": "jsl.torch.Optimizer optimizer(jsl.nn.Optimizer optimizer, List<Tensor> parameters, float learningRate)",
-              "params": [
-                {
-                  "type": "jsl.nn.Optimizer",
-                  "name": "optimizer"
-                },
-                {
-                  "type": "List<Tensor>",
-                  "name": "parameters"
-                },
-                {
-                  "type": "float",
-                  "name": "learningRate"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "按枚举构造优化器实例",
-                "body": [
-                  "三种取值的超参数并不相同：SGD 映射为权重衰减 0 的 SGD；ADAM 映射为 AdamW(0.9, 0.999, 1e-8, 0.0)，即不带解耦权重衰减的 Adam；ADAMW 映射为 AdamW 默认构造，权重衰减 0.01。"
-                ],
-                "params": {
-                  "optimizer": "优化算法枚举；不能为 null",
-                  "parameters": "待更新参数列表；不能为 null，元素通常来自模块的 parameters()",
-                  "learningRate": "学习率，原样传给所选优化器"
-                },
-                "returns": "与枚举对应的优化器实例",
-                "throws": {
-                  "JSLRuntimeException": "optimizer 或 parameters 为 null"
-                },
-                "notes": [
-                  "ADAM 与 ADAMW 都实例化为 AdamW，区别仅在权重衰减系数；需要无衰减 Adam 时选 ADAM。"
-                ]
-              }
-            },
-            {
-              "kind": "method",
-              "key": "adamw(List<Tensor>, float)",
-              "signature": "AdamW adamw(List<Tensor> parameters, float learningRate)",
-              "params": [
-                {
-                  "type": "List<Tensor>",
-                  "name": "parameters"
-                },
-                {
-                  "type": "float",
-                  "name": "learningRate"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "构造使用默认超参数的 AdamW",
-                "body": [
-                  "使用 AdamW 的两参构造：beta1 = 0.9、beta2 = 0.999、epsilon = 1e-8、weightDecay = 0.01。需要自定义这些系数时应直接调用 AdamW 的六参构造。"
-                ],
-                "params": {
-                  "parameters": "待更新参数列表，元素必须属于同一上下文",
-                  "learningRate": "学习率"
-                },
-                "returns": "AdamW 优化器实例"
-              }
-            },
-            {
-              "kind": "method",
-              "key": "sgd(List<Tensor>, float)",
-              "signature": "SGD sgd(List<Tensor> parameters, float learningRate)",
-              "params": [
-                {
-                  "type": "List<Tensor>",
-                  "name": "parameters"
-                },
-                {
-                  "type": "float",
-                  "name": "learningRate"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "构造无权重衰减的随机梯度下降优化器",
-                "body": [
-                  "等价于 SGD(parameters, learningRate, 0.0f)，权重衰减固定为 0；需要 L2 正则时应直接使用 SGD 的三参构造。"
-                ],
-                "params": {
-                  "parameters": "待更新参数列表，元素必须属于同一上下文",
-                  "learningRate": "学习率"
-                },
-                "returns": "SGD 优化器实例"
-              }
-            },
-            {
-              "kind": "method",
-              "key": "crossEntropy()",
-              "signature": "CrossEntropyLoss crossEntropy()",
-              "params": [],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "创建交叉熵损失对象",
-                "body": [
-                  "每次调用返回新实例，损失对象本身无状态，可复用于多个前向过程。"
-                ],
-                "returns": "新的 CrossEntropyLoss 实例"
-              }
-            },
-            {
-              "kind": "method",
-              "key": "mse()",
-              "signature": "MSELoss mse()",
-              "params": [],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "创建均方误差损失对象",
-                "body": [
-                  "每次调用返回新实例；单次调用也可直接用 Tensor.mse(Tensor) 这一便捷入口。"
-                ],
-                "returns": "新的 MSELoss 实例"
-              }
-            },
-            {
-              "kind": "method",
-              "key": "graph()",
-              "signature": "Graph graph()",
-              "params": [],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "包装当前上下文的计算图句柄",
-                "body": [
-                  "返回绑定同一 NativeContext 的新 Graph 包装对象，用于显式查看节点数、清空图或对指定根张量执行反向传播。"
-                ],
-                "returns": "绑定当前上下文的 Graph 句柄"
-              }
-            },
-            {
-              "kind": "method",
-              "key": "clearGraph()",
-              "signature": "void clearGraph()",
-              "params": [],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "清空计算图中记录的所有节点",
-                "body": [
-                  "在两次独立前向之间调用可避免图无限增长；张量本身不受影响，仅丢弃自动微分记录。"
-                ],
-                "throws": {
-                  "IllegalStateException": "上下文已关闭"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "key": "stats()",
-              "signature": "long[] stats()",
-              "params": [],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "读取上下文的内存与图统计",
-                "body": [
-                  "返回长度固定为 3 的数组，依次为存活张量数、存活字节数、计算图节点数，由原生侧一次性填充。"
-                ],
-                "returns": "long[3]，含义为 {liveTensors, liveBytes, graphNodes}",
-                "throws": {
-                  "IllegalStateException": "上下文已关闭"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "key": "fit(jsl.ml.JSL.Algorithm, Matrix, double[])",
-              "signature": "Estimator fit(jsl.ml.JSL.Algorithm algorithm, Matrix features, double[] targets)",
-              "params": [
-                {
-                  "type": "jsl.ml.JSL.Algorithm",
-                  "name": "algorithm"
-                },
-                {
-                  "type": "Matrix",
-                  "name": "features"
-                },
-                {
-                  "type": "double[]",
-                  "name": "targets"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "按算法枚举训练经典估计器",
-                "body": [
-                  "静态转发到 jsl.ml.JSL.fit，使用各估计器的保守默认超参数并按任务类型选择训练路径；无监督算法忽略 targets。该调用不读取实例上下文，可在未创建门面时使用。"
-                ],
-                "params": {
-                  "algorithm": "算法枚举，自带任务类型信息",
-                  "features": "训练特征矩阵，行对应样本",
-                  "targets": "训练标签；有监督算法不能为 null，无监督算法可为 null"
-                },
-                "returns": "已完成 fit 的估计器实例",
-                "throws": {
-                  "IllegalArgumentException": "有监督算法的 targets 为 null"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "key": "predict(Estimator, Matrix)",
-              "signature": "double[] predict(Estimator model, Matrix features)",
-              "params": [
-                {
-                  "type": "Estimator",
-                  "name": "model"
-                },
-                {
-                  "type": "Matrix",
-                  "name": "features"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "用已训练估计器输出预测值",
-                "body": [
-                  "静态转发到 jsl.ml.JSL.predict，直接调用 model.predict(features)，不做额外的形状或状态校验。"
-                ],
-                "params": {
-                  "model": "已训练好的估计器",
-                  "features": "预测特征矩阵，列数需与训练时一致"
-                },
-                "returns": "每个样本一个预测值，顺序与输入行一致"
-              }
-            },
-            {
-              "kind": "method",
-              "key": "crossValidate(jsl.ml.JSL.Algorithm, Matrix, double[], int, jsl.ml.JSL.Metric)",
-              "signature": "double crossValidate(jsl.ml.JSL.Algorithm algorithm, Matrix features, double[] targets, int folds, jsl.ml.JSL.Metric metric)",
-              "params": [
-                {
-                  "type": "jsl.ml.JSL.Algorithm",
-                  "name": "algorithm"
-                },
-                {
-                  "type": "Matrix",
-                  "name": "features"
-                },
-                {
-                  "type": "double[]",
-                  "name": "targets"
-                },
-                {
-                  "type": "int",
-                  "name": "folds"
-                },
-                {
-                  "type": "jsl.ml.JSL.Metric",
-                  "name": "metric"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "返回 K 折交叉验证的平均分数",
-                "body": [
-                  "静态转发到 jsl.ml.JSL.crossValidate：按固定随机种子 42 打乱后切分，每折重新 fit 并在测试折上评估，最后对各折分数取算术平均。RMSE 取负值参与平均，因此所有指标都是越大越好。"
-                ],
-                "params": {
-                  "algorithm": "算法枚举，必须是有监督任务",
-                  "features": "特征矩阵",
-                  "targets": "标签数组，长度须与特征行数一致",
-                  "folds": "折数，合法区间为 [2, 特征行数]",
-                  "metric": "评估指标：ACCURACY、MACRO_F1、R2 或 RMSE"
-                },
-                "returns": "各折指标的平均值；RMSE 已取负",
-                "throws": {
-                  "IllegalArgumentException": "算法属于无监督任务，或 folds 超出 [2, 特征行数]"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "key": "close()",
-              "signature": "void close()",
-              "params": [],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "释放上下文及其全部张量与图",
-                "body": [
-                  "销毁原生上下文并注销 Cleaner 回调。重复调用是幂等的：句柄置零后不再重复销毁，后续张量操作会抛出 IllegalStateException。"
-                ],
-                "notes": [
-                  "关闭会等待正在执行的 JNI 调用结束，因为上下文使用读写锁保护生命周期。"
-                ]
-              }
-            }
-          ]
+         "type": "int",
+         "name": "threads"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以指定线程提示值创建门面实例",
+        "body": [
+         "线程数只是传给原生内核的提示值，不做线程池预创建。合法区间为 [0, 256]，其中 0 表示自动。"
+        ],
+        "params": {
+         "threads": "原生内核并行度提示；0 表示交由 Rust 侧决定，合法区间 [0, 256]"
+        },
+        "returns": "持有新建 NativeContext 的门面实例",
+        "throws": {
+         "IllegalArgumentException": "threads 为负数或大于 256",
+         "JSLRuntimeException": "原生张量运行时不可用，或原生上下文分配返回空指针"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "context()",
+       "signature": "NativeContext context()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回门面持有的原生上下文",
+        "body": [
+         "用于直接调用上下文级能力，例如 guard()、graphSize() 或 clipGradNorm()。返回的引用与门面共享生命周期，门面关闭后该上下文随之失效。"
+        ],
+        "returns": "门面持有的 NativeContext 实例，永不为 null"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "threads()",
+       "signature": "int threads()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回创建时传入的线程提示值",
+        "body": [
+         "返回值原样透传上下文中的线程提示值，不会解析成实际核数；通过 create() 创建时得到 0。"
+        ],
+        "returns": "线程提示值，0 表示自动"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "tensor(float[], int...)",
+       "signature": "Tensor tensor(float[] data, int... shape)",
+       "params": [
+        {
+         "type": "float[]",
+         "name": "data"
         },
         {
-          "qualified": "jsl.JSLRuntimeException",
-          "simple_qualified": "JSLRuntimeException",
-          "kind": "class",
-          "modifiers": [
-            "public"
-          ],
-          "generic": "",
-          "extends": "IllegalStateException",
-          "implements": [],
-          "file": "jsl/JSLRuntimeException.java",
-          "line": 10,
-          "nested": [],
-          "doc": {
-            "summary": "SDK 统一非受检异常：封装原生 panic、形状拒绝与空参数",
-            "body": [
-              "原生 Rust panic、JNI 层形状拒绝以及 null 参数都被翻译为该类型，调用方只需捕获一个 SDK 专属异常即可覆盖大多数失败场景。",
-              "继承 IllegalStateException 是为了兼容性：已有捕获 JDK 异常的代码无需修改，同时 SDK 用户可以精确区分 JSL 自身的失败与其它状态错误。",
-              "requireNonNull 是配套的校验工具，失败时把参数名拼进消息，避免出现无上下文的 NullPointerException。"
-            ],
-            "notes": [
-              "构造器不校验 message 与 cause，允许两者为 null，与父类行为一致。",
-              "形状不匹配等可编程错误仍由 IllegalArgumentException 表达，本类型不替代它。"
-            ],
-            "example": "try (JSL jsl = JSL.create()) {\n    jsl.activation(jsl.nn.Activation.NONE);\n} catch (JSLRuntimeException failure) {\n    System.err.println(failure.getMessage());\n}",
-            "see": [
-              "jsl.JSL",
-              "java.lang.IllegalStateException"
-            ]
-          },
-          "members": [
-            {
-              "kind": "constructor",
-              "key": "JSLRuntimeException(String)",
-              "signature": "JSLRuntimeException(String message)",
-              "params": [
-                {
-                  "type": "String",
-                  "name": "message"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "以消息构造异常",
-                "params": {
-                  "message": "异常消息，允许为 null"
-                }
-              }
-            },
-            {
-              "kind": "constructor",
-              "key": "JSLRuntimeException(String, Throwable)",
-              "signature": "JSLRuntimeException(String message, Throwable cause)",
-              "params": [
-                {
-                  "type": "String",
-                  "name": "message"
-                },
-                {
-                  "type": "Throwable",
-                  "name": "cause"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "以消息与原因构造异常",
-                "body": [
-                  "用于在保留原始失败信息的前提下统一异常类型，例如把原生层返回的错误对象挂在 cause 上。"
-                ],
-                "params": {
-                  "message": "异常消息，允许为 null",
-                  "cause": "根因异常，允许为 null"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "key": "requireNonNull(T, String)",
-              "signature": "<T> T requireNonNull(T value, String name)",
-              "params": [
-                {
-                  "type": "T",
-                  "name": "value"
-                },
-                {
-                  "type": "String",
-                  "name": "name"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "校验参数非空并原样返回",
-                "body": [
-                  "value 为 null 时抛出消息为 \"<name> must not be null\" 的异常，否则直接返回该值，便于写成内联表达式。"
-                ],
-                "params": {
-                  "value": "待校验的引用",
-                  "name": "参数名，会被拼进异常消息"
-                },
-                "returns": "非空的 value 本身",
-                "throws": {
-                  "JSLRuntimeException": "value 为 null"
-                }
-              }
-            }
-          ]
+         "type": "int...",
+         "name": "shape"
         }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "由数据构造不追踪梯度的张量",
+        "body": [
+         "数据按行优先展平后写入原生缓冲区，requires_grad 固定为 false。元素总数必须与 data 长度严格相等，否则由上下文层拒绝。"
+        ],
+        "params": {
+         "data": "初始元素，按行优先解释；不能为 null",
+         "shape": "目标形状，各维必须为正；不能为空"
+        },
+        "returns": "归属当前上下文的张量句柄",
+        "throws": {
+         "JSLRuntimeException": "data 为 null",
+         "IllegalArgumentException": "data 长度与 shape 元素数不一致、shape 为空、某维非正，或元素总数超过 Integer.MAX_VALUE"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "parameter(float[], int...)",
+       "signature": "Tensor parameter(float[] data, int... shape)",
+       "params": [
+        {
+         "type": "float[]",
+         "name": "data"
+        },
+        {
+         "type": "int...",
+         "name": "shape"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "由数据构造可训练张量",
+        "body": [
+         "与 tensor(float[], int...) 相同的数据校验，但 requires_grad 置为 true，可直接作为优化器的参数列表成员。"
+        ],
+        "params": {
+         "data": "初始元素，按行优先解释；不能为 null",
+         "shape": "目标形状，各维必须为正；不能为空"
+        },
+        "returns": "requires_grad 为 true 的张量句柄",
+        "throws": {
+         "JSLRuntimeException": "data 为 null",
+         "IllegalArgumentException": "data 长度与 shape 元素数不一致、shape 为空、某维非正，或元素总数超过 Integer.MAX_VALUE"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "zeros(int...)",
+       "signature": "Tensor zeros(int... shape)",
+       "params": [
+        {
+         "type": "int...",
+         "name": "shape"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建全零且不追踪梯度的张量",
+        "body": [
+         "常用于占位缓冲区或需要显式填充的累加器；需要参与训练时应改用 parameter(int...)。"
+        ],
+        "params": {
+         "shape": "目标形状，各维必须为正；不能为空"
+        },
+        "returns": "全零张量句柄，requires_grad 为 false",
+        "throws": {
+         "IllegalArgumentException": "shape 为空、某维非正，或元素总数超过 Integer.MAX_VALUE"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "randn(int...)",
+       "signature": "Tensor randn(int... shape)",
+       "params": [
+        {
+         "type": "int...",
+         "name": "shape"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建标准正态随机张量",
+        "body": [
+         "以缩放系数 1.0 从实例种子计数器取种子后调用原生随机初始化，requires_grad 为 false。同一实例中每次调用消耗一个新种子，序列可复现。"
+        ],
+        "params": {
+         "shape": "目标形状，各维必须为正；不能为空"
+        },
+        "returns": "标准正态初始化的张量句柄",
+        "throws": {
+         "IllegalArgumentException": "shape 为空、某维非正，或元素总数超过 Integer.MAX_VALUE"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "parameter(int...)",
+       "signature": "Tensor parameter(int... shape)",
+       "params": [
+        {
+         "type": "int...",
+         "name": "shape"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建全零的可训练张量",
+        "body": [
+         "该重载是零初始化而非随机初始化：requires_grad 为 true，但所有元素为 0。需要随机初始化的参数应使用 parameter(float[], int...) 或模块构造器。"
+        ],
+        "params": {
+         "shape": "目标形状，各维必须为正；不能为空"
+        },
+        "returns": "requires_grad 为 true 的全零张量句柄",
+        "throws": {
+         "IllegalArgumentException": "shape 为空、某维非正，或元素总数超过 Integer.MAX_VALUE"
+        },
+        "notes": [
+         "零初始化会让对称权重在首步得到相同梯度；手工搭建网络时通常改用随机初始化。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "linear(int, int)",
+       "signature": "Linear linear(int inputSize, int outputSize)",
+       "params": [
+        {
+         "type": "int",
+         "name": "inputSize"
+        },
+        {
+         "type": "int",
+         "name": "outputSize"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "构造带偏置的全连接层",
+        "body": [
+         "权重形状为 [inputSize, outputSize]，按 sqrt(6 / (inputSize + outputSize)) 为界的均匀分布初始化；偏置形状为 [1, outputSize] 并置零。种子由实例计数器推进得到。"
+        ],
+        "params": {
+         "inputSize": "输入特征维，对应前向时最后一维的大小",
+         "outputSize": "输出特征维，也是偏置的长度"
+        },
+        "returns": "新建的 Linear 模块，requires_grad 参数已就绪",
+        "throws": {
+         "IllegalArgumentException": "形状校验失败时由张量创建路径抛出"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "conv2d(int, int, int)",
+       "signature": "Conv2d conv2d(int inputChannels, int outputChannels, int kernelSize)",
+       "params": [
+        {
+         "type": "int",
+         "name": "inputChannels"
+        },
+        {
+         "type": "int",
+         "name": "outputChannels"
+        },
+        {
+         "type": "int",
+         "name": "kernelSize"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "构造默认步长与填充的二维卷积层",
+        "body": [
+         "等价于 conv2d(inputChannels, outputChannels, kernelSize, 1, 0)，即方形核、步长 1、无填充。"
+        ],
+        "params": {
+         "inputChannels": "输入通道数，必须为正",
+         "outputChannels": "输出通道数，必须为正",
+         "kernelSize": "方形卷积核边长，同时用于高与宽"
+        },
+        "returns": "新建的 Conv2d 模块",
+        "throws": {
+         "IllegalArgumentException": "任一维参数非正"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "conv2d(int, int, int, int, int)",
+       "signature": "Conv2d conv2d(int inputChannels, int outputChannels, int kernelSize, int stride, int padding)",
+       "params": [
+        {
+         "type": "int",
+         "name": "inputChannels"
+        },
+        {
+         "type": "int",
+         "name": "outputChannels"
+        },
+        {
+         "type": "int",
+         "name": "kernelSize"
+        },
+        {
+         "type": "int",
+         "name": "stride"
+        },
+        {
+         "type": "int",
+         "name": "padding"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "构造指定步长与填充的二维卷积层",
+        "body": [
+         "stride 与 padding 同时作用于高度和宽度两个空间维，因此只支持对称配置。权重形状为 [outputChannels, inputChannels, kernelSize, kernelSize]，按 sqrt(6 / (fanIn + fanOut)) 初始化，偏置形状为 [1, outputChannels, 1, 1] 并置零。"
+        ],
+        "params": {
+         "inputChannels": "输入通道数，必须为正",
+         "outputChannels": "输出通道数，必须为正",
+         "kernelSize": "方形卷积核边长，必须为正",
+         "stride": "高宽共用步长",
+         "padding": "高宽共用零填充宽度"
+        },
+        "returns": "新建的 Conv2d 模块",
+        "throws": {
+         "IllegalArgumentException": "通道数或核尺寸非正"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "conv2d(int, int, int, int, int, int, int)",
+       "signature": "Conv2d conv2d(int inputChannels, int outputChannels, int kernelSize, int stride, int padding, int dilation, int groups)",
+       "params": [
+        {
+         "type": "int",
+         "name": "inputChannels"
+        },
+        {
+         "type": "int",
+         "name": "outputChannels"
+        },
+        {
+         "type": "int",
+         "name": "kernelSize"
+        },
+        {
+         "type": "int",
+         "name": "stride"
+        },
+        {
+         "type": "int",
+         "name": "padding"
+        },
+        {
+         "type": "int",
+         "name": "dilation"
+        },
+        {
+         "type": "int",
+         "name": "groups"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "构造支持膨胀与分组（含深度卷积）的二维卷积层",
+        "body": [
+         "kernelSize、stride、padding、dilation 都同时作用于高与宽。groups 为 1 是普通卷积，等于 inputChannels 时退化为逐通道的深度卷积。",
+         "权重形状为 [outputChannels, inputChannels / groups, kernelSize, kernelSize]，按 sqrt(6 / (fanIn + fanOut)) 的均匀分布初始化，偏置形状为 [1, outputChannels, 1, 1] 并置零。传给原生层的种子是实例计数器取值再混入 31 * inputChannels + outputChannels。"
+        ],
+        "params": {
+         "inputChannels": "输入通道数，必须为正且能被 groups 整除",
+         "outputChannels": "输出通道数，必须为正且能被 groups 整除",
+         "kernelSize": "方形卷积核边长，必须为正",
+         "stride": "高宽共用步长，必须为正",
+         "padding": "高宽共用零填充宽度",
+         "dilation": "高宽共用膨胀系数，必须为正",
+         "groups": "输入与输出通道的分组数，必须为正"
+        },
+        "returns": "新建的 Conv2d 模块",
+        "throws": {
+         "IllegalArgumentException": "任一维参数非正，或通道数不能被 groups 整除"
+        },
+        "notes": [
+         "分组卷积的参数量按组数成比例下降，groups 取 inputChannels 是逐通道卷积的极端情形。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "depthwiseSeparableConv2d(int, int, int, int, int)",
+       "signature": "DepthwiseSeparableConv2d depthwiseSeparableConv2d(int inputChannels, int outputChannels, int kernelSize, int stride, int padding)",
+       "params": [
+        {
+         "type": "int",
+         "name": "inputChannels"
+        },
+        {
+         "type": "int",
+         "name": "outputChannels"
+        },
+        {
+         "type": "int",
+         "name": "kernelSize"
+        },
+        {
+         "type": "int",
+         "name": "stride"
+        },
+        {
+         "type": "int",
+         "name": "padding"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "构造深度可分离二维卷积层",
+        "body": [
+         "内部串联两层卷积：第一层以 inputChannels 为分组数、不带偏置的逐通道卷积，负责空间滤波；第二层是 1×1、步长 1、无填充的逐点卷积，负责通道混合，偏置只存在于这一层。",
+         "stride 与 padding 仅作用于逐通道层。两层种子分别取实例计数器值偏移 17 与 53，因此同一层内不会与其它模块共用权重。"
+        ],
+        "params": {
+         "inputChannels": "输入通道数，同时作为逐通道卷积的分组数",
+         "outputChannels": "逐点卷积的输出通道数",
+         "kernelSize": "逐通道卷积的方形核边长；逐点层固定为 1×1",
+         "stride": "逐通道卷积的高宽共用步长",
+         "padding": "逐通道卷积的高宽共用零填充宽度"
+        },
+        "returns": "新建的 DepthwiseSeparableConv2d 模块",
+        "throws": {
+         "IllegalArgumentException": "通道数、核尺寸或步长非正"
+        },
+        "notes": [
+         "参数量约为标准卷积的 1/outputChannels + 1/kernelSize²，代价是通道间信息只在 1×1 层交换。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "groupNorm(int, int)",
+       "signature": "<L extends Layout> GroupNorm<L> groupNorm(int numGroups, int numChannels)",
+       "params": [
+        {
+         "type": "int",
+         "name": "numGroups"
+        },
+        {
+         "type": "int",
+         "name": "numChannels"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "构造按通道分组的归一化层",
+        "body": [
+         "通道被等分为 numGroups 组，归一化在每组内部进行，统计量不跨样本，因此结果与批量大小无关。epsilon 使用 GroupNorm 的默认值 1e-5。",
+         "可学习参数为长度 numChannels 的 gamma 与 beta，分别初始化为 1 与 0，两者 requires_grad 均为 true。"
+        ],
+        "params": {
+         "numGroups": "分组数，必须为正且整除 numChannels",
+         "numChannels": "通道数，必须为正"
+        },
+        "returns": "新建的 GroupNorm 模块",
+        "throws": {
+         "IllegalArgumentException": "numChannels 非正，或不能被 numGroups 整除"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "sequential()",
+       "signature": "<L extends Layout> Sequential<L, L> sequential()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建空的顺序容器",
+        "body": [
+         "返回 Sequential.start() 的空容器，布局类型参数在 add 时逐步推导。容器本身不持有上下文，其中模块的张量仍由调用方所属上下文创建。"
+        ],
+        "returns": "不含任何模块的顺序容器"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "computationGraph()",
+       "signature": "ComputationGraph.Builder computationGraph()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建计算图构建器",
+        "body": [
+         "返回 ComputationGraph.builder() 的空构建器，用 addInputs、addLayer、addAddVertex、setOutputs 描述拓扑，build() 时校验输入与输出均非空、节点名唯一，并做拓扑排序得到执行顺序。",
+         "构建器是纯 Java 的图结构，不读取门面上下文；真正前向执行时才会用到模块所属的张量上下文。"
+        ],
+        "returns": "新的 ComputationGraph.Builder 实例",
+        "notes": [
+         "build() 失败时抛出 IllegalArgumentException，错误信息会指出缺失的输入或未知的输出节点。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "activation(jsl.nn.Activation)",
+       "signature": "<L extends Layout> jsl.torch.Activation<L> activation(jsl.nn.Activation activation)",
+       "params": [
+        {
+         "type": "jsl.nn.Activation",
+         "name": "activation"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "把激活枚举映射为可组合的激活模块",
+        "body": [
+         "支持 RELU、GELU、SILU、SIGMOID、TANH 五种。NONE 与 SOFTMAX 没有对应的张量核：NONE 无意义，SOFTMAX 需沿指定维度归一化，应改用 Tensor.softmax(dimension)。"
+        ],
+        "params": {
+         "activation": "激活函数枚举；不能为 null"
+        },
+        "returns": "对应种类的 Activation 模块",
+        "throws": {
+         "JSLRuntimeException": "activation 为 null，或取值为 NONE、SOFTMAX"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "optimizer(jsl.nn.Optimizer, List<Tensor>, float)",
+       "signature": "jsl.torch.Optimizer optimizer(jsl.nn.Optimizer optimizer, List<Tensor> parameters, float learningRate)",
+       "params": [
+        {
+         "type": "jsl.nn.Optimizer",
+         "name": "optimizer"
+        },
+        {
+         "type": "List<Tensor>",
+         "name": "parameters"
+        },
+        {
+         "type": "float",
+         "name": "learningRate"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "按枚举构造优化器实例",
+        "body": [
+         "三种取值的超参数并不相同：SGD 映射为权重衰减 0 的 SGD；ADAM 映射为 AdamW(0.9, 0.999, 1e-8, 0.0)，即不带解耦权重衰减的 Adam；ADAMW 映射为 AdamW 默认构造，权重衰减 0.01。"
+        ],
+        "params": {
+         "optimizer": "优化算法枚举；不能为 null",
+         "parameters": "待更新参数列表；不能为 null，元素通常来自模块的 parameters()",
+         "learningRate": "学习率，原样传给所选优化器"
+        },
+        "returns": "与枚举对应的优化器实例",
+        "throws": {
+         "JSLRuntimeException": "optimizer 或 parameters 为 null"
+        },
+        "notes": [
+         "ADAM 与 ADAMW 都实例化为 AdamW，区别仅在权重衰减系数；需要无衰减 Adam 时选 ADAM。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "adamw(List<Tensor>, float)",
+       "signature": "AdamW adamw(List<Tensor> parameters, float learningRate)",
+       "params": [
+        {
+         "type": "List<Tensor>",
+         "name": "parameters"
+        },
+        {
+         "type": "float",
+         "name": "learningRate"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "构造使用默认超参数的 AdamW",
+        "body": [
+         "使用 AdamW 的两参构造：beta1 = 0.9、beta2 = 0.999、epsilon = 1e-8、weightDecay = 0.01。需要自定义这些系数时应直接调用 AdamW 的六参构造。"
+        ],
+        "params": {
+         "parameters": "待更新参数列表，元素必须属于同一上下文",
+         "learningRate": "学习率"
+        },
+        "returns": "AdamW 优化器实例"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "sgd(List<Tensor>, float)",
+       "signature": "SGD sgd(List<Tensor> parameters, float learningRate)",
+       "params": [
+        {
+         "type": "List<Tensor>",
+         "name": "parameters"
+        },
+        {
+         "type": "float",
+         "name": "learningRate"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "构造无权重衰减的随机梯度下降优化器",
+        "body": [
+         "等价于 SGD(parameters, learningRate, 0.0f)，权重衰减固定为 0；需要 L2 正则时应直接使用 SGD 的三参构造。"
+        ],
+        "params": {
+         "parameters": "待更新参数列表，元素必须属于同一上下文",
+         "learningRate": "学习率"
+        },
+        "returns": "SGD 优化器实例"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "cosineAnnealingLR(jsl.torch.Optimizer, int, float)",
+       "signature": "CosineAnnealingLR cosineAnnealingLR(jsl.torch.Optimizer optimizer, int tMax, float etaMin)",
+       "params": [
+        {
+         "type": "jsl.torch.Optimizer",
+         "name": "optimizer"
+        },
+        {
+         "type": "int",
+         "name": "tMax"
+        },
+        {
+         "type": "float",
+         "name": "etaMin"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "构造余弦退火学习率调度器",
+        "body": [
+         "构造时把优化器当前学习率记为基准，第 t 步的学习率为 etaMin + 0.5 × (基准 − etaMin) × (1 + cos(π × min(t, tMax) / tMax))；迭代超过 tMax 后余弦项取 −1，学习率停在 etaMin。"
+        ],
+        "params": {
+         "optimizer": "被调度的优化器，构造时读取其学习率作为基准",
+         "tMax": "余弦周期的步数，必须为正",
+         "etaMin": "学习率下限，必须有限且非负"
+        },
+        "returns": "新建的 CosineAnnealingLR 实例",
+        "throws": {
+         "NullPointerException": "optimizer 为 null",
+         "IllegalArgumentException": "tMax 非正，或 etaMin 为负数或非有限值"
+        },
+        "notes": [
+         "调度器只改动优化器的学习率，不修改优化器状态；同一步调用多次 step() 会连续推进计数。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "stepLR(jsl.torch.Optimizer, int, float)",
+       "signature": "StepLR stepLR(jsl.torch.Optimizer optimizer, int stepSize, float gamma)",
+       "params": [
+        {
+         "type": "jsl.torch.Optimizer",
+         "name": "optimizer"
+        },
+        {
+         "type": "int",
+         "name": "stepSize"
+        },
+        {
+         "type": "float",
+         "name": "gamma"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "构造按固定步数阶梯衰减的调度器",
+        "body": [
+         "基准学习率在构造时锁定，第 t 步的学习率为 基准 × gamma^(t / stepSize)，除法取整数商，因此每满 stepSize 步乘一次 gamma。"
+        ],
+        "params": {
+         "optimizer": "被调度的优化器，构造时读取其学习率作为基准",
+         "stepSize": "衰减间隔的步数，必须为正",
+         "gamma": "每次衰减的乘数，必须为正且有限"
+        },
+        "returns": "新建的 StepLR 实例",
+        "throws": {
+         "NullPointerException": "optimizer 为 null",
+         "IllegalArgumentException": "stepSize 非正，或 gamma 非正、非有限"
+        },
+        "notes": [
+         "基准学习率不会随外部 setLearningRate 更新，手动改动学习率后衰减仍按旧基准计算。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "crossEntropy()",
+       "signature": "CrossEntropyLoss crossEntropy()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建交叉熵损失对象",
+        "body": [
+         "每次调用返回新实例，损失对象本身无状态，可复用于多个前向过程。"
+        ],
+        "returns": "新的 CrossEntropyLoss 实例"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "mse()",
+       "signature": "MSELoss mse()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建均方误差损失对象",
+        "body": [
+         "每次调用返回新实例；单次调用也可直接用 Tensor.mse(Tensor) 这一便捷入口。"
+        ],
+        "returns": "新的 MSELoss 实例"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "l1Loss()",
+       "signature": "L1Loss l1Loss()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建 L1（平均绝对误差）损失对象",
+        "body": [
+         "每次调用返回新实例；loss 直接转发到 Tensor.l1Loss，逐元素取绝对差后求均值。"
+        ],
+        "returns": "新的 L1Loss 实例"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "smoothL1Loss(float)",
+       "signature": "SmoothL1Loss smoothL1Loss(float beta)",
+       "params": [
+        {
+         "type": "float",
+         "name": "beta"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建带 beta 阈值的 Smooth L1 损失对象",
+        "body": [
+         "误差绝对值小于 beta 时按二次项计算，否则按线性项计算，因此对离群点比纯 L1 更稳定；beta 由构造时固定，之后不可变。"
+        ],
+        "params": {
+         "beta": "二次段与线性段的分界阈值，必须非负"
+        },
+        "returns": "新的 SmoothL1Loss 实例",
+        "throws": {
+         "IllegalArgumentException": "beta 为负数"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "bceWithLogitsLoss()",
+       "signature": "BCEWithLogitsLoss bceWithLogitsLoss()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建带 logits 的二分类交叉熵损失对象",
+        "body": [
+         "预测值直接接受未过 sigmoid 的 logits，sigmoid 与交叉熵在原生核内合并计算，避免概率接近 0 或 1 时的数值溢出。"
+        ],
+        "returns": "新的 BCEWithLogitsLoss 实例",
+        "notes": [
+         "标签应为 0 或 1；损失对象本身无状态，可跨前向复用。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "graph()",
+       "signature": "Graph graph()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "包装当前上下文的计算图句柄",
+        "body": [
+         "返回绑定同一 NativeContext 的新 Graph 包装对象，用于显式查看节点数、清空图或对指定根张量执行反向传播。"
+        ],
+        "returns": "绑定当前上下文的 Graph 句柄"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "clearGraph()",
+       "signature": "void clearGraph()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "清空计算图中记录的所有节点",
+        "body": [
+         "在两次独立前向之间调用可避免图无限增长；张量本身不受影响，仅丢弃自动微分记录。"
+        ],
+        "throws": {
+         "IllegalStateException": "上下文已关闭"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "stats()",
+       "signature": "long[] stats()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "读取上下文的内存与图统计",
+        "body": [
+         "返回长度固定为 3 的数组，依次为存活张量数、存活字节数、计算图节点数，由原生侧一次性填充。"
+        ],
+        "returns": "long[3]，含义为 {liveTensors, liveBytes, graphNodes}",
+        "throws": {
+         "IllegalStateException": "上下文已关闭"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "metrics()",
+       "signature": "JslMetrics.MetricsSnapshot metrics()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "获取全局算子与本上下文内存的指标快照",
+        "body": [
+         "等价于 JslMetrics.snapshot(context)。算子部分取自进程级静态登记表，涵盖所有实例记录过的算子，不按门面隔离；memory 部分读取本上下文的 stats()，即存活张量数、存活字节数与计算图节点数，再补上 JVM 已用堆与最大堆。",
+         "上下文已关闭时不会抛异常：原生三项计数直接记为 0，快照其余部分照常返回。"
+        ],
+        "returns": "算子摘要映射与内存快照组成的 MetricsSnapshot",
+        "notes": [
+         "算子统计只反映显式调用 recordOperator 或 time 的代码路径，未插桩的算子不会出现。",
+         "需要清零累计值时调用 JslMetrics.reset()，它清空的是全局登记表。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fit(jsl.ml.JSL.Algorithm, Matrix, double[])",
+       "signature": "Estimator fit(jsl.ml.JSL.Algorithm algorithm, Matrix features, double[] targets)",
+       "params": [
+        {
+         "type": "jsl.ml.JSL.Algorithm",
+         "name": "algorithm"
+        },
+        {
+         "type": "Matrix",
+         "name": "features"
+        },
+        {
+         "type": "double[]",
+         "name": "targets"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "按算法枚举训练经典估计器",
+        "body": [
+         "静态转发到 jsl.ml.JSL.fit，使用各估计器的保守默认超参数并按任务类型选择训练路径；无监督算法忽略 targets。该调用不读取实例上下文，可在未创建门面时使用。"
+        ],
+        "params": {
+         "algorithm": "算法枚举，自带任务类型信息",
+         "features": "训练特征矩阵，行对应样本",
+         "targets": "训练标签；有监督算法不能为 null，无监督算法可为 null"
+        },
+        "returns": "已完成 fit 的估计器实例",
+        "throws": {
+         "IllegalArgumentException": "有监督算法的 targets 为 null"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "predict(Estimator, Matrix)",
+       "signature": "double[] predict(Estimator model, Matrix features)",
+       "params": [
+        {
+         "type": "Estimator",
+         "name": "model"
+        },
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "用已训练估计器输出预测值",
+        "body": [
+         "静态转发到 jsl.ml.JSL.predict，直接调用 model.predict(features)，不做额外的形状或状态校验。"
+        ],
+        "params": {
+         "model": "已训练好的估计器",
+         "features": "预测特征矩阵，列数需与训练时一致"
+        },
+        "returns": "每个样本一个预测值，顺序与输入行一致"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "crossValidate(jsl.ml.JSL.Algorithm, Matrix, double[], int, jsl.ml.JSL.Metric)",
+       "signature": "double crossValidate(jsl.ml.JSL.Algorithm algorithm, Matrix features, double[] targets, int folds, jsl.ml.JSL.Metric metric)",
+       "params": [
+        {
+         "type": "jsl.ml.JSL.Algorithm",
+         "name": "algorithm"
+        },
+        {
+         "type": "Matrix",
+         "name": "features"
+        },
+        {
+         "type": "double[]",
+         "name": "targets"
+        },
+        {
+         "type": "int",
+         "name": "folds"
+        },
+        {
+         "type": "jsl.ml.JSL.Metric",
+         "name": "metric"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回 K 折交叉验证的平均分数",
+        "body": [
+         "静态转发到 jsl.ml.JSL.crossValidate：按固定随机种子 42 打乱后切分，每折重新 fit 并在测试折上评估，最后对各折分数取算术平均。RMSE 取负值参与平均，因此所有指标都是越大越好。"
+        ],
+        "params": {
+         "algorithm": "算法枚举，必须是有监督任务",
+         "features": "特征矩阵",
+         "targets": "标签数组，长度须与特征行数一致",
+         "folds": "折数，合法区间为 [2, 特征行数]",
+         "metric": "评估指标：ACCURACY、MACRO_F1、R2 或 RMSE"
+        },
+        "returns": "各折指标的平均值；RMSE 已取负",
+        "throws": {
+         "IllegalArgumentException": "算法属于无监督任务，或 folds 超出 [2, 特征行数]"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "close()",
+       "signature": "void close()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "释放上下文及其全部张量与图",
+        "body": [
+         "销毁原生上下文并注销 Cleaner 回调。重复调用是幂等的：句柄置零后不再重复销毁，后续张量操作会抛出 IllegalStateException。"
+        ],
+        "notes": [
+         "关闭会等待正在执行的 JNI 调用结束，因为上下文使用读写锁保护生命周期。"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "SDK 统一入口：持有单个原生上下文，集中提供张量、模块、优化器与估计器工厂",
+      "body": [
+       "门面把「一个原生上下文 + 一套张量工厂」绑定为单一对象。所有由它创建的张量、模块与图句柄都归属同一个 NativeContext，因此反向传播、清空计算图与内存统计天然共享同一份状态，不存在跨上下文混用的问题。",
+       "实例内部维护一个 AtomicLong 种子计数器，初值为黄金比例常数 0x9E3779B97F4A7C15。randn、linear、conv2d 每次都从计数器取一个新种子，因此同一实例内的随机初始化序列可复现，且不同层不会拿到相同权重。",
+       "经典估计器相关的 fit、predict、crossValidate 是静态方法，仅转发到 jsl.ml.JSL，不读取实例上下文；同一套 API 因此同时覆盖 eager 张量编程与 sklearn 风格的估计器工作流。"
+      ],
+      "notes": [
+       "close() 会级联释放该上下文内的全部张量与图，关闭后任何张量操作都会快速失败而不是访问已释放内存。",
+       "创建过程需要原生库可用；加载失败时构造函数路径抛出 JSLRuntimeException，而非 UnsatisfiedLinkError。",
+       "种子计数器为 AtomicLong，并发调用不会取到重复种子，但调用顺序决定种子分配顺序。"
+      ],
+      "example": "try (JSL jsl = JSL.create(4)) {\n    Tensor x = jsl.randn(32, 8);\n    Tensor y = jsl.randn(32, 1);\n    Linear hidden = jsl.linear(8, 16);\n    Linear output = jsl.linear(16, 1);\n    AdamW optimizer = jsl.adamw(output.parameters(), 1e-3f);\n    Tensor loss = output.forward(hidden.forward(x).relu()).mse(y);\n    loss.backward();\n    optimizer.step();\n}",
+      "see": [
+       "jsl.nativebridge.NativeContext",
+       "jsl.torch.Tensor",
+       "jsl.torch.Graph",
+       "jsl.ml.JSL"
       ]
+     }
     },
     {
-      "name": "jsl.concurrent",
-      "intro": [
-        "jsl.concurrent 提供建立在虚拟线程之上的任务编排。虚拟线程的创建成本足够低，可以按请求分配一个，但 CPU 密集的原生内核仍需要按核数限流，因此该包把「限流执行」与「不限流执行」拆成两条入口。",
-        "InferenceEngine 用 Semaphore 约束并发的模型推理，同时用无许可的入口承载 I/O 等待型任务；结果列表始终按提交顺序返回，调用方无需自行重排。"
-      ],
-      "types": [
+     "qualified": "jsl.JSLExceptionCode",
+     "simple_qualified": "JSLExceptionCode",
+     "kind": "enum",
+     "modifiers": [
+      "public"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/JSLExceptionCode.java",
+     "line": 6,
+     "javadoc": "Standardized error codes returned across the JNI/native boundary.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "OK",
+       "signature": "OK(0,                      )",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "操作成功，状态码 0",
+        "body": [
+         "唯一的非负状态码，表示 JNI 调用正常返回，不携带失败语义。"
+        ]
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "INVALID_PARAMETER",
+       "signature": "INVALID_PARAMETER(-1,                                )",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "参数或实参非法，状态码 -1",
+        "body": [
+         "覆盖空引用、越界取值与非法超参数；fromStatus 把它映射为 JSLParameterException。"
+        ]
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "SHAPE_MISMATCH",
+       "signature": "SHAPE_MISMATCH(-2,                                  )",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "张量或矩阵形状不兼容，状态码 -2",
+        "body": [
+         "在形状推导或广播校验阶段由原生层返回，fromStatus 映射为 JSLShapeException。"
+        ]
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "UNKNOWN_HANDLE",
+       "signature": "UNKNOWN_HANDLE(-3,                                                    )",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "原生句柄未知、失效或已释放，状态码 -3",
+        "body": [
+         "通常意味着张量或上下文句柄被提前释放，或指针来自另一进程；映射时不细分子类，直接使用 JSLRuntimeException。"
+        ]
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "CONTEXT_CLOSED",
+       "signature": "CONTEXT_CLOSED(-4,                                           )",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "原生上下文为空或已关闭，状态码 -4",
+        "body": [
+         "门面关闭后继续调用张量操作会命中该状态；Java 层通常先抛出 IllegalStateException，只有原生侧检测才会带回此码。"
+        ]
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "GRAPH_ERROR",
+       "signature": "GRAPH_ERROR(-5,                                                   )",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "计算图拓扑或执行出错，状态码 -5",
+        "body": [
+         "涵盖环检测失败、节点缺失与反向传播过程中的图不一致。"
+        ]
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "NATIVE_PANIC",
+       "signature": "NATIVE_PANIC(-6,                                          )",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "在 JNI 边界捕获到原生 panic，状态码 -6",
+        "body": [
+         "Rust 侧的 panic 被捕获后转成该码，进程不会终止，但相关句柄状态可能已不可用。"
+        ]
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "OUT_OF_MEMORY",
+       "signature": "OUT_OF_MEMORY(-7,                                                    )",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "原生内存分配失败，状态码 -7",
+        "body": [
+         "覆盖堆外分配失败与超出可寻址上限两种情形；fromStatus 映射为 JSLMemoryException。"
+        ]
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "UNSUPPORTED_OPERATION",
+       "signature": "UNSUPPORTED_OPERATION(-8,                                        )",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "不支持的算子或配置，状态码 -8",
+        "body": [
+         "当请求的算子、数据类型或模块配置在当前原生构建中不存在时返回；fromStatus 映射为 JSLUnsupportedOperationException。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "code()",
+       "signature": "int code()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回枚举对应的整数状态码",
+        "returns": "0 表示成功，负值表示失败类别"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "description()",
+       "signature": "String description()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回与常量绑定的英文描述",
+        "returns": "构造枚举时写入的英文短句，可直接拼进异常消息"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fromCode(int)",
+       "signature": "JSLExceptionCode fromCode(int code)",
+       "params": [
         {
-          "qualified": "jsl.concurrent.InferenceEngine",
-          "simple_qualified": "InferenceEngine",
-          "kind": "class",
-          "modifiers": [
-            "public",
-            "final"
-          ],
-          "generic": "",
-          "extends": "",
-          "implements": [
-            "AutoCloseable"
-          ],
-          "file": "jsl/concurrent/InferenceEngine.java",
-          "line": 22,
-          "nested": [],
-          "doc": {
-            "summary": "虚拟线程扇出：带许可限流的批量推理与不限流的任务编排",
-            "body": [
-              "每个实例持有一个 virtual-thread-per-task 执行器与一组信号量许可。predict 为每个批次提交一个任务，任务先获取许可再调用模型的 predict，从而把并发的原生/Java 内核数量压在许可数以内。",
-              "runIo 与 runAll 不消耗许可，适用于等待外部 I/O 的任务：此时虚拟线程的优势在于避免每个请求占用一个平台线程，而不是提高算力。",
-              "两条路径共用同一套提交与收集逻辑，因此异常语义、结果顺序与关闭行为完全一致。"
-            ],
-            "notes": [
-              "结果列表严格按输入列表顺序返回，与任务完成顺序无关。",
-              "任一任务失败即抛出 IllegalStateException 并携带原始 cause，其余已提交任务不会被取消。",
-              "closed 标志是普通 boolean 字段，关闭与并发提交之间没有额外同步，不建议跨线程关闭。",
-              "close() 调用 ExecutorService.close()，会等待已提交任务结束。"
-            ],
-            "example": "Matrix train = Matrix.fromRows(new double[][]{{1.0, 2.0}, {3.0, 4.0}, {5.0, 7.0}});\nEstimator model = jsl.ml.JSL.fit(jsl.ml.JSL.Algorithm.RIDGE, train, new double[]{1.0, 2.0, 3.0});\ntry (InferenceEngine engine = new InferenceEngine(4)) {\n    List<double[]> out = engine.predict(model, List.of(train, train));\n    System.out.println(out.size());\n}",
-            "see": [
-              "jsl.ml.Estimator",
-              "jsl.core.Matrix"
-            ]
-          },
-          "members": [
-            {
-              "kind": "constructor",
-              "key": "InferenceEngine(int)",
-              "signature": "InferenceEngine(int parallelism)",
-              "params": [
-                {
-                  "type": "int",
-                  "name": "parallelism"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "按并行度创建推理引擎",
-                "body": [
-                  "parallelism 决定信号量许可总数，即同时执行的内核调用上限；执行器本身不设线程上限，每个任务各占一个虚拟线程。"
-                ],
-                "params": {
-                  "parallelism": "并发许可数，必须为正，通常取 CPU 核数"
-                },
-                "throws": {
-                  "IllegalArgumentException": "parallelism 小于等于 0"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "key": "predict(Estimator, List<Matrix>)",
-              "signature": "List<double[]> predict(Estimator model, List<Matrix> batches)",
-              "params": [
-                {
-                  "type": "Estimator",
-                  "name": "model"
-                },
-                {
-                  "type": "List<Matrix>",
-                  "name": "batches"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "并发预测多个独立批次",
-                "body": [
-                  "每个批次包装为一个任务，任务在调用 model.predict 前后成对获取与释放许可，释放放在 finally 中以保证异常路径不泄漏许可。批次之间必须相互独立，同一模型被并发读取。"
-                ],
-                "params": {
-                  "model": "已训练的估计器；其 predict 会被多个虚拟线程同时调用",
-                  "batches": "待预测批次列表，每个元素对应一个结果"
-                },
-                "returns": "与 batches 等长且同序的预测结果列表",
-                "throws": {
-                  "IllegalStateException": "引擎已关闭，或某个批次预测失败（cause 为原始异常）"
-                },
-                "notes": [
-                  "许可不足时任务阻塞等待，不会拒绝提交。"
-                ]
-              }
-            },
-            {
-              "kind": "method",
-              "key": "runIo(List<Callable<T>>)",
-              "signature": "<T> List<T> runIo(List<Callable<T>> tasks)",
-              "params": [
-                {
-                  "type": "List<Callable<T>>",
-                  "name": "tasks"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "不限流地并发执行 I/O 型任务",
-                "body": [
-                  "实现上直接委托 runAll，不获取信号量许可；适用于阻塞等待网络或磁盘的场景，任务数可以远大于核数。"
-                ],
-                "params": {
-                  "tasks": "待执行任务列表，每个任务一个虚拟线程"
-                },
-                "returns": "与 tasks 等长且同序的结果列表",
-                "throws": {
-                  "IllegalStateException": "引擎已关闭，或某个任务执行失败"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "key": "runAll(List<Callable<T>>)",
-              "signature": "<T> List<T> runAll(List<Callable<T>> tasks)",
-              "params": [
-                {
-                  "type": "List<Callable<T>>",
-                  "name": "tasks"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "提交全部任务并按提交顺序收集结果",
-                "body": [
-                  "先一次性提交所有任务，再按 futures 顺序逐个 get，因此返回顺序与输入顺序一致，但等待是串行的：前面的任务未完成时不会读取后面的结果。首个失败会立即中断收集。"
-                ],
-                "params": {
-                  "tasks": "待执行任务列表"
-                },
-                "returns": "与 tasks 等长且同序的结果列表",
-                "throws": {
-                  "IllegalStateException": "引擎已关闭；或任务抛出异常，消息为 \"Inference task failed\" 且 cause 为原始异常；或等待时被中断，此时中断标志已恢复"
-                }
-              }
-            },
-            {
-              "kind": "method",
-              "key": "close()",
-              "signature": "void close()",
-              "params": [],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "关闭执行器并等待任务结束",
-                "body": [
-                  "首次调用把 closed 置为 true 并关闭执行器，后续调用无副作用。关闭后提交任务会抛出 IllegalStateException。"
-                ],
-                "notes": [
-                  "ExecutorService.close() 会阻塞至已提交任务全部完成，长任务会延长关闭时间。"
-                ]
-              }
-            }
-          ]
+         "type": "int",
+         "name": "code"
         }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "按整数状态码查找枚举常量",
+        "body": [
+         "线性扫描全部常量并按 code() 比较，找不到时返回 INVALID_PARAMETER 而不抛异常，因此未知状态码会被归入参数错误。"
+        ],
+        "params": {
+         "code": "原生层返回的状态码，可为任意 int"
+        },
+        "returns": "匹配的常量；无匹配时为 INVALID_PARAMETER"
+       }
+      }
+     ],
+     "doc": {
+      "summary": "跨 JNI 边界传递的标准化错误码枚举",
+      "body": [
+       "原生内核在每次 JNI 调用后返回一个 int 状态码，Java 层用 fromCode 还原成枚举，再由 JSLRuntimeException.fromStatus 决定抛出哪个异常子类，因此两侧的失败分类始终对齐。",
+       "整数值 0 表示成功，负值表示失败类别；code() 暴露该整数，description() 暴露英文短句，后者用于调用方没有提供消息时的兜底文本。",
+       "枚举本身只做分类，不携带堆栈、句柄或形状信息，这些上下文由异常消息承担。"
+      ],
+      "notes": [
+       "fromCode 对未登记的码返回 INVALID_PARAMETER，未知负码与 -1 无法区分。",
+       "常量顺序即 values() 的顺序，序列化请使用 code() 而不是 ordinal()。"
+      ],
+      "example": "JSLExceptionCode code = JSLExceptionCode.fromCode(-2);\nif (code == JSLExceptionCode.SHAPE_MISMATCH) {\n    System.err.println(code.code() + \": \" + code.description());\n}",
+      "see": [
+       "jsl.JSLRuntimeException",
+       "jsl.JSLShapeException",
+       "jsl.JSLMemoryException"
       ]
+     }
+    },
+    {
+     "qualified": "jsl.JSLMemoryException",
+     "simple_qualified": "JSLMemoryException",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "JSLRuntimeException",
+     "implements": [],
+     "file": "jsl/JSLMemoryException.java",
+     "line": 6,
+     "javadoc": "Thrown when native or off-heap memory allocation fails or exceeds addressable bounds.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "constructor",
+       "key": "JSLMemoryException(String)",
+       "signature": "JSLMemoryException(String message)",
+       "params": [
+        {
+         "type": "String",
+         "name": "message"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以消息构造内存异常",
+        "body": [
+         "错误码固定为 OUT_OF_MEMORY，不接受外部指定。"
+        ],
+        "params": {
+         "message": "异常消息，允许为 null"
+        }
+       }
+      },
+      {
+       "kind": "constructor",
+       "key": "JSLMemoryException(String, Throwable)",
+       "signature": "JSLMemoryException(String message, Throwable cause)",
+       "params": [
+        {
+         "type": "String",
+         "name": "message"
+        },
+        {
+         "type": "Throwable",
+         "name": "cause"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以消息与原因构造内存异常",
+        "body": [
+         "错误码固定为 OUT_OF_MEMORY，cause 原样交给父类保存。"
+        ],
+        "params": {
+         "message": "异常消息，允许为 null",
+         "cause": "底层分配失败的原因，允许为 null"
+        }
+       }
+      }
+     ],
+     "doc": {
+      "summary": "原生或堆外内存分配失败时抛出的异常",
+      "body": [
+       "继承链为 JSLMemoryException → JSLRuntimeException → IllegalStateException，是异常层次的末级类型，修饰符为 final，因此不能继续扩展出更细的分类。",
+       "两个构造器都委托父类的带错误码构造，errorCode 固定为 OUT_OF_MEMORY(-7)，statusCode() 恒返回 -7；cause 用来保留原生侧的原始失败对象。",
+       "除直接构造外，JSLRuntimeException.fromStatus 在状态码为 -7 时也会选择该类型。"
+      ],
+      "notes": [
+       "SDK 不在此类型中做任何内存回收；捕获后应先释放占用的张量再重试。",
+       "可寻址上限超限与真实分配失败使用同一错误码，消息是唯一的区分依据。"
+      ],
+      "example": "try (JSL jsl = JSL.create(4)) {\n    jsl.zeros(4096, 4096);\n} catch (JSLMemoryException failure) {\n    System.err.println(failure.statusCode() + \" \" + failure.getMessage());\n}",
+      "see": [
+       "jsl.JSLRuntimeException",
+       "jsl.JSLExceptionCode"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.JSLParameterException",
+     "simple_qualified": "JSLParameterException",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "JSLRuntimeException",
+     "implements": [],
+     "file": "jsl/JSLParameterException.java",
+     "line": 6,
+     "javadoc": "Thrown when an invalid parameter, hyperparameter, or argument is supplied to a JSL operator or estimator.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "constructor",
+       "key": "JSLParameterException(String)",
+       "signature": "JSLParameterException(String message)",
+       "params": [
+        {
+         "type": "String",
+         "name": "message"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以消息构造参数异常",
+        "body": [
+         "错误码固定为 INVALID_PARAMETER，不接受外部指定。"
+        ],
+        "params": {
+         "message": "异常消息，允许为 null"
+        }
+       }
+      },
+      {
+       "kind": "constructor",
+       "key": "JSLParameterException(String, Throwable)",
+       "signature": "JSLParameterException(String message, Throwable cause)",
+       "params": [
+        {
+         "type": "String",
+         "name": "message"
+        },
+        {
+         "type": "Throwable",
+         "name": "cause"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以消息与原因构造参数异常",
+        "body": [
+         "错误码固定为 INVALID_PARAMETER，cause 原样交给父类保存。"
+        ],
+        "params": {
+         "message": "异常消息，允许为 null",
+         "cause": "底层原因，允许为 null"
+        }
+       }
+      }
+     ],
+     "doc": {
+      "summary": "算子或估计器收到非法参数时抛出的异常",
+      "body": [
+       "继承链为 JSLParameterException → JSLRuntimeException → IllegalStateException，final 修饰，errorCode 固定为 INVALID_PARAMETER(-1)，statusCode() 恒为 -1。",
+       "JSLRuntimeException.requireNonNull 在引用为 null 时抛出的正是该类型，消息形如 \"<name> must not be null\"；原生层返回 -1 时 fromStatus 也选择它。",
+       "它表达的是可编程的调用错误，与 JSLShapeException 的形状类错误、JSLMemoryException 的资源类错误并列。"
+      ],
+      "notes": [
+       "部分参数校验仍以 IllegalArgumentException 直接抛出，两者可能出现在同一调用路径上。",
+       "捕获该类型通常意味着调用方代码需要修正，而不是重试。"
+      ],
+      "example": "try {\n    JSLRuntimeException.requireNonNull(null, \"features\");\n} catch (JSLParameterException failure) {\n    System.err.println(failure.getMessage());\n}",
+      "see": [
+       "jsl.JSLRuntimeException",
+       "jsl.JSLShapeException"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.JSLRuntimeException",
+     "simple_qualified": "JSLRuntimeException",
+     "kind": "class",
+     "modifiers": [
+      "public"
+     ],
+     "generic": "",
+     "extends": "IllegalStateException",
+     "implements": [],
+     "file": "jsl/JSLRuntimeException.java",
+     "line": 12,
+     "javadoc": "Unified unchecked exception for the JSL SDK.\n\n<p>Native Rust/C++ panics, JNI shape rejections, memory errors, and invalid arguments are\ntranslated into this hierarchy. It extends {@link IllegalStateException} so existing code that\ncatches the JDK exception keeps working, while SDK users can inspect {@link #errorCode()} or\ncatch specific subclasses ({@link JSLParameterException}, {@link JSLShapeException},\n{@link JSLMemoryException}, {@link JSLUnsupportedOperationException}).</p>",
+     "nested": [],
+     "members": [
+      {
+       "kind": "constructor",
+       "key": "JSLRuntimeException(String)",
+       "signature": "JSLRuntimeException(String message)",
+       "params": [
+        {
+         "type": "String",
+         "name": "message"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以消息构造异常",
+        "params": {
+         "message": "异常消息，允许为 null"
+        }
+       }
+      },
+      {
+       "kind": "constructor",
+       "key": "JSLRuntimeException(JSLExceptionCode, String)",
+       "signature": "JSLRuntimeException(JSLExceptionCode errorCode, String message)",
+       "params": [
+        {
+         "type": "JSLExceptionCode",
+         "name": "errorCode"
+        },
+        {
+         "type": "String",
+         "name": "message"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以错误码与消息构造异常",
+        "body": [
+         "错误码为 null 时回落为 INVALID_PARAMETER，因此 errorCode() 永远不会返回 null。"
+        ],
+        "params": {
+         "errorCode": "失败分类；null 视为 INVALID_PARAMETER",
+         "message": "异常消息，允许为 null"
+        }
+       }
+      },
+      {
+       "kind": "constructor",
+       "key": "JSLRuntimeException(String, Throwable)",
+       "signature": "JSLRuntimeException(String message, Throwable cause)",
+       "params": [
+        {
+         "type": "String",
+         "name": "message"
+        },
+        {
+         "type": "Throwable",
+         "name": "cause"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以消息与原因构造异常",
+        "body": [
+         "用于在保留原始失败信息的前提下统一异常类型，例如把原生层返回的错误对象挂在 cause 上。"
+        ],
+        "params": {
+         "message": "异常消息，允许为 null",
+         "cause": "根因异常，允许为 null"
+        }
+       }
+      },
+      {
+       "kind": "constructor",
+       "key": "JSLRuntimeException(JSLExceptionCode, String, Throwable)",
+       "signature": "JSLRuntimeException(JSLExceptionCode errorCode, String message, Throwable cause)",
+       "params": [
+        {
+         "type": "JSLExceptionCode",
+         "name": "errorCode"
+        },
+        {
+         "type": "String",
+         "name": "message"
+        },
+        {
+         "type": "Throwable",
+         "name": "cause"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以错误码、消息与原因构造异常",
+        "body": [
+         "错误码为 null 时回落为 INVALID_PARAMETER；cause 原样传给 IllegalStateException。"
+        ],
+        "params": {
+         "errorCode": "失败分类；null 视为 INVALID_PARAMETER",
+         "message": "异常消息，允许为 null",
+         "cause": "根因异常，允许为 null"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "errorCode()",
+       "signature": "JSLExceptionCode errorCode()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回异常携带的错误码",
+        "returns": "构造时确定的枚举，永不为 null"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "statusCode()",
+       "signature": "int statusCode()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回错误码对应的整数状态",
+        "returns": "errorCode().code()；失败为负值，0 仅出现在 OK"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fromStatus(int, String)",
+       "signature": "JSLRuntimeException fromStatus(int status, String message)",
+       "params": [
+        {
+         "type": "int",
+         "name": "status"
+        },
+        {
+         "type": "String",
+         "name": "message"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "按原生状态码构造对应子类异常",
+        "body": [
+         "先用 JSLExceptionCode.fromCode 还原分类，再做分派：INVALID_PARAMETER 得到 JSLParameterException，SHAPE_MISMATCH 得到 JSLShapeException，OUT_OF_MEMORY 得到 JSLMemoryException，UNSUPPORTED_OPERATION 得到 JSLUnsupportedOperationException，其余（含 OK、UNKNOWN_HANDLE、CONTEXT_CLOSED、GRAPH_ERROR、NATIVE_PANIC）得到携带原码的 JSLRuntimeException。",
+         "message 为 null 或空白时，改用 \"<description> (code <status>)\" 作为消息；未登记的状态码会先被 fromCode 归为 INVALID_PARAMETER，随后按参数异常返回。"
+        ],
+        "params": {
+         "status": "原生层返回的整数状态码",
+         "message": "原生层附带的消息，可为 null 或空白"
+        },
+        "returns": "按状态码分类的异常实例，方法本身不抛出",
+        "notes": [
+         "返回的异常尚未抛出，调用方需要自行 throw。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "requireNonNull(T, String)",
+       "signature": "<T> T requireNonNull(T value, String name)",
+       "params": [
+        {
+         "type": "T",
+         "name": "value"
+        },
+        {
+         "type": "String",
+         "name": "name"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "校验参数非空并原样返回",
+        "body": [
+         "value 为 null 时抛出消息为 \"<name> must not be null\" 的异常，否则直接返回该值，便于写成内联表达式。"
+        ],
+        "params": {
+         "value": "待校验的引用",
+         "name": "参数名，会被拼进异常消息"
+        },
+        "returns": "非空的 value 本身",
+        "throws": {
+         "JSLRuntimeException": "value 为 null"
+        }
+       }
+      }
+     ],
+     "doc": {
+      "summary": "SDK 统一非受检异常：封装原生 panic、形状拒绝与空参数",
+      "body": [
+       "原生 Rust panic、JNI 层形状拒绝以及 null 参数都被翻译为该类型，调用方只需捕获一个 SDK 专属异常即可覆盖大多数失败场景。",
+       "继承 IllegalStateException 是为了兼容性：已有捕获 JDK 异常的代码无需修改，同时 SDK 用户可以精确区分 JSL 自身的失败与其它状态错误。",
+       "requireNonNull 是配套的校验工具，失败时把参数名拼进消息，避免出现无上下文的 NullPointerException。"
+      ],
+      "notes": [
+       "构造器不校验 message 与 cause，允许两者为 null，与父类行为一致。",
+       "形状不匹配等可编程错误仍由 IllegalArgumentException 表达，本类型不替代它。"
+      ],
+      "example": "try (JSL jsl = JSL.create()) {\n    jsl.activation(jsl.nn.Activation.NONE);\n} catch (JSLRuntimeException failure) {\n    System.err.println(failure.getMessage());\n}",
+      "see": [
+       "jsl.JSL",
+       "java.lang.IllegalStateException"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.JSLShapeException",
+     "simple_qualified": "JSLShapeException",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "JSLRuntimeException",
+     "implements": [],
+     "file": "jsl/JSLShapeException.java",
+     "line": 6,
+     "javadoc": "Thrown when tensor or matrix dimensions are incompatible for an operation.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "constructor",
+       "key": "JSLShapeException(String)",
+       "signature": "JSLShapeException(String message)",
+       "params": [
+        {
+         "type": "String",
+         "name": "message"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以消息构造形状异常",
+        "body": [
+         "错误码固定为 SHAPE_MISMATCH，不接受外部指定。"
+        ],
+        "params": {
+         "message": "异常消息，允许为 null"
+        }
+       }
+      },
+      {
+       "kind": "constructor",
+       "key": "JSLShapeException(String, Throwable)",
+       "signature": "JSLShapeException(String message, Throwable cause)",
+       "params": [
+        {
+         "type": "String",
+         "name": "message"
+        },
+        {
+         "type": "Throwable",
+         "name": "cause"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以消息与原因构造形状异常",
+        "body": [
+         "错误码固定为 SHAPE_MISMATCH，cause 原样交给父类保存。"
+        ],
+        "params": {
+         "message": "异常消息，允许为 null",
+         "cause": "底层原因，允许为 null"
+        }
+       }
+      }
+     ],
+     "doc": {
+      "summary": "张量或矩阵维度不兼容时抛出的异常",
+      "body": [
+       "继承链为 JSLShapeException → JSLRuntimeException → IllegalStateException，final 修饰，errorCode 固定为 SHAPE_MISMATCH(-2)，statusCode() 恒为 -2。",
+       "Java 层的多数形状校验发生在张量工厂与原生上下文之间，命中时直接抛 IllegalArgumentException；只有错误跨 JNI 边界带回 -2，或经 fromStatus 分派时才会得到本类型。",
+       "因此捕获它可以精准区分「形状不对」与「参数不对」「内存不足」三类失败。"
+      ],
+      "notes": [
+       "异常本身不携带期望形状与实际形状字段，具体维度信息只存在于消息文本中。",
+       "需要兼容既有代码时，捕获父类 JSLRuntimeException 或 IllegalStateException 同样有效。"
+      ],
+      "example": "try {\n    jsl.tensor(new float[]{1f, 2f, 3f}, 2, 2);\n} catch (IllegalArgumentException | JSLShapeException failure) {\n    System.err.println(failure.getMessage());\n}",
+      "see": [
+       "jsl.JSLRuntimeException",
+       "jsl.JSLExceptionCode"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.JSLUnsupportedOperationException",
+     "simple_qualified": "JSLUnsupportedOperationException",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "JSLRuntimeException",
+     "implements": [],
+     "file": "jsl/JSLUnsupportedOperationException.java",
+     "line": 6,
+     "javadoc": "Thrown when a requested operator, opcode, or model configuration is not supported.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "constructor",
+       "key": "JSLUnsupportedOperationException(String)",
+       "signature": "JSLUnsupportedOperationException(String message)",
+       "params": [
+        {
+         "type": "String",
+         "name": "message"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以消息构造不支持操作异常",
+        "body": [
+         "错误码固定为 UNSUPPORTED_OPERATION，不接受外部指定。"
+        ],
+        "params": {
+         "message": "异常消息，允许为 null"
+        }
+       }
+      },
+      {
+       "kind": "constructor",
+       "key": "JSLUnsupportedOperationException(String, Throwable)",
+       "signature": "JSLUnsupportedOperationException(String message, Throwable cause)",
+       "params": [
+        {
+         "type": "String",
+         "name": "message"
+        },
+        {
+         "type": "Throwable",
+         "name": "cause"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以消息与原因构造不支持操作异常",
+        "body": [
+         "错误码固定为 UNSUPPORTED_OPERATION，cause 原样交给父类保存。"
+        ],
+        "params": {
+         "message": "异常消息，允许为 null",
+         "cause": "底层原因，允许为 null"
+        }
+       }
+      }
+     ],
+     "doc": {
+      "summary": "请求的算子或配置不受支持时抛出的异常",
+      "body": [
+       "继承链为 JSLUnsupportedOperationException → JSLRuntimeException → IllegalStateException，final 修饰，errorCode 固定为 UNSUPPORTED_OPERATION(-8)，statusCode() 恒为 -8。",
+       "适用于算子、opcode 或模块配置在当前原生构建中不存在的情形，例如缺少某种后端实现；JSLRuntimeException.fromStatus 在收到 -8 时返回该类型。",
+       "与 JSLParameterException 的区别在于：参数取值本身可能合法，只是运行时不提供对应能力，重试通常无效。"
+      ],
+      "notes": [
+       "该类型不继承 java.lang.UnsupportedOperationException，唯一的共同祖先是 IllegalStateException。",
+       "降级路径需要调用方自行选择，SDK 不会自动替换为等价算子。"
+      ],
+      "example": "try (JSL jsl = JSL.create()) {\n    jsl.activation(jsl.nn.Activation.SOFTMAX);\n} catch (JSLRuntimeException failure) {\n    System.err.println(failure.statusCode());\n}",
+      "see": [
+       "jsl.JSLRuntimeException",
+       "jsl.JSLExceptionCode"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.JslMetrics",
+     "simple_qualified": "JslMetrics",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/JslMetrics.java",
+     "line": 23,
+     "javadoc": "Standardized observability and metrics registry for JSL (Phase 3.2).\n\n<p>Tracks operator execution counts, total/mean/p50/p95/p99 latency, throughput\n(elements/sec and ops/sec), and native/JVM memory footprint, while emitting\nJFR events ({@link OperatorExecutionEvent}, {@link NativeMemoryEvent}).",
+     "nested": [
+      "OperatorSummary",
+      "MemorySnapshot",
+      "MetricsSnapshot",
+      "OperatorTracker"
+     ],
+     "members": [
+      {
+       "kind": "method",
+       "key": "recordOperator(String, long, long, long)",
+       "signature": "void recordOperator(String operator, long durationNanos, long elements, long bytesProcessed)",
+       "params": [
+        {
+         "type": "String",
+         "name": "operator"
+        },
+        {
+         "type": "long",
+         "name": "durationNanos"
+        },
+        {
+         "type": "long",
+         "name": "elements"
+        },
+        {
+         "type": "long",
+         "name": "bytesProcessed"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "登记一次算子调用的耗时与数据量",
+        "body": [
+         "按算子名找到或新建计数器，累加调用次数、总耗时、元素数与字节数，更新最大值，并把耗时写入该算子的 256 槽环形缓冲。耗时小于 1 纳秒时按 1 纳秒记录，元素数与字节数为负时按 0 累加。",
+         "若 JFR 事件 OperatorExecutionEvent 已启用，同时提交一条同名事件。"
+        ],
+        "params": {
+         "operator": "算子名，作为聚合键；null 或空白时整次调用被忽略",
+         "durationNanos": "本次耗时，单位纳秒",
+         "elements": "本次处理的元素数，负值按 0 计",
+         "bytesProcessed": "本次搬运的字节数，负值按 0 计"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "recordOperator(String, String, long, long, long)",
+       "signature": "void recordOperator(String operator, String backend, long durationNanos, long elements, long bytesProcessed)",
+       "params": [
+        {
+         "type": "String",
+         "name": "operator"
+        },
+        {
+         "type": "String",
+         "name": "backend"
+        },
+        {
+         "type": "long",
+         "name": "durationNanos"
+        },
+        {
+         "type": "long",
+         "name": "elements"
+        },
+        {
+         "type": "long",
+         "name": "bytesProcessed"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "带后端标签登记算子调用",
+        "body": [
+         "直接转发到四参版本，backend 仅作为调用方标注，不进入聚合键，也不会出现在快照或导出结果中。"
+        ],
+        "params": {
+         "operator": "算子名，作为聚合键；null 或空白时整次调用被忽略",
+         "backend": "后端标签，当前实现未使用",
+         "durationNanos": "本次耗时，单位纳秒",
+         "elements": "本次处理的元素数，负值按 0 计",
+         "bytesProcessed": "本次搬运的字节数，负值按 0 计"
+        },
+        "notes": [
+         "同名算子即使来自不同后端也会汇总到同一条统计。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "time(String, long, long, Supplier<T>)",
+       "signature": "<T> T time(String operator, long elements, long bytesProcessed, Supplier<T> block)",
+       "params": [
+        {
+         "type": "String",
+         "name": "operator"
+        },
+        {
+         "type": "long",
+         "name": "elements"
+        },
+        {
+         "type": "long",
+         "name": "bytesProcessed"
+        },
+        {
+         "type": "Supplier<T>",
+         "name": "block"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "计时执行代码块并登记算子指标",
+        "body": [
+         "以 System.nanoTime 取前后时间差，在 finally 中登记，因此 block 抛出异常时同样会记录一次调用，随后异常继续向外传播。"
+        ],
+        "params": {
+         "operator": "算子名，作为聚合键",
+         "elements": "代码块处理的元素数",
+         "bytesProcessed": "代码块搬运的字节数",
+         "block": "被计时的代码块，不能为 null"
+        },
+        "returns": "block.get() 的返回值，原样透传"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "snapshot(NativeContext)",
+       "signature": "MetricsSnapshot snapshot(NativeContext ctx)",
+       "params": [
+        {
+         "type": "NativeContext",
+         "name": "ctx"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "采集算子与指定上下文的内存快照",
+        "body": [
+         "遍历全部登记项生成 OperatorSummary，按登记表迭代顺序放入 LinkedHashMap。内存部分：ctx 非空且处于打开状态时读取 stats() 的存活张量数、存活字节数与图节点数；ctx 为 null、已关闭或读取抛异常时这三项记为 0。JVM 侧取 Runtime 的已用堆（totalMemory − freeMemory）与最大堆。",
+         "若 JFR 事件 NativeMemoryEvent 已启用，同时提交一条包含原生三项计数与堆用量的记录。"
+        ],
+        "params": {
+         "ctx": "要读取原生内存统计的上下文，可为 null"
+        },
+        "returns": "算子摘要映射与内存快照组成的新实例",
+        "notes": [
+         "快照只读取计数，不清零；需要重新累计时调用 reset()。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "snapshot()",
+       "signature": "MetricsSnapshot snapshot()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "只采集算子统计的快照",
+        "body": [
+         "等价于 snapshot(null)：原生三项计数固定为 0，只保留 JVM 堆用量与算子摘要。"
+        ],
+        "returns": "不含原生内存统计的 MetricsSnapshot"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "reset()",
+       "signature": "void reset()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "清空全部算子统计",
+        "body": [
+         "直接清空静态登记表，之后各算子从零开始累计；已生成的历史快照不受影响。"
+        ],
+        "notes": [
+         "清空是全局的，会同时抹掉其它门面实例记录的数据。"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "算子调用次数、延迟分位与内存占用的全局指标登记处",
+      "body": [
+       "指标按算子名聚合。recordOperator 记录单次调用的纳秒耗时、元素数与字节数，time 则包住一段 Supplier 自动计时；每个算子维护调用计数、总耗时、总元素与总字节、最大值，以及 256 槽环形缓冲保存最近若干次耗时。均值按全部调用折算，p50/p95/p99 只基于缓冲内样本排序后取下标 floor(q × (n − 1))，单位为微秒；两个吞吐率都按累计耗时折算，分别为元素数与调用次数除以总秒数。",
+       "登记表是进程级静态 ConcurrentHashMap，跨上下文、跨门面共享；只有快照的 memory 部分与具体上下文绑定。recordOperator 在 operator 为 null 或空白时直接返回，不做任何登记，因此空名字的调用不会污染统计。",
+       "MetricsSnapshot 提供两种导出：toJson 输出 memory 与 operators 两段结构，toPrometheus 输出三个 gauge 以及按算子打标的累计值与时序行。采集本身没有全局开关，是否记录取决于调用方是否显式调用记录方法；JFR 事件则由 shouldCommit() 决定是否提交。"
+      ],
+      "notes": [
+       "缓冲未填满时，分位统计只覆盖已记录的那部分调用，样本数不等于 calls。",
+       "耗时按最小 1 纳秒记录，零耗时调用也会计入均值并拉低平均延迟。",
+       "启用 JFR 时每次记录提交 OperatorExecutionEvent，快照提交 NativeMemoryEvent；未启用时这两类事件被跳过，指标本身照常累计。",
+       "所有方法都是静态方法，且构造器为私有，不能创建实例。"
+      ],
+      "example": "try (JSL jsl = JSL.create(4)) {\n    Tensor y = JslMetrics.time(\"randn\", 16, 64, () -> jsl.randn(4, 4));\n    JslMetrics.MetricsSnapshot snapshot = jsl.metrics();\n    System.out.println(snapshot.toJson());\n    System.out.println(snapshot.toPrometheus());\n}",
+      "see": [
+       "jsl.JSL",
+       "jsl.JslMetrics.MetricsSnapshot",
+       "jsl.torch.OperatorExecutionEvent",
+       "jsl.torch.NativeMemoryEvent"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.JslMetrics.MemorySnapshot",
+     "simple_qualified": "JslMetrics.MemorySnapshot",
+     "kind": "record",
+     "modifiers": [
+      "public"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/JslMetrics.java",
+     "line": 45,
+     "javadoc": "Snapshot of native + JVM memory telemetry.",
+     "nested": [],
+     "members": [],
+     "doc": {
+      "summary": "原生内存与 JVM 堆的即时占用快照",
+      "body": [
+       "记录五个计数字段：liveNativeTensors、liveNativeBytes、graphNodes 来自上下文 stats()，即存活张量数、存活字节数与计算图节点数；jvmHeapUsedBytes 与 jvmHeapMaxBytes 来自 Runtime，即已用堆与最大堆。",
+       "上下文缺失、已关闭或统计读取失败时，前三项固定为 0，后两项仍反映当前 JVM 状态。"
+      ],
+      "notes": [
+       "liveNativeBytes 是堆外分配量，与 jvmHeapUsedBytes 不重叠，两者相加才是进程的总内存压力。",
+       "最大堆可能为 Long.MAX_VALUE，表示未设置上限。"
+      ],
+      "example": "JslMetrics.MemorySnapshot memory = JslMetrics.snapshot(jsl.context()).memory();\nSystem.out.println(memory.liveNativeBytes() + \" off-heap / \" + memory.jvmHeapUsedBytes() + \" heap\");",
+      "see": [
+       "jsl.JslMetrics",
+       "jsl.JslMetrics.MetricsSnapshot",
+       "jsl.nativebridge.NativeContext"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.JslMetrics.MetricsSnapshot",
+     "simple_qualified": "JslMetrics.MetricsSnapshot",
+     "kind": "record",
+     "modifiers": [
+      "public"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/JslMetrics.java",
+     "line": 53,
+     "javadoc": "Full observability snapshot across all operators and memory pools.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "constructor",
+       "key": "MetricsSnapshot(Map<String, OperatorSummary>, MemorySnapshot)",
+       "signature": "MetricsSnapshot(Map<String, OperatorSummary> operators, MemorySnapshot memory)",
+       "params": [
+        {
+         "type": "Map<String, OperatorSummary>",
+         "name": "operators"
+        },
+        {
+         "type": "MemorySnapshot",
+         "name": "memory"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以算子摘要表与内存快照构造",
+        "body": [
+         "显式声明的紧凑构造器把 operators 复制进不可变的 LinkedHashMap，保留传入顺序，因此后续对原映射的修改不会影响快照；memory 直接持有。"
+        ],
+        "params": {
+         "operators": "算子名到摘要的映射，构造时复制为不可变有序表；不能为 null",
+         "memory": "内存与计算图统计，原样持有；不能为 null"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "toJson()",
+       "signature": "String toJson()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "导出两段式 JSON 文本",
+        "body": [
+         "顶层固定为 memory 与 operators 两个对象。memory 下是五个计数字段；operators 下每个算子名对应 calls、elements、bytes、totalMs、meanUs、p50Us、p95Us、p99Us、maxUs、opsPerSec、elementsPerSec 十一个字段。",
+         "浮点统一按 Locale.US 格式化：毫秒 3 位小数、微秒 2 位、吞吐 1 位，因此小数点不会随系统区域设置变化。"
+        ],
+        "returns": "缩进两空格的多行 JSON 字符串",
+        "notes": [
+         "算子名直接作为键拼接，未做转义；含引号或反斜杠的名字会破坏 JSON 结构。",
+         "空算子表输出为空的 operators 对象，仍是合法 JSON。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "toPrometheus()",
+       "signature": "String toPrometheus()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "导出 Prometheus 文本格式指标",
+        "body": [
+         "先输出三个 gauge 并附 HELP 与 TYPE 注释：jsl_native_live_tensors、jsl_native_live_bytes、jsl_jvm_heap_used_bytes。随后为每个算子输出 jsl_operator_calls_total，以及带 quantile 标签（0.5、0.95、0.99）的 jsl_operator_latency_micros 和 jsl_operator_throughput_elements_per_sec。"
+        ],
+        "returns": "以换行分隔的文本，行数随算子数量线性增长",
+        "notes": [
+         "graphNodes 与 JVM 最大堆没有对应的指标行，需要时请读取 toJson。",
+         "所有时序都带 op 标签，标签值同样未做转义。"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "全部算子与单个上下文内存的一次性观测快照",
+      "body": [
+       "由 JslMetrics.snapshot 生成，保存算子名到 OperatorSummary 的不可变有序映射，以及一份 MemorySnapshot。构造时复制映射，因此快照是时点值，不会随后续登记变化。",
+       "两种导出覆盖不同消费场景：toJson 适合日志与人工排查，字段名紧凑且包含全部十一项统计；toPrometheus 适合抓取，使用 gauge 与带标签的时序行，可直接拼进 /metrics 响应。",
+       "快照不持有上下文引用，也不负责释放资源，可以在关闭门面之后继续读取。"
+      ],
+      "notes": [
+       "数值格式化固定使用 Locale.US，跨区域部署时输出稳定。",
+       "算子名为不可信输入时，导出前应自行过滤，否则可能产生非法 JSON 或指标行。"
+      ],
+      "example": "JslMetrics.MetricsSnapshot snapshot = JslMetrics.snapshot(jsl.context());\nString json = snapshot.toJson();\nString metrics = snapshot.toPrometheus();",
+      "see": [
+       "jsl.JslMetrics",
+       "jsl.JslMetrics.OperatorSummary",
+       "jsl.JslMetrics.MemorySnapshot"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.JslMetrics.OperatorSummary",
+     "simple_qualified": "JslMetrics.OperatorSummary",
+     "kind": "record",
+     "modifiers": [
+      "public"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/JslMetrics.java",
+     "line": 30,
+     "javadoc": "Snapshot of metrics for a single operator category.",
+     "nested": [],
+     "members": [],
+     "doc": {
+      "summary": "单个算子的聚合统计快照",
+      "body": [
+       "包含算子名 operator、调用次数 calls、累计元素数 totalElements、累计字节数 totalBytes，以及以毫秒计的 totalMillis、以微秒计的 meanMicros、p50Micros、p95Micros、p99Micros、maxMicros。",
+       "最后两个字段是以累计耗时折算的吞吐率：throughputElementsPerSec 为元素数除以总秒数，throughputOpsPerSec 为调用次数除以总秒数；总耗时为 0 时按 1 纳秒下限处理，避免除零。",
+       "分位值只来自 256 槽环形缓冲内最近记录的那部分样本，未填满时样本数等于 calls。"
+      ],
+      "notes": [
+       "totalMillis 与微秒字段单位不同，混用时需要先换算。",
+       "样本被环形缓冲覆盖后，分位统计只反映最近 256 次调用，而 calls 与均值仍是全量累计。"
+      ],
+      "example": "JslMetrics.OperatorSummary summary = JslMetrics.snapshot(jsl.context()).operators().get(\"randn\");\nif (summary != null) {\n    System.out.println(summary.calls() + \" calls, p95 = \" + summary.p95Micros() + \" us\");\n}",
+      "see": [
+       "jsl.JslMetrics",
+       "jsl.JslMetrics.MetricsSnapshot"
+      ]
+     }
     }
-  ]
+   ]
+  }
+ ]
 }

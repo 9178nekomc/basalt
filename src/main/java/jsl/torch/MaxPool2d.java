@@ -30,4 +30,20 @@ public final class MaxPool2d extends Module<BCHW, BCHW> {
     public List<Tensor> parameters() {
         return List.of();
     }
+
+    public int kernelHeight() {
+        return kernelHeight;
+    }
+
+    public int kernelWidth() {
+        return kernelWidth;
+    }
+
+    public int strideHeight() {
+        return strideHeight;
+    }
+
+    public int strideWidth() {
+        return strideWidth;
+    }
 }

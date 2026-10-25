@@ -3,7 +3,9 @@ package jsl.ml;
 import jsl.core.Matrix;
 import jsl.core.ModelFormatException;
 import jsl.core.ModelReader;
+import jsl.core.ModelKind;
 import jsl.core.ModelWriter;
+import jsl.core.Persistable;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
@@ -18,7 +20,7 @@ import java.util.TreeMap;
  * Random forests reuse one global {@link BinnedFeatures} and call {@link #fitBinned} with bootstrap
  * row indices, which removes the per-tree binning and matrix copy of the naive implementation.</p>
  */
-public final class DecisionTree implements Estimator {
+public final class DecisionTree implements Estimator, Persistable {
     private final int maxDepth;
     private final int minSamplesSplit;
     private final int minSamplesLeaf;
@@ -409,6 +411,20 @@ public final class DecisionTree implements Estimator {
     }
 
     /** Writes the fitted topology; the estimator configuration is reconstructed by the reader. */
+    @Override
+    public ModelKind kind() {
+        return ModelKind.DECISION_TREE;
+    }
+
+    @Override
+    public void write(ModelWriter writer) {
+        writeState(writer);
+    }
+
+    public static DecisionTree read(ModelReader reader) {
+        return readState(reader);
+    }
+
     public void writeState(ModelWriter writer) {
         if (model == null) {
             throw new IllegalStateException("DecisionTree must be fitted before serialization");

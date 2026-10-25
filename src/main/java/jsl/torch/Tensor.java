@@ -284,22 +284,153 @@ public final class Tensor implements AutoCloseable {
 
     public Tensor conv2d(Tensor weight, int kernelHeight, int kernelWidth, int strideHeight,
                          int strideWidth, int paddingHeight, int paddingWidth) {
+        return conv2d(weight, kernelHeight, kernelWidth, strideHeight, strideWidth,
+                paddingHeight, paddingWidth, 1, 1, 1);
+    }
+
+    public Tensor conv2d(Tensor weight, int kernelHeight, int kernelWidth, int strideHeight,
+                         int strideWidth, int paddingHeight, int paddingWidth,
+                         int dilationHeight, int dilationWidth, int groups) {
         int[] input = shape();
         int[] kernel = weight.shape();
-        if (input.length != 4 || kernel.length != 4 || input[1] != kernel[1]) {
-            throw new IllegalArgumentException("conv2d expects NCHW input and OIHW weight");
+        if (groups <= 0) {
+            throw new IllegalArgumentException("groups must be positive");
         }
-        int outputHeight = (input[2] + 2 * paddingHeight - kernelHeight) / strideHeight + 1;
-        int outputWidth = (input[3] + 2 * paddingWidth - kernelWidth) / strideWidth + 1;
+        if (input.length != 4 || kernel.length != 4
+                || input[1] % groups != 0 || kernel[0] % groups != 0
+                || input[1] / groups != kernel[1]) {
+            throw new IllegalArgumentException("conv2d expects NCHW input and [O, I/groups, kH, kW] weight");
+        }
+        int effKh = dilationHeight * (kernelHeight - 1) + 1;
+        int effKw = dilationWidth * (kernelWidth - 1) + 1;
+        int outputHeight = (input[2] + 2 * paddingHeight - effKh) / strideHeight + 1;
+        int outputWidth = (input[3] + 2 * paddingWidth - effKw) / strideWidth + 1;
         if (outputHeight <= 0 || outputWidth <= 0) {
             throw new IllegalArgumentException("conv2d output would be empty");
         }
         Tensor output = zeros(context, input[0], kernel[0], outputHeight, outputWidth);
         CommandQueueBuilder queue = new CommandQueueBuilder(context);
         queue.conv2d(handle, weight.handle, output.handle, kernelHeight, kernelWidth,
-                strideHeight, strideWidth, paddingHeight, paddingWidth);
+                strideHeight, strideWidth, paddingHeight, paddingWidth,
+                dilationHeight, dilationWidth, groups);
         queue.executeAndClear();
         return output;
+    }
+
+    public Tensor groupNorm(Tensor gamma, Tensor beta, int groups, float epsilon) {
+        int[] shape = shape();
+        if (shape.length < 2 || shape[1] % groups != 0) {
+            throw new IllegalArgumentException("groupNorm expects [N, C, ...] with C divisible by groups");
+        }
+        if (gamma.size() != shape[1] || beta.size() != shape[1]) {
+            throw new IllegalArgumentException("groupNorm gamma/beta must match channel dimension " + shape[1]);
+        }
+        Tensor output = zeros(context, shape);
+        CommandQueueBuilder queue = new CommandQueueBuilder(context);
+        queue.groupNorm(handle, gamma.handle, beta.handle, output.handle, groups, epsilon);
+        queue.executeAndClear();
+        return output;
+    }
+
+    public Tensor leakyRelu(float negativeSlope) {
+        Tensor pos = relu();
+        Tensor negInput = mul(scalar(context, -1.0f)).relu().mul(scalar(context, -negativeSlope));
+        return pos.add(negInput);
+    }
+
+    public Tensor elu(float alpha) {
+        // Differentiable approximation via composition or exact elementwise for forward + backward
+        Tensor pos = relu();
+        Tensor neg = sub(pos); // min(0, x)
+        // Use 2nd-order Padé / exact exp for negative branch or silu/tanh composition
+        // Even better: for x <= 0, neg is non-positive; we can compute exact forward and use autograd!
+        // Note: in our autodiff graph, we can express L1/SmoothL1/LeakyReLU/Softplus directly via graph ops
+        // or exact differentiable masks.
+        float[] x = data();
+        float[] mask = new float[x.length];
+        float[] offset = new float[x.length];
+        for (int i = 0; i < x.length; i++) {
+            if (x[i] > 0.0f) {
+                mask[i] = 1.0f;
+                offset[i] = 0.0f;
+            } else {
+                float ex = (float) Math.exp(x[i]);
+                mask[i] = alpha * ex;
+                offset[i] = alpha * (ex - 1.0f) - mask[i] * x[i];
+            }
+        }
+        return mul(of(context, mask, shape())).add(of(context, offset, shape()));
+    }
+
+    public Tensor l1Loss(Tensor target) {
+        if (!Arrays.equals(shape(), target.shape())) {
+            throw new IllegalArgumentException("L1Loss expects equal shapes");
+        }
+        Tensor diff = sub(target);
+        Tensor absDiff = diff.relu().add(diff.mul(scalar(context, -1.0f)).relu());
+        float invN = 1.0f / size();
+        Tensor ones = of(context, fillArray(size(), invN), size(), 1);
+        return absDiff.reshape(1, size()).matMul(ones).reshape(1);
+    }
+
+    public Tensor smoothL1Loss(Tensor target, float beta) {
+        if (!Arrays.equals(shape(), target.shape())) {
+            throw new IllegalArgumentException("SmoothL1Loss expects equal shapes");
+        }
+        if (beta <= 0.0f) {
+            return l1Loss(target);
+        }
+        Tensor diff = sub(target);
+        float[] d = diff.data();
+        int n = d.length;
+        float[] quadMask = new float[n];
+        float[] linSign = new float[n];
+        float[] linOffset = new float[n];
+        for (int i = 0; i < n; i++) {
+            float abs = Math.abs(d[i]);
+            if (abs < beta) {
+                quadMask[i] = 1.0f / (float) Math.sqrt(2.0f * beta);
+            } else {
+                linSign[i] = d[i] >= 0.0f ? 1.0f : -1.0f;
+                linOffset[i] = -0.5f * beta;
+            }
+        }
+        Tensor quadPart = diff.mul(of(context, quadMask, shape()));
+        Tensor quadSq = quadPart.mul(quadPart);
+        Tensor linPart = diff.mul(of(context, linSign, shape())).add(of(context, linOffset, shape()));
+        Tensor elem = quadSq.add(linPart);
+        Tensor ones = of(context, fillArray(n, 1.0f / n), n, 1);
+        return elem.reshape(1, n).matMul(ones).reshape(1);
+    }
+
+    public Tensor bceWithLogitsLoss(Tensor target) {
+        if (!Arrays.equals(shape(), target.shape())) {
+            throw new IllegalArgumentException("BCEWithLogitsLoss expects equal shapes");
+        }
+        Tensor probs = sigmoid();
+        // Numerically stable BCE with exact gradient (sigmoid(x) - y) / N
+        float[] x = data();
+        float[] y = target.data();
+        float[] p = probs.data();
+        int n = x.length;
+        double sumLoss = 0.0;
+        float[] gradScale = new float[n];
+        for (int i = 0; i < n; i++) {
+            double max0 = Math.max(x[i], 0.0);
+            sumLoss += max0 - x[i] * y[i] + Math.log1p(Math.exp(-Math.abs(x[i])));
+            gradScale[i] = (p[i] - y[i]) / n;
+        }
+        float meanLoss = (float) (sumLoss / n);
+        // Attach exact first-order gradient to this logit tensor via linear surrogate + constant offset
+        Tensor linearTerm = reshape(1, n).matMul(of(context, gradScale, n, 1)).reshape(1);
+        float linearVal = linearTerm.data()[0];
+        return linearTerm.add(scalar(context, meanLoss - linearVal));
+    }
+
+    private static float[] fillArray(int length, float value) {
+        float[] arr = new float[length];
+        Arrays.fill(arr, value);
+        return arr;
     }
 
     public Tensor maxPool2d(int kernelHeight, int kernelWidth, int strideHeight,

@@ -1,0 +1,2395 @@
+{
+ "group": "g19",
+ "title": "eager 张量与模块（1/4）",
+ "modules": [
+  {
+   "name": "jsl.torch",
+   "types": [
+    {
+     "qualified": "jsl.torch.Activation",
+     "simple_qualified": "Activation",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "<L extends Layout>",
+     "extends": "Module<L, L>",
+     "implements": [],
+     "file": "jsl/torch/Activation.java",
+     "line": 7,
+     "javadoc": "Element-wise activation with layout-preserving type.",
+     "nested": [
+      "Kind"
+     ],
+     "members": [
+      {
+       "kind": "constructor",
+       "key": "Activation(Kind)",
+       "signature": "Activation(Kind kind)",
+       "params": [
+        {
+         "type": "Kind",
+         "name": "kind"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "按激活种类构造无参模块",
+        "params": {
+         "kind": "激活种类，取值来自 Activation.Kind；不做 null 校验"
+        },
+        "notes": [
+         "构造器只保存枚举值，不分配任何张量。"
+        ]
+       }
+      },
+      {
+       "kind": "constructor",
+       "key": "Activation(Kind, float)",
+       "signature": "Activation(Kind kind, float alpha)",
+       "params": [
+        {
+         "type": "Kind",
+         "name": "kind"
+        },
+        {
+         "type": "float",
+         "name": "alpha"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "按激活种类与附加系数构造",
+        "params": {
+         "kind": "激活种类，取值来自 Activation.Kind；不做 null 校验",
+         "alpha": "附加系数：LEAKY_RELU 的负半轴斜率、ELU 的负半轴饱和值；其余种类不读取该值，也不校验范围"
+        },
+        "notes": [
+         "单参构造器按 kind 取默认值：LEAKY_RELU 为 0.01f，其余种类为 1.0f。",
+         "构造器只保存枚举值与系数，不分配任何张量。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "kind()",
+       "signature": "Kind kind()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回激活种类",
+        "returns": "构造时传入的 Kind 枚举值"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "alpha()",
+       "signature": "float alpha()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回附加系数",
+        "returns": "构造时传入的 alpha；RELU、GELU、SILU、SIGMOID、TANH 分支不使用该值"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "forward(Tensor)",
+       "signature": "Tensor forward(Tensor input)",
+       "params": [
+        {
+         "type": "Tensor",
+         "name": "input"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "对输入逐元素应用激活",
+        "params": {
+         "input": "任意秩、任意布局的张量；形状与元素个数不被改变"
+        },
+        "returns": "与 input 同形状的新张量",
+        "notes": [
+         "训练与推理行为相同，切换 train()/eval() 不影响结果。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "parameters()",
+       "signature": "List<Tensor> parameters()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回空参数列表",
+        "returns": "恒为空的不可变列表"
+       }
+      }
+     ],
+     "doc": {
+      "summary": "逐元素激活函数模块，保持输入布局",
+      "body": [
+       "forward 按 kind 分派到 Tensor 上的一元算子：RELU、GELU、SILU、SIGMOID、TANH 直接转调同名方法，LEAKY_RELU 与 ELU 额外把 alpha 传给对应算子。输出与输入同形状，不做任何维度变换，也不改变布局标签。",
+       "模块不持有参数，parameters() 恒返回空列表，因此不会进入优化器的参数集；类型参数 L 的作用是让激活在 Sequential 中保持前后布局一致。"
+      ],
+      "notes": [
+       "kind 不做 null 校验，构造时传入 null 会在 forward 的 switch 分派处抛 NullPointerException。",
+       "激活由原生内核逐元素计算，输出是新分配的张量，梯度按元素导数回传。"
+      ],
+      "see": [
+       "jsl.torch.Module",
+       "jsl.torch.Sequential",
+       "jsl.torch.Activation.Kind"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.torch.AdamW",
+     "simple_qualified": "AdamW",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "Optimizer",
+     "implements": [],
+     "file": "jsl/torch/AdamW.java",
+     "line": 6,
+     "javadoc": "Adam with decoupled weight decay and bias correction.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "constructor",
+       "key": "AdamW(List<Tensor>, float)",
+       "signature": "AdamW(List<Tensor> parameters, float learningRate)",
+       "params": [
+        {
+         "type": "List<Tensor>",
+         "name": "parameters"
+        },
+        {
+         "type": "float",
+         "name": "learningRate"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以默认超参数构造 AdamW",
+        "body": [
+         "等价于 beta1=0.9、beta2=0.999、epsilon=1e-8、weightDecay=0.01 的完整构造器。"
+        ],
+        "params": {
+         "parameters": "待优化的可训练张量列表，必须非空",
+         "learningRate": "步长，必须有限且大于 0"
+        },
+        "throws": {
+         "IllegalArgumentException": "参数列表为空，或学习率非正、非有限"
+        },
+        "notes": [
+         "列表在构造时被复制，之后修改原列表不影响优化器。"
+        ]
+       }
+      },
+      {
+       "kind": "constructor",
+       "key": "AdamW(List<Tensor>, float, float, float, float, float)",
+       "signature": "AdamW(List<Tensor> parameters, float learningRate, float beta1, float beta2, float epsilon, float weightDecay)",
+       "params": [
+        {
+         "type": "List<Tensor>",
+         "name": "parameters"
+        },
+        {
+         "type": "float",
+         "name": "learningRate"
+        },
+        {
+         "type": "float",
+         "name": "beta1"
+        },
+        {
+         "type": "float",
+         "name": "beta2"
+        },
+        {
+         "type": "float",
+         "name": "epsilon"
+        },
+        {
+         "type": "float",
+         "name": "weightDecay"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以显式超参数构造 AdamW",
+        "params": {
+         "parameters": "待优化的可训练张量列表，必须非空",
+         "learningRate": "步长，必须有限且大于 0",
+         "beta1": "一阶矩的指数衰减率",
+         "beta2": "二阶矩的指数衰减率",
+         "epsilon": "分母稳定项，避免二阶矩为零时除零",
+         "weightDecay": "解耦权重衰减系数，直接加在参数上"
+        },
+        "throws": {
+         "IllegalArgumentException": "参数列表为空，或学习率非正、非有限"
+        },
+        "notes": [
+         "beta1、beta2、epsilon、weightDecay 不做取值校验。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "step()",
+       "signature": "void step()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "执行一步更新，并把内部步数加一",
+        "body": [
+         "先自增步数计数器，再对每个参数调用 Tensor.adam，用同一计数器做偏差校正。"
+        ],
+        "notes": [
+         "不清零梯度，也不清计算图；梯度为零时更新量为零但仍会推进计数器。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "stepCount()",
+       "signature": "long stepCount()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回已执行的更新步数",
+        "returns": "从 0 开始、每次 step() 加一的计数"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "setStepCount(long)",
+       "signature": "void setStepCount(long step)",
+       "params": [
+        {
+         "type": "long",
+         "name": "step"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "覆盖内部步数计数器",
+        "params": {
+         "step": "新的步数，必须大于等于 0；用于从检查点续训时对齐偏差校正的幂次"
+        },
+        "throws": {
+         "IllegalArgumentException": "step 为负"
+        },
+        "notes": [
+         "只改计数器，不触碰参数，也不重置原生上下文里的一阶、二阶矩缓冲。",
+         "恢复后首次 step() 会先自增，再以新的计数器计算 1 - beta^t。"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "解耦权重衰减与偏差校正的 Adam 优化器",
+      "body": [
+       "每步执行 p -= lr * (m̂ / (√v̂ + ε) + wd * p)：m̂、v̂ 是经偏差校正的一阶与二阶矩估计，权重衰减以加性项直接作用于参数，不进入矩估计，因此衰减强度与自适应步长相互独立。",
+       "一阶、二阶矩缓冲由原生上下文按张量地址保存，首次 step() 时按参数长度惰性分配；参数长度变化会重置缓冲。单参构造器采用 beta1=0.9、beta2=0.999、epsilon=1e-8、weightDecay=0.01。"
+      ],
+      "notes": [
+       "step() 先自增内部计数器再更新参数，计数器从 1 开始，正好是偏差校正所需的幂次；stepCount() 返回该计数。",
+       "构造器不校验 beta1、beta2、epsilon、weightDecay 的取值，传入非有限值会直接污染参数。",
+       "同一参数不应同时交给两个优化器：矩缓冲按张量地址存放在上下文中，后创建者会覆盖前者。"
+      ],
+      "see": [
+       "jsl.torch.Optimizer",
+       "jsl.torch.SGD",
+       "jsl.torch.Tensor#adam(float, float, float, float, float, long)"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.torch.BCEWithLogitsLoss",
+     "simple_qualified": "BCEWithLogitsLoss",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [
+      "Loss"
+     ],
+     "file": "jsl/torch/BCEWithLogitsLoss.java",
+     "line": 4,
+     "javadoc": "Numerically stable Binary Cross-Entropy with Logits loss.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "method",
+       "key": "loss(Tensor, Tensor)",
+       "signature": "Tensor loss(Tensor prediction, Tensor target)",
+       "params": [
+        {
+         "type": "Tensor",
+         "name": "prediction"
+        },
+        {
+         "type": "Tensor",
+         "name": "target"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "计算带 logits 的二分类交叉熵",
+        "params": {
+         "prediction": "任意形状的 logits 张量，与 target 逐维同形；内部会取 sigmoid，不要预先激活",
+         "target": "与 prediction 同形状的标签张量，元素取 0 或 1；仅读取数值，不参与求导"
+        },
+        "returns": "形状 [1] 的标量损失张量，值为全体元素的平均，可继续调用 backward()",
+        "throws": {
+         "IllegalArgumentException": "prediction 与 target 形状不一致"
+        },
+        "notes": [
+         "梯度按 (sigmoid(prediction) - target) / n 附着在 prediction 上，n 为元素总数而非批大小。"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "数值稳定的带 logits 二分类交叉熵",
+      "body": [
+       "loss(prediction, target) 直接转调 Tensor.bceWithLogitsLoss：prediction 是未过 sigmoid 的 logits，target 与 prediction 形状完全相同、元素取 0 或 1，返回形状 [1] 的标量，按元素总数取平均。",
+       "前向用 max(x, 0) - x·y + log1p(exp(-|x|)) 的等价形式逐元素累加，避免 exp 在正半轴溢出；反向不沿 sigmoid 的自动微分链回传，而是把 (sigmoid(x) - y)/n 作为常量系数构造一次 reshape 与 matMul，再叠加常数偏移凑出标量值，因此对 prediction 的一阶梯度精确。"
+      ],
+      "notes": [
+       "prediction 与 target 形状必须逐维相同，否则抛 IllegalArgumentException；不广播。",
+       "target 只被读取原始数值，不参与求导，把它设为 requiresGrad 也不会得到梯度。",
+       "返回张量在 prediction 上是线性的替代图，一阶梯度正确，但二阶导数不等于真实 BCE 的 Hessian。",
+       "无状态、无可训练参数，可复用同一实例。"
+      ],
+      "example": "try (JSL jsl = JSL.create()) {\n    BCEWithLogitsLoss criterion = new BCEWithLogitsLoss();\n    Tensor logits = jsl.randn(4, 1);\n    Tensor target = jsl.zeros(4, 1);   // 二分类标签，元素取 0 或 1\n    Tensor loss = criterion.loss(logits, target);\n    loss.backward();\n}",
+      "see": [
+       "jsl.torch.Loss",
+       "jsl.torch.CrossEntropyLoss",
+       "jsl.torch.Tensor#bceWithLogitsLoss(Tensor)"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.torch.BatchNorm2d",
+     "simple_qualified": "BatchNorm2d",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "Module<BCHW, BCHW>",
+     "implements": [],
+     "file": "jsl/torch/BatchNorm2d.java",
+     "line": 10,
+     "javadoc": "Batch normalization over NCHW. Running statistics are state, not trainable parameters.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "constructor",
+       "key": "BatchNorm2d(NativeContext, int)",
+       "signature": "BatchNorm2d(NativeContext context, int channels)",
+       "params": [
+        {
+         "type": "NativeContext",
+         "name": "context"
+        },
+        {
+         "type": "int",
+         "name": "channels"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以 epsilon=1e-5、momentum=0.1 构造",
+        "params": {
+         "context": "持有原生上下文，参数与状态张量都在其中分配",
+         "channels": "通道数 C，即 gamma、beta 与滑动统计量的长度，必须为正"
+        },
+        "throws": {
+         "IllegalArgumentException": "channels 小于等于 0"
+        },
+        "notes": [
+         "等价于调用四参构造器并传入 1e-5f 与 0.1f。"
+        ]
+       }
+      },
+      {
+       "kind": "constructor",
+       "key": "BatchNorm2d(NativeContext, int, float, float)",
+       "signature": "BatchNorm2d(NativeContext context, int channels, float epsilon, float momentum)",
+       "params": [
+        {
+         "type": "NativeContext",
+         "name": "context"
+        },
+        {
+         "type": "int",
+         "name": "channels"
+        },
+        {
+         "type": "float",
+         "name": "epsilon"
+        },
+        {
+         "type": "float",
+         "name": "momentum"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "显式指定数值稳定项与滑动动量",
+        "params": {
+         "context": "持有原生上下文，参数与状态张量都在其中分配",
+         "channels": "通道数 C，必须为正",
+         "epsilon": "加在方差上的数值稳定项，避免除零；不校验正负",
+         "momentum": "滑动统计量更新时新批统计量的权重，取 0 到 1 时表现为指数滑动平均；不校验范围"
+        },
+        "throws": {
+         "IllegalArgumentException": "channels 小于等于 0"
+        },
+        "notes": [
+         "momentum 越界不会报错，但会让滑动统计量发散或完全停滞。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "forward(Tensor)",
+       "signature": "Tensor forward(Tensor input)",
+       "params": [
+        {
+         "type": "Tensor",
+         "name": "input"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "按当前训练或推理模式做批归一化",
+        "params": {
+         "input": "形状 [N, C, H, W] 的张量，C 需与构造时的 channels 一致"
+        },
+        "returns": "[N, C, H, W]，与输入同形状的新张量",
+        "throws": {
+         "IllegalArgumentException": "输入不是四维张量"
+        },
+        "notes": [
+         "训练模式会原地改写 running_mean 与 running_var；推理模式只读。",
+         "批内统计覆盖整个 N×H×W，batch 为 1 时方差可能接近 0，此时 epsilon 决定数值稳定性。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "parameters()",
+       "signature": "List<Tensor> parameters()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回可训练的 gamma 与 beta",
+        "returns": "长度为 2 的列表，顺序为 gamma、beta"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "epsilon()",
+       "signature": "float epsilon()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回数值稳定项",
+        "returns": "构造时传入的 epsilon，单参构造器下为 1e-5"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "gamma()",
+       "signature": "Tensor gamma()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回缩放参数",
+        "returns": "形状 [channels] 的可训练张量，初值全 1"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "beta()",
+       "signature": "Tensor beta()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回平移参数",
+        "returns": "形状 [channels] 的可训练张量，初值全 0"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "runningMean()",
+       "signature": "Tensor runningMean()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回滑动均值状态",
+        "returns": "形状 [channels] 的非可训练张量，初值全 0，训练前向中原地更新"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "runningVar()",
+       "signature": "Tensor runningVar()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回滑动方差状态",
+        "returns": "形状 [channels] 的非可训练张量，初值全 1，训练前向中按无偏估计原地更新"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "namedParameters()",
+       "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回含滑动统计量的命名状态",
+        "returns": "gamma、beta、running_mean、running_var 四项，顺序固定",
+        "notes": [
+         "stateDict 因此包含推理所需的统计量，loadStateDict 可完整恢复 eval 行为。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "close()",
+       "signature": "void close()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "释放参数与统计量张量",
+        "notes": [
+         "关闭后模块不可再用；四个张量均由本模块独占。"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "NCHW 上的批归一化，含滑动统计量",
+      "body": [
+       "训练模式下按通道统计 N×H×W 上的均值与方差，用批内方差归一化后做仿射变换，同时按 running = (1 - momentum)·running + momentum·batch 的方向更新滑动均值与滑动方差，即 momentum 是新批统计量的权重。",
+       "推理模式不再统计批内数据，直接用滑动均值与滑动方差归一化。写入滑动方差的是无偏估计（spatial 大于 1 时乘 spatial / (spatial - 1)），而归一化本身使用有偏方差。",
+       "gamma 初始化为 1、beta 初始化为 0，两者是可训练参数；running_mean 初始化为 0、running_var 初始化为 1，它们是不可训练状态，仅在训练前向中被原地改写。"
+      ],
+      "notes": [
+       "默认 epsilon 为 1e-5、momentum 为 0.1，来自单参构造器；构造器不校验这两个值的范围。",
+       "滑动统计量是模块状态而非参数：parameters() 只返回 gamma 与 beta，namedParameters() 额外给出 running_mean 与 running_var。",
+       "在从未训练过的模块上直接 eval()，归一化使用均值 0、方差 1，输出近似为 gamma·x + beta。"
+      ],
+      "see": [
+       "jsl.torch.LayerNorm",
+       "jsl.torch.Module#train()",
+       "jsl.torch.Tensor#batchNorm2d"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.torch.Checkpoint",
+     "simple_qualified": "Checkpoint",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/torch/Checkpoint.java",
+     "line": 21,
+     "javadoc": "Training checkpoint persistence for {@link Module} and {@link Optimizer}: saves and restores\nthe complete model {@code stateDict}, epoch index, optimizer learning rate, Adam step count,\nand last recorded loss to enable seamless resume-from-checkpoint training.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "constructor",
+       "key": "Checkpoint(int, float, float, long, Map<String, float[]>)",
+       "signature": "Checkpoint(int epoch, float loss, float learningRate, long optimizerStep, Map<String, float[]> stateDict)",
+       "params": [
+        {
+         "type": "int",
+         "name": "epoch"
+        },
+        {
+         "type": "float",
+         "name": "loss"
+        },
+        {
+         "type": "float",
+         "name": "learningRate"
+        },
+        {
+         "type": "long",
+         "name": "optimizerStep"
+        },
+        {
+         "type": "Map<String, float[]>",
+         "name": "stateDict"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以给定训练状态构造检查点对象",
+        "params": {
+         "epoch": "已完成的轮次序号，原样保存",
+         "loss": "该轮记录的损失值",
+         "learningRate": "保存时优化器的学习率，0 表示未记录",
+         "optimizerStep": "AdamW 的累计步数，非 AdamW 优化器记 0",
+         "stateDict": "参数名到数值数组的映射，构造时逐项克隆"
+        },
+        "notes": [
+         "映射被复制成不可修改视图，但其中的 float[] 是克隆副本，改动它们会改变本实例的取值。",
+         "通常由 load 或 restore 产生，手工构造主要用于测试。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "save(Path, Module<?, ?>, Optimizer, int, float)",
+       "signature": "void save(Path target, Module<?, ?> module, Optimizer optimizer, int epoch, float loss)",
+       "params": [
+        {
+         "type": "Path",
+         "name": "target"
+        },
+        {
+         "type": "Module<?, ?>",
+         "name": "module"
+        },
+        {
+         "type": "Optimizer",
+         "name": "optimizer"
+        },
+        {
+         "type": "int",
+         "name": "epoch"
+        },
+        {
+         "type": "float",
+         "name": "loss"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "把模块状态与训练进度写入文件",
+        "params": {
+         "target": "目标文件路径，父目录必须已存在；已存在时被整体覆盖",
+         "module": "提供 stateDict 的模块，其 namedParameters 决定写入的键",
+         "optimizer": "可选，为 null 时学习率与步数都记 0；非 AdamW 优化器只记录学习率",
+         "epoch": "写入的轮次序号",
+         "loss": "写入的损失值"
+        },
+        "throws": {
+         "UncheckedIOException": "写入文件失败，例如目录不存在或没有写权限"
+        },
+        "notes": [
+         "target 或 module 为 null 时抛 NullPointerException。",
+         "写入是整文件覆盖，不做原子替换，也不保留旧版本。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "load(Path)",
+       "signature": "Checkpoint load(Path source)",
+       "params": [
+        {
+         "type": "Path",
+         "name": "source"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "从文件读取检查点",
+        "params": {
+         "source": "已存在的检查点文件路径"
+        },
+        "returns": "解析出的 Checkpoint，含 epoch、loss、学习率、优化器步数与参数表",
+        "throws": {
+         "ModelFormatException": "魔数或版本不符、数据被截断、长度字段非法，或读取后仍有多余字节",
+         "UncheckedIOException": "读取文件失败"
+        },
+        "notes": [
+         "只做格式校验，不接触任何模块或优化器。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "restore(Path, Module<?, ?>, Optimizer)",
+       "signature": "Checkpoint restore(Path source, Module<?, ?> module, Optimizer optimizer)",
+       "params": [
+        {
+         "type": "Path",
+         "name": "source"
+        },
+        {
+         "type": "Module<?, ?>",
+         "name": "module"
+        },
+        {
+         "type": "Optimizer",
+         "name": "optimizer"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "读取检查点并恢复到模块与优化器",
+        "params": {
+         "source": "检查点文件路径",
+         "module": "接收参数值的模块，其 namedParameters 的键必须覆盖文件中的全部条目",
+         "optimizer": "可选；非 null 时按文件内容回写学习率，AdamW 还会恢复步数计数器"
+        },
+        "returns": "读取到的 Checkpoint，可从中取 epoch 与 loss",
+        "throws": {
+         "IllegalArgumentException": "模块缺少文件中的某个状态键"
+        },
+        "notes": [
+         "文件中学习率为 0 时跳过回写；非 AdamW 优化器不恢复步数。",
+         "不恢复 AdamW 的矩缓冲；文件格式错误时抛出与 load 相同的异常。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "epoch()",
+       "signature": "int epoch()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回保存时的轮次序号",
+        "returns": "检查点记录的 epoch，通常表示已完成的轮数"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "loss()",
+       "signature": "float loss()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回保存时记录的损失",
+        "returns": "写入时的 float 损失值"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "learningRate()",
+       "signature": "float learningRate()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回保存时的学习率",
+        "returns": "写入时的学习率；save 时 optimizer 为 null 则为 0"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "optimizerStep()",
+       "signature": "long optimizerStep()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回保存时的优化器步数",
+        "returns": "AdamW 的累计步数；其他优化器与无优化器情形为 0"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "stateDict()",
+       "signature": "Map<String, float[]> stateDict()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回参数名到数值的映射",
+        "returns": "不可修改的 Map，键为模块 namedParameters 的名称，值为 float 数组",
+        "notes": [
+         "数组是构造时的克隆，改数组不会回写文件，但会改变本实例持有的取值。"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "训练检查点的保存与恢复",
+      "body": [
+       "save 把模块的 stateDict、epoch、loss、优化器学习率与 AdamW 步数写进单个二进制文件：魔数 0x4A534C4B（“JSLK”）、版本 1，随后是 epoch、loss、学习率、步数，再逐项写入名称长度 + UTF-8 名称 + 元素个数 + 以 double 存储的数值。",
+       "restore 先 load 再把参数表灌回模块：文件中学习率大于 0 时写回优化器，优化器是 AdamW 时同时恢复步数计数器，返回的 Checkpoint 提供 epoch 与 loss，供续训时对齐轮次与日志。",
+       "AdamW 的一阶、二阶矩缓冲保存在原生上下文里、按张量句柄索引，不进入检查点；恢复后矩缓冲从零开始累积，偏差校正按恢复出的步数计算，因此续训初期的更新幅度与不间断训练并不相同。"
+      ],
+      "notes": [
+       "参数以 float 写盘、以 double 读回再截断为 float，往返无损；文件不含校验和，也不含模型结构。",
+       "save 的 optimizer 允许为 null，此时学习率记 0、步数记 0，restore 侧因此不会覆盖优化器学习率。",
+       "load 校验魔数与版本，读完后检查没有剩余字节，任一不符抛 ModelFormatException。",
+       "恢复要求模块的 namedParameters 键集与文件一致，缺键抛 IllegalArgumentException；多余键被忽略。"
+      ],
+      "example": "try (JSL jsl = JSL.create()) {\n    Linear model = new Linear(jsl.context(), 16, 4);\n    AdamW optimizer = new AdamW(model.parameters(), 1e-3f);\n    // ... 训练若干轮\n    Checkpoint.save(Path.of(\"ckpt.bin\"), model, optimizer, 3, 0.42f);\n    Checkpoint ckpt = Checkpoint.restore(Path.of(\"ckpt.bin\"), model, optimizer);\n    int nextEpoch = ckpt.epoch() + 1;\n}",
+      "see": [
+       "jsl.torch.Module#stateDict()",
+       "jsl.torch.AdamW#stepCount()",
+       "jsl.torch.CosineAnnealingLR"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.torch.ComputationGraph",
+     "simple_qualified": "ComputationGraph",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "Module<Layout, Layout>",
+     "implements": [],
+     "file": "jsl/torch/ComputationGraph.java",
+     "line": 26,
+     "javadoc": "Directed Acyclic Graph (DAG) neural network architecture (inspired by DL4J's\n{@code ComputationGraph}), breaking through the linear limitation of {@link Sequential}.\n\n<p>Supports arbitrary branching, residual skip connections ({@link VertexOp#ADD}), multiplicative\ngating ({@link VertexOp#MUL}), and multi-input / multi-output models while preserving full\nreverse-mode autograd, {@link #train()}/{@link #eval()} mode propagation, and\n{@link #stateDict()}/{@link #loadStateDict(Map)} persistence.</p>",
+     "nested": [
+      "VertexOp",
+      "Vertex",
+      "Builder"
+     ],
+     "members": [
+      {
+       "kind": "method",
+       "key": "builder()",
+       "signature": "Builder builder()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建图构造器",
+        "returns": "新的 Builder，输入、顶点与输出列表均为空"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "forward(Tensor)",
+       "signature": "Tensor forward(Tensor input)",
+       "params": [
+        {
+         "type": "Tensor",
+         "name": "input"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "单输入单输出的求值入口",
+        "params": {
+         "input": "喂给唯一输入节点的张量，形状由首个模块决定"
+        },
+        "returns": "第一个输出节点的张量",
+        "throws": {
+         "IllegalStateException": "图的输入节点数不为 1"
+        },
+        "notes": [
+         "输出多于一个时只返回 outputNames 的第一个，其余输出仍会被计算但不返回。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "forwardMany(Tensor...)",
+       "signature": "Tensor[] forwardMany(Tensor... inputs)",
+       "params": [
+        {
+         "type": "Tensor...",
+         "name": "inputs"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "按声明顺序喂入多个张量",
+        "params": {
+         "inputs": "张量数组，长度与顺序必须与 addInputs 声明的输入名一致"
+        },
+        "returns": "按 outputNames 顺序排列的输出张量数组",
+        "throws": {
+         "IllegalArgumentException": "传入的张量个数与输入节点数不符"
+        },
+        "notes": [
+         "输入按声明顺序绑定，与参数名无关；多输出时数组长度等于输出节点数。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "forward(Map<String, Tensor>)",
+       "signature": "Map<String, Tensor> forward(Map<String, Tensor> inputs)",
+       "params": [
+        {
+         "type": "Map<String, Tensor>",
+         "name": "inputs"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以名字映射喂入并取回全部输出",
+        "params": {
+         "inputs": "输入名到张量的映射，必须覆盖全部输入名"
+        },
+        "returns": "以输出名为键的 LinkedHashMap，顺序与 outputNames 一致",
+        "throws": {
+         "JSLParameterException": "inputs 为 null",
+         "IllegalArgumentException": "缺少某个必需的输入名"
+        },
+        "notes": [
+         "映射中不属于输入节点的多余键被忽略。",
+         "这是另外两个 forward 重载的公共实现，单输入与多输入都经由它求值。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "parameters()",
+       "signature": "List<Tensor> parameters()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "按执行顺序汇总各模块参数",
+        "returns": "所有 MODULE 节点参数的拼接列表；无参数节点不贡献元素"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "namedParameters()",
+       "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回带节点名前缀的命名参数",
+        "returns": "键为“节点名.参数名”的条目列表，顺序与执行顺序一致"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "train()",
+       "signature": "void train()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "切换训练模式并向下传播",
+        "notes": [
+         "先置自身的 training 标志，再对每个持有模块的节点调用 train()。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "eval()",
+       "signature": "void eval()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "切换推理模式并向下传播",
+        "notes": [
+         "先置自身的 training 标志，再对每个持有模块的节点调用 eval()，Dropout、BatchNorm2d 因此改走推理路径。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "close()",
+       "signature": "void close()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "关闭所有持有模块",
+        "notes": [
+         "逐个调用子模块的 close()；外部传入的输入张量不归图所有，不会被释放。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "inputNames()",
+       "signature": "List<String> inputNames()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回输入节点名",
+        "returns": "不可变列表，顺序与 addInputs 的声明顺序一致"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "outputNames()",
+       "signature": "List<String> outputNames()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回输出节点名",
+        "returns": "不可变列表，顺序与 setOutputs 的声明顺序一致"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "executionOrder()",
+       "signature": "List<String> executionOrder()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回拓扑排序后的执行顺序",
+        "returns": "节点名列表，每个节点都排在其全部输入之后",
+        "notes": [
+         "顺序在 build 时固定，之后不再变化；未列入其中的节点不会被执行。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "vertices()",
+       "signature": "Map<String, Vertex> vertices()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回节点表",
+        "returns": "节点名到 Vertex 的不可修改映射，保持登记顺序"
+       }
+      }
+     ],
+     "doc": {
+      "summary": "支持分支与残差连接的有向无环计算图",
+      "body": [
+       "图由命名节点组成：输入节点用 addInputs 声明，MODULE 节点引用一个模块并只取单输入，ADD、SUB、MUL 节点只做张量运算、不持有参数。build 时按输入名与已登记节点名统计入度做 Kahn 拓扑排序，得到 executionOrder；排序覆盖不了全部节点就说明存在环，或存在无法从输入到达的节点，抛 IllegalArgumentException。",
+       "forward 按 executionOrder 逐节点求值，把输出存进以节点名为键的激活表：MODULE 取 inputs 的第一个名字调用 module.forward，ADD 与 MUL 从第二个输入起逐个累加或累乘，SUB 只接受两个输入做左减右。残差连接就是把同一个上游名字同时登记为模块节点的输入和 ADD 节点的一个输入，两条分支在 ADD 处合流。",
+       "多输入用 forwardMany(Tensor...) 或 forward(Map<String, Tensor>) 喂入，多输出分别以按 outputNames 顺序排列的数组和 LinkedHashMap 取回；单输入单输出的图可直接用 forward(Tensor)。求值全部基于普通张量算子，反向传播、train()/eval() 传播与 stateDict 存取都沿用模块体系。"
+      ],
+      "notes": [
+       "ADD 与 MUL 至少需要两个输入，SUB 固定两个；名字与输入名或已有节点重名时在构造阶段抛 IllegalArgumentException。",
+       "parameters() 按执行顺序拼接各模块的参数，ADD/SUB/MUL 节点不贡献参数；namedParameters 的键为“节点名.参数名”，因此 stateDict/loadStateDict 可直接用于整图存取。",
+       "train()/eval() 与 close() 会传播到所有持有模块的节点；图本身不分配张量，中间结果由各算子按需创建。",
+       "执行顺序在 build 时确定且不可变；vertices() 保持登记顺序，与 executionOrder() 的顺序不一定相同。"
+      ],
+      "example": "try (JSL jsl = JSL.create()) {\n    ComputationGraph graph = ComputationGraph.builder()\n            .addInputs(\"x\")\n            .addLayer(\"conv\", new Conv2d(jsl.context(), 3, 8, 3, 3, 1, 1, 1, 1, true, 0L), \"x\")\n            .addLayer(\"block\", new Conv2d(jsl.context(), 8, 8, 3, 3, 1, 1, 1, 1, true, 0L), \"conv\")\n            .addAddVertex(\"res\", \"conv\", \"block\")   // 残差：把 conv 的输出与 block 的输出相加\n            .setOutputs(\"res\")\n            .build();\n    Tensor y = graph.forward(jsl.randn(2, 3, 16, 16));\n    graph.close();\n}",
+      "see": [
+       "jsl.torch.Module",
+       "jsl.torch.Sequential",
+       "jsl.torch.ComputationGraph.Builder"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.torch.Conv2d",
+     "simple_qualified": "Conv2d",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "Module<BCHW, BCHW>",
+     "implements": [],
+     "file": "jsl/torch/Conv2d.java",
+     "line": 13,
+     "javadoc": "2-D convolution over NCHW tensors, supporting standard, grouped ({@code groups > 1}), depthwise\n({@code groups == inputChannels}), and dilated ({@code dilation > 1}) convolutions.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "constructor",
+       "key": "Conv2d(NativeContext, int, int, int, int)",
+       "signature": "Conv2d(NativeContext context, int inputChannels, int outputChannels, int kernelHeight, int kernelWidth)",
+       "params": [
+        {
+         "type": "NativeContext",
+         "name": "context"
+        },
+        {
+         "type": "int",
+         "name": "inputChannels"
+        },
+        {
+         "type": "int",
+         "name": "outputChannels"
+        },
+        {
+         "type": "int",
+         "name": "kernelHeight"
+        },
+        {
+         "type": "int",
+         "name": "kernelWidth"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "默认 stride=1、padding=0、带偏置",
+        "params": {
+         "context": "持有原生上下文，权重与偏置在其中分配",
+         "inputChannels": "输入通道数，必须为正",
+         "outputChannels": "输出通道数，即卷积核个数，必须为正",
+         "kernelHeight": "卷积核高度，必须为正",
+         "kernelWidth": "卷积核宽度，必须为正"
+        },
+        "throws": {
+         "IllegalArgumentException": "任一通道数或卷积核尺寸小于等于 0"
+        },
+        "notes": [
+         "等价于 stride 1×1、padding 0×0、dilation 1×1、groups=1、useBias=true、seed=0 的完整构造器。"
+        ]
+       }
+      },
+      {
+       "kind": "constructor",
+       "key": "Conv2d(NativeContext, int, int, int, int, int, int, int, int, boolean, long)",
+       "signature": "Conv2d(NativeContext context, int inputChannels, int outputChannels, int kernelHeight, int kernelWidth, int strideHeight, int strideWidth, int paddingHeight, int paddingWidth, boolean useBias, long seed)",
+       "params": [
+        {
+         "type": "NativeContext",
+         "name": "context"
+        },
+        {
+         "type": "int",
+         "name": "inputChannels"
+        },
+        {
+         "type": "int",
+         "name": "outputChannels"
+        },
+        {
+         "type": "int",
+         "name": "kernelHeight"
+        },
+        {
+         "type": "int",
+         "name": "kernelWidth"
+        },
+        {
+         "type": "int",
+         "name": "strideHeight"
+        },
+        {
+         "type": "int",
+         "name": "strideWidth"
+        },
+        {
+         "type": "int",
+         "name": "paddingHeight"
+        },
+        {
+         "type": "int",
+         "name": "paddingWidth"
+        },
+        {
+         "type": "boolean",
+         "name": "useBias"
+        },
+        {
+         "type": "long",
+         "name": "seed"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "完整指定步长、填充、偏置与种子",
+        "params": {
+         "context": "持有原生上下文，权重与偏置在其中分配",
+         "inputChannels": "输入通道数，必须为正",
+         "outputChannels": "输出通道数，必须为正",
+         "kernelHeight": "卷积核高度，必须为正",
+         "kernelWidth": "卷积核宽度，必须为正",
+         "strideHeight": "垂直步长，必须为正；1 表示逐行滑动",
+         "strideWidth": "水平步长，必须为正",
+         "paddingHeight": "上下各补的零行数，参与输出尺寸计算；不校验，可为负",
+         "paddingWidth": "左右各补的零列数；不校验，可为负",
+         "useBias": "是否创建 [1, outputChannels, 1, 1] 的偏置张量",
+         "seed": "初始化种子基数，实际种子还会混入 inputChannels 与 outputChannels"
+        },
+        "throws": {
+         "IllegalArgumentException": "任一通道数、卷积核尺寸或步长小于等于 0"
+        },
+        "notes": [
+         "等价于 dilation 1×1、groups=1 的完整构造器，即普通卷积。",
+         "权重由 Tensor.random 以 ±sqrt(6/(fanIn+fanOut)) 的均匀分布生成，requiresGrad 为 true；偏置初值为 0。",
+         "padding 大于核尺寸时输出可能变大，不会被拒绝。"
+        ]
+       }
+      },
+      {
+       "kind": "constructor",
+       "key": "Conv2d(NativeContext, int, int, int, int, int, int, int, int, int, int, int, boolean, long)",
+       "signature": "Conv2d(NativeContext context, int inputChannels, int outputChannels, int kernelHeight, int kernelWidth, int strideHeight, int strideWidth, int paddingHeight, int paddingWidth, int dilationHeight, int dilationWidth, int groups, boolean useBias, long seed)",
+       "params": [
+        {
+         "type": "NativeContext",
+         "name": "context"
+        },
+        {
+         "type": "int",
+         "name": "inputChannels"
+        },
+        {
+         "type": "int",
+         "name": "outputChannels"
+        },
+        {
+         "type": "int",
+         "name": "kernelHeight"
+        },
+        {
+         "type": "int",
+         "name": "kernelWidth"
+        },
+        {
+         "type": "int",
+         "name": "strideHeight"
+        },
+        {
+         "type": "int",
+         "name": "strideWidth"
+        },
+        {
+         "type": "int",
+         "name": "paddingHeight"
+        },
+        {
+         "type": "int",
+         "name": "paddingWidth"
+        },
+        {
+         "type": "int",
+         "name": "dilationHeight"
+        },
+        {
+         "type": "int",
+         "name": "dilationWidth"
+        },
+        {
+         "type": "int",
+         "name": "groups"
+        },
+        {
+         "type": "boolean",
+         "name": "useBias"
+        },
+        {
+         "type": "long",
+         "name": "seed"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "完整指定膨胀、分组、偏置与种子",
+        "params": {
+         "context": "持有原生上下文，权重与偏置在其中分配",
+         "inputChannels": "输入通道数，必须为正且能被 groups 整除",
+         "outputChannels": "输出通道数，必须为正且能被 groups 整除",
+         "kernelHeight": "卷积核高度，必须为正",
+         "kernelWidth": "卷积核宽度，必须为正",
+         "strideHeight": "垂直步长，必须为正",
+         "strideWidth": "水平步长，必须为正",
+         "paddingHeight": "上下各补的零行数；不校验，可为负",
+         "paddingWidth": "左右各补的零列数；不校验，可为负",
+         "dilationHeight": "垂直膨胀系数，必须为正；1 表示核元素相邻，2 表示间隔一个像素",
+         "dilationWidth": "水平膨胀系数，必须为正",
+         "groups": "分组数，必须为正；1 为普通卷积，等于 inputChannels 时为深度卷积",
+         "useBias": "是否创建 [1, outputChannels, 1, 1] 的偏置张量",
+         "seed": "初始化种子基数"
+        },
+        "throws": {
+         "IllegalArgumentException": "任一通道数、卷积核尺寸、步长、膨胀或 groups 非正；或通道数不能被 groups 整除"
+        },
+        "notes": [
+         "权重形状为 [outputChannels, inputChannels/groups, kernelHeight, kernelWidth]，按 ±sqrt(6/(fanIn+fanOut)) 的均匀分布初始化，fanIn 与 fanOut 均按每组通道数计算。",
+         "实际种子为 seed + 31·inputChannels + outputChannels，与 groups、dilation 无关。",
+         "groups 与 dilation 同时生效时，原生内核走逐元素累加路径，不再使用 im2col 加矩阵乘的快速路径。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "forward(Tensor)",
+       "signature": "Tensor forward(Tensor input)",
+       "params": [
+        {
+         "type": "Tensor",
+         "name": "input"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "对 NCHW 输入做卷积并叠加偏置",
+        "params": {
+         "input": "形状 [N, C, H, W]，C 必须等于 inputChannels"
+        },
+        "returns": "[N, outputChannels, Hout, Wout] 的新张量",
+        "throws": {
+         "IllegalArgumentException": "输入非四维、输入通道与权重不匹配，或输出空间尺寸非正"
+        },
+        "notes": [
+         "偏置按通道广播，输出形状不因偏置改变。",
+         "训练与推理行为相同，切换 train()/eval() 不影响结果。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "parameters()",
+       "signature": "List<Tensor> parameters()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回权重与可选的偏置",
+        "returns": "weight 在前；存在偏置时 bias 在后，否则长度为 1"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "namedParameters()",
+       "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回 weight 与 bias 命名状态",
+        "returns": "名称依次为 weight、bias；无偏置时只含 weight"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "weight()",
+       "signature": "Tensor weight()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回卷积核张量",
+        "returns": "[outputChannels, inputChannels/groups, kernelHeight, kernelWidth] 的可训练张量"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "bias()",
+       "signature": "Tensor bias()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回偏置张量",
+        "returns": "[1, outputChannels, 1, 1] 的可训练张量；useBias 为 false 时返回 null",
+        "notes": [
+         "调用方需自行判空；无偏置时 parameters() 也不含该项。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "inputChannels()",
+       "signature": "int inputChannels()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回输入通道数",
+        "returns": "构造时的 inputChannels，等于每组输入通道数乘以 groups"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "outputChannels()",
+       "signature": "int outputChannels()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回输出通道数",
+        "returns": "构造时的 outputChannels，即卷积核个数"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "kernelHeight()",
+       "signature": "int kernelHeight()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回卷积核高度",
+        "returns": "构造时的 kernelHeight"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "kernelWidth()",
+       "signature": "int kernelWidth()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回卷积核宽度",
+        "returns": "构造时的 kernelWidth"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "strideHeight()",
+       "signature": "int strideHeight()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回垂直步长",
+        "returns": "构造时的 strideHeight"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "strideWidth()",
+       "signature": "int strideWidth()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回水平步长",
+        "returns": "构造时的 strideWidth"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "paddingHeight()",
+       "signature": "int paddingHeight()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回垂直零填充行数",
+        "returns": "构造时的 paddingHeight，可能为负"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "paddingWidth()",
+       "signature": "int paddingWidth()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回水平零填充列数",
+        "returns": "构造时的 paddingWidth，可能为负"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "dilationHeight()",
+       "signature": "int dilationHeight()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回垂直膨胀系数",
+        "returns": "构造时的 dilationHeight；1 表示标准卷积"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "dilationWidth()",
+       "signature": "int dilationWidth()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回水平膨胀系数",
+        "returns": "构造时的 dilationWidth；1 表示标准卷积"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "groups()",
+       "signature": "int groups()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回分组数",
+        "returns": "构造时的 groups；1 为普通卷积，等于 inputChannels 时为深度卷积"
+       }
+      }
+     ],
+     "doc": {
+      "summary": "NCHW 上的二维卷积，支持分组、深度与膨胀",
+      "body": [
+       "权重形状为 [outputChannels, inputChannels/groups, kernelHeight, kernelWidth]，即按分组切分输入通道的 OIHW；按 Glorot 均匀分布初始化，范围 ±sqrt(6 / (fanIn + fanOut))，其中 fanIn = (inputChannels/groups)·kH·kW、fanOut = (outputChannels/groups)·kH·kW，实际种子为 seed + 31·inputChannels + outputChannels。",
+       "偏置形状为 [1, outputChannels, 1, 1]，初始化为 0，在卷积结果上按通道广播相加；useBias 为 false 时不创建偏置，parameters() 与 namedParameters() 相应少一项。",
+       "输出空间尺寸为 (H + 2·paddingHeight − (dilationHeight·(kernelHeight − 1) + 1)) / strideHeight + 1，宽度同理，除法向下取整，结果任一维非正时拒绝执行。groups 只改变通道的分组方式，不改变尺寸公式；dilation 通过放大有效核尺寸参与计算，因此同样缩小输出。groups 等于 inputChannels 时为深度卷积，等于 1 时为普通卷积，介于两者之间为分组卷积。"
+      ],
+      "notes": [
+       "构造器校验通道数、卷积核尺寸、步长、膨胀与 groups 均为正，且 inputChannels、outputChannels 能被 groups 整除；padding 不做校验，传入负值会缩小输出甚至导致输出尺寸非正。",
+       "输入通道数必须能被 groups 整除，且 inputChannels/groups 必须等于权重的第二维，否则 Tensor.conv2d 抛 IllegalArgumentException。",
+       "偏置通过广播相加实现，会额外产生一个计算图节点；不需要偏置时置 useBias=false 可省去该节点。"
+      ],
+      "example": "try (JSL jsl = JSL.create()) {\n    Conv2d conv = new Conv2d(jsl.context(), 3, 16, 3, 3, 1, 1, 1, 1, true, 42L);\n    Tensor input = jsl.randn(4, 3, 32, 32);\n    Tensor output = conv.forward(input);\n    // output 形状为 [4, 16, 32, 32]\n    conv.close();\n}",
+      "see": [
+       "jsl.torch.MaxPool2d",
+       "jsl.torch.Flatten",
+       "jsl.torch.Tensor#conv2d"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.torch.CosineAnnealingLR",
+     "simple_qualified": "CosineAnnealingLR",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [
+      "LRScheduler"
+     ],
+     "file": "jsl/torch/CosineAnnealingLR.java",
+     "line": 10,
+     "javadoc": "Cosine Annealing learning rate scheduler:\n{@code lr_t = eta_min + 0.5 * (eta_max - eta_min) * (1 + cos(pi * t / T_max))},\nmatching {@code torch.optim.lr_scheduler.CosineAnnealingLR}.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "constructor",
+       "key": "CosineAnnealingLR(Optimizer, int)",
+       "signature": "CosineAnnealingLR(Optimizer optimizer, int tMax)",
+       "params": [
+        {
+         "type": "Optimizer",
+         "name": "optimizer"
+        },
+        {
+         "type": "int",
+         "name": "tMax"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "etaMin 取 0 的余弦退火",
+        "params": {
+         "optimizer": "被调度的优化器，构造时读取其学习率作为 baseLr",
+         "tMax": "半个余弦周期的步数，必须为正"
+        },
+        "throws": {
+         "IllegalArgumentException": "tMax 小于等于 0"
+        },
+        "notes": [
+         "等价于 etaMin=0 的三参构造器，学习率最终退到 0。",
+         "optimizer 为 null 时抛 NullPointerException。"
+        ]
+       }
+      },
+      {
+       "kind": "constructor",
+       "key": "CosineAnnealingLR(Optimizer, int, float)",
+       "signature": "CosineAnnealingLR(Optimizer optimizer, int tMax, float etaMin)",
+       "params": [
+        {
+         "type": "Optimizer",
+         "name": "optimizer"
+        },
+        {
+         "type": "int",
+         "name": "tMax"
+        },
+        {
+         "type": "float",
+         "name": "etaMin"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "指定周期长度与最小学习率",
+        "params": {
+         "optimizer": "被调度的优化器，构造时读取其学习率作为 baseLr",
+         "tMax": "半个余弦周期的步数，必须为正",
+         "etaMin": "学习率下界，必须有限且非负；0 表示可以退到 0"
+        },
+        "throws": {
+         "IllegalArgumentException": "tMax 小于等于 0，或 etaMin 为负、非有限"
+        },
+        "notes": [
+         "etaMin 大于 baseLr 时曲线整体上移，学习率会随步数上升，构造器不做额外限制。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "step()",
+       "signature": "float step()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "推进一步并写回学习率",
+        "returns": "本步写入优化器的学习率",
+        "notes": [
+         "计数器先自增再钳到 tMax；超过 tMax 后返回值恒为 etaMin。",
+         "每调用一次都会改写优化器的学习率，与是否执行过 optimizer.step() 无关。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "currentLearningRate()",
+       "signature": "float currentLearningRate()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回优化器当前学习率",
+        "returns": "optimizer.learningRate() 的当前值；尚未调用 step() 时等于构造时的 baseLr"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "currentStep()",
+       "signature": "int currentStep()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回已推进的步数",
+        "returns": "从 0 开始、每次 step() 加一的计数，可超过 tMax"
+       }
+      }
+     ],
+     "doc": {
+      "summary": "余弦退火学习率调度器",
+      "body": [
+       "按 lr_t = etaMin + 0.5·(baseLr − etaMin)·(1 + cos(π·t/T_max)) 调整优化器学习率，与 torch.optim.lr_scheduler.CosineAnnealingLR 一致；baseLr 在构造时从 optimizer.learningRate() 读取一次，之后不再跟随外部改动。",
+       "step() 先把内部计数器加一，再以 min(t, T_max) 代入公式，把结果写回优化器并返回；t 达到 T_max 后学习率停在 etaMin，继续调用只推进计数器、不再改变取值。",
+       "实现不含热重启：没有周期重置，也没有 restart 入口。需要周期性回升时，按周期新建调度器，或在重置点先 setLearningRate 回到 baseLr 再重新计时。"
+      ],
+      "notes": [
+       "tMax 必须为正，etaMin 必须有限且非负，否则构造器抛 IllegalArgumentException；optimizer 为 null 抛 NullPointerException。",
+       "currentLearningRate() 返回优化器当前的学习率，而不是按公式重算的值；外部改过优化器学习率后两者会不一致。",
+       "计数器从 0 开始，第一次 step() 后 t = 1，因此要经过 T_max 次调用才降到 etaMin。"
+      ],
+      "example": "try (JSL jsl = JSL.create()) {\n    Linear model = new Linear(jsl.context(), 16, 4);\n    AdamW optimizer = new AdamW(model.parameters(), 1e-3f);\n    CosineAnnealingLR scheduler = new CosineAnnealingLR(optimizer, 100, 1e-5f);\n    for (int epoch = 1; epoch <= 100; epoch++) {\n        // ... 前向、反向\n        optimizer.step();\n        float lr = scheduler.step();\n    }\n}",
+      "see": [
+       "jsl.torch.LRScheduler",
+       "jsl.torch.StepLR",
+       "jsl.torch.Optimizer#setLearningRate(float)"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.torch.CrossEntropyLoss",
+     "simple_qualified": "CrossEntropyLoss",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [
+      "Loss"
+     ],
+     "file": "jsl/torch/CrossEntropyLoss.java",
+     "line": 4,
+     "javadoc": "Fused softmax + negative log likelihood over [N, C] logits.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "method",
+       "key": "loss(Tensor, Tensor)",
+       "signature": "Tensor loss(Tensor prediction, Tensor target)",
+       "params": [
+        {
+         "type": "Tensor",
+         "name": "prediction"
+        },
+        {
+         "type": "Tensor",
+         "name": "target"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "计算批量平均的交叉熵",
+        "params": {
+         "prediction": "形状 [N, C] 的 logits，不做 softmax 预处理",
+         "target": "元素个数为 N 的类索引张量，取值须落在 [0, C)"
+        },
+        "returns": "形状 [1] 的标量损失张量，可继续调用 backward()",
+        "throws": {
+         "IllegalArgumentException": "logits 秩不为 2，或目标元素数不等于 N"
+        },
+        "notes": [
+         "目标以 float 存储并被截断取整；越界由原生层抛 IllegalStateException。"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "融合 softmax 与负对数似然的分类损失",
+      "body": [
+       "loss(prediction, target) 直接转调 Tensor.crossEntropy：prediction 是 [N, C] 的未归一化 logits，target 是长度 N 的类索引（以 float 存储），返回形状 [1] 的标量，按 N 取平均。",
+       "前向用 log-sum-exp 稳定计算，反向一次得到 (softmax - onehot) / N，不需要显式构造 softmax 再取对数，省去中间张量与溢出风险。"
+      ],
+      "notes": [
+       "target 越界或非有限由原生层拒绝，抛 IllegalStateException；形状不符在 Java 侧抛 IllegalArgumentException。",
+       "不支持类别权重、ignore_index 与 label smoothing，类别不平衡需自行加权或重采样。",
+       "无状态、无可训练参数，可复用同一实例。"
+      ],
+      "see": [
+       "jsl.torch.Loss",
+       "jsl.torch.MSELoss",
+       "jsl.torch.Tensor#crossEntropy(Tensor)"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.torch.DepthwiseSeparableConv2d",
+     "simple_qualified": "DepthwiseSeparableConv2d",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "Module<BCHW, BCHW>",
+     "implements": [],
+     "file": "jsl/torch/DepthwiseSeparableConv2d.java",
+     "line": 14,
+     "javadoc": "Depthwise Separable 2-D Convolution (MobileNet / Xception style): a depthwise spatial\nconvolution ({@code groups = inputChannels}) followed by a {@code 1x1} pointwise channel-mixing\nconvolution.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "constructor",
+       "key": "DepthwiseSeparableConv2d(NativeContext, int, int, int, int, int, long)",
+       "signature": "DepthwiseSeparableConv2d(NativeContext context, int inputChannels, int outputChannels, int kernelSize, int stride, int padding, long seed)",
+       "params": [
+        {
+         "type": "NativeContext",
+         "name": "context"
+        },
+        {
+         "type": "int",
+         "name": "inputChannels"
+        },
+        {
+         "type": "int",
+         "name": "outputChannels"
+        },
+        {
+         "type": "int",
+         "name": "kernelSize"
+        },
+        {
+         "type": "int",
+         "name": "stride"
+        },
+        {
+         "type": "int",
+         "name": "padding"
+        },
+        {
+         "type": "long",
+         "name": "seed"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "方形核、对称步长与填充的构造器",
+        "params": {
+         "context": "持有原生上下文，两段权重都在其中分配",
+         "inputChannels": "输入通道数，同时作为 depthwise 的分组数，必须为正",
+         "outputChannels": "pointwise 的输出通道数，必须为正",
+         "kernelSize": "depthwise 的方形核边长，必须为正",
+         "stride": "高宽共用的 depthwise 步长，必须为正",
+         "padding": "高宽共用的 depthwise 零填充宽度；不校验，可为负",
+         "seed": "种子基数，两段各自偏移后使用"
+        },
+        "throws": {
+         "IllegalArgumentException": "通道数、核尺寸或步长非正"
+        },
+        "notes": [
+         "等价于 dilation 1×1、useBias=true 的完整构造器。"
+        ]
+       }
+      },
+      {
+       "kind": "constructor",
+       "key": "DepthwiseSeparableConv2d(NativeContext, int, int, int, int, int, int, int, int, int, int, boolean, long)",
+       "signature": "DepthwiseSeparableConv2d(NativeContext context, int inputChannels, int outputChannels, int kernelHeight, int kernelWidth, int strideHeight, int strideWidth, int paddingHeight, int paddingWidth, int dilationHeight, int dilationWidth, boolean useBias, long seed)",
+       "params": [
+        {
+         "type": "NativeContext",
+         "name": "context"
+        },
+        {
+         "type": "int",
+         "name": "inputChannels"
+        },
+        {
+         "type": "int",
+         "name": "outputChannels"
+        },
+        {
+         "type": "int",
+         "name": "kernelHeight"
+        },
+        {
+         "type": "int",
+         "name": "kernelWidth"
+        },
+        {
+         "type": "int",
+         "name": "strideHeight"
+        },
+        {
+         "type": "int",
+         "name": "strideWidth"
+        },
+        {
+         "type": "int",
+         "name": "paddingHeight"
+        },
+        {
+         "type": "int",
+         "name": "paddingWidth"
+        },
+        {
+         "type": "int",
+         "name": "dilationHeight"
+        },
+        {
+         "type": "int",
+         "name": "dilationWidth"
+        },
+        {
+         "type": "boolean",
+         "name": "useBias"
+        },
+        {
+         "type": "long",
+         "name": "seed"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "完整指定核、步长、填充、膨胀与偏置",
+        "params": {
+         "context": "持有原生上下文，两段权重都在其中分配",
+         "inputChannels": "输入通道数，等于 depthwise 的分组数，必须为正",
+         "outputChannels": "pointwise 的输出通道数，必须为正",
+         "kernelHeight": "depthwise 核高度，必须为正",
+         "kernelWidth": "depthwise 核宽度，必须为正",
+         "strideHeight": "depthwise 垂直步长，必须为正",
+         "strideWidth": "depthwise 水平步长，必须为正",
+         "paddingHeight": "depthwise 垂直零填充；不校验，可为负",
+         "paddingWidth": "depthwise 水平零填充；不校验，可为负",
+         "dilationHeight": "depthwise 垂直膨胀系数，必须为正",
+         "dilationWidth": "depthwise 水平膨胀系数，必须为正",
+         "useBias": "是否给 pointwise 段创建偏置；depthwise 段恒无偏置",
+         "seed": "种子基数，depthwise 用 seed + 17、pointwise 用 seed + 53"
+        },
+        "throws": {
+         "IllegalArgumentException": "通道数、核尺寸、步长或膨胀非正"
+        },
+        "notes": [
+         "膨胀只作用于 depthwise；pointwise 固定 1×1、步长 1、无填充、groups=1。",
+         "两段权重分别是 [inputChannels, 1, kH, kW] 与 [outputChannels, inputChannels, 1, 1]。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "forward(Tensor)",
+       "signature": "Tensor forward(Tensor input)",
+       "params": [
+        {
+         "type": "Tensor",
+         "name": "input"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "先逐通道卷积再 1×1 混合",
+        "params": {
+         "input": "形状 [N, inputChannels, H, W] 的张量"
+        },
+        "returns": "[N, outputChannels, Hout, Wout] 的新张量，Hout、Wout 由 depthwise 的核、步长、填充与膨胀决定",
+        "throws": {
+         "IllegalArgumentException": "输入非四维、通道数与权重不匹配，或输出空间尺寸非正"
+        },
+        "notes": [
+         "两段串联产生两个计算图节点，梯度沿链式法则先回传到 pointwise 输入，再进入 depthwise。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "parameters()",
+       "signature": "List<Tensor> parameters()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回两段参数",
+        "returns": "depthwise 权重在前，随后是 pointwise 权重与可选偏置；无偏置时长度为 2"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "namedParameters()",
+       "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回带段名前缀的命名参数",
+        "returns": "depthwise.weight、pointwise.weight，带偏置时追加 pointwise.bias"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "depthwise()",
+       "signature": "Conv2d depthwise()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回逐通道卷积子模块",
+        "returns": "groups 等于 inputChannels、useBias 为 false 的 Conv2d"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "pointwise()",
+       "signature": "Conv2d pointwise()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回 1×1 混合子模块",
+        "returns": "核 1×1、groups 为 1 的 Conv2d，可能带偏置"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "train()",
+       "signature": "void train()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "切换训练模式并传给两段",
+        "notes": [
+         "先置自身的 training 标志，再对两段调用 train()；Conv2d 无状态，前向结果不受模式影响。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "eval()",
+       "signature": "void eval()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "切换推理模式并传给两段",
+        "notes": [
+         "先置自身的 training 标志，再对两段调用 eval()；对 Conv2d 而言与 train() 等价。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "close()",
+       "signature": "void close()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "关闭两段卷积",
+        "notes": [
+         "释放两段的权重与偏置张量，之后模块不可再用。"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "深度可分离二维卷积，先逐通道再 1×1 混合",
+      "body": [
+       "内部由两个 Conv2d 组成：depthwise 以 groups = inputChannels 做逐通道空间卷积，权重形状 [inputChannels, 1, kernelHeight, kernelWidth]，不设偏置；pointwise 是 1×1、步长 1、无填充的普通卷积，权重形状 [outputChannels, inputChannels, 1, 1]，是否带偏置由 useBias 决定。",
+       "forward 串联两段：先按 depthwise 的核、步长、填充、膨胀算出空间尺寸 Hout = (H + 2·pH − (dH·(kH − 1) + 1)) / sH + 1（向下取整），pointwise 不改变空间尺寸，最终输出 [N, outputChannels, Hout, Wout]。",
+       "参数按 depthwise 在前、pointwise 在后的顺序拼接；namedParameters 的键带 depthwise. 与 pointwise. 前缀，stateDict 因此能区分两段权重。"
+      ],
+      "notes": [
+       "两段的种子分别是 seed + 17 与 seed + 53，再各自混入通道数，同一个 seed 也能得到不同的初值。",
+       "参数校验完全交给两个 Conv2d：通道数、核尺寸、步长、膨胀非正时抛 IllegalArgumentException；inputChannels 与 outputChannels 无需相等。",
+       "train()/eval() 与 close() 同时作用于两段；模块自身不持有额外张量。",
+       "计算量约为普通 k×k 卷积的 1/outputChannels 加 1/(k×k)，代价是通道间信息只在 pointwise 段交换。"
+      ],
+      "example": "try (JSL jsl = JSL.create()) {\n    DepthwiseSeparableConv2d block =\n            new DepthwiseSeparableConv2d(jsl.context(), 32, 64, 3, 2, 1, 42L);\n    Tensor y = block.forward(jsl.randn(1, 32, 56, 56));\n    // y 形状为 [1, 64, 28, 28]\n    block.close();\n}",
+      "see": [
+       "jsl.torch.Conv2d",
+       "jsl.torch.BatchNorm2d",
+       "jsl.torch.Activation"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.torch.Dropout",
+     "simple_qualified": "Dropout",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "<L extends Layout>",
+     "extends": "Module<L, L>",
+     "implements": [],
+     "file": "jsl/torch/Dropout.java",
+     "line": 7,
+     "javadoc": "Inverted dropout; evaluation is the identity.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "constructor",
+       "key": "Dropout(float)",
+       "signature": "Dropout(float probability)",
+       "params": [
+        {
+         "type": "float",
+         "name": "probability"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以默认种子构造 dropout",
+        "params": {
+         "probability": "置零概率，取值 [0, 1)；0 表示恒等"
+        },
+        "throws": {
+         "IllegalArgumentException": "probability 不在 [0, 1) 内，含 NaN"
+        }
+       }
+      },
+      {
+       "kind": "constructor",
+       "key": "Dropout(float, long)",
+       "signature": "Dropout(float probability, long seed)",
+       "params": [
+        {
+         "type": "float",
+         "name": "probability"
+        },
+        {
+         "type": "long",
+         "name": "seed"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "指定掩码种子构造 dropout",
+        "params": {
+         "probability": "置零概率，取值 [0, 1)",
+         "seed": "掩码生成种子，每次 forward 后自增"
+        },
+        "throws": {
+         "IllegalArgumentException": "probability 不在 [0, 1) 内，含 NaN"
+        },
+        "notes": [
+         "种子为 0 时原生侧会先与 1 按位或，实际状态序列与传 1 相同。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "forward(Tensor)",
+       "signature": "Tensor forward(Tensor input)",
+       "params": [
+        {
+         "type": "Tensor",
+         "name": "input"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "训练时随机置零并缩放，推理时恒等",
+        "params": {
+         "input": "任意形状的张量，掩码按元素个数生成"
+        },
+        "returns": "与输入同形状的新张量",
+        "notes": [
+         "每次调用都会推进内部种子，因此同一输入连续两次前向的结果不同。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "parameters()",
+       "signature": "List<Tensor> parameters()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回空参数列表",
+        "returns": "恒为空的不可变列表"
+       }
+      }
+     ],
+     "doc": {
+      "summary": "倒置 dropout，推理期为恒等映射",
+      "body": [
+       "训练模式下按概率 probability 把元素置零，并把保留的元素乘以 1 / (1 - probability)，使前向期望保持不变；probability 为 0 时直接返回输入的副本。",
+       "推理模式或 probability 为 0 时掩码全为 1，输出等于输入，因此同一模块可以在训练与推理之间反复切换而不改变调用方式。",
+       "掩码由原生内核用 xorshift64 从 seed 生成，给定种子完全确定；模块在每次 forward 之后把内部 seed 加一，所以连续调用得到不同掩码，而整条序列可复现。"
+      ],
+      "notes": [
+       "构造器校验 probability 落在 [0, 1)，越界抛 IllegalArgumentException；单参构造器的默认种子为 0x9E3779B97F4A7C15。",
+       "掩码按元素个数生成，与形状无关；同一次前向与对应反向使用同一掩码。",
+       "内部 seed 可变，同一实例不宜跨线程并发调用 forward。"
+      ],
+      "see": [
+       "jsl.torch.Module#train()",
+       "jsl.torch.Tensor#dropout"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.torch.Embedding",
+     "simple_qualified": "Embedding",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "Module<BC, BSF>",
+     "implements": [],
+     "file": "jsl/torch/Embedding.java",
+     "line": 10,
+     "javadoc": "Lookup table: [batch, sequence] integer-valued floats -> [batch, sequence, dim].",
+     "nested": [],
+     "members": [
+      {
+       "kind": "constructor",
+       "key": "Embedding(NativeContext, int, int)",
+       "signature": "Embedding(NativeContext context, int vocabularySize, int dimension)",
+       "params": [
+        {
+         "type": "NativeContext",
+         "name": "context"
+        },
+        {
+         "type": "int",
+         "name": "vocabularySize"
+        },
+        {
+         "type": "int",
+         "name": "dimension"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以 seed=0 构造查找表",
+        "params": {
+         "context": "持有原生上下文，权重在其中分配",
+         "vocabularySize": "词表大小，即权重行数，必须为正",
+         "dimension": "每个索引对应的向量维度，必须为正"
+        },
+        "notes": [
+         "等价于四参构造器传入 seed=0。"
+        ]
+       }
+      },
+      {
+       "kind": "constructor",
+       "key": "Embedding(NativeContext, int, int, long)",
+       "signature": "Embedding(NativeContext context, int vocabularySize, int dimension, long seed)",
+       "params": [
+        {
+         "type": "NativeContext",
+         "name": "context"
+        },
+        {
+         "type": "int",
+         "name": "vocabularySize"
+        },
+        {
+         "type": "int",
+         "name": "dimension"
+        },
+        {
+         "type": "long",
+         "name": "seed"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "指定初始化种子构造查找表",
+        "params": {
+         "context": "持有原生上下文，权重在其中分配",
+         "vocabularySize": "词表大小，必须为正",
+         "dimension": "向量维度，必须为正",
+         "seed": "初始化种子基数，实际种子混入 vocabularySize 与 dimension"
+        },
+        "notes": [
+         "初始化幅度随 dimension 增大而收缩，dimension=1 时为 ±1。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "forward(Tensor)",
+       "signature": "Tensor forward(Tensor input)",
+       "params": [
+        {
+         "type": "Tensor",
+         "name": "input"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "按索引查表，输出追加一维",
+        "params": {
+         "input": "元素为整数值的浮点张量，任意秩，每个元素是一个行号"
+        },
+        "returns": "形状为 input.shape() 末尾追加 dimension 的新张量",
+        "throws": {
+         "JSLRuntimeException": "索引非有限，或落在 [0, vocabularySize) 之外（由原生内核校验）"
+        },
+        "notes": [
+         "输出不复制权重之外的数据，行内容与权重对应行逐元素相同。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "parameters()",
+       "signature": "List<Tensor> parameters()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回权重张量",
+        "returns": "只含 weight 的单元素列表"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "namedParameters()",
+       "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回名为 weight 的状态项",
+        "returns": "只含 weight 的单元素列表"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "weight()",
+       "signature": "Tensor weight()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回查找表权重",
+        "returns": "[vocabularySize, dimension] 的可训练张量"
+       }
+      }
+     ],
+     "doc": {
+      "summary": "词表查找表，索引以 f32 存整数",
+      "body": [
+       "权重形状为 [vocabularySize, dimension]，按 ±1/sqrt(dimension) 的均匀分布初始化，实际种子为 seed + 41·vocabularySize + dimension。",
+       "forward 把输入中的每个元素当作行号，取出对应的 dimension 维向量，输出形状为输入形状末尾追加一维 dimension；输入可以是任意秩，不限于 [batch, sequence]。",
+       "索引以 f32 存储，原生内核校验其有限且落在 [0, vocabularySize) 内，随后截断为整数行号再拷贝整行权重。"
+      ],
+      "notes": [
+       "索引应为整数值的浮点数；带小数部分时会被截断取整，不报错。",
+       "vocabularySize 与 dimension 必须为正，否则张量分配阶段抛 IllegalArgumentException。",
+       "反向传播按索引做散射累加，同一索引在输入中出现多次时梯度相加。"
+      ],
+      "see": [
+       "jsl.torch.Linear",
+       "jsl.torch.Tensor#embedding"
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -27,7 +27,7 @@ import java.nio.ByteOrder;
  * <p>Complex ops carry their shape parameters inline in the 16 attribute slots, so convolution
  * and batchnorm need no second allocation or pointer chase.</p>
  */
-public final class CommandQueueBuilder {
+public final class CommandQueueBuilder implements AutoCloseable {
     public static final int OP_MATMUL = 1;
     public static final int OP_ADD = 2;
     public static final int OP_RELU = 3;
@@ -49,6 +49,7 @@ public final class CommandQueueBuilder {
     public static final int OP_BATCHED_MATMUL = 19;
     public static final int OP_PERMUTE = 20;
     public static final int OP_RESHAPE = 21;
+    public static final int OP_GROUP_NORM = 22;
 
     public static final int COMMAND_BYTES = 128;
 
@@ -62,52 +63,52 @@ public final class CommandQueueBuilder {
                 .order(ByteOrder.nativeOrder());
     }
 
-    public CommandQueueBuilder matMul(NativeTensorHandle left, NativeTensorHandle right,
+    public synchronized CommandQueueBuilder matMul(NativeTensorHandle left, NativeTensorHandle right,
                                       NativeTensorHandle output) {
         return binary(OP_MATMUL, left, right, output);
     }
 
-    public CommandQueueBuilder add(NativeTensorHandle left, NativeTensorHandle right,
+    public synchronized CommandQueueBuilder add(NativeTensorHandle left, NativeTensorHandle right,
                                    NativeTensorHandle output) {
         return binary(OP_ADD, left, right, output);
     }
 
-    public CommandQueueBuilder sub(NativeTensorHandle left, NativeTensorHandle right,
+    public synchronized CommandQueueBuilder sub(NativeTensorHandle left, NativeTensorHandle right,
                                    NativeTensorHandle output) {
         return binary(OP_SUB, left, right, output);
     }
 
-    public CommandQueueBuilder mul(NativeTensorHandle left, NativeTensorHandle right,
+    public synchronized CommandQueueBuilder mul(NativeTensorHandle left, NativeTensorHandle right,
                                    NativeTensorHandle output) {
         return binary(OP_MUL, left, right, output);
     }
 
-    public CommandQueueBuilder relu(NativeTensorHandle input, NativeTensorHandle output) {
+    public synchronized CommandQueueBuilder relu(NativeTensorHandle input, NativeTensorHandle output) {
         return unary(OP_RELU, input, output);
     }
 
-    public CommandQueueBuilder sigmoid(NativeTensorHandle input, NativeTensorHandle output) {
+    public synchronized CommandQueueBuilder sigmoid(NativeTensorHandle input, NativeTensorHandle output) {
         return unary(OP_SIGMOID, input, output);
     }
 
-    public CommandQueueBuilder tanh(NativeTensorHandle input, NativeTensorHandle output) {
+    public synchronized CommandQueueBuilder tanh(NativeTensorHandle input, NativeTensorHandle output) {
         return unary(OP_TANH, input, output);
     }
 
-    public CommandQueueBuilder gelu(NativeTensorHandle input, NativeTensorHandle output) {
+    public synchronized CommandQueueBuilder gelu(NativeTensorHandle input, NativeTensorHandle output) {
         return unary(OP_GELU, input, output);
     }
 
-    public CommandQueueBuilder silu(NativeTensorHandle input, NativeTensorHandle output) {
+    public synchronized CommandQueueBuilder silu(NativeTensorHandle input, NativeTensorHandle output) {
         return unary(OP_SILU, input, output);
     }
 
-    public CommandQueueBuilder mse(NativeTensorHandle prediction, NativeTensorHandle target,
+    public synchronized CommandQueueBuilder mse(NativeTensorHandle prediction, NativeTensorHandle target,
                                    NativeTensorHandle output) {
         return binary(OP_MSE, prediction, target, output);
     }
 
-    public CommandQueueBuilder softmax(NativeTensorHandle input, NativeTensorHandle output,
+    public synchronized CommandQueueBuilder softmax(NativeTensorHandle input, NativeTensorHandle output,
                                        int dimension) {
         JSLRuntimeException.requireNonNull(input, "input");
         JSLRuntimeException.requireNonNull(output, "output");
@@ -117,12 +118,12 @@ public final class CommandQueueBuilder {
         return this;
     }
 
-    public CommandQueueBuilder crossEntropy(NativeTensorHandle logits, NativeTensorHandle targets,
+    public synchronized CommandQueueBuilder crossEntropy(NativeTensorHandle logits, NativeTensorHandle targets,
                                             NativeTensorHandle output) {
         return binary(OP_CROSS_ENTROPY, logits, targets, output);
     }
 
-    public CommandQueueBuilder layerNorm(NativeTensorHandle input, NativeTensorHandle gamma,
+    public synchronized CommandQueueBuilder layerNorm(NativeTensorHandle input, NativeTensorHandle gamma,
                                          NativeTensorHandle beta, NativeTensorHandle output,
                                          float epsilon) {
         JSLRuntimeException.requireNonNull(input, "input");
@@ -135,7 +136,7 @@ public final class CommandQueueBuilder {
         return this;
     }
 
-    public CommandQueueBuilder batchNorm2d(NativeTensorHandle input, NativeTensorHandle gamma,
+    public synchronized CommandQueueBuilder batchNorm2d(NativeTensorHandle input, NativeTensorHandle gamma,
                                            NativeTensorHandle beta,
                                            NativeTensorHandle runningMean,
                                            NativeTensorHandle runningVar,
@@ -156,10 +157,21 @@ public final class CommandQueueBuilder {
         return this;
     }
 
-    public CommandQueueBuilder conv2d(NativeTensorHandle input, NativeTensorHandle weight,
-                                      NativeTensorHandle output, int kernelHeight,
-                                      int kernelWidth, int strideHeight, int strideWidth,
-                                      int paddingHeight, int paddingWidth) {
+    public synchronized CommandQueueBuilder conv2d(
+            NativeTensorHandle input, NativeTensorHandle weight,
+            NativeTensorHandle output, int kernelHeight,
+            int kernelWidth, int strideHeight, int strideWidth,
+            int paddingHeight, int paddingWidth) {
+        return conv2d(input, weight, output, kernelHeight, kernelWidth, strideHeight, strideWidth,
+                paddingHeight, paddingWidth, 1, 1, 1);
+    }
+
+    public synchronized CommandQueueBuilder conv2d(
+            NativeTensorHandle input, NativeTensorHandle weight,
+            NativeTensorHandle output, int kernelHeight,
+            int kernelWidth, int strideHeight, int strideWidth,
+            int paddingHeight, int paddingWidth, int dilationHeight,
+            int dilationWidth, int groups) {
         JSLRuntimeException.requireNonNull(input, "input");
         JSLRuntimeException.requireNonNull(weight, "weight");
         JSLRuntimeException.requireNonNull(output, "output");
@@ -171,10 +183,28 @@ public final class CommandQueueBuilder {
         putInt(3, strideWidth);
         putInt(4, paddingHeight);
         putInt(5, paddingWidth);
+        putInt(6, dilationHeight);
+        putInt(7, dilationWidth);
+        putInt(8, groups);
         return this;
     }
 
-    public CommandQueueBuilder maxPool2d(NativeTensorHandle input, NativeTensorHandle output,
+    public synchronized CommandQueueBuilder groupNorm(
+            NativeTensorHandle input, NativeTensorHandle gamma,
+            NativeTensorHandle beta, NativeTensorHandle output,
+            int groups, float epsilon) {
+        JSLRuntimeException.requireNonNull(input, "input");
+        JSLRuntimeException.requireNonNull(gamma, "gamma");
+        JSLRuntimeException.requireNonNull(beta, "beta");
+        JSLRuntimeException.requireNonNull(output, "output");
+        requireSameContext(input, gamma, beta, output);
+        begin(OP_GROUP_NORM, input.ptr(), gamma.ptr(), beta.ptr(), 0, 0, output.ptr());
+        putInt(0, groups);
+        putFloat(1, epsilon);
+        return this;
+    }
+
+    public synchronized CommandQueueBuilder maxPool2d(NativeTensorHandle input, NativeTensorHandle output,
                                          int kernelHeight, int kernelWidth, int strideHeight,
                                          int strideWidth) {
         JSLRuntimeException.requireNonNull(input, "input");
@@ -188,7 +218,7 @@ public final class CommandQueueBuilder {
         return this;
     }
 
-    public CommandQueueBuilder dropout(NativeTensorHandle input, NativeTensorHandle output,
+    public synchronized CommandQueueBuilder dropout(NativeTensorHandle input, NativeTensorHandle output,
                                        float probability, boolean training, long seed) {
         JSLRuntimeException.requireNonNull(input, "input");
         JSLRuntimeException.requireNonNull(output, "output");
@@ -201,17 +231,17 @@ public final class CommandQueueBuilder {
         return this;
     }
 
-    public CommandQueueBuilder embedding(NativeTensorHandle indices, NativeTensorHandle weight,
+    public synchronized CommandQueueBuilder embedding(NativeTensorHandle indices, NativeTensorHandle weight,
                                          NativeTensorHandle output) {
         return binary(OP_EMBEDDING, indices, weight, output);
     }
 
-    public CommandQueueBuilder batchedMatMul(NativeTensorHandle left, NativeTensorHandle right,
+    public synchronized CommandQueueBuilder batchedMatMul(NativeTensorHandle left, NativeTensorHandle right,
                                              NativeTensorHandle output) {
         return binary(OP_BATCHED_MATMUL, left, right, output);
     }
 
-    public CommandQueueBuilder permute(NativeTensorHandle input, NativeTensorHandle output,
+    public synchronized CommandQueueBuilder permute(NativeTensorHandle input, NativeTensorHandle output,
                                        int... permutation) {
         JSLRuntimeException.requireNonNull(input, "input");
         JSLRuntimeException.requireNonNull(output, "output");
@@ -227,7 +257,7 @@ public final class CommandQueueBuilder {
         return this;
     }
 
-    public CommandQueueBuilder reshape(NativeTensorHandle input, NativeTensorHandle output,
+    public synchronized CommandQueueBuilder reshape(NativeTensorHandle input, NativeTensorHandle output,
                                        int... shape) {
         JSLRuntimeException.requireNonNull(input, "input");
         JSLRuntimeException.requireNonNull(output, "output");
@@ -313,19 +343,19 @@ public final class CommandQueueBuilder {
         buffer = grown;
     }
 
-    public int size() {
+    public synchronized int size() {
         return count;
     }
 
-    public int capacity() {
+    public synchronized int capacity() {
         return buffer.capacity() / COMMAND_BYTES;
     }
 
-    public void execute() {
+    public synchronized void execute() {
         execute(context.threads());
     }
 
-    public void execute(int threads) {
+    public synchronized void execute(int threads) {
         if (threads < 0 || threads > 256) {
             throw new IllegalArgumentException("threads must be in [0, 256]");
         }
@@ -336,26 +366,29 @@ public final class CommandQueueBuilder {
         try (NativeContext.Guard guard = context.guard()) {
             NativeBindings.executeQueue(guard.handle(), buffer, count, threads);
         } finally {
+            long elapsed = System.nanoTime() - start;
             jsl.torch.NativeQueueEvent event = new jsl.torch.NativeQueueEvent();
             event.commands = count;
             event.threads = threads;
             event.bytes = count * COMMAND_BYTES;
-            event.durationNanos = System.nanoTime() - start;
+            event.durationNanos = elapsed;
             event.commit();
+            jsl.JslMetrics.recordOperator("native.command_queue", elapsed, count,
+                    (long) count * COMMAND_BYTES);
         }
     }
 
-    public void executeAndClear() {
+    public synchronized void executeAndClear() {
         execute();
         clear();
     }
 
-    public void clear() {
+    public synchronized void clear() {
         count = 0;
         buffer.clear();
     }
 
-    public void close() {
+    public synchronized void close() {
         clear();
     }
 

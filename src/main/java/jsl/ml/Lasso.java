@@ -1,9 +1,14 @@
 package jsl.ml;
 
 import jsl.core.Matrix;
+import jsl.core.ModelFormatException;
+import jsl.core.ModelKind;
+import jsl.core.ModelReader;
+import jsl.core.ModelWriter;
+import jsl.core.Persistable;
 
 /** L1-regularized least squares fitted by cyclic coordinate descent. */
-public final class Lasso implements Estimator {
+public final class Lasso implements Estimator, Persistable {
     private final double alpha;
     private final int maxIterations;
     private final double tolerance;
@@ -114,6 +119,42 @@ public final class Lasso implements Estimator {
 
     public double intercept() {
         return intercept;
+    }
+
+
+    @Override
+    public ModelKind kind() {
+        return ModelKind.LASSO;
+    }
+
+    @Override
+    public void write(ModelWriter writer) {
+        if (weights == null) {
+            throw new IllegalStateException("Lasso must be fitted before serialization");
+        }
+        writer.putDouble(alpha);
+        writer.putInt(maxIterations);
+        writer.putDouble(tolerance);
+        writer.putInt(featureCount);
+        writer.putDouble(intercept);
+        writer.putDoubles(weights);
+    }
+
+    public static Lasso read(ModelReader reader) {
+        double alpha = reader.getDouble();
+        int maxIter = reader.getInt();
+        double tol = reader.getDouble();
+        int features = reader.getInt();
+        if (features <= 0) {
+            throw new ModelFormatException("Invalid Lasso feature count");
+        }
+        double intercept = reader.getDouble();
+        double[] weights = reader.getDoubles(features);
+        Lasso model = new Builder().alpha(alpha).maxIterations(maxIter).tolerance(tol).build();
+        model.featureCount = features;
+        model.intercept = intercept;
+        model.weights = weights;
+        return model;
     }
 
     public static final class Builder {

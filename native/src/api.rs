@@ -46,7 +46,7 @@ fn jni_error(error: jni::errors::Error) -> NativeError {
 }
 
 fn throw_error(env: &mut JNIEnv<'_>, error: &NativeError) {
-    let _ = env.throw_new("jsl/JSLRuntimeException", error.to_string());
+    let _ = env.throw_new(error.exception_class(), error.to_string());
 }
 
 fn run_jni<'local, T>(
@@ -115,6 +115,8 @@ fn tensor_shape_of(tensor: &Arc<RwLock<NativeTensor>>) -> Result<Vec<usize>> {
         .clone())
 }
 
+#[no_mangle]
+#[allow(non_snake_case)]
 pub extern "system" fn Java_jsl_nativebridge_NativeBindings_available(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,

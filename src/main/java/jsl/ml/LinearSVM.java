@@ -1,6 +1,11 @@
 package jsl.ml;
 
 import jsl.core.Matrix;
+import jsl.core.ModelFormatException;
+import jsl.core.ModelKind;
+import jsl.core.ModelReader;
+import jsl.core.ModelWriter;
+import jsl.core.Persistable;
 import java.util.Random;
 import java.util.TreeMap;
 
@@ -11,7 +16,7 @@ import java.util.TreeMap;
  * The step size is {@code 1/(lambda * t)}; the bias is unregularized. For linearly separable data
  * the hinge loss reaches zero and the model recovers a maximum-margin direction.</p>
  */
-public final class LinearSVM implements Estimator {
+public final class LinearSVM implements Estimator, Persistable {
     private final double lambda;
     private final int epochs;
     private final long seed;
@@ -108,6 +113,49 @@ public final class LinearSVM implements Estimator {
 
     public double bias() {
         return bias;
+    }
+
+
+    public double[] classes() {
+        return classes == null ? null : classes.clone();
+    }
+
+    @Override
+    public ModelKind kind() {
+        return ModelKind.LINEAR_SVM;
+    }
+
+    @Override
+    public void write(ModelWriter writer) {
+        if (weights == null) {
+            throw new IllegalStateException("LinearSVM must be fitted before serialization");
+        }
+        writer.putDouble(lambda);
+        writer.putInt(epochs);
+        writer.putLong(seed);
+        writer.putInt(featureCount);
+        writer.putDouble(bias);
+        writer.putDoubles(classes);
+        writer.putDoubles(weights);
+    }
+
+    public static LinearSVM read(ModelReader reader) {
+        double lambda = reader.getDouble();
+        int epochs = reader.getInt();
+        long seed = reader.getLong();
+        int features = reader.getInt();
+        if (features <= 0) {
+            throw new ModelFormatException("Invalid LinearSVM feature count");
+        }
+        double bias = reader.getDouble();
+        double[] classes = reader.getDoubles(2);
+        double[] weights = reader.getDoubles(features);
+        LinearSVM model = new Builder().lambda(lambda).epochs(epochs).seed(seed).build();
+        model.featureCount = features;
+        model.bias = bias;
+        model.classes = classes;
+        model.weights = weights;
+        return model;
     }
 
     public static final class Builder {

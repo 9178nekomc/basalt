@@ -1,41 +1,31 @@
 {
  "group": "g08",
- "title": "序列模型与注意力",
+ "title": "经典机器学习（3/9）",
  "modules": [
   {
-   "name": "jsl.nn",
-   "intro": [
-    "本模块提供面向 BSF 布局的循环层与注意力层。BSF 的三个轴依次为 batch、sequence（时间步）、feature，所有序列层都保持这一布局：输入与输出的前两轴相同，只有特征轴按层配置改变。",
-    "循环层在首次 forward 时根据输入特征数惰性分配参数，并缓存每个时间步的门与状态缓冲；随后必须按 forward → backward → update 的顺序调用，backward 只累积梯度，update 才写回参数。"
-   ],
+   "name": "jsl.ml",
    "types": [
     {
-     "qualified": "jsl.nn.GRU",
-     "simple_qualified": "GRU",
+     "qualified": "jsl.ml.KernelPCA",
+     "simple_qualified": "KernelPCA",
      "kind": "class",
-     "modifiers": ["public", "final"],
+     "modifiers": [
+      "public",
+      "final"
+     ],
      "generic": "",
      "extends": "",
-     "implements": ["Layer<BSF, BSF>", "Persistable"],
-     "file": "jsl/nn/GRU.java",
-     "line": 26,
-     "javadoc": "Many-to-many GRU with explicit backpropagation through time.\n\n<p>Gate order is update ({@code z}), reset ({@code r}) and candidate ({@code n}):\n{@code z = sigmoid(Wz x + Uz h + bz)}, {@code r = sigmoid(Wr x + Ur h + br)},\n{@code n = tanh(Wn x + Un (r * h) + bn)}, {@code h' = (1 - z) * n + z * h}.</p>\n\n<p>The update gate carries the previous state additively, so its Jacobian contains\n{@code dh'/dh = z + ...}, which stays close to the identity early in training. That is the\nmechanism that keeps gradients alive over long sequences, in contrast to the product of\n{@code tanh'} factors in a vanilla RNN.</p>",
-     "nested": ["Builder"],
-     "doc": {
-      "summary": "门控循环层：显式 BPTT 的 many-to-many GRU，输入输出均为 BSF。",
-      "body": [
-       "门顺序固定为 update（z）、reset（r）、candidate（n）。z 与 r 经 sigmoid 得到，候选状态经 tanh 得到，最终状态按 h' = (1 - z) * n + z * h 组合，其中 z 越大越保留旧状态。",
-       "reset 门按前一时刻隐藏向量的分量逐元素作用于 U_n h，而非整段向量缩放。forward 返回整段序列的全部时间步输出，而不是只返回最后一步；h_0 为零向量，序列之间不携带状态。"
-      ],
-      "notes": [
-       "参数规模为 3 * hiddenSize * (features + hiddenSize + 1)，权重按门分块连续存储，门块内再按隐藏单元分行。",
-       "bias 以全零初始化，因此 z 与 r 在训练开始时的输出均为 0.5。",
-       "输入特征数在首次 forward 时确定，之后传入不同特征数会抛出异常。",
-       "必须按 forward → backward → update 的顺序调用；update 消费梯度后需重新前向才能再次更新。"
-      ],
-      "example": "GRU gru = GRU.builder().hiddenSize(8).seed(42).build();\nTensor<BSF> input = Tensor.zerosBSF(2, 5, 3);\nTensor<BSF> output = gru.forward(input);\nTensor<BSF> inputGradient = gru.backward(Tensor.zerosBSF(2, 5, 8));\ngru.update(Optimizer.ADAM.withLearningRate(0.01));",
-      "see": ["jsl.nn.LSTM", "jsl.nn.VanillaRNN", "jsl.nn.SequenceNetwork"]
-     },
+     "implements": [
+      "Estimator",
+      "Transformer",
+      "Persistable"
+     ],
+     "file": "jsl/ml/KernelPCA.java",
+     "line": 15,
+     "javadoc": "Non-linear dimensionality reduction through centered Kernel Principal Component Analysis\n(Kernel PCA), matching {@code sklearn.decomposition.KernelPCA}.",
+     "nested": [
+      "Builder"
+     ],
      "members": [
       {
        "kind": "method",
@@ -45,747 +35,145 @@
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "创建构建器，hiddenSize 默认 16、seed 默认 42。",
-        "returns": "新的 Builder 实例"
+        "summary": "创建构建器，默认 2 个分量、rbf(1.0) 核。",
+        "returns": "新的 Builder，字段取默认值"
        }
       },
       {
        "kind": "method",
-       "key": "forward(Tensor<BSF>)",
-       "signature": "Tensor<BSF> forward(Tensor<BSF> input)",
-       "params": [{"type": "Tensor<BSF>", "name": "input"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "沿时间轴前向传播，返回全序列隐藏状态。",
-        "params": {
-         "input": "形状 (batch, sequence, features) 的 BSF 张量；features 在首次调用时确定并据此分配参数"
-        },
-        "returns": "形状 (batch, sequence, hiddenSize) 的张量，含每个时间步的隐藏状态，t=0 的状态由零初始状态算出",
-        "throws": {
-         "IllegalArgumentException": "features 与首次 forward 时确定的值不一致"
-        },
-        "notes": [
-         "返回的张量是内部缓冲的副本，后续调用不会改写已返回的结果。",
-         "内部逐时间步缓冲在批量与序列长度不变时复用，避免重复分配。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "backward(Tensor<BSF>)",
-       "signature": "Tensor<BSF> backward(Tensor<BSF> gradient)",
-       "params": [{"type": "Tensor<BSF>", "name": "gradient"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "沿时间轴反向传播，累积参数梯度并返回输入梯度。",
-        "params": {
-         "gradient": "上游梯度，形状必须为 (batch, sequence, hiddenSize)，与最近一次 forward 的输出对齐"
-        },
-        "returns": "对输入的梯度，形状 (batch, sequence, features)",
-        "throws": {
-         "IllegalStateException": "尚未调用 forward",
-         "IllegalArgumentException": "gradient 的形状与最近一次 forward 不匹配"
-        },
-        "notes": [
-         "梯度写入 inputWeights、recurrentWeights、bias 的缓冲，需再调用 update 才作用于参数。",
-         "反向按时间步逆序进行，逐时刻交换隐藏梯度缓冲，不递归。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "update(OptimizerConfig)",
-       "signature": "void update(OptimizerConfig optimizer)",
-       "params": [{"type": "OptimizerConfig", "name": "optimizer"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "用累积梯度对三组参数执行一次优化器更新。",
-        "params": {
-         "optimizer": "优化器超参数，同时作用于输入权重、循环权重与偏置"
-        },
-        "throws": {
-         "IllegalStateException": "未完成 forward 与 backward，或梯度已被上一次 update 消费"
-        },
-        "notes": ["更新后清除梯度就绪标记，重复调用会抛出异常。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "parameters()",
-       "signature": "List<ParameterRef> parameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回三组参数的实时视图。",
-        "returns": "参数视图列表，名称依次为 gru.inputWeights、gru.recurrentWeights、gru.bias；首次 forward 之前为空列表",
-        "notes": ["视图直接引用层内数组，可用于梯度检查、裁剪与持久化，不应调整长度。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "hiddenSize()",
-       "signature": "int hiddenSize()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回配置的隐藏单元数。",
-        "returns": "构建时指定的 hiddenSize"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "kind()",
-       "signature": "ModelKind kind()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回模型族标识。",
-        "returns": "固定为 ModelKind.GRU"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "write(ModelWriter)",
-       "signature": "void write(ModelWriter writer)",
-       "params": [{"type": "ModelWriter", "name": "writer"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把配置与权重写入模型流。",
-        "params": {
-         "writer": "目标写入器；依次写入 hiddenSize、seed、inputFeatures，已初始化时再写三组权重"
-        },
-        "notes": ["未初始化时 inputFeatures 写为 -1，且不写权重数组。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "read(ModelReader)",
-       "signature": "GRU read(ModelReader reader)",
-       "params": [{"type": "ModelReader", "name": "reader"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "从模型流恢复 GRU 实例。",
-        "params": {
-         "reader": "源读取器，读取顺序须与 write 一致"
-        },
-        "returns": "恢复后的 GRU；若流中记录了特征数，则同时重建并覆盖权重",
-        "throws": {
-         "ModelFormatException": "hiddenSize 非正，或特征标记既非 -1 也非正数"
-        }
-       }
-      }
-     ]
-    },
-    {
-     "qualified": "jsl.nn.LSTM",
-     "simple_qualified": "LSTM",
-     "kind": "class",
-     "modifiers": ["public", "final"],
-     "generic": "",
-     "extends": "",
-     "implements": ["Layer<BSF, BSF>", "Persistable"],
-     "file": "jsl/nn/LSTM.java",
-     "line": 23,
-     "javadoc": "Many-to-many LSTM with explicit backpropagation through time.\n\n<p>Gate order is input, forget, cell, output. The constant error carousel\n{@code c_t = f_t * c_{t-1} + i_t * g_t} has Jacobian {@code dc_t/dc_{t-1} = f_t}; because the\nforget gate is initialized near one and is learned, gradients do not have to pass through a\nproduct of squashed derivatives. Every per-timestep buffer is retained between calls and reused\nwhen the batch shape is unchanged.</p>",
-     "nested": ["Builder"],
-     "doc": {
-      "summary": "门控循环层：显式 BPTT 的 many-to-many LSTM，输入输出均为 BSF。",
-      "body": [
-       "门顺序固定为 input（i）、forget（f）、cell（g）、output（o）。i、f、o 经 sigmoid，g 经 tanh；单元状态按 c_t = f * c_{t-1} + i * g 更新，隐藏状态为 o * tanh(c_t)。",
-       "单元状态沿时间轴的雅可比就是 forget 门本身，梯度不必连乘被压缩的导数，这是长序列上梯度得以保留的结构原因。forward 返回整段序列，h_0 与 c_0 均为零。"
-      ],
-      "notes": [
-       "参数规模为 4 * hiddenSize * (features + hiddenSize + 1)，四门权重在同一矩阵内按 i、f、g、o 分块连续存放。",
-       "bias 以全零初始化，因此 forget 门的初始输出为 0.5，而非饱和在 1 附近。",
-       "输入特征数在首次 forward 时确定，之后传入不同特征数会抛出异常。",
-       "每个时间步的门与状态缓冲在批量形状不变时复用，序列较长时内存占用为 batch * sequence * hiddenSize 的若干倍。"
-      ],
-      "example": "LSTM lstm = LSTM.builder().hiddenSize(8).seed(42).build();\nTensor<BSF> input = Tensor.zerosBSF(2, 5, 3);\nTensor<BSF> output = lstm.forward(input);\nTensor<BSF> inputGradient = lstm.backward(Tensor.zerosBSF(2, 5, 8));\nlstm.update(Optimizer.ADAM.withLearningRate(0.01));",
-      "see": ["jsl.nn.GRU", "jsl.nn.SequenceNetwork", "jsl.nn.SequencePool"]
-     },
-     "members": [
-      {
-       "kind": "method",
-       "key": "builder()",
-       "signature": "Builder builder()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建构建器，hiddenSize 默认 16、seed 默认 42。",
-        "returns": "新的 Builder 实例"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "forward(Tensor<BSF>)",
-       "signature": "Tensor<BSF> forward(Tensor<BSF> input)",
-       "params": [{"type": "Tensor<BSF>", "name": "input"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "沿时间轴前向传播，返回全序列隐藏状态。",
-        "params": {
-         "input": "形状 (batch, sequence, features) 的 BSF 张量；features 在首次调用时确定并据此分配参数"
-        },
-        "returns": "形状 (batch, sequence, hiddenSize) 的张量，逐时间步给出 o * tanh(c_t)",
-        "throws": {
-         "IllegalArgumentException": "features 与首次 forward 时确定的值不一致"
-        },
-        "notes": [
-         "批次内各样本独立计算，互不共享状态。",
-         "返回的张量是内部缓冲的副本，后续调用不会改写已返回的结果。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "backward(Tensor<BSF>)",
-       "signature": "Tensor<BSF> backward(Tensor<BSF> gradient)",
-       "params": [{"type": "Tensor<BSF>", "name": "gradient"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "沿时间轴反向传播，累积参数梯度并返回输入梯度。",
-        "params": {
-         "gradient": "上游梯度，形状必须为 (batch, sequence, hiddenSize)，与最近一次 forward 的输出对齐"
-        },
-        "returns": "对输入的梯度，形状 (batch, sequence, features)",
-        "throws": {
-         "IllegalStateException": "尚未调用 forward",
-         "IllegalArgumentException": "gradient 的形状与最近一次 forward 不匹配"
-        },
-        "notes": [
-         "反向按时间步逆序进行，同时传播隐藏梯度与单元梯度，隐藏与单元缓冲逐时刻交换。",
-         "梯度写入三组参数缓冲，需再调用 update 才作用于参数。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "update(OptimizerConfig)",
-       "signature": "void update(OptimizerConfig optimizer)",
-       "params": [{"type": "OptimizerConfig", "name": "optimizer"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "用累积梯度对三组参数执行一次优化器更新。",
-        "params": {
-         "optimizer": "优化器超参数，同时作用于输入权重、循环权重与偏置"
-        },
-        "throws": {
-         "IllegalStateException": "未完成 forward 与 backward，或梯度已被上一次 update 消费"
-        },
-        "notes": ["更新后清除梯度就绪标记，重复调用会抛出异常。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "parameters()",
-       "signature": "List<ParameterRef> parameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回三组参数的实时视图。",
-        "returns": "参数视图列表，名称依次为 lstm.inputWeights、lstm.recurrentWeights、lstm.bias；首次 forward 之前为空列表",
-        "notes": ["视图直接引用层内数组，可用于梯度检查、裁剪与持久化，不应调整长度。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "hiddenSize()",
-       "signature": "int hiddenSize()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回配置的隐藏单元数。",
-        "returns": "构建时指定的 hiddenSize"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "kind()",
-       "signature": "ModelKind kind()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回模型族标识。",
-        "returns": "固定为 ModelKind.LSTM"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "write(ModelWriter)",
-       "signature": "void write(ModelWriter writer)",
-       "params": [{"type": "ModelWriter", "name": "writer"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把配置与权重写入模型流。",
-        "params": {
-         "writer": "目标写入器；依次写入 hiddenSize、seed、inputFeatures，已初始化时再写三组权重"
-        },
-        "notes": ["未初始化时 inputFeatures 写为 -1，且不写权重数组。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "read(ModelReader)",
-       "signature": "LSTM read(ModelReader reader)",
-       "params": [{"type": "ModelReader", "name": "reader"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "从模型流恢复 LSTM 实例。",
-        "params": {
-         "reader": "源读取器，读取顺序须与 write 一致"
-        },
-        "returns": "恢复后的 LSTM；若流中记录了特征数，则同时重建并覆盖权重",
-        "throws": {
-         "ModelFormatException": "hiddenSize 非正，或特征标记既非 -1 也非正数"
-        }
-       }
-      }
-     ]
-    },
-    {
-     "qualified": "jsl.nn.SelfAttention",
-     "simple_qualified": "SelfAttention",
-     "kind": "class",
-     "modifiers": ["public", "final"],
-     "generic": "",
-     "extends": "",
-     "implements": ["Layer<BSF, BSF>", "Persistable"],
-     "file": "jsl/nn/SelfAttention.java",
-     "line": 23,
-     "javadoc": "Single-head scaled dot-product self-attention with full Q/K/V and Softmax derivatives.\n\n<p>{@code A = softmax(Q K^T / sqrt(d))}, {@code O = A V}. The backward pass applies the exact\nSoftmax Jacobian {@code dS = A * (dA - rowsum(dA * A))} before the scaling factor, then\naccumulates {@code dQ = dS K}, {@code dK = dS^T Q} and {@code dV = A^T dO}. An optional causal\nmask restricts row {@code t} to keys {@code 0..t}.</p>",
-     "nested": ["Builder"],
-     "doc": {
-      "summary": "单头缩放点积自注意力，支持因果掩码与完整 Softmax 反向传播。",
-      "body": [
-       "对每个时间步做三次线性投影得到 Q、K、V，按 A = softmax(Q K^T / sqrt(d)) 归一化后加权求和 V，输出与输入同为 (batch, sequence, dimension)，每个时间步输出仍对应同一位置。",
-       "causal 为 true 时第 t 行只在键 0..t 上归一化，t 之后的注意力权重被置零，既不参与输出也不接收梯度；因此位置 t 的输出与未来时间步的输入无关。"
-      ],
-      "notes": [
-       "输入特征数必须严格等于 dimension，不做隐式投影；需要改变维度时应在之前串联 LSTM、GRU 或 Dense。",
-       "注意力缓冲为 batch * sequence * sequence 个 double，序列长度增加时内存按平方增长。",
-       "缩放因子 1 / sqrt(dimension) 在构造时算好，不随输入变化。",
-       "三组权重按 query、key、value 顺序用同一随机源连续采样，均匀分布于 ±sqrt(3 / dimension)；无偏置项。"
-      ],
-      "example": "SelfAttention attention = SelfAttention.builder()\n        .dimension(4)\n        .causal(true)\n        .seed(7)\n        .build();\nTensor<BSF> input = Tensor.zerosBSF(2, 6, 4);\nTensor<BSF> output = attention.forward(input);\nTensor<BSF> inputGradient = attention.backward(Tensor.zerosBSF(2, 6, 4));\nattention.update(Optimizer.ADAM.withLearningRate(0.001));",
-      "see": ["jsl.nn.LSTM", "jsl.nn.SequenceNetwork", "jsl.nn.SequencePool"]
-     },
-     "members": [
-      {
-       "kind": "method",
-       "key": "builder()",
-       "signature": "Builder builder()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建构建器，dimension 默认 16、seed 默认 42、非因果。",
-        "returns": "新的 Builder 实例"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "forward(Tensor<BSF>)",
-       "signature": "Tensor<BSF> forward(Tensor<BSF> input)",
-       "params": [{"type": "Tensor<BSF>", "name": "input"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "计算自注意力输出，形状与输入一致。",
-        "params": {
-         "input": "形状 (batch, sequence, dimension) 的 BSF 张量，特征轴必须等于 dimension"
-        },
-        "returns": "形状 (batch, sequence, dimension) 的注意力输出",
-        "throws": {
-         "IllegalArgumentException": "输入特征数不等于 dimension"
-        },
-        "notes": [
-         "首次调用时初始化三组 dimension × dimension 权重矩阵。",
-         "Softmax 按行减去该行最大值后再归一化，避免指数溢出。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "backward(Tensor<BSF>)",
-       "signature": "Tensor<BSF> backward(Tensor<BSF> gradient)",
-       "params": [{"type": "Tensor<BSF>", "name": "gradient"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "反传注意力，累积 Q/K/V 权重梯度并返回输入梯度。",
-        "params": {
-         "gradient": "上游梯度，形状必须为 (batch, sequence, dimension)"
-        },
-        "returns": "对输入的梯度，形状 (batch, sequence, dimension)",
-        "throws": {
-         "IllegalStateException": "尚未调用 forward",
-         "IllegalArgumentException": "gradient 的形状与最近一次 forward 不匹配"
-        },
-        "notes": [
-         "Softmax 使用精确雅可比 A * (dA - rowsum(dA * A))，再乘缩放因子，而不是近似导数。",
-         "causal 模式下被掩码的键不参与求和，其梯度恒为零。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "update(OptimizerConfig)",
-       "signature": "void update(OptimizerConfig optimizer)",
-       "params": [{"type": "OptimizerConfig", "name": "optimizer"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "用累积梯度更新 Q/K/V 三组权重。",
-        "params": {
-         "optimizer": "优化器超参数，分别作用于 query、key、value 权重"
-        },
-        "throws": {
-         "IllegalStateException": "未完成 forward 与 backward，或梯度已被上一次 update 消费"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "parameters()",
-       "signature": "List<ParameterRef> parameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回 Q/K/V 权重的实时视图。",
-        "returns": "参数视图列表，名称依次为 attention.query、attention.key、attention.value；首次 forward 之前为空列表"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "dimension()",
-       "signature": "int dimension()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回每个位置的投影维度。",
-        "returns": "构建时指定的 dimension，同时是输入输出的特征数"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "causal()",
-       "signature": "boolean causal()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回是否启用因果掩码。",
-        "returns": "启用时为 true，此时位置 t 只关注键 0..t"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "kind()",
-       "signature": "ModelKind kind()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回模型族标识。",
-        "returns": "固定为 ModelKind.SELF_ATTENTION"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "write(ModelWriter)",
-       "signature": "void write(ModelWriter writer)",
-       "params": [{"type": "ModelWriter", "name": "writer"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把配置与权重写入模型流。",
-        "params": {
-         "writer": "目标写入器；依次写入 dimension、seed、因果标志、是否已初始化，已初始化时再写三组权重"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "read(ModelReader)",
-       "signature": "SelfAttention read(ModelReader reader)",
-       "params": [{"type": "ModelReader", "name": "reader"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "从模型流恢复自注意力层。",
-        "params": {
-         "reader": "源读取器，读取顺序须与 write 一致"
-        },
-        "returns": "恢复后的实例，未初始化时保留惰性初始化状态",
-        "throws": {
-         "ModelFormatException": "dimension 非正，或因果标志、初始化标志不是 0 或 1"
-        }
-       }
-      }
-     ]
-    },
-    {
-     "qualified": "jsl.nn.SequenceNetwork",
-     "simple_qualified": "SequenceNetwork",
-     "kind": "class",
-     "modifiers": ["public", "final"],
-     "generic": "",
-     "extends": "",
-     "implements": ["Persistable"],
-     "file": "jsl/nn/SequenceNetwork.java",
-     "line": 25,
-     "javadoc": "End-to-end trainable sequence classifier: {@code BSF -> [recurrent/attention layers] -> pool ->\nDense head -> BC}.\n\n<p>Training performs a full forward pass, the loss gradient, backpropagation through the head,\nthe pooling layer and every body layer in reverse order, global-norm gradient clipping, and one\noptimizer step per parameter. Mini-batching slices the batch axis without touching the time or\nfeature axes.</p>",
-     "nested": ["Builder"],
-     "doc": {
-      "summary": "端到端序列分类器：BSF → 若干序列层 → 池化 → Dense 头 → BC。",
-      "body": [
-       "前向按 add 顺序串联主体层，再经池化把时间轴压缩为一个向量，最后过 Dense 头得到 (batch, classes) 输出。训练时一次完整前向、计算损失梯度、逆序反传头部与各主体层，再做全局范数裁剪与逐参数更新。",
-       "fit 在批量轴上连续切片做小批量训练，时间轴与特征轴保持不动；每轮记录按样本数加权的平均损失。主体层只接受 Layer<BSF, BSF>，因此 Dense 不能放入主体，只能作为头部。"
-      ],
-      "notes": [
-       "head 必填；CATEGORICAL_CROSSENTROPY 要求 SOFTMAX 头且 units 不少于 2，BINARY_CROSSENTROPY 要求 SIGMOID 头。",
-       "默认配置为 LAST 池化、分类交叉熵、Adam（学习率 0.001）、梯度裁剪阈值 5.0。",
-       "update 返回裁剪前的全局梯度范数，可用于监控训练稳定性。",
-       "backward 只接受最近一次 evaluate 返回的同一个 LossEvaluation 实例，其余会抛出异常。",
-       "fit 不打乱样本顺序，批次按批量轴顺序连续切分。"
-      ],
-      "example": "SequenceNetwork network = SequenceNetwork.builder()\n        .add(LSTM.builder().hiddenSize(8).seed(1).build())\n        .add(SelfAttention.builder().dimension(8).causal(true).seed(2).build())\n        .pooling(SequencePool.Pooling.LAST)\n        .head(Dense.builder().units(2).activation(Activation.SOFTMAX).seed(3).build())\n        .loss(Loss.CATEGORICAL_CROSSENTROPY)\n        .optimizer(Optimizer.ADAM.withLearningRate(0.01))\n        .gradientClip(5.0)\n        .build();\nTensor<BSF> features = Tensor.zerosBSF(16, 10, 4);\nTensor<BC> scores = network.predict(features);",
-      "see": ["jsl.nn.SequencePool", "jsl.nn.LSTM", "jsl.nn.Dense", "jsl.nn.Loss"]
-     },
-     "members": [
-      {
-       "kind": "method",
-       "key": "builder()",
-       "signature": "Builder builder()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建构建器，使用 LAST 池化与分类交叉熵等默认值。",
-        "returns": "新的 Builder 实例"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "predict(Tensor<BSF>)",
-       "signature": "Tensor<BC> predict(Tensor<BSF> features)",
-       "params": [{"type": "Tensor<BSF>", "name": "features"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "对整批序列推理，输出各类别得分。",
-        "params": {
-         "features": "形状 (batch, sequence, features) 的 BSF 张量"
-        },
-        "returns": "形状 (batch, classes) 的输出，等价于 forward",
-        "notes": ["会写入各层的前向缓存，但不改动参数。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "forward(Tensor<BSF>)",
-       "signature": "Tensor<BC> forward(Tensor<BSF> features)",
-       "params": [{"type": "Tensor<BSF>", "name": "features"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "执行完整前向：主体层、池化与头部。",
-        "params": {
-         "features": "形状 (batch, sequence, features) 的 BSF 张量，不能为 null"
-        },
-        "returns": "形状 (batch, classes) 的头部输出",
-        "notes": ["各主体层与池化层缓存本次前向的中间量，供紧随其后的 backward 使用。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "evaluate(Tensor<BSF>, Tensor<BC>)",
-       "signature": "LossEvaluation evaluate(Tensor<BSF> features, Tensor<BC> targets)",
+       "key": "fit(Matrix)",
+       "signature": "KernelPCA fit(Matrix features)",
        "params": [
-        {"type": "Tensor<BSF>", "name": "features"},
-        {"type": "Tensor<BC>", "name": "targets"}
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
        ],
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "前向并计算损失，缓存结果供 backward 使用。",
+        "summary": "只用特征拟合，目标数组缺省为 null。",
         "params": {
-         "features": "形状 (batch, sequence, features) 的 BSF 张量",
-         "targets": "形状 (batch, classes) 的目标；分类交叉熵要求每行之和为 1"
+         "features": "训练样本矩阵，行是样本、列是特征；元素必须有限"
         },
-        "returns": "损失标量与输出梯度；SOFTMAX 头配分类交叉熵时另带简化的 logit 梯度",
-        "notes": ["每次调用覆盖上一次缓存的评估结果，旧实例随后不能再传给 backward。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "backward(LossEvaluation)",
-       "signature": "Tensor<BSF> backward(LossEvaluation evaluation)",
-       "params": [{"type": "LossEvaluation", "name": "evaluation"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "反传缓存的损失梯度，返回对输入的梯度。",
-        "params": {
-         "evaluation": "最近一次 evaluate 返回的实例，按引用比较"
-        },
-        "returns": "形状与 forward 输入相同的 BSF 梯度",
+        "returns": "this，便于链式调用",
         "throws": {
-         "IllegalArgumentException": "evaluation 不是最近一次 evaluate 的实例"
+         "NullPointerException": "features 为 null",
+         "IllegalArgumentException": "features 含非有限值，或 components 大于样本数"
         },
         "notes": [
-         "头部为 SOFTMAX 且评估携带 logit 梯度时，走 p - t 形式的简化路径，数值更稳定。",
-         "反传顺序为头部、池化层，再由主体层逆序逐层回传。"
+         "等价于 fit(features, null)，目标参数被忽略"
         ]
        }
       },
       {
        "kind": "method",
-       "key": "update()",
-       "signature": "double update()",
-       "params": [],
+       "key": "fit(Matrix, double[])",
+       "signature": "KernelPCA fit(Matrix features, double[] ignoredTargets)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        },
+        {
+         "type": "double[]",
+         "name": "ignoredTargets"
+        }
+       ],
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "全局范数裁剪后对全部参数执行一次更新。",
-        "returns": "裁剪前的全局梯度范数",
+        "summary": "计算中心化核矩阵并提取前若干核主成分。",
+        "body": [
+         "核矩阵在训练集自身上求值后做双重中心化；Jacobi 分解得到的特征值截断为非负、降序排序，前 components 个特征向量按 1/sqrt(λ) 缩放为 alphas。"
+        ],
+        "params": {
+         "features": "训练样本矩阵，行是样本、列是特征；元素必须有限",
+         "ignoredTargets": "占位参数；核 PCA 忽略监督目标，可为 null"
+        },
+        "returns": "this，便于链式调用",
+        "throws": {
+         "NullPointerException": "features 为 null",
+         "IllegalArgumentException": "features 含非有限值，或 components 大于样本数"
+        },
         "notes": [
-         "范数超过 gradientClip 时，所有参数梯度按 clip / norm 等比缩放，方向不变。",
-         "逐主体层调用 update，最后更新头部；随后各层清除梯度就绪标记。"
+         "时间与内存都是 O(n²)，n 为训练样本数",
+         "特征值不大于 1e-12 的分量缩放因子取 0，该分量投影恒为 0"
         ]
        }
       },
       {
        "kind": "method",
-       "key": "fit(Tensor<BSF>, Tensor<BC>, int)",
-       "signature": "TrainingHistory fit(Tensor<BSF> features, Tensor<BC> targets, int epochs)",
+       "key": "transform(Matrix)",
+       "signature": "Matrix transform(Matrix features)",
        "params": [
-        {"type": "Tensor<BSF>", "name": "features"},
-        {"type": "Tensor<BC>", "name": "targets"},
-        {"type": "int", "name": "epochs"}
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
        ],
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "全批量训练指定轮数。",
+        "summary": "把样本投影到核主成分坐标。",
         "params": {
-         "features": "形状 (batch, sequence, features) 的训练序列",
-         "targets": "形状 (batch, classes) 的目标",
-         "epochs": "训练轮数，须为正"
+         "features": "样本矩阵，列数须等于训练特征数"
         },
-        "returns": "长度为 epochs 的历史，每项为该轮的加权平均损失",
+        "returns": "样本数 × components 的投影矩阵",
         "throws": {
-         "IllegalArgumentException": "epochs 非正，或特征与目标的批量不一致",
-         "IllegalStateException": "某一轮损失出现非有限值"
+         "NullPointerException": "features 为 null",
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "列数不匹配或含非有限值"
         },
-        "notes": ["等价于 batchSize 取 batch 的重载，即每轮只做一次参数更新。"]
+        "notes": [
+         "每个样本都要与全部训练样本求核值，代价为 O(m·n) 次核求值"
+        ]
        }
       },
       {
        "kind": "method",
-       "key": "fit(Tensor<BSF>, Tensor<BC>, int, int)",
-       "signature": "TrainingHistory fit(Tensor<BSF> features, Tensor<BC> targets, int epochs, int batchSize)",
+       "key": "predict(Matrix)",
+       "signature": "double[] predict(Matrix features)",
        "params": [
-        {"type": "Tensor<BSF>", "name": "features"},
-        {"type": "Tensor<BC>", "name": "targets"},
-        {"type": "int", "name": "epochs"},
-        {"type": "int", "name": "batchSize"}
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
        ],
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "按小批量训练指定轮数。",
+        "summary": "返回投影结果的扁平数组。",
+        "body": [
+         "等价于 transform(features).toArray()，按行优先展开，便于接入只需要 double[] 的下游流程。"
+        ],
         "params": {
-         "features": "形状 (batch, sequence, features) 的训练序列",
-         "targets": "形状 (batch, classes) 的目标",
-         "epochs": "训练轮数，须为正",
-         "batchSize": "每批样本数，须为正；沿批量轴顺序连续切片，最后一批可能不足"
+         "features": "样本矩阵，列数须等于训练特征数"
         },
-        "returns": "长度为 epochs 的历史，每项为按样本数加权的平均损失",
+        "returns": "长度为 样本数 × components 的数组",
         "throws": {
-         "IllegalArgumentException": "epochs 或 batchSize 非正，或特征与目标的批量不一致",
-         "IllegalStateException": "某一轮损失出现非有限值"
+         "NullPointerException": "features 为 null",
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "列数不匹配或含非有限值"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "eigenvalues()",
+       "signature": "double[] eigenvalues()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回各核主成分的特征值。",
+        "returns": "长度等于 components 的数组副本，非负且按降序排列",
+        "throws": {
+         "IllegalStateException": "尚未 fit"
         },
-        "notes": ["每个批次执行一次 evaluate、backward 与 update，因此每轮的更新次数为 ceil(batch / batchSize)。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "parameters()",
-       "signature": "List<ParameterRef> parameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "汇总主体层与头部的全部参数视图。",
-        "returns": "主体层参数在前、头部参数在后；尚未初始化的层不贡献条目"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "loss()",
-       "signature": "Loss loss()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回配置的损失函数。",
-        "returns": "构建时指定的 Loss 枚举值"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "optimizer()",
-       "signature": "OptimizerConfig optimizer()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回配置的优化器超参数。",
-        "returns": "构建时指定的 OptimizerConfig"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "pooling()",
-       "signature": "SequencePool.Pooling pooling()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回时间轴池化策略。",
-        "returns": "构建时指定的 SequencePool.Pooling"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "bodySize()",
-       "signature": "int bodySize()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回主体层数量。",
-        "returns": "add 调用所加入的层数"
+        "notes": [
+         "数值是中心化核矩阵的特征值，量纲与原始特征方差不同"
+        ]
        }
       },
       {
@@ -796,204 +184,104 @@
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "返回模型族标识。",
-        "returns": "固定为 ModelKind.SEQUENCE_NETWORK"
+        "summary": "返回模型类型标识。",
+        "returns": "ModelKind.KERNEL_PCA"
        }
       },
       {
        "kind": "method",
        "key": "write(ModelWriter)",
        "signature": "void write(ModelWriter writer)",
-       "params": [{"type": "ModelWriter", "name": "writer"}],
+       "params": [
+        {
+         "type": "ModelWriter",
+         "name": "writer"
+        }
+       ],
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "把整网结构与参数写入模型流。",
+        "summary": "写入核函数、分量数、训练集与中心化统计量。",
         "params": {
-         "writer": "目标写入器；依次写入主体层数与各层（带类型标记）、池化策略、头部、损失、优化器与裁剪阈值"
+         "writer": "目标写入器，由调用方负责容器头与关闭"
         },
         "throws": {
-         "IllegalStateException": "主体包含 LSTM、GRU、VanillaRNN、SelfAttention 之外的层类型"
+         "IllegalStateException": "尚未 fit"
         },
-        "notes": ["层类型以字节标记区分：1 为 LSTM、2 为 GRU、3 为 VanillaRNN、4 为 SelfAttention。"]
+        "notes": [
+         "写入顺序为核函数、分量数、特征数、训练样本数、全均值、训练数据、核行均值、特征值、alphas",
+         "maxIterations 与 tolerance 不写入流，read 后回到 Builder 默认值"
+        ]
        }
       },
       {
        "kind": "method",
        "key": "read(ModelReader)",
-       "signature": "SequenceNetwork read(ModelReader reader)",
-       "params": [{"type": "ModelReader", "name": "reader"}],
+       "signature": "KernelPCA read(ModelReader reader)",
+       "params": [
+        {
+         "type": "ModelReader",
+         "name": "reader"
+        }
+       ],
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "从模型流重建整网。",
+        "summary": "从序列化流重建 KernelPCA 模型。",
         "params": {
-         "reader": "源读取器，读取顺序须与 write 一致"
+         "reader": "已完成容器头解析的读取器"
         },
-        "returns": "重建后的网络，主体层按流中顺序恢复",
+        "returns": "可直接用于 transform 与 predict 的模型实例",
         "throws": {
-         "ModelFormatException": "主体层数超出 0..1000、层类型未知，或池化、损失、优化器序号越界"
-        }
+         "ModelFormatException": "分量数、特征数或训练样本数不为正"
+        },
+        "notes": [
+         "核函数按流中记录的类型与参数还原，不会退回默认的 rbf(1.0)"
+        ]
        }
       }
-     ]
+     ],
+     "doc": {
+      "summary": "核主成分分析：在核空间中心化后做特征分解的降维估计器。",
+      "body": [
+       "fit 先用核函数在训练集上求 n × n Gram 矩阵，按行均值、列均值与全均值做双重中心化 K - 1K/n - K1/n + 1K1/n²，再用循环 Jacobi 对称特征分解求特征值与特征向量；特征值截断为非负、按降序取前 components 个，特征向量按 1/sqrt(λ) 缩放后存为 alphas，λ 不超过 1e-12 的分量缩放因子取 0。",
+       "transform 对新样本计算它与全部训练样本的核值，用拟合阶段缓存的 kFitRows 与 kFitAll 做同样的中心化，再与 alphas 逐分量做内积得到投影坐标。predict 只是把投影矩阵按行优先展开成扁平数组。"
+      ],
+      "notes": [
+       "核函数默认 rbf(gamma=1.0)，可用 kernel(Kernel)、rbf(gamma) 或 poly(degree, gamma, coef0) 替换",
+       "components 不能超过样本数，否则 fit 抛 IllegalArgumentException",
+       "Jacobi 迭代上限 60 轮、收敛阈值 1e-12，Builder 未暴露这两个参数的设值方法",
+       "主方向符号按特征向量绝对值最大的分量为正固定，同一输入重复拟合可复现",
+       "训练集与核行均值随模型一起序列化，预测时的内存占用与训练集规模成正比"
+      ],
+      "example": "Matrix features = Matrix.fromRows(new double[][] {\n    {1.0, 2.0}, {2.0, 1.0}, {3.0, 4.0}, {4.0, 3.0}, {5.0, 6.0}\n});\nKernelPCA kpca = KernelPCA.builder()\n        .components(2)\n        .rbf(0.5)\n        .build()\n        .fit(features);\nMatrix projected = kpca.transform(features);\ndouble[] eigenvalues = kpca.eigenvalues();",
+      "see": [
+       "jsl.ml.Kernel",
+       "jsl.ml.PCA",
+       "jsl.ml.KernelPCA.Builder"
+      ]
+     }
     },
     {
-     "qualified": "jsl.nn.SequencePool",
-     "simple_qualified": "SequencePool",
+     "qualified": "jsl.ml.KernelRidge",
+     "simple_qualified": "KernelRidge",
      "kind": "class",
-     "modifiers": ["public", "final"],
+     "modifiers": [
+      "public",
+      "final"
+     ],
      "generic": "",
      "extends": "",
-     "implements": ["Layer<BSF, BC>"],
-     "file": "jsl/nn/SequencePool.java",
+     "implements": [
+      "Estimator",
+      "Persistable"
+     ],
+     "file": "jsl/ml/KernelRidge.java",
      "line": 16,
-     "javadoc": "Collapses a sequence into one vector per batch element.\n\n<p>{@link Pooling#LAST} is the standard many-to-one head for classification;\n{@link Pooling#MEAN} averages over time and therefore touches every timestep. Backward mirrors\nthe operation exactly: LAST routes the gradient to the final timestep, MEAN divides it evenly.</p>",
-     "nested": ["Pooling"],
-     "doc": {
-      "summary": "沿时间轴把 BSF 序列压缩为每个样本一个 BC 向量。",
-      "body": [
-       "Pooling.LAST 取最后一个时间步，是分类任务常用的 many-to-one 头，代价是只使用末步信息；Pooling.MEAN 对全部时间步求平均，每个时间步都参与结果。",
-       "反向传播与正向严格对应：LAST 把梯度原样写回最后一个时间步，其余时间步为零；MEAN 把梯度除以序列长度后平均分配到每个时间步。"
-      ],
-      "notes": [
-       "只提供 LAST 与 MEAN 两种策略，没有 MAX 归约。",
-       "MEAN 对全部时间步取平均，不区分填充位置；变长序列需自行保证有效长度一致。",
-       "backward 依赖最近一次 forward 记录的形状，未前向即调用会因形状不匹配而失败。",
-       "本层无可训练参数，parameters 继承默认实现返回空列表。"
-      ],
-      "example": "SequencePool pool = SequencePool.of(SequencePool.Pooling.MEAN);\nTensor<BSF> sequence = Tensor.zerosBSF(4, 6, 3);\nTensor<BC> pooled = pool.forward(sequence);\nTensor<BSF> gradient = pool.backward(Tensor.zerosBC(4, 3));",
-      "see": ["jsl.nn.SequenceNetwork", "jsl.nn.LSTM"]
-     },
-     "members": [
-      {
-       "kind": "method",
-       "key": "of(Pooling)",
-       "signature": "SequencePool of(Pooling pooling)",
-       "params": [{"type": "Pooling", "name": "pooling"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按指定策略创建池化层。",
-        "params": {
-         "pooling": "时间轴归约策略，不能为 null"
-        },
-        "returns": "新的 SequencePool 实例",
-        "throws": {
-         "IllegalArgumentException": "pooling 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "forward(Tensor<BSF>)",
-       "signature": "Tensor<BC> forward(Tensor<BSF> input)",
-       "params": [{"type": "Tensor<BSF>", "name": "input"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按策略把序列归约为单个向量。",
-        "params": {
-         "input": "形状 (batch, sequence, features) 的 BSF 张量，sequence 须至少为 1"
-        },
-        "returns": "形状 (batch, features) 的 BC 张量；LAST 取末步，MEAN 取时间均值",
-        "notes": ["记录 batch、sequence、features 三个维度，供 backward 校验与还原。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "backward(Tensor<BC>)",
-       "signature": "Tensor<BSF> backward(Tensor<BC> gradient)",
-       "params": [{"type": "Tensor<BC>", "name": "gradient"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把池化梯度还原到时间轴。",
-        "params": {
-         "gradient": "形状 (batch, features) 的上游梯度"
-        },
-        "returns": "形状 (batch, sequence, features) 的梯度，未参与归约的时间步为零",
-        "throws": {
-         "IllegalArgumentException": "gradient 形状与最近一次 forward 不匹配，包括尚未调用 forward 的情况"
-        },
-        "notes": ["LAST 只写末步，MEAN 对每个时间步写入 gradient / sequence。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "pooling()",
-       "signature": "Pooling pooling()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回池化策略。",
-        "returns": "创建时指定的 Pooling 枚举值"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "write(ModelWriter)",
-       "signature": "void write(ModelWriter writer)",
-       "params": [{"type": "ModelWriter", "name": "writer"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "写入策略序号，供整网持久化调用。",
-        "params": {
-         "writer": "目标写入器；写入 pooling 的序号"
-        },
-        "notes": ["包内可见，由 SequenceNetwork 的序列化流程调用。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "read(ModelReader)",
-       "signature": "SequencePool read(ModelReader reader)",
-       "params": [{"type": "ModelReader", "name": "reader"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按序号恢复池化层。",
-        "params": {
-         "reader": "源读取器，读取一个 int 作为策略序号"
-        },
-        "returns": "恢复后的 SequencePool 实例",
-        "throws": {
-         "ModelFormatException": "序号不在 Pooling 取值范围内"
-        },
-        "notes": ["包内可见，由 SequenceNetwork 的反序列化流程调用。"]
-       }
-      }
-     ]
-    },
-    {
-     "qualified": "jsl.nn.VanillaRNN",
-     "simple_qualified": "VanillaRNN",
-     "kind": "class",
-     "modifiers": ["public", "final"],
-     "generic": "",
-     "extends": "",
-     "implements": ["Layer<BSF, BSF>", "Persistable"],
-     "file": "jsl/nn/VanillaRNN.java",
-     "line": 21,
-     "javadoc": "Elman RNN: {@code h_t = tanh(W x_t + U h_{t-1} + b)}.\n\n<p>This layer exists as the control group for the gradient-vanishing experiment. Its BPTT\nJacobian is a product of {@code U^T diag(1 - h^2)} factors, whose spectral norm is typically\nbelow one, so the gradient of an early timestep decays geometrically with sequence length.</p>",
-     "nested": ["Builder"],
-     "doc": {
-      "summary": "最简 Elman 循环层：h_t = tanh(W x_t + U h_{t-1} + b)。",
-      "body": [
-       "只有一组输入权重、一组循环权重与一个偏置，没有门控。h_0 为零向量，forward 返回整段序列的全部隐藏状态，形状为 (batch, sequence, hiddenSize)。",
-       "该层保留作对照基线：BPTT 的雅可比是 U^T diag(1 - h^2) 的连乘，谱范数通常小于 1，早期时间步的梯度随序列长度按几何级数衰减。"
-      ],
-      "notes": [
-       "参数规模为 hiddenSize * (features + hiddenSize + 1)，约为同规模 LSTM 的四分之一。",
-       "bias 以全零初始化；输入权重与循环权重分别按 ±sqrt(6 / (features + hiddenSize)) 与 ±sqrt(6 / (2 * hiddenSize)) 的均匀分布采样。",
-       "不提供 hiddenSize() 访问器，隐藏单元数只在构建时可见。",
-       "必须按 forward → backward → update 的顺序调用。"
-      ],
-      "example": "VanillaRNN rnn = VanillaRNN.builder().hiddenSize(8).seed(42).build();\nTensor<BSF> input = Tensor.zerosBSF(2, 5, 3);\nTensor<BSF> output = rnn.forward(input);\nTensor<BSF> inputGradient = rnn.backward(Tensor.zerosBSF(2, 5, 8));\nrnn.update(Optimizer.SGD.withLearningRate(0.05));",
-      "see": ["jsl.nn.LSTM", "jsl.nn.GRU", "jsl.nn.SequenceNetwork"]
-     },
+     "javadoc": "Kernel Ridge Regression (KRR) combining Ridge regularization with the kernel trick\n{@code (K + alpha * I) dual_coef = y}, solved by Cholesky decomposition, matching\n{@code sklearn.kernel_ridge.KernelRidge}.",
+     "nested": [
+      "Builder"
+     ],
      "members": [
       {
        "kind": "method",
@@ -1003,76 +291,102 @@
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "创建构建器，hiddenSize 默认 16、seed 默认 42。",
-        "returns": "新的 Builder 实例"
+        "summary": "创建构建器，默认 rbf(1.0) 核、alpha=1.0。",
+        "returns": "新的 Builder，字段取默认值"
        }
       },
       {
        "kind": "method",
-       "key": "forward(Tensor<BSF>)",
-       "signature": "Tensor<BSF> forward(Tensor<BSF> input)",
-       "params": [{"type": "Tensor<BSF>", "name": "input"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "沿时间轴前向传播，返回全序列隐藏状态。",
-        "params": {
-         "input": "形状 (batch, sequence, features) 的 BSF 张量；features 在首次调用时确定并据此分配参数"
+       "key": "fit(Matrix, double[])",
+       "signature": "KernelRidge fit(Matrix features, double[] targets)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
         },
-        "returns": "形状 (batch, sequence, hiddenSize) 的张量，每步为 tanh(W x_t + U h_{t-1} + b)",
-        "throws": {
-         "IllegalArgumentException": "features 与首次 forward 时确定的值不一致"
-        },
-        "notes": ["隐藏缓冲每次前向先清零，t=0 不使用循环项。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "backward(Tensor<BSF>)",
-       "signature": "Tensor<BSF> backward(Tensor<BSF> gradient)",
-       "params": [{"type": "Tensor<BSF>", "name": "gradient"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "沿时间轴反向传播，累积参数梯度并返回输入梯度。",
-        "params": {
-         "gradient": "上游梯度，形状必须为 (batch, sequence, hiddenSize)"
-        },
-        "returns": "对输入的梯度，形状 (batch, sequence, features)",
-        "throws": {
-         "IllegalStateException": "尚未调用 forward",
-         "IllegalArgumentException": "gradient 的形状与最近一次 forward 不匹配"
-        },
-        "notes": ["每步梯度乘以 1 - h^2，长序列上乘积累积会使早期时间步的梯度迅速趋近零。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "update(OptimizerConfig)",
-       "signature": "void update(OptimizerConfig optimizer)",
-       "params": [{"type": "OptimizerConfig", "name": "optimizer"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "用累积梯度对三组参数执行一次优化器更新。",
-        "params": {
-         "optimizer": "优化器超参数，同时作用于输入权重、循环权重与偏置"
-        },
-        "throws": {
-         "IllegalStateException": "未完成 forward 与 backward，或梯度已被上一次 update 消费"
+        {
+         "type": "double[]",
+         "name": "targets"
         }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "组装正则化核矩阵并用 Cholesky 求解对偶系数。",
+        "params": {
+         "features": "训练特征矩阵，n 行 d 列",
+         "targets": "训练目标数组，长度等于 n"
+        },
+        "returns": "this，便于链式调用",
+        "throws": {
+         "NullPointerException": "features 或 targets 为 null",
+         "IllegalArgumentException": "行数与目标长度不符，或数据含 NaN/无穷"
+        },
+        "notes": [
+         "Gram 矩阵为 n × n，时间 O(n²·d)、内存 O(n²)",
+         "alpha 只加在 Gram 对角线上，等价于对偶问题的 L2 惩罚"
+        ]
        }
       },
       {
        "kind": "method",
-       "key": "parameters()",
-       "signature": "List<ParameterRef> parameters()",
+       "key": "predict(Matrix)",
+       "signature": "double[] predict(Matrix features)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "用对偶系数与核值加权求和。",
+        "params": {
+         "features": "待预测特征矩阵，列数须等于训练特征数"
+        },
+        "returns": "每行一个连续预测值",
+        "throws": {
+         "NullPointerException": "features 为 null",
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "列数不匹配或含非有限值"
+        },
+        "notes": [
+         "每行需要 n 次核求值，n 为训练样本数"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "dualCoef()",
+       "signature": "double[] dualCoef()",
        "params": [],
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "返回三组参数的实时视图。",
-        "returns": "参数视图列表，名称依次为 rnn.inputWeights、rnn.recurrentWeights、rnn.bias；首次 forward 之前为空列表"
+        "summary": "返回对偶系数副本。",
+        "returns": "长度为训练样本数的对偶系数数组副本",
+        "throws": {
+         "IllegalStateException": "尚未 fit"
+        },
+        "notes": [
+         "系数与训练样本一一对应，顺序即 fit 时特征矩阵的行序"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "kernel()",
+       "signature": "Kernel kernel()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回配置的核函数。",
+        "returns": "拟合所用的 Kernel 实例；未 fit 时也可读取",
+        "notes": [
+         "核函数在构造时确定，fit 不会替换它"
+        ]
        }
       },
       {
@@ -1083,493 +397,2998 @@
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "返回模型族标识。",
-        "returns": "固定为 ModelKind.VANILLA_RNN"
+        "summary": "返回模型类型标识。",
+        "returns": "ModelKind.KERNEL_RIDGE"
        }
       },
       {
        "kind": "method",
        "key": "write(ModelWriter)",
        "signature": "void write(ModelWriter writer)",
-       "params": [{"type": "ModelWriter", "name": "writer"}],
+       "params": [
+        {
+         "type": "ModelWriter",
+         "name": "writer"
+        }
+       ],
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "把配置与权重写入模型流。",
+        "summary": "写入核函数、alpha、训练集与对偶系数。",
         "params": {
-         "writer": "目标写入器；依次写入 hiddenSize、seed、inputFeatures，已初始化时再写三组权重"
+         "writer": "目标写入器，由调用方负责容器头与关闭"
         },
-        "notes": ["未初始化时 inputFeatures 写为 -1，且不写权重数组。"]
+        "throws": {
+         "IllegalStateException": "尚未 fit"
+        },
+        "notes": [
+         "写入顺序为核函数、alpha、特征数、训练样本数、训练数据、对偶系数"
+        ]
        }
       },
       {
        "kind": "method",
        "key": "read(ModelReader)",
-       "signature": "VanillaRNN read(ModelReader reader)",
-       "params": [{"type": "ModelReader", "name": "reader"}],
+       "signature": "KernelRidge read(ModelReader reader)",
+       "params": [
+        {
+         "type": "ModelReader",
+         "name": "reader"
+        }
+       ],
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "从模型流恢复 VanillaRNN 实例。",
+        "summary": "从序列化流重建 KernelRidge 模型。",
         "params": {
-         "reader": "源读取器，读取顺序须与 write 一致"
+         "reader": "已完成容器头解析的读取器"
         },
-        "returns": "恢复后的实例；若流中记录了特征数，则同时重建并覆盖权重",
+        "returns": "可直接用于 predict 的模型实例",
         "throws": {
-         "ModelFormatException": "hiddenSize 非正，或特征标记既非 -1 也非正数"
-        }
+         "ModelFormatException": "特征数或训练样本数不为正"
+        },
+        "notes": [
+         "alpha 从流中还原并重新经过 Builder 校验"
+        ]
        }
       }
-     ]
-    },
-    {
-     "qualified": "jsl.nn.GRU.Builder",
-     "simple_qualified": "GRU.Builder",
-     "kind": "class",
-     "modifiers": ["public", "static", "final"],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/GRU.java",
-     "line": 342,
-     "javadoc": "",
-     "nested": [],
+     ],
      "doc": {
-      "summary": "GRU 构建器，隐藏单元数默认 16，随机种子默认 42。",
+      "summary": "核岭回归：在核空间解 (K + alpha·I)α = y 的回归估计器。",
       "body": [
-       "仅暴露隐藏单元数与随机种子两项配置，其余结构由层自身固定。构建出的 GRU 在首次 forward 前不持有参数，因此构建器不校验输入特征数。"
-      ],
-      "notes": ["校验发生在 build：hiddenSize 非正时抛出 IllegalArgumentException，而非在 setter 中。"],
-      "see": ["jsl.nn.GRU"]
-     },
-     "members": [
-      {
-       "kind": "method",
-       "key": "hiddenSize(int)",
-       "signature": "Builder hiddenSize(int hiddenSize)",
-       "params": [{"type": "int", "name": "hiddenSize"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置隐藏单元数，默认 16。",
-        "params": {
-         "hiddenSize": "隐藏状态维度；必须为正，在 build 时校验"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [{"type": "long", "name": "seed"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置权重初始化随机种子，默认 42。",
-        "params": {
-         "seed": "传给 java.util.Random 的种子；相同种子与相同特征数可复现初始权重"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "GRU build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验配置并构造 GRU。",
-        "returns": "新的 GRU 实例，参数尚未分配",
-        "throws": {
-         "IllegalArgumentException": "hiddenSize 小于等于 0"
-        }
-       }
-      }
-     ]
-    },
-    {
-     "qualified": "jsl.nn.LSTM.Builder",
-     "simple_qualified": "LSTM.Builder",
-     "kind": "class",
-     "modifiers": ["public", "static", "final"],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/LSTM.java",
-     "line": 300,
-     "javadoc": "",
-     "nested": [],
-     "doc": {
-      "summary": "LSTM 构建器，隐藏单元数默认 16，随机种子默认 42。",
-      "body": [
-       "仅暴露隐藏单元数与随机种子两项配置。构建出的 LSTM 在首次 forward 前不持有参数，输入特征数与三组权重的形状都推迟到首次前向时确定。"
-      ],
-      "notes": ["校验发生在 build：hiddenSize 非正时抛出 IllegalArgumentException，而非在 setter 中。"],
-      "see": ["jsl.nn.LSTM"]
-     },
-     "members": [
-      {
-       "kind": "method",
-       "key": "hiddenSize(int)",
-       "signature": "Builder hiddenSize(int hiddenSize)",
-       "params": [{"type": "int", "name": "hiddenSize"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置隐藏单元数，默认 16。",
-        "params": {
-         "hiddenSize": "隐藏状态与单元状态的维度；必须为正，在 build 时校验"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [{"type": "long", "name": "seed"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置权重初始化随机种子，默认 42。",
-        "params": {
-         "seed": "传给 java.util.Random 的种子；相同种子与相同特征数可复现初始权重"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "LSTM build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验配置并构造 LSTM。",
-        "returns": "新的 LSTM 实例，参数尚未分配",
-        "throws": {
-         "IllegalArgumentException": "hiddenSize 小于等于 0"
-        }
-       }
-      }
-     ]
-    },
-    {
-     "qualified": "jsl.nn.SelfAttention.Builder",
-     "simple_qualified": "SelfAttention.Builder",
-     "kind": "class",
-     "modifiers": ["public", "static", "final"],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/SelfAttention.java",
-     "line": 316,
-     "javadoc": "",
-     "nested": [],
-     "doc": {
-      "summary": "自注意力构建器，dimension 默认 16、seed 默认 42、非因果。",
-      "body": [
-       "投影维度同时决定输入特征数、输出特征数与权重矩阵尺寸，三者被强制一致，因此该层不改变特征轴长度。因果标志只影响注意力掩码，不改变参数量。"
-      ],
-      "notes": ["缩放因子 1 / sqrt(dimension) 在构造时计算，之后不可更改。"],
-      "see": ["jsl.nn.SelfAttention"]
-     },
-     "members": [
-      {
-       "kind": "method",
-       "key": "dimension(int)",
-       "signature": "Builder dimension(int dimension)",
-       "params": [{"type": "int", "name": "dimension"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置投影维度，默认 16。",
-        "params": {
-         "dimension": "每个位置的 Q/K/V 维度，也是输入输出特征数；必须为正，在 build 时校验"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [{"type": "long", "name": "seed"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置权重初始化随机种子，默认 42。",
-        "params": {
-         "seed": "传给 java.util.Random 的种子；Q、K、V 三组权重依次从同一随机源采样"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "causal(boolean)",
-       "signature": "Builder causal(boolean causal)",
-       "params": [{"type": "boolean", "name": "causal"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置是否启用因果掩码，默认关闭。",
-        "params": {
-         "causal": "true 时位置 t 只对键 0..t 归一化，屏蔽未来时间步；false 时对全部键归一化"
-        },
-        "returns": "this，便于链式调用",
-        "notes": ["掩码方向为“看过去”：行索引小于列索引的位置被置零。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "SelfAttention build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验配置并构造自注意力层。",
-        "returns": "新的 SelfAttention 实例，权重在首次 forward 时分配",
-        "throws": {
-         "IllegalArgumentException": "dimension 小于等于 0"
-        }
-       }
-      }
-     ]
-    },
-    {
-     "qualified": "jsl.nn.SequenceNetwork.Builder",
-     "simple_qualified": "SequenceNetwork.Builder",
-     "kind": "class",
-     "modifiers": ["public", "static", "final"],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/SequenceNetwork.java",
-     "line": 244,
-     "javadoc": "",
-     "nested": [],
-     "doc": {
-      "summary": "整网构建器；LAST 池化、分类交叉熵、Adam 0.001、裁剪 5.0。",
-      "body": [
-       "主体层按 add 调用顺序串联，池化与头部各自只有一个实例。所有 setter 以 requireNonNull 拒绝 null 引用，校验集中在 build，因此配置错误在构建阶段一次性暴露。"
+       "fit 用核函数在训练集上求 n × n Gram 矩阵，对角线加 alpha 后用 Cholesky 分解解线性方程组，得到对偶系数 α；预测值是目标样本与全部训练样本核值的加权和，模型没有独立截距项。",
+       "Cholesky 分解对对角元取 max(sum, 1e-12) 作为抖动，半正定退化时不产生 NaN。alpha 越大解越平滑，对偶系数的绝对值整体变小。"
       ],
       "notes": [
-       "build 会交叉校验损失与头部激活：分类交叉熵配 SOFTMAX，二元交叉熵配 SIGMOID。",
-       "默认池化 LAST 适合分类；需要利用全部时间步时可改为 MEAN。"
+       "核函数默认 rbf(gamma=1.0)，可用 kernel(Kernel)、rbf(gamma) 或 poly(degree, gamma, coef0) 替换",
+       "alpha 必须严格为正且有限，在 build() 时校验",
+       "训练集与对偶系数一起序列化，预测代价与训练样本数成正比",
+       "没有截距项：目标未中心化时预测会带系统性偏移"
       ],
-      "see": ["jsl.nn.SequenceNetwork", "jsl.nn.SequencePool", "jsl.nn.Dense"]
-     },
+      "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {1, 0}, {0, 1}, {1, 1}});\ndouble[] y = {0.0, 1.0, 1.0, 2.0};\nKernelRidge model = KernelRidge.builder()\n        .rbf(1.0)\n        .alpha(0.1)\n        .build()\n        .fit(x, y);\ndouble[] predictions = model.predict(x);\ndouble[] dual = model.dualCoef();",
+      "see": [
+       "jsl.ml.Kernel",
+       "jsl.ml.Ridge",
+       "jsl.ml.KernelRidge.Builder"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.LabelEncoder",
+     "simple_qualified": "LabelEncoder",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [
+      "Transformer"
+     ],
+     "file": "jsl/ml/LabelEncoder.java",
+     "line": 19,
+     "javadoc": "Encodes target labels (either {@code double[]} or {@code String[]}) with values between\n{@code 0} and {@code n_classes - 1}, matching {@code sklearn.preprocessing.LabelEncoder}.",
+     "nested": [],
      "members": [
       {
-       "kind": "method",
-       "key": "add(L)",
-       "signature": "<L extends Layer<BSF, BSF>> Builder add(L layer)",
-       "params": [{"type": "L", "name": "layer"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "向主体追加一个序列层，按调用顺序串联。",
-        "params": {
-         "layer": "类型为 Layer<BSF, BSF> 的层，如 LSTM、GRU、VanillaRNN、SelfAttention；不能为 null"
-        },
-        "returns": "this，便于链式调用",
-        "notes": ["泛型约束使 Dense 等 BC 布局的层无法加入主体，编译期即被拒绝。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "pooling(SequencePool.Pooling)",
-       "signature": "Builder pooling(SequencePool.Pooling pooling)",
-       "params": [{"type": "SequencePool.Pooling", "name": "pooling"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置时间轴池化策略，默认 LAST。",
-        "params": {
-         "pooling": "LAST 取末步，MEAN 取时间均值；不能为 null"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "head(Dense)",
-       "signature": "Builder head(Dense head)",
-       "params": [{"type": "Dense", "name": "head"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置输出头，必填项。",
-        "params": {
-         "head": "Dense 层；其输入维度须等于池化后的特征数，不能为 null"
-        },
-        "returns": "this，便于链式调用",
-        "notes": ["头部的 units 决定输出类别数，激活函数需与损失匹配。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "loss(Loss)",
-       "signature": "Builder loss(Loss loss)",
-       "params": [{"type": "Loss", "name": "loss"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置损失函数，默认分类交叉熵。",
-        "params": {
-         "loss": "Loss 枚举值，不能为 null"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "optimizer(OptimizerConfig)",
-       "signature": "Builder optimizer(OptimizerConfig optimizer)",
-       "params": [{"type": "OptimizerConfig", "name": "optimizer"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置优化器超参数，默认 Adam、学习率 0.001。",
-        "params": {
-         "optimizer": "优化器配置；可用 Optimizer.ADAM.withLearningRate(...) 等工厂方法构造，不能为 null"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "gradientClip(double)",
-       "signature": "Builder gradientClip(double gradientClip)",
-       "params": [{"type": "double", "name": "gradientClip"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置全局梯度范数裁剪阈值，默认 5.0。",
-        "params": {
-         "gradientClip": "范数上限；须为有限正数，在 build 时校验"
-        },
-        "returns": "this，便于链式调用",
-        "notes": ["裁剪作用于整网所有参数的拼接梯度范数，而不是逐参数单独裁剪。"]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "SequenceNetwork build()",
+       "kind": "constructor",
+       "key": "LabelEncoder()",
+       "signature": "LabelEncoder()",
        "params": [],
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "校验配置并构造整网。",
-        "returns": "新的 SequenceNetwork 实例；主体层列表被复制，后续修改构建器不影响已建网络",
+        "summary": "创建尚未拟合的空编码器。",
+        "notes": [
+         "fit 之前调用任何 transform 或 inverseTransform 都抛 IllegalStateException"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fit(double[])",
+       "signature": "LabelEncoder fit(double[] targets)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "targets"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "收集升序唯一值作为类别表。",
+        "params": {
+         "targets": "标签数组，不能为空，元素必须有限"
+        },
+        "returns": "this，便于链式调用",
         "throws": {
-         "IllegalStateException": "未设置 head",
-         "IllegalArgumentException": "gradientClip 非正、损失与头部激活不匹配，或分类头 units 小于 2"
+         "NullPointerException": "targets 为 null",
+         "IllegalArgumentException": "targets 为空或含 NaN/无穷"
+        },
+        "notes": [
+         "类别表按数值升序排列，编码值即该顺序中的下标",
+         "会清空此前 fit(String[]) 建立的字符串表"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fit(String[])",
+       "signature": "LabelEncoder fit(String[] labels)",
+       "params": [
+        {
+         "type": "String[]",
+         "name": "labels"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "按字符串自然序建立类别表。",
+        "params": {
+         "labels": "标签数组，不能为空，元素不能为 null"
+        },
+        "returns": "this，便于链式调用",
+        "throws": {
+         "NullPointerException": "labels 为 null，或其中某个元素为 null",
+         "IllegalArgumentException": "labels 为空"
+        },
+        "notes": [
+         "排序使用 String 的自然序，区分大小写，不做归一化",
+         "同时把 classes 置为 0..k-1，因此数值接口在字符串拟合后仍可用"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "transformToInt(double[])",
+       "signature": "int[] transformToInt(double[] targets)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "targets"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "把标签转成整数下标。",
+        "params": {
+         "targets": "待编码标签"
+        },
+        "returns": "与输入等长的整数码数组，取值 0..k-1",
+        "throws": {
+         "NullPointerException": "targets 为 null",
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "出现训练时未见过的标签"
+        },
+        "notes": [
+         "内部用 Arrays.binarySearch，依赖类别表升序"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "transform(double[])",
+       "signature": "double[] transform(double[] targets)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "targets"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "把标签转成 double 形式的整数码。",
+        "params": {
+         "targets": "待编码标签"
+        },
+        "returns": "与输入等长的编码数组，元素为整数值的 double",
+        "throws": {
+         "NullPointerException": "targets 为 null",
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "出现训练时未见过的标签"
+        },
+        "notes": [
+         "等价于 transformToInt 的逐元素 double 化"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fitTransform(double[])",
+       "signature": "double[] fitTransform(double[] targets)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "targets"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "先 fit 再 transform。",
+        "params": {
+         "targets": "既用于拟合又用于编码的标签数组"
+        },
+        "returns": "与输入等长的编码数组",
+        "throws": {
+         "NullPointerException": "targets 为 null",
+         "IllegalArgumentException": "targets 为空或含 NaN/无穷"
+        },
+        "notes": [
+         "同一数组既作训练又作输入，因此不会出现未知标签"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "inverseTransform(double[])",
+       "signature": "double[] inverseTransform(double[] encoded)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "encoded"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "把浮点编码还原为类别值。",
+        "params": {
+         "encoded": "编码数组，元素须接近 [0, k-1] 内的整数"
+        },
+        "returns": "与输入等长的类别值数组",
+        "throws": {
+         "NullPointerException": "encoded 为 null",
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "下标越界，或元素与最近整数相差超过 1e-9"
+        },
+        "notes": [
+         "先用 Math.round 取整再校验，容差 1e-9"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "inverseTransform(int[])",
+       "signature": "double[] inverseTransform(int[] encoded)",
+       "params": [
+        {
+         "type": "int[]",
+         "name": "encoded"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "把整数编码还原为类别值。",
+        "params": {
+         "encoded": "整数码数组，元素须在 [0, k-1] 内"
+        },
+        "returns": "与输入等长的类别值数组",
+        "throws": {
+         "NullPointerException": "encoded 为 null",
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "下标越界"
         }
        }
+      },
+      {
+       "kind": "method",
+       "key": "transform(String[])",
+       "signature": "int[] transform(String[] labels)",
+       "params": [
+        {
+         "type": "String[]",
+         "name": "labels"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "把字符串标签转成整数下标。",
+        "params": {
+         "labels": "待编码字符串标签"
+        },
+        "returns": "与输入等长的整数码数组",
+        "throws": {
+         "NullPointerException": "labels 为 null",
+         "IllegalStateException": "未在字符串标签上 fit",
+         "IllegalArgumentException": "出现未见过的字符串标签"
+        },
+        "notes": [
+         "只查表，不做大小写或空白归一化"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fitTransform(String[])",
+       "signature": "int[] fitTransform(String[] labels)",
+       "params": [
+        {
+         "type": "String[]",
+         "name": "labels"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "先 fit 再编码字符串标签。",
+        "params": {
+         "labels": "既用于拟合又用于编码的字符串标签"
+        },
+        "returns": "与输入等长的整数码数组",
+        "throws": {
+         "NullPointerException": "labels 为 null，或其中某个元素为 null",
+         "IllegalArgumentException": "labels 为空"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "inverseTransformStrings(int[])",
+       "signature": "String[] inverseTransformStrings(int[] encoded)",
+       "params": [
+        {
+         "type": "int[]",
+         "name": "encoded"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "把整数编码还原为字符串标签。",
+        "params": {
+         "encoded": "整数码数组，元素须在 [0, k-1] 内"
+        },
+        "returns": "与输入等长的字符串数组",
+        "throws": {
+         "NullPointerException": "encoded 为 null",
+         "IllegalStateException": "未在字符串标签上 fit",
+         "IllegalArgumentException": "下标越界"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fit(Matrix, double[])",
+       "signature": "LabelEncoder fit(Matrix features, double[] ignoredTargets)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        },
+        {
+         "type": "double[]",
+         "name": "ignoredTargets"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以单列矩阵为输入的适配方法。",
+        "params": {
+         "features": "单列矩阵，每行一个标签",
+         "ignoredTargets": "占位参数，被忽略，可为 null"
+        },
+        "returns": "this，便于链式调用",
+        "throws": {
+         "NullPointerException": "features 为 null",
+         "IllegalArgumentException": "features 的列数不等于 1，或数据含非有限值"
+        },
+        "notes": [
+         "把矩阵数据按行展开后交给 fit(double[])，因此只接受单列输入"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "transform(Matrix)",
+       "signature": "Matrix transform(Matrix features)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "编码单列矩阵。",
+        "params": {
+         "features": "单列矩阵，每行一个标签"
+        },
+        "returns": "行数不变、单列的编码矩阵",
+        "throws": {
+         "NullPointerException": "features 为 null",
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "列数不等于 1，或出现未见过的标签"
+        },
+        "notes": [
+         "内部走 transform(double[])，编码值以 double 写出"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "inverseTransform(Matrix)",
+       "signature": "Matrix inverseTransform(Matrix transformed)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "transformed"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "解码单列矩阵。",
+        "params": {
+         "transformed": "单列的编码矩阵"
+        },
+        "returns": "行数不变、单列的类别值矩阵",
+        "throws": {
+         "NullPointerException": "transformed 为 null",
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "列数不等于 1，或编码值越界"
+        },
+        "notes": [
+         "内部走 inverseTransform(double[])，同样要求编码接近整数"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "classes()",
+       "signature": "double[] classes()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回数值类别表副本。",
+        "returns": "升序类别值副本；在字符串上拟合时为 0..k-1",
+        "throws": {
+         "IllegalStateException": "尚未 fit"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "stringClasses()",
+       "signature": "String[] stringClasses()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回字符串类别表副本。",
+        "returns": "按自然序排列的字符串类别副本；未在字符串上 fit 时为 null",
+        "notes": [
+         "不抛异常，未拟合或数值模式下一律返回 null"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "kind()",
+       "signature": "ModelKind kind()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回模型类型标识。",
+        "returns": "ModelKind.LABEL_ENCODER"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "write(ModelWriter)",
+       "signature": "void write(ModelWriter writer)",
+       "params": [
+        {
+         "type": "ModelWriter",
+         "name": "writer"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "写入数值类别表与可选的字符串表。",
+        "params": {
+         "writer": "目标写入器，由调用方负责容器头与关闭"
+        },
+        "throws": {
+         "IllegalStateException": "尚未 fit"
+        },
+        "notes": [
+         "先写类别数与类别值，再写字符串条数（0 表示无字符串表）",
+         "每条字符串先写 UTF-8 字节数再写字节，读取端按同一格式消费"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "read(ModelReader)",
+       "signature": "LabelEncoder read(ModelReader reader)",
+       "params": [
+        {
+         "type": "ModelReader",
+         "name": "reader"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "从序列化流重建 LabelEncoder。",
+        "params": {
+         "reader": "已完成容器头解析的读取器"
+        },
+        "returns": "可直接用于 transform 与 inverseTransform 的编码器",
+        "throws": {
+         "ModelFormatException": "类别数不为正"
+        },
+        "notes": [
+         "字符串条数大于 0 时同时重建标签到下标的哈希表"
+        ]
+       }
       }
-     ]
-    },
-    {
-     "qualified": "jsl.nn.SequencePool.Pooling",
-     "simple_qualified": "SequencePool.Pooling",
-     "kind": "enum",
-     "modifiers": ["public"],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/SequencePool.java",
-     "line": 110,
-     "javadoc": "Reduction applied along the time axis.",
-     "nested": [],
+     ],
      "doc": {
-      "summary": "时间轴归约策略。",
+      "summary": "把类别标签双向映射为 0..k-1 整数码的编码器。",
       "body": [
-       "LAST 取最后一个时间步的向量，是分类任务默认的 many-to-one 头；MEAN 对全部时间步求平均，每个时间步都影响结果。两者都保持特征轴不变。",
-       "枚举声明顺序为 LAST、MEAN，持久化时按序号写入，序号 0 对应 LAST、1 对应 MEAN。反向传播只使用策略本身，不需要额外状态。"
+       "fit(double[]) 用 TreeSet 收集升序唯一值作为类别表；fit(String[]) 按字符串自然序收集，同时建立标签到下标的哈希表，并把 classes 置为 0..k-1，使数值接口与字符串接口共享同一套下标语义。",
+       "transform 对未见过的标签不做兜底：数值路径用二分查找，字符串路径查表，命中失败一律抛 IllegalArgumentException；inverseTransform 把整数码还原为类别值，浮点输入要求与最近整数相差不超过 1e-9。"
       ],
       "notes": [
-       "调整枚举常量顺序会改变序列化序号，导致旧模型文件被解析为另一种策略。",
-       "没有 MAX 归约；需要最大值池化时应在层外自行实现。"
+       "fit(double[]) 与 fit(String[]) 互斥，后一次 fit 会清空另一种模式的类别表",
+       "在字符串上拟合后 classes() 返回 0..k-1 的整数码，反查字符串需用 stringClasses() 或 inverseTransformStrings",
+       "空输入与 null 元素在 fit 阶段即被拒绝，未知标签只在 transform 阶段报错",
+       "write 把字符串按 UTF-8 逐条写入，长度前缀为字节数而非字符数"
       ],
-      "see": ["jsl.nn.SequencePool", "jsl.nn.SequenceNetwork"]
-     },
-     "members": []
+      "example": "LabelEncoder encoder = new LabelEncoder();\ndouble[] codes = encoder.fitTransform(new double[]{3.0, 1.0, 3.0, 2.0});\ndouble[] original = encoder.inverseTransform(codes);\ndouble[] classes = encoder.classes();\n\nLabelEncoder names = new LabelEncoder();\nint[] ids = names.fitTransform(new String[]{\"cat\", \"dog\", \"cat\"});\nString[] restored = names.inverseTransformStrings(ids);",
+      "see": [
+       "jsl.ml.OneHotEncoder",
+       "jsl.ml.Transformer"
+      ]
+     }
     },
     {
-     "qualified": "jsl.nn.VanillaRNN.Builder",
-     "simple_qualified": "VanillaRNN.Builder",
+     "qualified": "jsl.ml.Lasso",
+     "simple_qualified": "Lasso",
      "kind": "class",
-     "modifiers": ["public", "static", "final"],
+     "modifiers": [
+      "public",
+      "final"
+     ],
      "generic": "",
      "extends": "",
-     "implements": [],
-     "file": "jsl/nn/VanillaRNN.java",
-     "line": 234,
-     "javadoc": "",
-     "nested": [],
-     "doc": {
-      "summary": "VanillaRNN 构建器，隐藏单元数默认 16，随机种子默认 42。",
-      "body": [
-       "仅暴露隐藏单元数与随机种子。参数在首次 forward 时按输入特征数分配，构建阶段不校验特征数，因此同一构建器产出的层可以适配不同输入宽度。"
-      ],
-      "notes": ["校验发生在 build：hiddenSize 非正时抛出 IllegalArgumentException。"],
-      "see": ["jsl.nn.VanillaRNN"]
-     },
+     "implements": [
+      "Estimator",
+      "Persistable"
+     ],
+     "file": "jsl/ml/Lasso.java",
+     "line": 11,
+     "javadoc": "L1-regularized least squares fitted by cyclic coordinate descent.",
+     "nested": [
+      "Builder"
+     ],
      "members": [
       {
        "kind": "method",
-       "key": "hiddenSize(int)",
-       "signature": "Builder hiddenSize(int hiddenSize)",
-       "params": [{"type": "int", "name": "hiddenSize"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置隐藏单元数，默认 16。",
-        "params": {
-         "hiddenSize": "隐藏状态维度；必须为正，在 build 时校验"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [{"type": "long", "name": "seed"}],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置权重初始化随机种子，默认 42。",
-        "params": {
-         "seed": "传给 java.util.Random 的种子；相同种子与相同特征数可复现初始权重"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "VanillaRNN build()",
+       "key": "builder()",
+       "signature": "Builder builder()",
        "params": [],
        "throws": [],
        "javadoc": "",
        "doc": {
-        "summary": "校验配置并构造 VanillaRNN。",
-        "returns": "新的 VanillaRNN 实例，参数尚未分配",
+        "summary": "创建构建器，默认 alpha=0.1、1000 轮、1e-8。",
+        "returns": "新的 Builder，字段取默认值"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fit(Matrix, double[])",
+       "signature": "Lasso fit(Matrix features, double[] targets)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        },
+        {
+         "type": "double[]",
+         "name": "targets"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "用循环坐标下降拟合 L1 正则模型。",
+        "params": {
+         "features": "训练特征矩阵，n 行 d 列",
+         "targets": "训练目标数组，长度等于 n"
+        },
+        "returns": "this",
         "throws": {
-         "IllegalArgumentException": "hiddenSize 小于等于 0"
+         "NullPointerException": "features 或 targets 为 null",
+         "IllegalArgumentException": "行数与目标长度不符，或数据含 NaN/无穷"
+        },
+        "notes": [
+         "系数初值全为零，相同输入的迭代轨迹完全确定",
+         "平方和为零的常数列会被跳过，系数保持 0"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "predict(Matrix)",
+       "signature": "double[] predict(Matrix features)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "计算截距与系数的线性组合。",
+        "params": {
+         "features": "待预测特征矩阵，列数须等于训练特征数"
+        },
+        "returns": "每行一个连续预测值",
+        "throws": {
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "列数不匹配或含非有限值"
         }
        }
+      },
+      {
+       "kind": "method",
+       "key": "weights()",
+       "signature": "double[] weights()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回回归系数副本。",
+        "returns": "长度为特征数的系数数组副本，稀疏结果中不重要的特征为 0.0",
+        "throws": {
+         "NullPointerException": "尚未 fit，内部数组为 null"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "intercept()",
+       "signature": "double intercept()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回截距项。",
+        "returns": "标量截距；未 fit 时为 0.0",
+        "notes": [
+         "截距不受 L1 惩罚，每轮扫描后按残差均值修正"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "kind()",
+       "signature": "ModelKind kind()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回模型类型标识。",
+        "returns": "ModelKind.LASSO"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "write(ModelWriter)",
+       "signature": "void write(ModelWriter writer)",
+       "params": [
+        {
+         "type": "ModelWriter",
+         "name": "writer"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "写入 alpha、迭代参数、截距与系数。",
+        "params": {
+         "writer": "目标写入器，由调用方负责容器头与关闭"
+        },
+        "throws": {
+         "IllegalStateException": "尚未 fit"
+        },
+        "notes": [
+         "写入顺序为 alpha、maxIterations、tolerance、特征数、截距、系数"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "read(ModelReader)",
+       "signature": "Lasso read(ModelReader reader)",
+       "params": [
+        {
+         "type": "ModelReader",
+         "name": "reader"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "从序列化流重建 Lasso 模型。",
+        "params": {
+         "reader": "已完成容器头解析的读取器"
+        },
+        "returns": "可直接用于 predict 的模型实例",
+        "throws": {
+         "ModelFormatException": "特征数不为正"
+        },
+        "notes": [
+         "alpha、maxIterations、tolerance 从流中还原并重新经过 Builder 校验"
+        ]
+       }
       }
-     ]
+     ],
+     "doc": {
+      "summary": "坐标下降求解的 L1 正则最小二乘。",
+      "body": [
+       "fit 先令截距等于目标均值、残差为零均值化后的目标，再循环坐标下降：对每个特征计算 rho = Σ x_i·(r_i + w_j·x_i)，用软阈值把 rho 向零收缩 alpha，再除以该特征的平方和得到新系数，并把变化量即时回写到残差。",
+       "每轮扫描结束后把残差均值并入截距，使残差保持零均值。alpha 作用在按行求和的尺度上（rho 与 norms 都未除以样本数），与按均方误差定义的 alpha 相差 n 倍，取值需相应放大。"
+      ],
+      "notes": [
+       "alpha 允许为 0，此时退化为无正则的坐标下降最小二乘",
+       "收敛判据是本轮坐标更新的最大绝对变化小于 tolerance；达到 maxIterations 时静默停止，不抛异常",
+       "各特征的平方和只在 fit 开始时计算一次",
+       "特征未中心化或标准化，列尺度直接决定收缩强度"
+      ],
+      "example": "Matrix x = Matrix.fromRows(new double[][]{{1, 0}, {0, 1}, {1, 1}, {2, 2}});\ndouble[] y = {1.0, 2.0, 3.0, 5.0};\nLasso lasso = Lasso.builder()\n        .alpha(0.1)\n        .maxIterations(500)\n        .build()\n        .fit(x, y);\ndouble[] coefficients = lasso.weights();\ndouble bias = lasso.intercept();",
+      "see": [
+       "jsl.ml.Ridge",
+       "jsl.ml.LinearRegression",
+       "jsl.ml.Lasso.Builder"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.LimeExplainer",
+     "simple_qualified": "LimeExplainer",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/ml/LimeExplainer.java",
+     "line": 15,
+     "javadoc": "Local Interpretable Model-agnostic Explanations (LIME): explains individual predictions of\nany black-box {@link Estimator} or {@link Pipeline} by sampling Gaussian perturbations around\nthe target instance, weighting them by an exponential Euclidean kernel\n{@code w(z) = exp(-||x - z||^2 / kernelWidth^2)}, and fitting a local weighted Ridge linear\nsurrogate model.",
+     "nested": [
+      "LocalExplanation"
+     ],
+     "members": [
+      {
+       "kind": "constructor",
+       "key": "LimeExplainer(Estimator, Matrix)",
+       "signature": "LimeExplainer(Estimator model, Matrix trainingData)",
+       "params": [
+        {
+         "type": "Estimator",
+         "name": "model"
+        },
+        {
+         "type": "Matrix",
+         "name": "trainingData"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "用默认采样数 500、自动核宽、种子 42 构造。",
+        "params": {
+         "model": "被解释的估计器或 Pipeline，不能为 null",
+         "trainingData": "训练数据，用于估计每列标准差"
+        },
+        "throws": {
+         "NullPointerException": "model 或 trainingData 为 null",
+         "IllegalArgumentException": "trainingData 含 NaN 或无穷"
+        },
+        "notes": [
+         "等价于 new LimeExplainer(model, trainingData, 500, 0.0, 42L)"
+        ]
+       }
+      },
+      {
+       "kind": "constructor",
+       "key": "LimeExplainer(Estimator, Matrix, int, double, long)",
+       "signature": "LimeExplainer(Estimator model, Matrix trainingData, int numSamples, double kernelWidth, long seed)",
+       "params": [
+        {
+         "type": "Estimator",
+         "name": "model"
+        },
+        {
+         "type": "Matrix",
+         "name": "trainingData"
+        },
+        {
+         "type": "int",
+         "name": "numSamples"
+        },
+        {
+         "type": "double",
+         "name": "kernelWidth"
+        },
+        {
+         "type": "long",
+         "name": "seed"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "指定采样数、核宽与随机种子构造。",
+        "params": {
+         "model": "被解释的估计器或 Pipeline，不能为 null",
+         "trainingData": "训练数据，用于估计每列标准差",
+         "numSamples": "局部采样数，必须不小于 20",
+         "kernelWidth": "距离核的宽度；不大于 0 时取 0.75·sqrt(特征数)",
+         "seed": "随机种子，决定扰动样本的生成"
+        },
+        "throws": {
+         "NullPointerException": "model 或 trainingData 为 null",
+         "IllegalArgumentException": "trainingData 含 NaN 或无穷，或 numSamples 小于 20"
+        },
+        "notes": [
+         "标准差按总体口径计算，分母为样本数而非样本数减一",
+         "标准差不超过 1e-12 的列按 1.0 处理，避免扰动退化为常数"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "explainInstance(double[])",
+       "signature": "LocalExplanation explainInstance(double[] instance)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "instance"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "为目标样本生成局部解释。",
+        "params": {
+         "instance": "目标样本，长度须等于训练特征数"
+        },
+        "returns": "含截距、各特征权重、局部与真实预测、加权 R² 与特征排序的 LocalExplanation",
+        "throws": {
+         "NullPointerException": "instance 为 null",
+         "IllegalArgumentException": "instance 长度与训练特征数不符"
+        },
+        "notes": [
+         "localPrediction 由代理模型在目标样本上求值，与 modelPrediction 的差异反映代理拟合质量",
+         "全部扰动样本的预测通过一次批量调用完成，不逐行调用"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "用局部加权线性代理模型解释单个预测的 LIME 解释器。",
+      "body": [
+       "构造时统计训练数据每列的标准差（分母取样本数，标准差不超过 1e-12 的列按 1.0 处理），作为扰动的尺度。explainInstance 以目标样本为中心按 0.5 倍标准差做高斯采样：第 0 条样本固定为目标本身、权重为 1，其余样本按 w = exp(-d²/kernelWidth²) 加权，其中 d² 是采样偏移按列标准差归一化后再乘 0.5 的平方和。",
+       "代理模型是对增广设计矩阵 [1, x] 的加权岭回归，用 Cholesky 求解，特征对角加 1e-4、截距加 1e-9 的抖动。拟合优度用加权 R² 表示，即 1 减去加权残差平方和与加权总平方和之比；总平方和不超过 1e-15 时直接记为 1.0，结果下限截断为 0。"
+      ],
+      "notes": [
+       "kernelWidth 不大于 0 时自动取 0.75·sqrt(特征数)，单参数构造器即走该路径",
+       "numSamples 必须不小于 20，默认 500",
+       "每次调用都用 seed 重新初始化随机源，同一实例的多次解释结果完全一致",
+       "topFeatures 按 |系数 × 该列标准差| 降序给出全部特征的下标，不做截断",
+       "模型统一经 ShapExplainer 的求值入口调用：逻辑回归与随机森林取正类概率，直方图梯度提升取原始分数"
+      ],
+      "example": "Matrix train = Matrix.fromRows(new double[][]{{0, 0}, {1, 0}, {0, 1}, {1, 1}});\ndouble[] y = {0, 0, 1, 1};\nLogisticRegression model = LogisticRegression.builder().build().fit(train, y);\nLimeExplainer lime = new LimeExplainer(model, train, 200, 0.75, 7L);\nLimeExplainer.LocalExplanation explanation = lime.explainInstance(new double[]{1.0, 0.2});\ndouble[] weights = explanation.featureWeights();\ndouble fidelity = explanation.r2Fidelity();\nint[] ranked = explanation.topFeatures();",
+      "see": [
+       "jsl.ml.ShapExplainer",
+       "jsl.ml.Estimator",
+       "jsl.ml.Pipeline"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.LinearRegression",
+     "simple_qualified": "LinearRegression",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [
+      "Estimator",
+      "Persistable"
+     ],
+     "file": "jsl/ml/LinearRegression.java",
+     "line": 12,
+     "javadoc": "Ordinary linear regression trained by full-batch gradient descent.",
+     "nested": [
+      "Builder"
+     ],
+     "members": [
+      {
+       "kind": "method",
+       "key": "builder()",
+       "signature": "Builder builder()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建构建器，默认 lr=0.05、2000 轮、无正则。",
+        "returns": "新的 Builder，字段取默认值"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fit(Matrix, double[])",
+       "signature": "LinearRegression fit(Matrix features, double[] targets)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        },
+        {
+         "type": "double[]",
+         "name": "targets"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "用全批量梯度下降最小化均方误差。",
+        "params": {
+         "features": "训练特征矩阵，n 行 d 列",
+         "targets": "训练目标数组，长度等于 n"
+        },
+        "returns": "this",
+        "throws": {
+         "NullPointerException": "features 或 targets 为 null",
+         "IllegalArgumentException": "行数与目标长度不符，或数据含 NaN/无穷"
+        },
+        "notes": [
+         "epochs 轮内不做提前停止，lossHistory 长度恒为 epochs"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "predict(Matrix)",
+       "signature": "double[] predict(Matrix features)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "批量计算线性预测值。",
+        "params": {
+         "features": "待预测特征矩阵，列数须等于训练特征数"
+        },
+        "returns": "长度等于行数的连续预测值",
+        "throws": {
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "列数不匹配或含非有限值"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "predictOne(double[], int)",
+       "signature": "double predictOne(double[] features, int offset)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "features"
+        },
+        {
+         "type": "int",
+         "name": "offset"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "对扁平数组中的单个样本预测。",
+        "body": [
+         "适合在已经展开的批量缓冲区上按偏移逐行调用，避免为单行构造 Matrix。"
+        ],
+        "params": {
+         "features": "扁平特征数组",
+         "offset": "该样本第一个特征在数组中的下标"
+        },
+        "returns": "单样本的预测值",
+        "throws": {
+         "IllegalStateException": "尚未 fit",
+         "IndexOutOfBoundsException": "offset 为负，或 offset 加特征数超过数组长度"
+        },
+        "notes": [
+         "只检查长度，不检查取值是否有限"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "weights()",
+       "signature": "double[] weights()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回权重副本。",
+        "returns": "长度为特征数的权重副本；未 fit 时返回空数组",
+        "notes": [
+         "返回副本，修改它不影响模型"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "intercept()",
+       "signature": "double intercept()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回截距项。",
+        "returns": "标量截距；未 fit 时为 0.0",
+        "notes": [
+         "fitIntercept 为 false 时该值恒为 0.0"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "lossHistory()",
+       "signature": "double[] lossHistory()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回每个 epoch 的均方误差。",
+        "returns": "长度为 epochs 的数组，元素是当轮更新前的 MSE",
+        "notes": [
+         "返回副本；未 fit 时为空数组",
+         "曲线单调下降说明学习率合适，震荡说明步长偏大"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "kind()",
+       "signature": "ModelKind kind()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回模型类型标识。",
+        "returns": "ModelKind.LINEAR_REGRESSION"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "write(ModelWriter)",
+       "signature": "void write(ModelWriter writer)",
+       "params": [
+        {
+         "type": "ModelWriter",
+         "name": "writer"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "写入超参数、截距与权重。",
+        "params": {
+         "writer": "目标写入器，由调用方负责容器头与关闭"
+        },
+        "throws": {
+         "IllegalStateException": "尚未 fit"
+        },
+        "notes": [
+         "写入顺序为 learningRate、epochs、l2、fitIntercept 字节、特征数、截距、权重",
+         "lossHistory 不写入流，read 后为空数组"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "read(ModelReader)",
+       "signature": "LinearRegression read(ModelReader reader)",
+       "params": [
+        {
+         "type": "ModelReader",
+         "name": "reader"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "从序列化流重建 LinearRegression 模型。",
+        "params": {
+         "reader": "已完成容器头解析的读取器"
+        },
+        "returns": "已标记为拟合状态、可直接 predict 的实例",
+        "throws": {
+         "ModelFormatException": "特征数不为正"
+        },
+        "notes": [
+         "超参数从流中还原并重新经过 Builder 校验",
+         "lossHistory 为空数组，训练曲线不可恢复"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "全批量梯度下降的普通最小二乘。",
+      "body": [
+       "fit 从全零权重与零截距出发，每个 epoch 用全部样本累加 MSE 梯度（缩放因子 2/n），加上 2·l2·w 后按 learningRate 做一次整批更新；fitIntercept 为 true 时截距同步更新，且不受 l2 惩罚。",
+       "lossHistory 记录每个 epoch 更新前算出的均方误差，可用于判断是否收敛。算法对特征尺度敏感：未标准化时应降低 learningRate，否则梯度下降可能震荡或发散。"
+      ],
+      "notes": [
+       "权重初值恒为零，同一输入的拟合结果完全确定",
+       "l2 以 2·l2·w 加入梯度，只作用于权重",
+       "不对特征做中心化或标准化，也不做特征筛选"
+      ],
+      "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 1}, {1, 1}, {2, 1}, {3, 1}});\ndouble[] y = {1.0, 3.0, 5.0, 7.0};\nLinearRegression model = LinearRegression.builder()\n        .learningRate(0.05)\n        .epochs(2000)\n        .fitIntercept(true)\n        .build()\n        .fit(x, y);\ndouble[] predictions = model.predict(x);\ndouble one = model.predictOne(new double[]{4.0, 1.0}, 0);",
+      "see": [
+       "jsl.ml.Ridge",
+       "jsl.ml.LogisticRegression",
+       "jsl.ml.LinearRegression.Builder"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.LinearSVM",
+     "simple_qualified": "LinearSVM",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [
+      "Estimator",
+      "Persistable"
+     ],
+     "file": "jsl/ml/LinearSVM.java",
+     "line": 19,
+     "javadoc": "Binary linear support vector machine trained with the PEGASOS sub-gradient method.\n\n<p>Objective: {@code lambda/2 * ||w||^2 + mean(max(0, 1 - y(w·x + b)))} with {@code y in {-1,1}}.\nThe step size is {@code 1/(lambda * t)}; the bias is unregularized. For linearly separable data\nthe hinge loss reaches zero and the model recovers a maximum-margin direction.</p>",
+     "nested": [
+      "Builder"
+     ],
+     "members": [
+      {
+       "kind": "method",
+       "key": "builder()",
+       "signature": "Builder builder()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建构建器，默认 lambda=0.01、20 轮、种子 42。",
+        "returns": "新的 Builder，字段取默认值"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fit(Matrix, double[])",
+       "signature": "LinearSVM fit(Matrix features, double[] targets)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        },
+        {
+         "type": "double[]",
+         "name": "targets"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "用 PEGASOS 迭代训练二分类线性模型。",
+        "params": {
+         "features": "训练特征矩阵，n 行 d 列",
+         "targets": "训练标签，必须恰好包含两个不同取值"
+        },
+        "returns": "this",
+        "throws": {
+         "NullPointerException": "features 或 targets 为 null",
+         "IllegalArgumentException": "类别数不等于 2，或形状不符、数据含非有限值"
+        },
+        "notes": [
+         "类别按升序决定符号：较大值为正类",
+         "每轮重新洗牌，累计步数 t 不随 epoch 重置"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "predict(Matrix)",
+       "signature": "double[] predict(Matrix features)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "按判别值的符号输出原始标签。",
+        "params": {
+         "features": "待预测特征矩阵，列数须等于训练特征数"
+        },
+        "returns": "每行一个训练集中出现过的标签值",
+        "throws": {
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "列数不匹配或含非有限值"
+        },
+        "notes": [
+         "判别值恰为 0 时判为正类"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "weights()",
+       "signature": "double[] weights()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回权重向量副本。",
+        "returns": "长度为特征数的权重副本",
+        "throws": {
+         "NullPointerException": "尚未 fit，内部数组为 null"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "bias()",
+       "signature": "double bias()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回偏置项。",
+        "returns": "标量偏置 b；未 fit 时为 0.0",
+        "notes": [
+         "偏置不参与正则化，只按 η·y 累加"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "classes()",
+       "signature": "double[] classes()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回两个类别值。",
+        "returns": "升序排列的两个类别副本；未 fit 时为 null",
+        "notes": [
+         "下标 0 为负类、1 为正类，判别值非负时输出下标 1",
+         "不抛异常，未拟合时返回 null"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "kind()",
+       "signature": "ModelKind kind()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回模型类型标识。",
+        "returns": "ModelKind.LINEAR_SVM"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "write(ModelWriter)",
+       "signature": "void write(ModelWriter writer)",
+       "params": [
+        {
+         "type": "ModelWriter",
+         "name": "writer"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "写入超参数、偏置、类别与权重。",
+        "params": {
+         "writer": "目标写入器，由调用方负责容器头与关闭"
+        },
+        "throws": {
+         "IllegalStateException": "尚未 fit"
+        },
+        "notes": [
+         "写入顺序为 lambda、epochs、seed、特征数、bias、classes、weights"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "read(ModelReader)",
+       "signature": "LinearSVM read(ModelReader reader)",
+       "params": [
+        {
+         "type": "ModelReader",
+         "name": "reader"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "从序列化流重建 LinearSVM 模型。",
+        "params": {
+         "reader": "已完成容器头解析的读取器"
+        },
+        "returns": "可直接用于 predict 的模型实例",
+        "throws": {
+         "ModelFormatException": "特征数不为正"
+        },
+        "notes": [
+         "类别数组固定按 2 个元素读取",
+         "lambda、epochs、seed 从流中还原并重新经过 Builder 校验"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "PEGASOS 次梯度法训练的二分类线性 SVM。",
+      "body": [
+       "fit 要求标签恰好取两个不同值，按升序映射为负类与正类（较大者记 +1）。每个 epoch 先洗牌样本顺序，再逐样本判断 margin：小于 1 时做 hinge 更新 w ← (1-ηλ)w + η·y·x、b ← b + η·y，否则只做收缩 w ← (1-ηλ)w。",
+       "步长 η = 1/(λ·t)，t 是跨 epoch 累计的样本计数，因此收缩因子 1-ηλ 等于 1-1/t。偏置只累加 η·y，不受 L2 正则。predict 取 w·x + b 的符号，返回原始标签值而非 ±1。"
+      ],
+      "notes": [
+       "lambda 越小正则越弱、早期有效步长越大",
+       "洗牌由 seed 驱动的 Random 完成，默认 42，结果可复现",
+       "单类别或三分类以上的数据会在 fit 时被拒绝",
+       "目标值只用于确定两个类别，不做 0/1 之外的假设"
+      ],
+      "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}});\ndouble[] y = {0, 0, 1, 1};\nLinearSVM svm = LinearSVM.builder()\n        .lambda(0.01)\n        .epochs(20)\n        .seed(42L)\n        .build()\n        .fit(x, y);\ndouble[] labels = svm.predict(x);\ndouble[] w = svm.weights();\ndouble b = svm.bias();",
+      "see": [
+       "jsl.ml.LogisticRegression",
+       "jsl.ml.LinearSVM.Builder"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.LogisticRegression",
+     "simple_qualified": "LogisticRegression",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [
+      "Estimator",
+      "Persistable"
+     ],
+     "file": "jsl/ml/LogisticRegression.java",
+     "line": 12,
+     "javadoc": "Binary logistic regression trained with numerically stable cross-entropy.",
+     "nested": [
+      "Builder"
+     ],
+     "members": [
+      {
+       "kind": "method",
+       "key": "builder()",
+       "signature": "Builder builder()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建构建器，默认 lr=0.1、2000 轮、无正则。",
+        "returns": "新的 Builder，字段取默认值"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fit(Matrix, double[])",
+       "signature": "LogisticRegression fit(Matrix features, double[] targets)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        },
+        {
+         "type": "double[]",
+         "name": "targets"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "用全批量梯度下降最小化交叉熵。",
+        "params": {
+         "features": "训练特征矩阵，n 行 d 列",
+         "targets": "训练标签，每个元素必须是 0.0 或 1.0"
+        },
+        "returns": "this",
+        "throws": {
+         "NullPointerException": "features 或 targets 为 null",
+         "IllegalArgumentException": "标签不是 0/1，或行数与标签长度不符、数据含非有限值"
+        },
+        "notes": [
+         "标签校验在形状校验之后进行，逐元素扫描"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "predictProbability(Matrix)",
+       "signature": "double[] predictProbability(Matrix features)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "输出每行属于正类的概率。",
+        "params": {
+         "features": "待预测特征矩阵，列数须等于训练特征数"
+        },
+        "returns": "长度等于行数的概率数组，取值在 [0,1]",
+        "throws": {
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "列数不匹配或含非有限值"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "predict(Matrix)",
+       "signature": "double[] predict(Matrix features)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以 0.5 为阈值输出 0/1 标签。",
+        "params": {
+         "features": "待预测特征矩阵"
+        },
+        "returns": "每行 1.0 或 0.0，概率大于等于 0.5 判为 1.0",
+        "throws": {
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "列数不匹配或含非有限值"
+        },
+        "notes": [
+         "内部先算概率再阈值化，与 predictProbability 结果一致"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "lossHistory()",
+       "signature": "double[] lossHistory()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回每个 epoch 的平均交叉熵。",
+        "returns": "长度为 epochs 的数组，元素是当轮更新前的平均损失",
+        "notes": [
+         "返回副本；未 fit 时为空数组"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "weights()",
+       "signature": "double[] weights()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回权重副本。",
+        "returns": "长度为特征数的权重副本；未 fit 时返回空数组",
+        "notes": [
+         "返回副本，修改它不影响模型"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "intercept()",
+       "signature": "double intercept()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回截距项。",
+        "returns": "标量截距；未 fit 时为 0.0",
+        "notes": [
+         "截距不受 l2 惩罚，只按平均梯度更新"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "kind()",
+       "signature": "ModelKind kind()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回模型类型标识。",
+        "returns": "ModelKind.LOGISTIC_REGRESSION"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "write(ModelWriter)",
+       "signature": "void write(ModelWriter writer)",
+       "params": [
+        {
+         "type": "ModelWriter",
+         "name": "writer"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "写入超参数、截距与权重。",
+        "params": {
+         "writer": "目标写入器，由调用方负责容器头与关闭"
+        },
+        "throws": {
+         "IllegalStateException": "尚未 fit"
+        },
+        "notes": [
+         "写入顺序为 learningRate、epochs、l2、特征数、截距、权重",
+         "lossHistory 不写入流，read 后为空数组"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "read(ModelReader)",
+       "signature": "LogisticRegression read(ModelReader reader)",
+       "params": [
+        {
+         "type": "ModelReader",
+         "name": "reader"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "从序列化流重建 LogisticRegression 模型。",
+        "params": {
+         "reader": "已完成容器头解析的读取器"
+        },
+        "returns": "已标记为拟合状态、可直接 predict 的实例",
+        "throws": {
+         "ModelFormatException": "特征数不为正"
+        },
+        "notes": [
+         "超参数从流中还原并重新经过 Builder 校验",
+         "lossHistory 为空数组，训练曲线不可恢复"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "全批量梯度下降的二分类逻辑回归。",
+      "body": [
+       "fit 要求标签严格等于 0.0 或 1.0，其他取值直接拒绝。每个 epoch 用全部样本计算交叉熵梯度；损失按 max(z,0) - z·y + log1p(exp(-|z|)) 计算，在 logit 绝对值很大时也不会溢出。",
+       "l2 以 2·l2·w 加入权重梯度，截距不受惩罚。predictProbability 用分段 sigmoid 输出概率，predict 再以固定阈值 0.5 转成 0/1 硬标签。"
+      ],
+      "notes": [
+       "概率阈值硬编码为 0.5，不可配置",
+       "特征未标准化时需按尺度调整 learningRate",
+       "类别必须是 0 与 1，不做任意标签的自动映射"
+      ],
+      "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}});\ndouble[] y = {0, 0, 1, 1};\nLogisticRegression model = LogisticRegression.builder()\n        .learningRate(0.1)\n        .epochs(2000)\n        .build()\n        .fit(x, y);\ndouble[] probability = model.predictProbability(x);\ndouble[] labels = model.predict(x);",
+      "see": [
+       "jsl.ml.LinearSVM",
+       "jsl.ml.Metrics",
+       "jsl.ml.LogisticRegression.Builder"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.Metrics",
+     "simple_qualified": "Metrics",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/ml/Metrics.java",
+     "line": 6,
+     "javadoc": "Classification and regression metrics with no external dependencies.",
+     "nested": [],
+     "members": [
+      {
+       "kind": "method",
+       "key": "accuracy(double[], double[])",
+       "signature": "double accuracy(double[] expected, double[] predicted)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "expected"
+        },
+        {
+         "type": "double[]",
+         "name": "predicted"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "预测与期望完全相等的比例。",
+        "params": {
+         "expected": "真实标签",
+         "predicted": "预测标签，长度须与 expected 相同"
+        },
+        "returns": "[0,1] 的准确率，即相等元素数除以样本数",
+        "throws": {
+         "IllegalArgumentException": "两个数组长度不一致或为空"
+        },
+        "notes": [
+         "用 == 比较 double，浮点近似值不会被判为相等"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "precision(double[], double[], double)",
+       "signature": "double precision(double[] expected, double[] predicted, double positive)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "expected"
+        },
+        {
+         "type": "double[]",
+         "name": "predicted"
+        },
+        {
+         "type": "double",
+         "name": "positive"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "指定正类的精确率。",
+        "params": {
+         "expected": "真实标签",
+         "predicted": "预测标签",
+         "positive": "被视为正类的标签值"
+        },
+        "returns": "TP/(TP+FP)；没有任何预测为正类时返回 0.0",
+        "throws": {
+         "IllegalArgumentException": "两个数组长度不一致或为空"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "recall(double[], double[], double)",
+       "signature": "double recall(double[] expected, double[] predicted, double positive)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "expected"
+        },
+        {
+         "type": "double[]",
+         "name": "predicted"
+        },
+        {
+         "type": "double",
+         "name": "positive"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "指定正类的召回率。",
+        "params": {
+         "expected": "真实标签",
+         "predicted": "预测标签",
+         "positive": "被视为正类的标签值"
+        },
+        "returns": "TP/(TP+FN)；expected 中没有正类时返回 0.0",
+        "throws": {
+         "IllegalArgumentException": "两个数组长度不一致或为空"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "f1(double[], double[], double)",
+       "signature": "double f1(double[] expected, double[] predicted, double positive)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "expected"
+        },
+        {
+         "type": "double[]",
+         "name": "predicted"
+        },
+        {
+         "type": "double",
+         "name": "positive"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "精确率与召回率的调和平均。",
+        "params": {
+         "expected": "真实标签",
+         "predicted": "预测标签",
+         "positive": "被视为正类的标签值"
+        },
+        "returns": "2PR/(P+R)；P 与 R 同时为 0 时返回 0.0",
+        "throws": {
+         "IllegalArgumentException": "两个数组长度不一致或为空"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "macroF1(double[], double[])",
+       "signature": "double macroF1(double[] expected, double[] predicted)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "expected"
+        },
+        {
+         "type": "double[]",
+         "name": "predicted"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "按类别取 F1 的算术平均。",
+        "body": [
+         "类别集合来自 expected 的升序唯一值，对每个类别分别作为正类计算 F1，再求平均。多分类问题常用该指标，可避免多数类主导。"
+        ],
+        "params": {
+         "expected": "真实标签，决定类别集合",
+         "predicted": "预测标签"
+        },
+        "returns": "[0,1] 的宏平均 F1",
+        "throws": {
+         "IllegalArgumentException": "两个数组长度不一致或为空"
+        },
+        "notes": [
+         "predicted 中若出现 expected 之外的新标签，不会被单独计为一类"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "confusionMatrix(double[], double[])",
+       "signature": "int[][] confusionMatrix(double[] expected, double[] predicted)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "expected"
+        },
+        {
+         "type": "double[]",
+         "name": "predicted"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回以类别为行列的混淆矩阵。",
+        "body": [
+         "行对应真实类别，列对应预测类别，行列顺序都是 expected 唯一值的升序，因此 matrix[i][j] 表示真实为第 i 类且被预测为第 j 类的样本数。"
+        ],
+        "params": {
+         "expected": "真实标签，决定矩阵维度与类别顺序",
+         "predicted": "预测标签"
+        },
+        "returns": "k×k 的 int 矩阵，k 为 expected 的唯一值个数",
+        "throws": {
+         "IllegalArgumentException": "predicted 含 expected 之外的类别，或两数组长度不一致、为空"
+        },
+        "notes": [
+         "对角线元素之和等于 accuracy 的分子"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "rocAuc(double[], double[])",
+       "signature": "double rocAuc(double[] labels, double[] scores)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "labels"
+        },
+        {
+         "type": "double[]",
+         "name": "scores"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "二分类 ROC 曲线下面积。",
+        "body": [
+         "先按分数升序排序并给出秩，同分样本取平均秩，再用正类秩和减去 positives·(positives+1)/2 得到 U 统计量，最后除以 positives·negatives。"
+        ],
+        "params": {
+         "labels": "真实标签，必须只含 0.0 与 1.0，其中 1 为正类",
+         "scores": "实数打分，越大越倾向正类，可以是 logit 或概率"
+        },
+        "returns": "[0,1] 的 AUC，0.5 相当于随机排序",
+        "throws": {
+         "IllegalArgumentException": "标签含 0/1 之外的值、缺少某一类，或两数组长度不一致、为空"
+        },
+        "notes": [
+         "并列分数按平均秩处理，结果与样本顺序无关",
+         "只支持二分类；多分类需先做 one-vs-rest 拆分"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "mse(double[], double[])",
+       "signature": "double mse(double[] expected, double[] predicted)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "expected"
+        },
+        {
+         "type": "double[]",
+         "name": "predicted"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "均方误差。",
+        "params": {
+         "expected": "真实值",
+         "predicted": "预测值"
+        },
+        "returns": "Σ(expected-predicted)²/n，非负",
+        "throws": {
+         "IllegalArgumentException": "两个数组长度不一致或为空"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "rmse(double[], double[])",
+       "signature": "double rmse(double[] expected, double[] predicted)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "expected"
+        },
+        {
+         "type": "double[]",
+         "name": "predicted"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "均方根误差。",
+        "params": {
+         "expected": "真实值",
+         "predicted": "预测值"
+        },
+        "returns": "mse 的平方根，与目标值同量纲",
+        "throws": {
+         "IllegalArgumentException": "两个数组长度不一致或为空"
+        },
+        "notes": [
+         "门面 crossValidate 会对其取负号，使指标统一为越大越好"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "mae(double[], double[])",
+       "signature": "double mae(double[] expected, double[] predicted)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "expected"
+        },
+        {
+         "type": "double[]",
+         "name": "predicted"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "平均绝对误差。",
+        "params": {
+         "expected": "真实值",
+         "predicted": "预测值"
+        },
+        "returns": "Σ|expected-predicted|/n，非负",
+        "throws": {
+         "IllegalArgumentException": "两个数组长度不一致或为空"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "r2(double[], double[])",
+       "signature": "double r2(double[] expected, double[] predicted)",
+       "params": [
+        {
+         "type": "double[]",
+         "name": "expected"
+        },
+        {
+         "type": "double[]",
+         "name": "predicted"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "决定系数。",
+        "body": [
+         "以 expected 的均值为基准计算总平方和，返回 1 - SSres/SStot；模型比常数均值预测更差时结果为负。"
+        ],
+        "params": {
+         "expected": "真实值",
+         "predicted": "预测值"
+        },
+        "returns": "1 - SSres/SStot，上界为 1，可以为负",
+        "throws": {
+         "IllegalArgumentException": "两个数组长度不一致或为空"
+        },
+        "notes": [
+         "SStot 为 0（所有真实值相同）时：残差也为 0 返回 1.0，否则返回 0.0"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "分类与回归指标，纯 Java 实现。",
+      "body": [
+       "全部方法为静态方法，输入是两个等长 double[]；长度不等或为空时抛 IllegalArgumentException。分类指标按 double 精确相等比较标签，因此预测必须是类别码（例如 0/1），传入概率会得到无意义的结果。",
+       "precision、recall、f1 用 positive 参数指定正类，分母为零时返回 0.0 而不是 NaN。rocAuc 单独约定输入：标签必须只含 0/1，分数可以是任意实数，采用并列取平均秩的 Mann-Whitney 统计量，等价于梯形法 ROC 面积。"
+      ],
+      "notes": [
+       "不修改输入数组",
+       "macroF1 与 confusionMatrix 的类别集合取自 expected 的升序唯一值",
+       "回归指标不做样本数之外的归一化，量纲随目标值"
+      ],
+      "example": "double[] expected = {1, 0, 1, 1, 0};\ndouble[] predicted = {1, 0, 0, 1, 0};\ndouble accuracy = Metrics.accuracy(expected, predicted);\ndouble f1 = Metrics.f1(expected, predicted, 1.0);\nint[][] matrix = Metrics.confusionMatrix(expected, predicted);\ndouble auc = Metrics.rocAuc(expected, new double[]{0.9, 0.1, 0.4, 0.8, 0.2});",
+      "see": [
+       "jsl.ml.JSL.Metric",
+       "jsl.ml.Estimator"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.MinMaxScaler",
+     "simple_qualified": "MinMaxScaler",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [
+      "Transformer",
+      "Estimator"
+     ],
+     "file": "jsl/ml/MinMaxScaler.java",
+     "line": 14,
+     "javadoc": "Transforms features by scaling each feature to a given range {@code [featureMin, featureMax]}\n(default {@code [0, 1]}), matching {@code sklearn.preprocessing.MinMaxScaler}.",
+     "nested": [
+      "Builder"
+     ],
+     "members": [
+      {
+       "kind": "method",
+       "key": "builder()",
+       "signature": "Builder builder()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建构建器，默认区间 [0, 1]、不截断。",
+        "returns": "新的 Builder，字段取默认值"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fit(Matrix)",
+       "signature": "MinMaxScaler fit(Matrix features)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "只用特征拟合，目标数组缺省为 null。",
+        "params": {
+         "features": "训练特征矩阵，行是样本、列是特征"
+        },
+        "returns": "this，便于链式调用",
+        "throws": {
+         "NullPointerException": "features 为 null",
+         "IllegalArgumentException": "features 含 NaN 或无穷"
+        },
+        "notes": [
+         "等价于 fit(features, null)"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fit(Matrix, double[])",
+       "signature": "MinMaxScaler fit(Matrix features, double[] ignoredTargets)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        },
+        {
+         "type": "double[]",
+         "name": "ignoredTargets"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "逐列统计极值并算出缩放系数。",
+        "params": {
+         "features": "训练特征矩阵，行是样本、列是特征",
+         "ignoredTargets": "占位参数；缩放忽略监督目标，可为 null"
+        },
+        "returns": "this，便于链式调用",
+        "throws": {
+         "NullPointerException": "features 为 null",
+         "IllegalArgumentException": "features 含 NaN 或无穷"
+        },
+        "notes": [
+         "单次扫描，时间 O(n·d)",
+         "常数列的 dataRange 记为 0，但缩放分母取 1.0"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "transform(Matrix)",
+       "signature": "Matrix transform(Matrix features)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "按列线性映射到目标区间。",
+        "params": {
+         "features": "待变换特征矩阵，列数须等于拟合特征数"
+        },
+        "returns": "与输入同形状的变换结果",
+        "throws": {
+         "NullPointerException": "features 为 null",
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "列数不匹配或含非有限值"
+        },
+        "notes": [
+         "clip 为 true 时输出被截断到 [featureMin, featureMax]"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "inverseTransform(Matrix)",
+       "signature": "Matrix inverseTransform(Matrix transformed)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "transformed"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "把缩放结果还原到原始量纲。",
+        "params": {
+         "transformed": "变换后的矩阵，列数须等于拟合特征数"
+        },
+        "returns": "与输入同形状的还原结果",
+        "throws": {
+         "NullPointerException": "transformed 为 null",
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "列数不匹配或含非有限值"
+        },
+        "notes": [
+         "按 (v - minOffset) / scale 逐元素计算，scale 恒为正"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "predict(Matrix)",
+       "signature": "double[] predict(Matrix features)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回变换结果的扁平数组。",
+        "params": {
+         "features": "待变换特征矩阵，列数须等于拟合特征数"
+        },
+        "returns": "长度为 行数 × 特征数 的数组",
+        "throws": {
+         "NullPointerException": "features 为 null",
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "列数不匹配或含非有限值"
+        },
+        "notes": [
+         "等价于 transform(features).toArray()，clip 同样生效"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "dataMin()",
+       "signature": "double[] dataMin()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回拟合时各列最小值。",
+        "returns": "长度等于特征数的数组副本",
+        "throws": {
+         "IllegalStateException": "尚未 fit"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "dataMax()",
+       "signature": "double[] dataMax()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回拟合时各列最大值。",
+        "returns": "长度等于特征数的数组副本",
+        "throws": {
+         "IllegalStateException": "尚未 fit"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "dataRange()",
+       "signature": "double[] dataRange()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回各列极差。",
+        "returns": "dataMax - dataMin 的数组副本；常数列为 0",
+        "throws": {
+         "IllegalStateException": "尚未 fit"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "scale()",
+       "signature": "double[] scale()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回各列缩放系数。",
+        "returns": "目标区间宽度与极差之比的数组副本；常数列等于区间宽度",
+        "throws": {
+         "IllegalStateException": "尚未 fit"
+        },
+        "notes": [
+         "反变换需要除以该系数，因此它恒为正"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "kind()",
+       "signature": "ModelKind kind()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回模型类型标识。",
+        "returns": "ModelKind.MIN_MAX_SCALER"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "write(ModelWriter)",
+       "signature": "void write(ModelWriter writer)",
+       "params": [
+        {
+         "type": "ModelWriter",
+         "name": "writer"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "写入目标区间、截断标志与全部拟合统计量。",
+        "params": {
+         "writer": "目标写入器，由调用方负责容器头与关闭"
+        },
+        "throws": {
+         "IllegalStateException": "尚未 fit"
+        },
+        "notes": [
+         "写入顺序为区间下界、上界、clip 字节、特征数、dataMin、dataMax、dataRange、scale、minOffset",
+         "minOffset 一并写入，读取端无需重新推导"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "read(ModelReader)",
+       "signature": "MinMaxScaler read(ModelReader reader)",
+       "params": [
+        {
+         "type": "ModelReader",
+         "name": "reader"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "从序列化流重建 MinMaxScaler。",
+        "params": {
+         "reader": "已完成容器头解析的读取器"
+        },
+        "returns": "可直接用于 transform 与 inverseTransform 的实例",
+        "throws": {
+         "ModelFormatException": "特征数不为正，或区间上界不大于下界"
+        },
+        "notes": [
+         "统计量直接读取，不重新扫描数据"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "按列线性映射到指定区间的缩放器。",
+      "body": [
+       "fit 逐列扫描得到最小值与最大值，dataRange 记录极差，scale = (featureMax - featureMin) / dataRange，minOffset = featureMin - dataMin·scale；transform 计算 v·scale + minOffset，inverseTransform 用 (v - minOffset) / scale 还原。",
+       "极差不超过 1e-12 的常数列把缩放分母取 1.0，此时 scale 等于目标区间宽度、输出恒为 featureMin，不会产生除零或 NaN。clip 为 true 时 transform 的输出被截断到 [featureMin, featureMax]，对训练分布之外的值同样生效。"
+      ],
+      "notes": [
+       "目标区间默认 [0, 1]，由 Builder.featureRange(min, max) 设置，要求有限且 min < max",
+       "拟合统计量 dataMin、dataMax、dataRange、scale、minOffset 随模型一起序列化",
+       "transform 与 inverseTransform 都要求列数等于拟合时的特征数",
+       "inverseTransform 只做逆线性映射，clip 造成的截断无法还原",
+       "同时实现 Transformer 与 Estimator，可放入 Pipeline"
+      ],
+      "example": "Matrix x = Matrix.fromRows(new double[][]{{1, 10}, {2, 20}, {3, 30}});\nMinMaxScaler scaler = MinMaxScaler.builder()\n        .featureRange(-1.0, 1.0)\n        .clip(true)\n        .build()\n        .fit(x);\nMatrix scaled = scaler.transform(x);\nMatrix restored = scaler.inverseTransform(scaled);\ndouble[] scale = scaler.scale();",
+      "see": [
+       "jsl.ml.StandardScaler",
+       "jsl.ml.Transformer",
+       "jsl.ml.MinMaxScaler.Builder"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.OneHotEncoder",
+     "simple_qualified": "OneHotEncoder",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [
+      "Transformer",
+      "Estimator"
+     ],
+     "file": "jsl/ml/OneHotEncoder.java",
+     "line": 21,
+     "javadoc": "One-hot encodes categorical columns into dense binary indicator features, matching\n{@code sklearn.preprocessing.OneHotEncoder(sparse_output=False)}.\n\n<p>Supports encoding all columns or a specified subset of categorical column indices while\npassing numeric columns through unchanged. Supports {@link HandleUnknown#ERROR} and\n{@link HandleUnknown#IGNORE} (all-zeros indicator for unseen categories), plus\n{@link #inverseTransform(Matrix)}.</p>",
+     "nested": [
+      "HandleUnknown",
+      "Builder"
+     ],
+     "members": [
+      {
+       "kind": "method",
+       "key": "builder()",
+       "signature": "Builder builder()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建构建器，默认全部列编码、未知类别报错。",
+        "returns": "新的 Builder，字段取默认值"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fit(Matrix)",
+       "signature": "OneHotEncoder fit(Matrix features)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "只用特征拟合，目标数组缺省为 null。",
+        "params": {
+         "features": "训练特征矩阵，行是样本、列是特征"
+        },
+        "returns": "this，便于链式调用",
+        "throws": {
+         "NullPointerException": "features 为 null",
+         "IllegalArgumentException": "features 含 NaN 或无穷，或类别列下标越界"
+        },
+        "notes": [
+         "等价于 fit(features, null)"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fit(Matrix, double[])",
+       "signature": "OneHotEncoder fit(Matrix features, double[] ignoredTargets)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        },
+        {
+         "type": "double[]",
+         "name": "ignoredTargets"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "收集每列的类别词表并计算输出布局。",
+        "params": {
+         "features": "训练特征矩阵，n 行 d 列",
+         "ignoredTargets": "占位参数；编码忽略监督目标，可为 null"
+        },
+        "returns": "this，便于链式调用",
+        "throws": {
+         "NullPointerException": "features 为 null",
+         "IllegalArgumentException": "features 含 NaN 或无穷，或 categoricalColumns 中的下标越界"
+        },
+        "notes": [
+         "每个类别列做一次 TreeSet 收集，时间 O(n·d·log n)",
+         "categoricalColumns 未设置时全部列按类别处理，数值列需显式排除"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "transform(Matrix)",
+       "signature": "Matrix transform(Matrix features)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "把类别列展开为 0/1 指示特征。",
+        "params": {
+         "features": "待编码矩阵，列数须等于拟合特征数"
+        },
+        "returns": "行数不变、宽度为 outputFeatureCount() 的稠密矩阵",
+        "throws": {
+         "NullPointerException": "features 为 null",
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "列数不匹配、含非有限值，或 handleUnknown 为 ERROR 时出现未知类别"
+        },
+        "notes": [
+         "数值列按原值透传，不做缩放或中心化"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "inverseTransform(Matrix)",
+       "signature": "Matrix inverseTransform(Matrix transformed)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "transformed"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "从指示特征还原原始列。",
+        "params": {
+         "transformed": "编码后的矩阵，列数须等于输出特征数"
+        },
+        "returns": "行数不变、宽度等于输入特征数的矩阵",
+        "throws": {
+         "NullPointerException": "transformed 为 null",
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "列数不匹配或含非有限值"
+        },
+        "notes": [
+         "每个类别块取最大值对应的下标；整块不大于 0 时该格输出 NaN"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "predict(Matrix)",
+       "signature": "double[] predict(Matrix features)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回编码结果的扁平数组。",
+        "params": {
+         "features": "待编码矩阵，列数须等于拟合特征数"
+        },
+        "returns": "长度为 行数 × 输出特征数 的数组",
+        "throws": {
+         "NullPointerException": "features 为 null",
+         "IllegalStateException": "尚未 fit",
+         "IllegalArgumentException": "列数不匹配、含非有限值，或出现未知类别"
+        },
+        "notes": [
+         "等价于 transform(features).toArray()"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "categories()",
+       "signature": "double[][] categories()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回每列的类别词表。",
+        "returns": "长度为输入特征数的二维数组副本；数值列为空数组",
+        "throws": {
+         "IllegalStateException": "尚未 fit"
+        },
+        "notes": [
+         "每个子数组按升序排列，且为深拷贝"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "outputFeatureCount()",
+       "signature": "int outputFeatureCount()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回编码后的特征宽度。",
+        "returns": "输出列数；未 fit 时为 0",
+        "notes": [
+         "等于各列词表长度之和，数值列按 1 计",
+         "不抛异常，可在拟合前查询（此时为 0）"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "kind()",
+       "signature": "ModelKind kind()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回模型类型标识。",
+        "returns": "ModelKind.ONE_HOT_ENCODER"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "write(ModelWriter)",
+       "signature": "void write(ModelWriter writer)",
+       "params": [
+        {
+         "type": "ModelWriter",
+         "name": "writer"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "写入未知类别策略、特征数与逐列词表。",
+        "params": {
+         "writer": "目标写入器，由调用方负责容器头与关闭"
+        },
+        "throws": {
+         "IllegalStateException": "尚未 fit"
+        },
+        "notes": [
+         "每列依次写类别标志字节、词表长度与词表值，最后写 outputOffsets",
+         "输入与输出特征数在词表之前写出，读取端可先分配空间"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "read(ModelReader)",
+       "signature": "OneHotEncoder read(ModelReader reader)",
+       "params": [
+        {
+         "type": "ModelReader",
+         "name": "reader"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "从序列化流重建 OneHotEncoder。",
+        "params": {
+         "reader": "已完成容器头解析的读取器"
+        },
+        "returns": "可直接用于 transform 与 inverseTransform 的编码器",
+        "throws": {
+         "ModelFormatException": "HandleUnknown 序数非法，或输入/输出特征数不为正"
+        },
+        "notes": [
+         "categoricalColumns 的原始配置不被保留，分类标志来自逐列写出的字节"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "把类别列展开为稠密 0/1 指示特征的编码器。",
+      "body": [
+       "fit 对每个被标记为类别的列收集升序唯一值作为词表，并预先计算输出列偏移；未被指定的列原样透传，各占一个输出列。categoricalColumns 未设置时全部列都按类别处理。",
+       "transform 在每个类别块内把命中的位置置 1、其余为 0；handleUnknown 为 ERROR 时遇到词表外的值抛异常，为 IGNORE 时该样本的整块保持全 0。inverseTransform 对每个类别块取最大值的下标还原类别值，整块为 0 时输出 NaN。"
+      ],
+      "notes": [
+       "handleUnknown 默认 ERROR，可在 Builder 中改为 IGNORE",
+       "词表按 double 升序排列，比较用 Double.compare，因此 -0.0 与 0.0 被视为不同类别",
+       "输出特征数等于各列词表长度之和，数值列按 1 计",
+       "inverseTransform 只取 argmax，不校验输入是否为合法 one-hot",
+       "类别词表与列偏移随模型一起序列化"
+      ],
+      "example": "Matrix x = Matrix.fromRows(new double[][]{\n    {0, 1.5}, {1, 2.5}, {2, 3.5}\n});\nOneHotEncoder encoder = OneHotEncoder.builder()\n        .categoricalColumns(0)\n        .handleUnknown(OneHotEncoder.HandleUnknown.IGNORE)\n        .build()\n        .fit(x);\nMatrix encoded = encoder.transform(x);\nint width = encoder.outputFeatureCount();\nMatrix back = encoder.inverseTransform(encoded);",
+      "see": [
+       "jsl.ml.LabelEncoder",
+       "jsl.ml.KBinsDiscretizer",
+       "jsl.ml.OneHotEncoder.Builder"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.PCA",
+     "simple_qualified": "PCA",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [
+      "Estimator",
+      "Transformer",
+      "Persistable"
+     ],
+     "file": "jsl/ml/PCA.java",
+     "line": 28,
+     "javadoc": "Centered PCA with two exact eigensolvers.\n\n<ul>\n<li>{@link EigenSolver#JACOBI} diagonalizes the {@code p x p} covariance matrix. Cost is\n{@code O(n p^2)} for the covariance plus cyclic Jacobi sweeps, ideal when {@code n >> p}.</li>\n<li>{@link EigenSolver#GRAM} diagonalizes the {@code n x n} Gram matrix and recovers principal\ndirections as {@code v = X^T u / ||X^T u||}. Cost is {@code O(n^2 p)}, ideal when\n{@code p >> n} (the classic dual/PCA trick that avoids a huge covariance matrix).</li>\n</ul>\n\n<p>Both paths return orthonormal components and variances on the covariance scale, so their\noutputs agree up to sign and numerical noise. Whitening divides each projection by the component\nstandard deviation.</p>",
+     "nested": [
+      "EigenDecomposition",
+      "Builder"
+     ],
+     "members": [
+      {
+       "kind": "method",
+       "key": "builder()",
+       "signature": "Builder builder()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "创建 PCA 构建器。",
+        "returns": "参数取默认值的新 Builder 实例"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fit(Matrix)",
+       "signature": "PCA fit(Matrix features)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "只用特征拟合，目标数组缺省为 null。",
+        "params": {
+         "features": "训练样本矩阵，行是样本、列是特征"
+        },
+        "returns": "this，便于链式调用"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fit(Matrix, double[])",
+       "signature": "PCA fit(Matrix features, double[] ignoredTargets)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        },
+        {
+         "type": "double[]",
+         "name": "ignoredTargets"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "中心化后做特征分解并保留前若干主成分。",
+        "body": [
+         "先按列求均值并中心化，再按解析出的求解器计算特征分解；特征值截断为非负、按降序排序，保留前 components 个方向，总方差始终按全部特征累计。"
+        ],
+        "params": {
+         "features": "训练样本矩阵，行是样本、列是特征；元素必须有限",
+         "ignoredTargets": "占位参数；降维忽略监督目标，可为 null"
+        },
+        "returns": "this，便于链式调用",
+        "throws": {
+         "IllegalArgumentException": "features 为 null 或含非有限值；样本数小于 2；components 大于 min(样本数, 特征数)；显式选择 GRAM 而样本数超过 20000"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "transform(Matrix)",
+       "signature": "Matrix transform(Matrix features)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "把样本投影到主成分坐标。",
+        "body": [
+         "逐样本减去训练均值后与各主方向做点积。whiten 为 true 时每个投影再除以其主成分标准差 sqrt(max(特征值, 1e-12))，使各分量方差为 1。"
+        ],
+        "params": {
+         "features": "样本矩阵，列数须与拟合时一致"
+        },
+        "returns": "样本数 × components 的投影矩阵",
+        "throws": {
+         "IllegalStateException": "尚未拟合",
+         "IllegalArgumentException": "特征列数与拟合时不一致"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "inverseTransform(Matrix)",
+       "signature": "Matrix inverseTransform(Matrix transformed)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "transformed"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "把主成分坐标重建回原始特征空间。",
+        "body": [
+         "先按主方向加权求和，再加回均值。白化模型会先把每个坐标乘回对应标准差，因此与 transform 互为逆变换（截断维度时是到子空间的正交投影）。"
+        ],
+        "params": {
+         "transformed": "样本数 × components 的投影矩阵，列数须等于 components"
+        },
+        "returns": "样本数 × 特征数 的重建矩阵",
+        "throws": {
+         "IllegalStateException": "尚未拟合",
+         "IllegalArgumentException": "transformed 的列数不等于 components"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "predict(Matrix)",
+       "signature": "double[] predict(Matrix features)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回投影结果的扁平数组。",
+        "body": [
+         "等价于 transform(features).toArray()，按行优先展开，便于接入只需要 double[] 的下游流程。"
+        ],
+        "params": {
+         "features": "样本矩阵，列数须与拟合时一致"
+        },
+        "returns": "长度为 样本数 × components 的数组",
+        "throws": {
+         "IllegalStateException": "尚未拟合",
+         "IllegalArgumentException": "特征列数与拟合时不一致"
+        }
+       }
+      },
+      {
+       "kind": "method",
+       "key": "explainedVariance()",
+       "signature": "double[] explainedVariance()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回各主成分的方差。",
+        "body": [
+         "数值为协方差矩阵的特征值，已截断为非负，按降序排列，单位是原始特征的方差单位。内部数组在 fit 阶段分配，未拟合时不可调用。"
+        ],
+        "returns": "长度等于 components 的数组副本"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "explainedVarianceRatio()",
+       "signature": "double[] explainedVarianceRatio()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回各主成分方差占总方差的比例。",
+        "body": [
+         "分母是全部 p 个特征的方差之和，与保留的分量数无关，因此前 k 个比值之和通常小于 1。总方差不为正（例如全部特征为常数）时返回全 0。"
+        ],
+        "returns": "长度等于 components 的数组"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "components()",
+       "signature": "Matrix components()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回主方向矩阵。",
+        "returns": "components × 特征数 的矩阵，每行一个单位长度的主方向",
+        "throws": {
+         "IllegalStateException": "尚未拟合"
+        },
+        "notes": [
+         "每行已归一化为单位长度，且绝对值最大的分量被固定为正号",
+         "特征值过小、方向无法还原时该行全为 0"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "means()",
+       "signature": "double[] means()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回拟合时各特征的均值。",
+        "returns": "长度等于特征数的数组副本",
+        "notes": [
+         "未拟合时内部均值为 null，调用会抛 NullPointerException"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "solver()",
+       "signature": "EigenSolver solver()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回实际使用的求解器。",
+        "returns": "AUTO 解析后的具体求解器；未拟合时为 null，由 read 重建的模型为 JACOBI"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "kind()",
+       "signature": "ModelKind kind()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回模型类型标识。",
+        "returns": "ModelKind.PCA"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "write(ModelWriter)",
+       "signature": "void write(ModelWriter writer)",
+       "params": [
+        {
+         "type": "ModelWriter",
+         "name": "writer"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "写入分量数、特征数、白化标志、总方差、均值、特征值与主方向。",
+        "params": {
+         "writer": "目标写入器，由调用方负责容器头与关闭"
+        },
+        "throws": {
+         "IllegalStateException": "尚未拟合"
+        },
+        "notes": [
+         "tolerance 与 maxIterations 不写入流，read 后回到 Builder 默认值"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "read(ModelReader)",
+       "signature": "PCA read(ModelReader reader)",
+       "params": [
+        {
+         "type": "ModelReader",
+         "name": "reader"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "从序列化流重建 PCA 模型。",
+        "params": {
+         "reader": "已完成容器头解析的读取器"
+        },
+        "returns": "可直接用于 transform 与 inverseTransform 的模型实例",
+        "throws": {
+         "ModelFormatException": "分量数或特征数不为正，或白化标志不是 0/1"
+        },
+        "notes": [
+         "solver() 固定返回 JACOBI，原始求解器选择不被保留"
+        ]
+       }
+      }
+     ],
+     "doc": {
+      "summary": "中心化主成分分析，含协方差与 Gram 两条精确路径。",
+      "body": [
+       "JACOBI 路径分解 p × p 协方差矩阵，代价为 O(n p²) 的协方差累加加若干次 Jacobi 扫描，适合 n ≫ p。GRAM 路径分解 n × n Gram 矩阵，再用 v = Xᵀu / ‖Xᵀu‖ 还原主方向，代价 O(n² p)，适合 p > n 的宽表。",
+       "两条路径都输出正交归一的主方向与协方差尺度上的方差，结果在符号与数值误差范围内一致。主方向的符号按绝对值最大的分量为正固定，因此重复拟合可复现。"
+      ],
+      "notes": [
+       "AUTO 在特征数大于样本数且样本数不超过 20000 时选 GRAM，否则选 JACOBI",
+       "解释方差比的分母是全部 p 个特征方差之和，而非所选分量方差之和，因此前 k 个比值相加通常小于 1",
+       "Gram 路径需要 n × n 的双精度矩阵，20000 样本即约 3.2 GB",
+       "Jacobi 扫描以相对非对角范数判定收敛，收敛判据与矩阵整体尺度无关"
+      ],
+      "example": "Matrix features = Matrix.fromRows(new double[][] {\n    {2.5, 2.4}, {0.5, 0.7}, {2.2, 2.9},\n    {1.9, 2.2}, {3.1, 3.0}, {2.3, 2.7}\n});\nPCA pca = PCA.builder()\n        .components(1)\n        .solver(EigenSolver.AUTO)\n        .whiten(true)\n        .build()\n        .fit(features);\nMatrix projected = pca.transform(features);\nMatrix restored = pca.inverseTransform(projected);\ndouble[] ratio = pca.explainedVarianceRatio();",
+      "see": [
+       "jsl.ml.EigenSolver",
+       "jsl.ml.Estimator",
+       "jsl.core.Persistable"
+      ]
+     }
     }
    ]
   }

@@ -82,4 +82,8 @@ public final class Sequential<I extends Layout, O extends Layout> extends Module
     public int depth() {
         return modules.size();
     }
+
+    public List<Module<?, ?>> modules() {
+        return modules;
+    }
 }

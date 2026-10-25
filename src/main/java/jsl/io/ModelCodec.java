@@ -5,11 +5,32 @@ import jsl.core.ModelKind;
 import jsl.core.ModelReader;
 import jsl.core.ModelWriter;
 import jsl.core.Persistable;
+import jsl.ml.DecisionTree;
+import jsl.ml.GaussianMixture;
 import jsl.ml.GaussianNaiveBayes;
 import jsl.ml.HistogramGradientBoosting;
+import jsl.ml.IsolationForest;
+import jsl.ml.KBinsDiscretizer;
 import jsl.ml.KMeans;
+import jsl.ml.KernelDensity;
+import jsl.ml.KernelPCA;
+import jsl.ml.KernelRidge;
+import jsl.ml.LabelEncoder;
+import jsl.ml.Lasso;
+import jsl.ml.LinearRegression;
+import jsl.ml.LinearSVM;
+import jsl.ml.LogisticRegression;
+import jsl.ml.MinMaxScaler;
+import jsl.ml.OneHotEncoder;
 import jsl.ml.PCA;
+import jsl.ml.Pipeline;
+import jsl.ml.PolynomialFeatures;
 import jsl.ml.RandomForest;
+import jsl.ml.Ridge;
+import jsl.ml.SVC;
+import jsl.ml.SelectKBest;
+import jsl.ml.SimpleImputer;
+import jsl.ml.StandardScaler;
 import jsl.nn.CNN;
 import jsl.nn.GRU;
 import jsl.nn.LSTM;
@@ -39,9 +60,6 @@ import java.util.zip.CRC32C;
  * long crc32c    checksum of the payload
  * byte[length]   model-specific payload
  * </pre>
- *
- * <p>Saving writes one {@link ByteBuffer} through a single channel call. Loading memory-maps the
- * file, validates the checksum without copying, and hands a zero-copy slice to the model reader.</p>
  */
 public final class ModelCodec {
     public static final int MAGIC = 0x4A534C4D;
@@ -109,7 +127,7 @@ public final class ModelCodec {
                 throw new ModelFormatException("CRC32C mismatch: file is corrupt");
             }
             ModelReader reader = new ModelReader(mapped.position(HEADER_BYTES));
-            Persistable model = read(kind, reader);
+            Persistable model = readPayload(kind, reader);
             reader.requireFullyConsumed();
             return model;
         } catch (IOException failure) {
@@ -126,7 +144,7 @@ public final class ModelCodec {
         return type.cast(model);
     }
 
-    private static Persistable read(ModelKind kind, ModelReader reader) {
+    public static Persistable readPayload(ModelKind kind, ModelReader reader) {
         return switch (kind) {
             case CNN -> ModelSerializer.readCNN(reader);
             case HISTOGRAM_BOOSTING -> HistogramGradientBoosting.read(reader);
@@ -139,10 +157,30 @@ public final class ModelCodec {
             case VANILLA_RNN -> VanillaRNN.read(reader);
             case SELF_ATTENTION -> SelfAttention.read(reader);
             case SEQUENCE_NETWORK -> SequenceNetwork.read(reader);
+            case STANDARD_SCALER -> StandardScaler.read(reader);
+            case MIN_MAX_SCALER -> MinMaxScaler.read(reader);
+            case ONE_HOT_ENCODER -> OneHotEncoder.read(reader);
+            case LABEL_ENCODER -> LabelEncoder.read(reader);
+            case SIMPLE_IMPUTER -> SimpleImputer.read(reader);
+            case PIPELINE -> Pipeline.read(reader);
+            case SVC -> SVC.read(reader);
+            case KERNEL_RIDGE -> KernelRidge.read(reader);
+            case KERNEL_PCA -> KernelPCA.read(reader);
+            case GAUSSIAN_MIXTURE -> GaussianMixture.read(reader);
+            case ISOLATION_FOREST -> IsolationForest.read(reader);
+            case KERNEL_DENSITY -> KernelDensity.read(reader);
+            case SELECT_K_BEST -> SelectKBest.read(reader);
+            case POLYNOMIAL_FEATURES -> PolynomialFeatures.read(reader);
+            case KBINS_DISCRETIZER -> KBinsDiscretizer.read(reader);
+            case LINEAR_REGRESSION -> LinearRegression.read(reader);
+            case LOGISTIC_REGRESSION -> LogisticRegression.read(reader);
+            case RIDGE -> Ridge.read(reader);
+            case LASSO -> Lasso.read(reader);
+            case LINEAR_SVM -> LinearSVM.read(reader);
+            case DECISION_TREE -> DecisionTree.read(reader);
         };
     }
 
-    /** Utility used by tests and tooling; reads only the header without mapping the payload. */
     public static ModelKind peekKind(Path source) {
         try (FileChannel channel = FileChannel.open(source, StandardOpenOption.READ)) {
             ByteBuffer header = ByteBuffer.allocate(12);
@@ -165,7 +203,6 @@ public final class ModelCodec {
         }
     }
 
-    /** Returns the serialized size without decoding the payload. */
     public static long fileSize(Path source) {
         try {
             return Files.size(source);

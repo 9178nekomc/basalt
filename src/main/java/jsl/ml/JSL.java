@@ -5,15 +5,6 @@ import java.util.List;
 
 /**
  * One-call facade over the estimator catalogue.
- *
- * <pre>{@code
- * Estimator model = JSL.fit(JSL.Algorithm.RANDOM_FOREST, x, y);
- * double[] predictions = JSL.predict(model, testX);
- * double accuracy = JSL.crossValidate(JSL.Algorithm.RIDGE, x, y, 5, JSL.Metric.R2);
- * }</pre>
- *
- * <p>Defaults are intentionally conservative; use the concrete builders when tuning. The facade
- * exists so a model can be selected by name/enum without a dependency-injection framework.</p>
  */
 public final class JSL {
     private JSL() {
@@ -39,9 +30,16 @@ public final class JSL {
         GRADIENT_BOOSTING_REGRESSOR(Task.REGRESSION),
         GAUSSIAN_NAIVE_BAYES(Task.CLASSIFICATION),
         LINEAR_SVM(Task.CLASSIFICATION),
+        SVC(Task.CLASSIFICATION),
+        KERNEL_RIDGE(Task.REGRESSION),
         KMEANS(Task.UNSUPERVISED),
         PCA(Task.UNSUPERVISED),
-        DBSCAN(Task.UNSUPERVISED);
+        KERNEL_PCA(Task.UNSUPERVISED),
+        DBSCAN(Task.UNSUPERVISED),
+        GAUSSIAN_MIXTURE(Task.UNSUPERVISED),
+        AGGLOMERATIVE_CLUSTERING(Task.UNSUPERVISED),
+        ISOLATION_FOREST(Task.UNSUPERVISED),
+        KERNEL_DENSITY(Task.UNSUPERVISED);
 
         private final Task task;
 
@@ -82,9 +80,16 @@ public final class JSL {
                     .objective(BoostingObjective.SQUARED_ERROR).build().fit(features, targets);
             case GAUSSIAN_NAIVE_BAYES -> GaussianNaiveBayes.builder().build().fit(features, targets);
             case LINEAR_SVM -> LinearSVM.builder().build().fit(features, targets);
+            case SVC -> SVC.builder().build().fit(features, targets);
+            case KERNEL_RIDGE -> KernelRidge.builder().build().fit(features, targets);
             case KMEANS -> KMeans.builder().build().fit(features);
             case PCA -> PCA.builder().build().fit(features);
+            case KERNEL_PCA -> KernelPCA.builder().build().fit(features);
             case DBSCAN -> DBSCAN.builder().build().fit(features, null);
+            case GAUSSIAN_MIXTURE -> GaussianMixture.builder().build().fit(features);
+            case AGGLOMERATIVE_CLUSTERING -> AgglomerativeClustering.builder().build().fit(features);
+            case ISOLATION_FOREST -> IsolationForest.builder().build().fit(features);
+            case KERNEL_DENSITY -> KernelDensity.builder().build().fit(features);
         };
     }
 

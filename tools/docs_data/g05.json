@@ -1,1584 +1,1272 @@
 {
  "group": "g05",
- "title": "树模型与梯度提升",
+ "title": "持久化与 ONNX",
  "modules": [
   {
-   "name": "jsl.ml",
+   "name": "jsl.io",
    "types": [
     {
-     "qualified": "jsl.ml.BinnedFeatures",
-     "doc": {
-      "summary": "共享的分位点分箱结果，供直方图提升与森林树复用",
-      "body": [
-       "每个特征被离散为至多 maxBins 个桶。桶边界取相邻两个次序统计量的中点，语义固定为 value <= threshold 落入左侧桶。中点按 a/2 + b/2 计算，两个很大的有限值相加不会溢出为无穷；若中点落在 [a, b) 之外，则回退为 a，保证边界严格位于两个相邻取值之间。",
-       "桶编号按行优先存放在 byte[] 中，读取时按无符号字节解释，因此单特征桶数上限为 255。构建时若原生内核可用且行数不小于 512、列数不小于 2，则走 Rust 路径；否则用逐列排序加二分查找的 Java 路径。两条路径产出的桶编号与阈值语义一致。"
-      ],
-      "notes": [
-       "实例构建后不可变，只提供读取入口",
-       "桶编号以 byte 存放并按无符号读取，上限由 MAX_BINS 约束为 255",
-       "threshold(feature, bin) 的 bin 必须小于 binCount(feature) - 1，末桶没有上边界"
-      ],
-      "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {0.0, 1.0},\n        {1.0, 1.0},\n        {1.0, 0.0},\n        {2.0, 0.0}});\n\nBinnedFeatures binned = BinnedFeatures.build(x, 32);\nint buckets = binned.binCount(0);\ndouble boundary = binned.threshold(0, 0);\nint bucketOfFirstRow = binned.bin(0, 0);",
-      "see": ["jsl.ml.DecisionTree", "jsl.ml.HistogramGradientBoosting"]
-     },
+     "qualified": "jsl.io.ModelCodec",
+     "simple_qualified": "ModelCodec",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/io/ModelCodec.java",
+     "line": 64,
+     "javadoc": "Versioned .jsl container: 24-byte header + CRC32C-checked payload.\n\n<pre>\nint  magic     0x4A534C4D (\"JSLM\")\nint  version   2\nint  kind      stable ModelKind code\nint  length    payload bytes\nlong crc32c    checksum of the payload\nbyte[length]   model-specific payload\n</pre>",
+     "nested": [],
      "members": [
       {
-       "key": "255",
+       "kind": "field",
+       "key": "0x4A534C4D",
+       "signature": "int MAGIC = 0x4A534C4D",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
        "doc": {
-        "summary": "单特征桶数上限，等于 255",
+        "summary": "容器魔数 0x4A534C4D，即 ASCII \"JSLM\"。",
         "body": [
-         "桶编号以 byte 存放并按无符号读取，取值范围正好覆盖 0 至 255，因此上限取 255。构造分箱结果时 maxBins 必须落在 [2, 255] 内。"
+         "位于文件前 4 字节，save 写入，load 与 peekKind 校验；不匹配时抛 ModelFormatException（\"Invalid .jsl magic\"）。"
         ],
-        "notes": ["包内可见常量，被 DecisionTree、RandomForest 与提升器的校验分支引用"]
-       }
-      },
-      {
-       "key": "build(Matrix, int)",
-       "doc": {
-        "summary": "按分位点把特征矩阵离散为桶编号与阈值",
-        "body": [
-         "逐列取第 rows*bin/maxBins - 1 与后一位的次序统计量，用两者中点作为候选边界；两个取值相等时跳过该候选，重复边界只保留一次。最后对每行做二分查找，插入点即桶编号：命中阈值时取该下标，未命中时取 -insertion-1。"
-        ],
-        "params": {
-         "features": "训练特征矩阵，按行优先读取 data()",
-         "maxBins": "单特征桶数上限，取值 [2, 255]"
-        },
-        "returns": "不可变的分箱结果，行数与列数取自 features",
-        "throws": {
-         "IllegalArgumentException": "maxBins 不在 [2, 255] 内"
-        },
-        "notes": ["原生路径需要 NativeKernels 可用、行数 ≥ 512 且列数 ≥ 2，失败时自动回退 Java 路径"]
-       }
-      },
-      {
-       "key": "rows()",
-       "doc": {
-        "summary": "分箱覆盖的行数",
-        "returns": "构建时特征矩阵的行数"
-       }
-      },
-      {
-       "key": "features()",
-       "doc": {
-        "summary": "分箱覆盖的特征数",
-        "returns": "构建时特征矩阵的列数"
-       }
-      },
-      {
-       "key": "bins()",
-       "doc": {
-        "summary": "行优先的桶编号数组，按无符号字节解释",
-        "returns": "内部 byte[]，长度为 rows*features，不做复制",
-        "notes": ["直接暴露内部存储，仅供包内消费方读取"]
-       }
-      },
-      {
-       "key": "bin(int, int)",
-       "doc": {
-        "summary": "读取指定行、指定特征的桶编号",
-        "params": {
-         "row": "行下标，取值 [0, rows())",
-         "feature": "特征下标，取值 [0, features())"
-        },
-        "returns": "无符号桶编号，取值 [0, binCount(feature) - 1]",
-        "notes": ["内部按 row*features + feature 定位，不做边界检查"]
-       }
-      },
-      {
-       "key": "binCount(int)",
-       "doc": {
-        "summary": "该特征实际使用的桶数",
-        "params": {
-         "feature": "特征下标，取值 [0, features())"
-        },
-        "returns": "桶数，等于该特征阈值数组长度加 1；取值恒定或全同的特征为 1"
-       }
-      },
-      {
-       "key": "threshold(int, int)",
-       "doc": {
-        "summary": "读取把指定桶划到左侧时使用的边界值",
-        "params": {
-         "feature": "特征下标，取值 [0, features())",
-         "bin": "左侧末桶下标，必须小于 binCount(feature) - 1"
-        },
-        "returns": "边界值，满足 value <= 边界 的样本进入左侧",
-        "notes": ["bin 等于 binCount(feature) - 1 时越界，由数组访问抛出 ArrayIndexOutOfBoundsException"]
-       }
-      },
-      {
-       "key": "thresholds()",
-       "doc": {
-        "summary": "每个特征的边界数组",
-        "returns": "长度为 features() 的二维数组，内层长度即该特征边界数，不做复制"
-       }
-      },
-      {
-       "key": "maxBinCount()",
-       "doc": {
-        "summary": "所有特征中实际使用的最大桶数",
-        "returns": "最大桶数，至少为 1；用于一次性确定直方图的步长"
-       }
-      }
-     ]
-    },
-    {
-     "qualified": "jsl.ml.BoostingAlgorithm",
-     "doc": {
-      "summary": "直方图树的生长策略：深度优先或叶优先",
-      "body": [
-       "XGBOOST 按层递归生长：节点在深度小于 maxDepth 且增益为正时分裂，左右子树继续递归，树的叶数由深度与数据决定。LIGHTGBM 维护一个按增益降序排列的候选叶队列，每轮分裂全局增益最大的叶，直到叶数达到 maxLeaves。"
-      ],
-      "notes": [
-       "XGBOOST 策略不读取 maxLeaves",
-       "LIGHTGBM 策略同时受 maxDepth 约束，每分裂一次叶数加一"
-      ],
-      "example": "HistogramGradientBoosting depthWise = HistogramGradientBoosting.builder()\n        .algorithm(BoostingAlgorithm.XGBOOST)\n        .maxDepth(4)\n        .build();\n\nHistogramGradientBoosting leafWise = HistogramGradientBoosting.builder()\n        .algorithm(BoostingAlgorithm.LIGHTGBM)\n        .maxLeaves(15)\n        .build();",
-      "see": ["jsl.ml.HistogramGradientBoosting"]
-     },
-     "members": []
-    },
-    {
-     "qualified": "jsl.ml.BoostingObjective",
-     "doc": {
-      "summary": "直方图提升支持的目标：平方误差与二分类逻辑",
-      "body": [
-       "SQUARED_ERROR 取残差 raw - target 为梯度、hessian 恒为 1，叶权重等于负梯度除以 hessian 加 lambda。LOGISTIC 取概率减标签为梯度、p(1-p) 为 hessian（下限 1e-12），baseScore 为训练集正类均值的对数几率。"
-      ],
-      "notes": [
-       "LOGISTIC 的 fit 会逐行校验标签，出现 0 与 1 之外的值即抛 IllegalArgumentException",
-       "predictProbability 只在 LOGISTIC 下可用，其他目标调用会抛 IllegalStateException"
-      ],
-      "example": "HistogramGradientBoosting classifier = HistogramGradientBoosting.builder()\n        .objective(BoostingObjective.LOGISTIC)\n        .iterations(200)\n        .build();",
-      "see": ["jsl.ml.HistogramGradientBoosting"]
-     },
-     "members": []
-    },
-    {
-     "qualified": "jsl.ml.DecisionTree",
-     "doc": {
-      "summary": "预分箱特征上的 CART 树，分裂搜索走直方图",
-      "body": [
-       "分裂搜索基于直方图：一次遍历节点样本即可填满每个特征的类别计数（分类）或和与平方和（回归），随后每个桶边界以 O(classes) 或 O(1) 评估增益。分类准则为 GINI 或 ENTROPY，回归固定使用 MSE 的和与平方和等价形式。",
-       "叶子值：分类取多数类标签（票数相同时取下标最小者），回归取样本均值。特征重要性按「分裂增益乘以节点样本数」逐特征累加，再归一化到总和 1。",
-       "拟合结果展平为 TreeModel，推理只在原始数组上迭代行走。RandomForest 复用一份全局 BinnedFeatures 并调用 fitBinned 传入自助采样行号，省去每棵树的重复分箱与矩阵复制。"
-      ],
-      "notes": [
-       "分裂要求两侧样本数均不小于 minSamplesLeaf，父节点样本数不小于 minSamplesSplit 与 2*minSamplesLeaf",
-       "最优增益不超过 1e-12*max(1, 父不纯度) 时停止分裂，节点转为叶",
-       "maxDepth 为 0 时根节点直接成为叶",
-       "fit 就地更新估计器状态并返回 this"
-      ],
-      "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {0.0, 1.0},\n        {1.0, 1.0},\n        {1.0, 0.0},\n        {2.0, 0.0}});\ndouble[] y = {0.0, 0.0, 1.0, 1.0};\n\nDecisionTree tree = DecisionTree.builder()\n        .task(TreeTask.CLASSIFICATION)\n        .criterion(ImpurityCriterion.GINI)\n        .maxDepth(3)\n        .minSamplesLeaf(1)\n        .bins(32)\n        .seed(7L)\n        .build()\n        .fit(x, y);\n\ndouble[] predicted = tree.predict(x);\ndouble[] importance = tree.featureImportances();",
-      "see": ["jsl.ml.RandomForest", "jsl.ml.TreeModel", "jsl.ml.ImpurityCriterion"]
-     },
-     "members": [
-      {
-       "key": "builder()",
-       "doc": {
-        "summary": "创建构造器，参数全部取默认值",
-        "returns": "新的 Builder 实例"
-       }
-      },
-      {
-       "key": "fit(Matrix, double[])",
-       "doc": {
-        "summary": "在原始特征矩阵上分箱并训练单棵树",
-        "body": [
-         "先校验训练数据，再以 maxBins 构建 BinnedFeatures，最后用全部行号调用 fitBinned。分类标签按升序去重后编码为 0 起的整数，回归直接使用原始目标值。"
-        ],
-        "params": {
-         "features": "训练特征矩阵，行数为样本数，列数成为特征数",
-         "targets": "目标数组，长度必须等于行数；分类为类别标签，回归为连续值"
-        },
-        "returns": "this，已完成拟合",
-        "throws": {
-         "IllegalArgumentException": "目标数量与行数不一致、特征或目标含非有限值，或样本数小于 minSamplesLeaf",
-         "NullPointerException": "features 或 targets 为 null"
-        },
-        "notes": ["每次调用都会重建分箱与树，重复拟合覆盖上一次结果"]
-       }
-      },
-      {
-       "key": "fitBinned(BinnedFeatures, int[], double[])",
-       "doc": {
-        "summary": "在共享分箱与指定行号上训练，支持自助采样",
-        "body": [
-         "行号数组可重复、可乱序，因此同一份分箱既可用于全量训练，也可用于有放回采样。目标数组按分箱行号索引，而不是按行号数组的位置索引。特征重要性在入口处重置，随后按本次分裂重新累积。"
-        ],
-        "params": {
-         "binned": "已构建的分箱结果，其列数成为特征数",
-         "samples": "训练行号数组，非空，取值须在 [0, binned.rows())",
-         "targets": "按行号索引的目标数组，长度须等于 binned.rows()"
-        },
-        "returns": "this，已完成拟合",
-        "throws": {
-         "IllegalArgumentException": "目标长度不等于分箱行数、行号数组为空或含越界下标",
-         "NullPointerException": "任一参数为 null"
-        },
         "notes": [
-         "包内可见；RandomForest 用它复用同一份全局分箱",
-         "seed 只影响 maxFeatures 的特征子采样，不影响行选择"
+         "注意与 JSLD 数据格式的魔数 0x4A534C44 不同"
         ]
        }
       },
       {
-       "key": "predict(Matrix)",
+       "kind": "field",
+       "key": "2",
+       "signature": "int VERSION = 2",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
        "doc": {
-        "summary": "输出每行的叶值，分类为类别标签",
+        "summary": "当前容器版本号，值为 2。",
         "body": [
-         "内部调用 TreeModel.addInto 一次遍历完成，不做逐行对象分配。分类返回叶节点保存的类别标签，回归返回叶节点均值。"
+         "紧随 magic 之后写入。load 与 peekKind 要求完全相等，其他版本一律抛 ModelFormatException（\"Unsupported .jsl version\"），不尝试降级解析。"
         ],
-        "params": {
-         "features": "特征矩阵，列数须等于拟合时的特征数"
+        "notes": [
+         "版本只描述容器布局，载荷格式由各模型自行定义"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "save(Path, Persistable)",
+       "signature": "void save(Path target, Persistable model)",
+       "params": [
+        {
+         "type": "Path",
+         "name": "target"
         },
-        "returns": "长度为行数的预测数组",
-        "throws": {
-         "IllegalStateException": "估计器尚未拟合",
-         "IllegalArgumentException": "列数与拟合时不一致，或含非有限值"
+        {
+         "type": "Persistable",
+         "name": "model"
         }
-       }
-      },
-      {
-       "key": "featureImportances()",
+       ],
+       "throws": [],
+       "javadoc": "",
        "doc": {
-        "summary": "归一化的特征重要性，总和为 1",
+        "summary": "把模型序列化为 .jsl 文件。",
         "body": [
-         "口径为「分裂增益乘以该节点样本数」，在整棵树范围内按特征累加；总和大于 0 时整体除以总和，否则保持全零。只有真正参与分裂的特征会累积到非零值。"
+         "先创建初始容量 4096 的 ModelWriter，调用 model.write 得到载荷字节，据此计算 CRC32C，再组装 24 字节头与载荷，以 CREATE、WRITE、TRUNCATE_EXISTING 打开通道循环写出。",
+         "target 或 model 为 null 时抛 NullPointerException；载荷长度超过 Integer.MAX_VALUE - 24 时抛 ModelFormatException；打开或写入失败抛 UncheckedIOException。模型的 write 实现自身抛出的异常会原样传播。"
         ],
-        "returns": "长度为特征数的副本；树未产生分裂时全为 0",
-        "throws": {
-         "IllegalStateException": "估计器尚未拟合"
+        "params": {
+         "target": "输出路径，父目录须已存在，已存在文件会被截断",
+         "model": "待保存的模型，提供 kind() 与 write(ModelWriter)"
         },
-        "notes": ["返回 clone，修改不影响估计器内部状态"]
-       }
-      },
-      {
-       "key": "task()",
-       "doc": {
-        "summary": "构造时指定的任务类型",
-        "returns": "CLASSIFICATION 或 REGRESSION"
-       }
-      },
-      {
-       "key": "classes()",
-       "doc": {
-        "summary": "分类任务的类别标签，按升序排列",
-        "returns": "类别标签副本；回归任务返回 null",
-        "notes": ["标签顺序来自 TreeMap 的自然序，与 predictProbability 的列顺序无关"]
-       }
-      },
-      {
-       "key": "featureCount()",
-       "doc": {
-        "summary": "拟合时使用的特征数",
-        "returns": "特征数；未拟合为 0"
-       }
-      },
-      {
-       "key": "nodeCount()",
-       "doc": {
-        "summary": "树的节点总数",
-        "returns": "节点数，含叶节点；未拟合为 0"
-       }
-      },
-      {
-       "key": "depth()",
-       "doc": {
-        "summary": "根到叶的最大边数",
-        "returns": "树深；未拟合或单叶树为 0"
-       }
-      },
-      {
-       "key": "model()",
-       "doc": {
-        "summary": "返回内部扁平树模型，包内可见",
-        "returns": "TreeModel 实例；未拟合为 null",
         "notes": [
-         "包内访问入口，供 RandomForest、PackedTrees 与序列化复用",
-         "返回内部引用，不做复制，调用方不应改写其结构"
+         "载荷完整驻留内存，大模型峰值内存约为文件大小的两倍",
+         "校验和在写入前一次算完，写出过程不再重新计算"
         ]
        }
       },
       {
-       "key": "writeState(ModelWriter)",
+       "kind": "method",
+       "key": "load(Path)",
+       "signature": "Persistable load(Path source)",
+       "params": [
+        {
+         "type": "Path",
+         "name": "source"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
        "doc": {
-        "summary": "写出特征数、任务、类别标签与树拓扑",
+        "summary": "读取并校验 .jsl 文件，返回模型。",
         "body": [
-         "写入顺序为特征数、任务序号、类别数（回归写 0）与类别标签，最后是树的节点数组。超参数不落盘，读取方需要自行重建配置；分类树缺少标签会导致读取失败。"
+         "映射文件后依次校验：长度不小于 24 字节、magic 匹配、version 为 2、kind 编码可识别、声明长度等于文件大小减 24、CRC32C 与头部记录一致；随后按 ModelKind 分发到对应模型的 read 方法，并要求载荷被完整消费。",
+         "任一校验失败抛 ModelFormatException（截断、魔数错误、版本不支持、长度不符、校验和不匹配、载荷有残留字节）；文件打开或映射失败抛 UncheckedIOException。"
         ],
         "params": {
-         "writer": "目标二进制写入器"
+         "source": "输入路径，须为 save 写出的 .jsl 文件"
         },
-        "throws": {
-         "IllegalStateException": "估计器尚未拟合"
-        },
-        "notes": ["与 readState 成对使用，格式由 ModelCodec 的容器包裹"]
+        "returns": "按文件内 kind 构造的模型实例，静态类型为 Persistable",
+        "notes": [
+         "校验在映射区上原地进行，不复制载荷",
+         "返回类型取决于文件内容，需要具体类型时用 load(Path, Class)"
+        ]
        }
       },
       {
-       "key": "readState(ModelReader)",
-       "doc": {
-        "summary": "从二进制流重建树",
-        "params": {
-         "reader": "已定位到本对象载荷起点的读取器"
+       "kind": "method",
+       "key": "load(Path, Class<T>)",
+       "signature": "<T extends Persistable> T load(Path source, Class<T> type)",
+       "params": [
+        {
+         "type": "Path",
+         "name": "source"
         },
-        "returns": "新的 DecisionTree 实例，已具备预测能力",
+        {
+         "type": "Class<T>",
+         "name": "type"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "读取并校验类型后返回模型。",
+        "body": [
+         "委托 load(Path) 完成全部结构校验与解码，再用 type.isInstance 检查结果；不匹配时抛 ModelFormatException，信息中同时给出期望类型与文件中实际的 ModelKind。"
+        ],
+        "params": {
+         "source": "输入路径",
+         "type": "期望的模型类型，例如 KMeans.class"
+        },
+        "returns": "已转换为 T 的实例，可直接使用具体类型的访问器",
+        "notes": [
+         "类型不符时载荷已被解码，异常前不会泄漏句柄，但已付出解码开销"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "readPayload(ModelKind, ModelReader)",
+       "signature": "Persistable readPayload(ModelKind kind, ModelReader reader)",
+       "params": [
+        {
+         "type": "ModelKind",
+         "name": "kind"
+        },
+        {
+         "type": "ModelReader",
+         "name": "reader"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "按模型种类分派载荷解码。",
+        "body": [
+         "load 完成头部与 CRC32C 校验后调用该方法：对 ModelKind 的每个常量用 switch 调用对应模型的静态 read（如 KMeans.read、Pipeline.read、ModelSerializer.readCNN），返回新实例；随后由调用方执行 requireFullyConsumed 检查残留字节。",
+         "switch 为穷尽式，新增 ModelKind 常量时必须补分支，否则编译失败。各模型的 read 在头部字段非法或载荷截断时抛 ModelFormatException。"
+        ],
+        "params": {
+         "kind": "头部记录的模型种类，通常来自 ModelKind.fromCode 或 peekKind",
+         "reader": "位于载荷起点（偏移 24）的读取器，可映射在文件上；位置由各 read 自行推进"
+        },
+        "returns": "对应 kinds 的新实例，静态类型为 Persistable",
         "throws": {
-         "ModelFormatException": "任务序号越界，或分类树缺少类别标签"
+         "ModelFormatException": "kind 对应的 read 判定载荷头部非法或数据不足"
         },
         "notes": [
-         "重建后的超参数取 Builder 默认值，仅任务与准则被还原",
-         "重建后的特征重要性全为 0，不参与持久化"
+         "公开的扩展点，可脱离 load 直接对任意 ModelReader 使用，此时头部校验与 CRC32C 都不参与",
+         "方法本身不校验 reader 是否被读完，残留字节由调用方用 requireFullyConsumed 判定",
+         "不修改 reader 的所有权，两次调用之间需要自行重置位置"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "peekKind(Path)",
+       "signature": "ModelKind peekKind(Path source)",
+       "params": [
+        {
+         "type": "Path",
+         "name": "source"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "只读文件头，返回模型种类。",
+        "body": [
+         "打开通道读取前 12 字节，校验 magic 与 version 后用第三个 int 调 ModelKind.fromCode。头部截断、魔数或版本不符、编码未知时抛 ModelFormatException；打开或读取失败抛 UncheckedIOException。",
+         "不映射载荷，也不校验长度与 CRC32C，因此开销恒定且与文件大小无关。"
+        ],
+        "params": {
+         "source": "输入路径"
+        },
+        "returns": "文件头 kind 字段对应的 ModelKind 常量",
+        "notes": [
+         "适合在加载前按种类分派或做工具统计，结果不代表载荷完整"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "fileSize(Path)",
+       "signature": "long fileSize(Path source)",
+       "params": [
+        {
+         "type": "Path",
+         "name": "source"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回 .jsl 文件的总字节数。",
+        "body": [
+         "直接委托 Files.size，不解析头部也不校验内容；文件不存在、不可读或路径指向目录时抛 UncheckedIOException。"
+        ],
+        "params": {
+         "source": "输入路径"
+        },
+        "returns": "文件长度（字节），包含 24 字节头",
+        "notes": [
+         "载荷大小等于返回值减 24",
+         "可对任意文件使用，不要求是 .jsl 容器"
         ]
        }
       }
-     ]
-    },
-    {
-     "qualified": "jsl.ml.HistogramGradientBoosting",
+     ],
      "doc": {
-      "summary": "二阶直方图梯度提升，支持深度优先与叶优先生长",
+      "summary": "带版本与 CRC32C 校验的 .jsl 模型容器读写器。",
       "body": [
-       "分裂增益按正则化目标计算：0.5*(G_L^2/(H_L+lambda) + G_R^2/(H_R+lambda) - G^2/(H+lambda)) - gamma，叶权重为 -G/(H+lambda)。直方图用相减技巧：每次只累加较小子节点，较大子节点由 parent 减 small 得到，平衡树因此只做约一半遍历。",
-       "XGBOOST 策略按层递归，由 maxDepth 控制深度；LIGHTGBM 策略用优先队列每轮分裂全局增益最大的叶，由 maxLeaves 控制叶数。两种策略都受 minSamplesLeaf、minChildWeight 与 maxDepth 约束。",
-       "累计量较大时通过 JNI 交给 Rust AVX2 内核，原生调用失败则回退到分块并行的 Java 路径。featureFraction 按轮次抽取特征子集，validationFraction 切出验证集，配合 earlyStoppingRounds 把树列表回退到最优轮次。"
+       "容器由 24 字节头与载荷组成，字段依次为 int magic = 0x4A534C4D（\"JSLM\"）、int version = 2、int kind（ModelKind 编码）、int length（载荷字节数）、long crc32c，随后是 length 字节的模型载荷，均按大端序。",
+       "save() 让模型把状态写进内存 ModelWriter，再分配整文件缓冲、填头并循环写出；load() 只读映射整个文件，依次比对 magic、version、长度与文件大小，再在映射区原地计算 CRC32C，通过后把偏移 24 起的零拷贝切片交给按 ModelKind 分发的读取器。",
+       "载荷解码完成后要求被完整消费，残留字节视为格式错误。所有失败以未检查异常抛出：结构性问题用 ModelFormatException，I/O 问题包装为 UncheckedIOException。"
       ],
       "notes": [
-       "LOGISTIC 目标要求标签恰为 0 或 1，其余取值在 fit 入口被拒绝",
-       "早停触发后树列表截断到 bestIteration+1，lossHistory 同步截断",
-       "write 只保存算法、目标、学习率、baseScore 与树；读回时其余超参数取 Builder 默认值"
+       "save 会截断已存在的目标文件，且不写临时文件，写入中途失败会留下不完整文件。",
+       "load 依赖内存映射，解码期间文件须保持不变；文件被替换或截断时映射区内容不再可信。",
+       "版本不匹配直接拒绝，不做向后兼容解析；ModelFormatException 为 RuntimeException。",
+       "类为静态工具，无实例（构造器私有），无可变状态，可并发调用。"
       ],
-      "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {0.0, 1.0}, {1.0, 1.0}, {1.0, 0.0}, {2.0, 0.0},\n        {2.0, 1.0}, {3.0, 0.0}, {3.0, 1.0}, {4.0, 0.0}});\ndouble[] y = {0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0};\n\nHistogramGradientBoosting model = HistogramGradientBoosting.builder()\n        .algorithm(BoostingAlgorithm.LIGHTGBM)\n        .objective(BoostingObjective.LOGISTIC)\n        .iterations(200)\n        .learningRate(0.1)\n        .maxLeaves(15)\n        .featureFraction(0.8)\n        .validationFraction(0.25)\n        .earlyStoppingRounds(20)\n        .build()\n        .fit(x, y);\n\ndouble[] probability = model.predictProbability(x);\ndouble[] label = model.predict(x);\ndouble[] history = model.lossHistory();",
-      "see": ["jsl.ml.BoostingAlgorithm", "jsl.ml.BoostingObjective", "jsl.ml.DecisionTree"]
+      "example": "Matrix features = Matrix.fromRows(new double[][]{\n        {0.0, 1.0}, {1.0, 1.5}, {9.0, 8.5}, {8.5, 9.0}});\nKMeans model = KMeans.builder().clusters(2).build().fit(features);\n\nPath file = Path.of(\"kmeans.jsl\");\nModelCodec.save(file, model);\nKMeans restored = ModelCodec.load(file, KMeans.class);\nlong bytes = ModelCodec.fileSize(file);",
+      "see": [
+       "jsl.core.Persistable",
+       "jsl.core.ModelKind",
+       "jsl.core.ModelFormatException"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.io.OnnxConverter",
+     "simple_qualified": "OnnxConverter",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/io/OnnxConverter.java",
+     "line": 47,
+     "javadoc": "High-level ONNX model import and export facade.\n\n<p>Supports:</p>\n<ul>\n<li>Loading standard `.onnx` files into {@link OnnxModel} for native JVM execution.</li>\n<li>Exporting JSL classical models ({@link LinearRegression}, {@link Ridge}, {@link Lasso},\n{@link LogisticRegression}, {@link LinearSVM}, {@link PCA}, {@link StandardScaler},\n{@link MinMaxScaler}, {@link Pipeline}) and deep learning modules ({@link Linear},\n{@link Conv2d}, {@link DepthwiseSeparableConv2d}, {@link Sequential},\n{@link ComputationGraph}) to standard `.onnx` files (IR v8, Opset 17).</li>\n</ul>",
+     "nested": [
+      "StepResult"
+     ],
+     "doc": {
+      "summary": "ONNX 导入导出门面：把 JSL 估计器与模块翻译成 .onnx。",
+      "body": [
+       "导入侧只有 load，直接转调 OnnxModel.load。导出侧把两类对象翻译成节点与常量张量：估计器方向接受 Pipeline、StandardScaler、MinMaxScaler、PCA、LinearRegression、Ridge、Lasso、LogisticRegression、LinearSVM；模块方向接受 Sequential、Linear、Conv2d、DepthwiseSeparableConv2d、Activation、MaxPool2d、Flatten、BatchNorm2d、LayerNorm、Dropout 与 ComputationGraph。产物统一声明 IR v8、Opset 17。",
+       "翻译是结构性的：线性模型展开为 MatMul + Add，标准化器展开为 Sub/Mul（StandardScaler 的尺度取倒数预先算好），PCA 展开为 Sub + MatMul（主成分先转置），Pipeline 按步骤串联并以 step0、step1、est 等前缀命名中间值；LogisticRegression 在回归输出后再接 Sigmoid。类型不在支持列表内时在翻译阶段抛 JSLUnsupportedOperationException，此时不会写出任何文件。",
+       "输入输出声明：估计器导出固定为 input 形状 [-1, inputFeatures] 与输出形状 [-1, outDim]，-1 表示动态批；模块导出把调用方给的 inputShape 原样写进第一输入声明，输出形状留空（未知）；ComputationGraph 导出中每个图输入都套用同一 inputShape。生成的算子集合限定在 OnnxModel 执行器的白名单内，因此导出的模型也能被重新加载执行。"
+      ],
+      "notes": [
+       "全部数值以 float32 写入，JSL 侧的 double 权重在导出时降精度；往返一次会引入 float32 舍入误差。",
+       "只表达前向推理：Dropout 写成 Identity，BatchNorm2d 使用 runningMean/runningVar 与 epsilon，training_mode 不写。",
+       "输出 shape 不写入具体维度，下游工具无法据文件做静态形状校验。",
+       "导出不做算子集裁剪，也不检查目标机器上的 onnxruntime 版本是否支持 Opset 17。",
+       "类为静态工具，无实例（构造器私有），无可变状态。"
+      ],
+      "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {0.0, 1.0}, {1.0, 1.5}, {9.0, 8.5}, {8.5, 9.0}});\ndouble[] y = {0.0, 0.0, 1.0, 1.0};\nLinearRegression model = LinearRegression.builder().build().fit(x, y);\n\nPath file = Path.of(\"linear.onnx\");\nOnnxConverter.export(model, 2, file);\n\nOnnxModel onnx = OnnxConverter.load(file);\nint features = onnx.inputs().get(0).shape()[1];\nMatrix scores = onnx.predictMatrix(x);",
+      "see": [
+       "jsl.io.OnnxModel",
+       "jsl.ml.Pipeline",
+       "jsl.torch.Sequential",
+       "jsl.torch.ComputationGraph"
+      ]
      },
      "members": [
       {
-       "key": "builder()",
+       "kind": "method",
+       "key": "load(Path)",
+       "signature": "OnnxModel load(Path path)",
+       "params": [
+        {
+         "type": "Path",
+         "name": "path"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
        "doc": {
-        "summary": "创建构造器，参数全部取默认值",
-        "returns": "新的 Builder 实例"
-       }
-      },
-      {
-       "key": "fit(Matrix, double[])",
-       "doc": {
-        "summary": "分箱、切分验证集并逐轮提升",
+        "summary": "加载 .onnx 文件。",
         "body": [
-         "先按 validationFraction 用 seed 打乱行号，前若干行作验证集，其余作训练集；baseScore 取训练集标签均值，LOGISTIC 下取该均值的对数几率。每轮计算梯度与 hessian、生长一棵树、以 learningRate 累加到原始得分，并记录训练与验证损失。"
+         "等价于 OnnxModel.load(path)：整文件读入后按 proto3 线格式解析，不额外校验算子集合或 IR 版本。"
         ],
         "params": {
-         "features": "训练特征矩阵，行数为样本数",
-         "targets": "目标数组，长度须等于行数；LOGISTIC 时取值须为 0 或 1"
+         "path": "标准 .onnx 文件路径，须为可读普通文件"
         },
-        "returns": "this，已完成拟合",
+        "returns": "解析出的 OnnxModel，图结构与元数据均来自文件",
         "throws": {
-         "IllegalArgumentException": "目标数量与行数不一致、含非有限值，或 LOGISTIC 标签不是 0 或 1"
+         "UncheckedIOException": "文件不存在、不可读或读取失败"
         },
         "notes": [
-         "验证集大小取 round(rows*validationFraction)，下限 1，上限 rows-2",
-         "featureFraction 小于 1 时，第 i 轮用 seed + i*7919 抽取 ceil(fraction*featureCount) 个特征"
+         "返回的模型可直接用于推断，遇到不支持的算子时在 run 阶段才报错"
         ]
        }
       },
       {
-       "key": "predictRaw(Matrix)",
-       "doc": {
-        "summary": "输出原始得分，未过 sigmoid",
-        "body": [
-         "结果以 baseScore 为初值，逐棵树以 learningRate 加权累加叶值。行数乘树数不小于 2000 万时转交原生集成预测内核，否则在 Java 侧逐树累加。"
-        ],
-        "params": {
-         "features": "特征矩阵，列数须等于拟合时的特征数"
+       "kind": "method",
+       "key": "export(Estimator, int, Path)",
+       "signature": "void export(Estimator estimator, int inputFeatures, Path target)",
+       "params": [
+        {
+         "type": "Estimator",
+         "name": "estimator"
         },
-        "returns": "长度为行数的原始得分数组",
-        "throws": {
-         "IllegalStateException": "尚未拟合（树列表为空）",
-         "IllegalArgumentException": "列数不匹配或含非有限值"
+        {
+         "type": "int",
+         "name": "inputFeatures"
+        },
+        {
+         "type": "Path",
+         "name": "target"
         }
-       }
-      },
-      {
-       "key": "predictProbability(Matrix)",
+       ],
+       "throws": [],
+       "javadoc": "",
        "doc": {
-        "summary": "输出正类概率，等于 sigmoid(原始得分)",
+        "summary": "把估计器导出为 .onnx 文件。",
+        "body": [
+         "先调用 toOnnx(Estimator, int) 在内存中完成翻译，再 save(target) 写出。转换阶段的异常不会留下文件；写出失败时目标可能已被截断。"
+        ],
         "params": {
-         "features": "特征矩阵，列数须等于拟合时的特征数"
+         "estimator": "待导出的估计器，须已完成 fit 以具备权重；Pipeline 会连同其末端估计器一起翻译",
+         "inputFeatures": "输入特征数，决定 input 声明第二维与常量张量形状；须为正数",
+         "target": "输出路径，父目录须已存在，已存在文件被覆盖"
         },
-        "returns": "长度为行数的概率数组，取值 (0, 1)",
         "throws": {
-         "IllegalStateException": "目标不是 LOGISTIC（该校验先于拟合状态校验）"
-        },
-        "notes": ["sigmoid 按符号分支实现，负值不经过 exp 溢出"]
-       }
-      },
-      {
-       "key": "predict(Matrix)",
-       "doc": {
-        "summary": "输出预测值，LOGISTIC 下为 0/1 标签",
-        "body": [
-         "回归直接返回原始得分；LOGISTIC 把 sigmoid(原始得分) 与 0.5 比较，大于等于 0.5 取 1.0，否则取 0.0。"
-        ],
-        "params": {
-         "features": "特征矩阵，列数须等于拟合时的特征数"
-        },
-        "returns": "长度为行数的预测数组",
-        "throws": {
-         "IllegalStateException": "尚未拟合",
-         "IllegalArgumentException": "列数不匹配或含非有限值"
-        }
-       }
-      },
-      {
-       "key": "lossHistory()",
-       "doc": {
-        "summary": "每轮训练集平均损失",
-        "body": [
-         "平方误差目标记录 0.5*残差^2 的均值；LOGISTIC 记录 softplus(raw) - target*raw 的均值，数值上等价于二元交叉熵。"
-        ],
-        "returns": "长度为实际训练轮数的副本；未拟合为空数组",
-        "notes": ["早停后长度等于保留下来的树数"]
-       }
-      },
-      {
-       "key": "validationHistory()",
-       "doc": {
-        "summary": "每轮验证集平均损失",
-        "returns": "长度为实际训练轮数的副本；未设置 validationFraction 或未拟合时为空数组"
-       }
-      },
-      {
-       "key": "featureImportances()",
-       "doc": {
-        "summary": "归一化的特征重要性，总和为 1",
-        "body": [
-         "口径与 DecisionTree 一致：每次分裂的增益乘以该节点样本数，按特征累加后整体归一化到总和 1。分裂发生在特征子集上时，未参与该轮的特征不增加。"
-        ],
-        "returns": "长度为特征数的副本；未拟合为空数组",
-        "notes": ["读回的模型不携带重要性，返回全 0"]
-       }
-      },
-      {
-       "key": "treeCount()",
-       "doc": {
-        "summary": "已训练的树数",
-        "returns": "树数；未拟合为 0，早停后小于 iterations"
-       }
-      },
-      {
-       "key": "bestIteration()",
-       "doc": {
-        "summary": "验证损失最优的轮次下标",
-        "returns": "最优轮次；无验证集时为最后一轮，未拟合为 iterations-1"
-       }
-      },
-      {
-       "key": "kind()",
-       "doc": {
-        "summary": "持久化类型标识",
-        "returns": "ModelKind.HISTOGRAM_BOOSTING"
-       }
-      },
-      {
-       "key": "write(ModelWriter)",
-       "doc": {
-        "summary": "按 Persistable 契约写出提升模型",
-        "body": [
-         "写入算法序号、目标序号、learningRate、baseScore、特征数、树数与各棵树的节点数组。maxDepth、maxLeaves、lambda 等超参数不参与序列化。"
-        ],
-        "params": {
-         "writer": "目标二进制写入器"
-        }
-       }
-      },
-      {
-       "key": "read(ModelReader)",
-       "doc": {
-        "summary": "从二进制流重建提升模型",
-        "params": {
-         "reader": "已定位到本对象载荷起点的读取器"
-        },
-        "returns": "新的 HistogramGradientBoosting 实例，可直接预测",
-        "throws": {
-         "ModelFormatException": "算法或目标序号越界，或特征数不大于 0、树数不在 [1, 100000]"
+         "JSLUnsupportedOperationException": "估计器类型或 Pipeline 中某一步骤不受支持",
+         "UncheckedIOException": "目标路径不可写或写入失败"
         },
         "notes": [
-         "读回后 lossHistory 与 validationHistory 为空数组，featureImportances 全为 0",
-         "bestIteration 置为树数减 1，训练相关字段不恢复"
+         "null 参数与 inputFeatures 的非正校验由 toOnnx 完成，先于任何 I/O",
+         "同一估计器可重复导出，翻译过程不修改原模型"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "export(Module<?, ?>, int[], Path)",
+       "signature": "void export(Module<?, ?> module, int[] inputShape, Path target)",
+       "params": [
+        {
+         "type": "Module<?, ?>",
+         "name": "module"
+        },
+        {
+         "type": "int[]",
+         "name": "inputShape"
+        },
+        {
+         "type": "Path",
+         "name": "target"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "把深度学习模块导出为 .onnx 文件。",
+        "body": [
+         "先调用 toOnnx(Module, int[]) 完成翻译，再 save(target)。Sequential 与 DepthwiseSeparableConv2d 会递归展开成等价的多节点链。"
+        ],
+        "params": {
+         "module": "待导出的模块，权重取自其当前状态",
+         "inputShape": "第一输入的完整形状（含批维），例如 {1, 3, 32, 32}；原样写入 input 声明",
+         "target": "输出路径，父目录须已存在"
+        },
+        "throws": {
+         "JSLUnsupportedOperationException": "模块链中出现不受支持的类型",
+         "UncheckedIOException": "目标路径不可写或写入失败"
+        },
+        "notes": [
+         "inputShape 只记录在声明里，不做形状推断或校验",
+         "ComputationGraph 的多个输入共用同一 inputShape"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "toOnnx(Estimator, int)",
+       "signature": "OnnxModel toOnnx(Estimator estimator, int inputFeatures)",
+       "params": [
+        {
+         "type": "Estimator",
+         "name": "estimator"
+        },
+        {
+         "type": "int",
+         "name": "inputFeatures"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "把估计器翻译成内存中的 ONNX 模型。",
+        "body": [
+         "按类型分流：Pipeline 遍历 steps() 逐个追加变换步骤（前缀 step0、step1…），若末端估计器非 null 再以 est 前缀追加；单独的 Transformer 走 tr0 前缀；其他估计器走 est0 前缀。追加过程中生成的权重、均值、尺度等以 TensorData 放入 initializers，节点名与值名由前缀派生。",
+         "返回的模型固定为 irVersion 8、opsetVersion 17、producerName \"JSL\"、graphName \"jsl_ml_graph\"；input 声明为 elemType 1、shape [-1, inputFeatures]，output 声明为 elemType 1、shape [-1, outDim]，其中 outDim 由最后一步决定（线性与逻辑回归为 1，PCA 为主成分个数，标准化器沿用输入维数）。"
+        ],
+        "params": {
+         "estimator": "待翻译的估计器，其权重、均值、标准差等在调用时读取",
+         "inputFeatures": "输入特征数，须大于 0；决定权重常量形状 [inputFeatures, 1] 以及 [1, inputFeatures] 的偏置/尺度张量"
+        },
+        "returns": "新构造的 OnnxModel，节点顺序即 Pipeline 的步骤顺序",
+        "throws": {
+         "NullPointerException": "estimator 为 null",
+         "IllegalArgumentException": "inputFeatures 小于等于 0（\"inputFeatures must be positive\"）",
+         "JSLUnsupportedOperationException": "估计器类型或 Pipeline 中某一步骤不受支持"
+        },
+        "notes": [
+         "所有常量都以 float32 副本写入，与 JSL 侧的原数组不共享存储",
+         "输出维度信息只在 ValueInfo 中体现，节点本身不携带 shape",
+         "只翻译结构与数值，不写出 sklearn 的类名、参数列表等元数据"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "toOnnx(Module<?, ?>, int[])",
+       "signature": "OnnxModel toOnnx(Module<?, ?> module, int[] inputShape)",
+       "params": [
+        {
+         "type": "Module<?, ?>",
+         "name": "module"
+        },
+        {
+         "type": "int[]",
+         "name": "inputShape"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "把模块翻译成内存中的 ONNX 模型。",
+        "body": [
+         "ComputationGraph 走整图分支：按 executionOrder() 逐顶点翻译，MODULE 顶点递归展开为算子节点，ADD/SUB/MUL 顶点直接成同名节点；输入名取自 inputNames()、输出名取自 outputNames()，图名 jsl_dag_graph，输出声明 shape 为 null。",
+         "其他模块包成单链：输入名固定 \"input\"，输出名由 appendModule 返回，图名 jsl_torch_graph。两种分支都使用 irVersion 8、opsetVersion 17、producerName \"JSL\"，每个输入声明都套用传入的 inputShape。"
+        ],
+        "params": {
+         "module": "待翻译的模块，权重取自 weight()、bias()、gamma()、beta()、runningMean()、runningVar() 等访问器",
+         "inputShape": "第一输入的完整形状，写入每个输入声明的 shape；不做元素类型推断"
+        },
+        "returns": "新构造的 OnnxModel，常量以 float32 保存",
+        "throws": {
+         "NullPointerException": "module 或 inputShape 为 null",
+         "JSLUnsupportedOperationException": "模块类型不在支持列表内（\"ONNX export does not yet support module type\"）"
+        },
+        "notes": [
+         "Flatten 固定写 axis = 1，Conv 的 pads 按上下左右对称写出",
+         "Dropout 写成 Identity 节点，不做率值编码",
+         "输出声明省略 shape，多输出计算图的每个输出名都逐个声明",
+         "5 维及以上的卷积、转置卷积、注意力类模块均不支持"
         ]
        }
       }
      ]
     },
     {
-     "qualified": "jsl.ml.ImpurityCriterion",
+     "qualified": "jsl.io.OnnxModel",
+     "simple_qualified": "OnnxModel",
+     "kind": "class",
+     "modifiers": [
+      "public",
+      "final"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/io/OnnxModel.java",
+     "line": 31,
+     "javadoc": "Standard ONNX (Open Neural Network Exchange) {@code ModelProto} representation and native-backed\ninference engine.\n\n<p>Implements a zero-dependency Protobuf wire-format decoder/encoder for the official\n{@code onnx.proto3} schema (IR v8, Opset 17) so Python-trained ONNX models (from PyTorch,\nscikit-learn {@code skl2onnx}, or ONNX Runtime) can be loaded and executed directly in the JVM,\nand JSL models can be exported to `.onnx` files consumable by Python `onnxruntime`.</p>",
+     "nested": [
+      "TensorData",
+      "Attribute",
+      "Node",
+      "ValueInfo",
+      "ProtoWriter",
+      "ProtoReader"
+     ],
      "doc": {
-      "summary": "决策树用于最大化信息增益的节点不纯度",
+      "summary": "ONNX ModelProto 的内存表示与原生推理引擎，零依赖编解码。",
       "body": [
-       "GINI 计算 1 - Σp^2，ENTROPY 计算 -Σ p*log2(p)，两者绑定 TreeTask.CLASSIFICATION。MSE 绑定 TreeTask.REGRESSION，其 impurity 方法直接抛出 IllegalStateException，因为回归分裂改用和与平方和的代数等价形式，不经过类别计数。",
-       "每个常量在构造时绑定任务，task() 暴露该绑定。DecisionTree.Builder 在 build() 时校验 criterion.task() 与 task 一致，准则与任务不会在运行期错配。"
+       "解码不依赖 protobuf 运行时：load 读入整个文件后按 proto3 线格式逐字段解释 ir_version、opset_import、producer_name 与 graph（node、initializer、input、output），未知字段按线类型跳过，因此 doc_string、metadata_props、training_info 等无关段不会导致失败。缺失字段走缺省值：IR 8、Opset 17、producer \"JSL\"、图名 \"jsl_graph\"。",
+       "计算图执行由 run 完成：先为每个 initializer 建张量放进按名字索引的环境表，再用 feed 覆盖同名条目，然后按 nodes 的列表顺序逐节点求值，中间结果写回同一张表；最后按 outputs 声明的名字从表中取值。单输入重载取 inputs 第一个作为输入名、outputs 第一个作为返回项。",
+       "支持算子为固定白名单：MatMul、Gemm、Add、Sub、Mul、Div、Relu、Sigmoid、Tanh、Gelu、Silu、LeakyRelu、Elu、Softmax、Identity、Dropout、Flatten、Reshape、Transpose、Conv、MaxPool、BatchNormalization、LayerNormalization、GreaterOrEqual、Where。执行到白名单外的节点时抛 JSLUnsupportedOperationException，报错信息带算子名，图不会部分产出。"
       ],
       "notes": [
-       "骨架中的 ENTROPY 与 MSE 条目是枚举常量，签名里出现的参数即构造时传入的任务标记",
-       "MSE 只作任务标识，逐节点计算不经过 impurity"
+       "张量类型映射：TensorData 只存 float32。解码时 raw_data 按 data_type 转换——INT64(7) 与 DOUBLE(11) 逐元素转 float，其余一律按 FLOAT 解释；raw_data 缺失时回退 float_data 或 int64_data。编码恒写 DataType.FLOAT(1) 与 little-endian raw_data。",
+       "输入形状对加载的模型不是固定的：执行器不读取、也不校验 ValueInfo.shape，形状完全由传入张量决定，仅各算子自身的形状约束生效。导出模型时批维写成 -1（dim_param \"N\"），特征维为具体值。",
+       "图按 nodes 列表顺序执行，不做拓扑排序；节点顺序必须与数据依赖一致，否则取不到输入。",
+       "不支持子图（If/Loop/Scan）、external_data 外部权重与稀疏初始化器；遇到时对应字段被跳过，结果是这些节点缺席而非显式报错。",
+       "所有计算在 float32 上进行，Matrix 入口的 double 数据会先降精度，往返存在舍入误差。"
       ],
-      "example": "ImpurityCriterion criterion = ImpurityCriterion.ENTROPY;\n\nDecisionTree tree = DecisionTree.builder()\n        .criterion(criterion)\n        .task(criterion.task())\n        .maxDepth(4)\n        .build();",
-      "see": ["jsl.ml.DecisionTree", "jsl.ml.TreeTask"]
+      "example": "Path file = Path.of(\"model.onnx\");\nOnnxModel model = OnnxModel.load(file);\n\nfor (OnnxModel.ValueInfo in : model.inputs()) {\n    System.out.println(in.name() + \" \" + java.util.Arrays.toString(in.shape()));\n}\nSystem.out.println(model.opsetVersion() + \" / \" + model.nodes().size());\n\nMatrix features = Matrix.fromRows(new double[][]{{\n        1.0, 2.0}, {3.0, 4.0}});\nMatrix scores = model.predictMatrix(features);\n\nbyte[] encoded = model.toBytes();\nmodel.save(Path.of(\"copy.onnx\"));",
+      "see": [
+       "jsl.io.OnnxConverter",
+       "jsl.io.ModelCodec",
+       "jsl.torch.Tensor",
+       "jsl.nativebridge.NativeContext"
+      ]
      },
      "members": [
       {
-       "key": "ENTROPY(TreeTask.CLASSIFICATION)",
-       "doc": {
-        "summary": "熵不纯度，仅用于分类任务",
-        "body": [
-         "按 -Σ p*log2(p) 计算，零计数项跳过。熵越大表示类别越混杂，分裂收益按父熵减去两侧加权熵得到。"
-        ],
-        "params": {
-         "TreeTask.CLASSIFICATION": "构造参数，把该常量绑定到分类任务"
+       "kind": "constructor",
+       "key": "OnnxModel(long, long, String, String, List<ValueInfo>, List<ValueInfo>, Map<String, TensorData>, List<Node>)",
+       "signature": "OnnxModel(long irVersion, long opsetVersion, String producerName, String graphName, List<ValueInfo> inputs, List<ValueInfo> outputs, Map<String, TensorData> initializers, List<Node> nodes)",
+       "params": [
+        {
+         "type": "long",
+         "name": "irVersion"
         },
-        "notes": ["父节点不纯度为 0 时不再尝试分裂"]
-       }
-      },
-      {
-       "key": "MSE(TreeTask.REGRESSION)",
-       "doc": {
-        "summary": "方差不纯度标记，仅用于回归任务",
-        "body": [
-         "回归分裂实际使用 sum 与 sumOfSquares 计算左右方差，增益等价于方差下降，因此该常量不实现计数式 impurity。"
-        ],
-        "params": {
-         "TreeTask.REGRESSION": "构造参数，把该常量绑定到回归任务"
+        {
+         "type": "long",
+         "name": "opsetVersion"
         },
-        "throws": {
-         "IllegalStateException": "调用 impurity 时抛出，提示改用连续目标路径"
+        {
+         "type": "String",
+         "name": "producerName"
+        },
+        {
+         "type": "String",
+         "name": "graphName"
+        },
+        {
+         "type": "List<ValueInfo>",
+         "name": "inputs"
+        },
+        {
+         "type": "List<ValueInfo>",
+         "name": "outputs"
+        },
+        {
+         "type": "Map<String, TensorData>",
+         "name": "initializers"
+        },
+        {
+         "type": "List<Node>",
+         "name": "nodes"
         }
-       }
-      },
-      {
-       "key": "task()",
+       ],
+       "throws": [],
+       "javadoc": "",
        "doc": {
-        "summary": "该准则绑定的任务类型",
-        "returns": "构造时传入的 TreeTask",
-        "notes": ["Builder 用它校验准则与任务是否匹配"]
-       }
-      },
-      {
-       "key": "impurity(int[], int)",
-       "doc": {
-        "summary": "按类别计数计算节点不纯度",
-        "params": {
-         "counts": "各类别的样本计数，下标即类别编码",
-         "total": "节点样本总数，由调用方保证等于 counts 之和"
-        },
-        "returns": "Gini 值或熵值；MSE 不返回",
-        "throws": {
-         "IllegalStateException": "准则为 MSE"
-        },
-        "notes": ["包内抽象方法，只由分类准则实现"]
-       }
-      }
-     ]
-    },
-    {
-     "qualified": "jsl.ml.PackedTrees",
-     "doc": {
-      "summary": "把多棵树拼成连续数组，供原生集成预测",
-      "body": [
-       "pack 先按各树 size() 求和分配五个总长数组与 offsets，再逐棵 copyInto 到对应偏移。offsets[i] 是第 i 棵树的起始下标，offsets[n] 等于总节点数，原生内核据此在单次调用内遍历整片森林或提升模型。",
-       "copyInto 在复制时把子节点下标加上偏移，因此拼接后的左、右指针是全局下标，跨树不会互相指向。"
-      ],
-      "notes": [
-       "所有字段为 final 数组，构造后不再变化",
-       "包内可见类型，不构成 jsl.ml 的公开 API",
-       "拼接只复制数组内容，不复制树对象"
-      ],
-      "example": "DecisionTree tree = DecisionTree.builder().maxDepth(3).build().fit(x, y);\n\nPackedTrees packed = PackedTrees.pack(List.of(tree.model()));\nint totalNodes = packed.offsets[packed.offsets.length - 1];\nint firstTreeStart = packed.offsets[0];",
-      "see": ["jsl.ml.TreeModel", "jsl.ml.RandomForest"]
-     },
-     "members": [
-      {
-       "key": "feature",
-       "doc": {
-        "summary": "各节点的分裂特征，-1 表示叶",
-        "notes": ["全局下标，按 offsets 划分树边界"]
-       }
-      },
-      {
-       "key": "threshold",
-       "doc": {
-        "summary": "各节点的分裂阈值",
-        "notes": ["判据为 value <= threshold 走左"]
-       }
-      },
-      {
-       "key": "left",
-       "doc": {
-        "summary": "左子节点的全局下标，-1 表示无"
-       }
-      },
-      {
-       "key": "right",
-       "doc": {
-        "summary": "右子节点的全局下标，-1 表示无"
-       }
-      },
-      {
-       "key": "value",
-       "doc": {
-        "summary": "叶节点的输出值",
-        "notes": ["分裂节点的该槽位无意义"]
-       }
-      },
-      {
-       "key": "offsets",
-       "doc": {
-        "summary": "每棵树的起始偏移",
-        "returns": "长度为树数加 1 的数组，末元素等于总节点数"
-       }
-      },
-      {
-       "key": "pack(List<TreeModel>)",
-       "doc": {
-        "summary": "按给定顺序拼接多棵树",
-        "params": {
-         "trees": "待拼接的树，顺序决定 offsets 与节点排列"
-        },
-        "returns": "拼接后的 PackedTrees",
-        "notes": ["按 tree.size() 累加总长度，逐棵调用 copyInto"]
-       }
-      }
-     ]
-    },
-    {
-     "qualified": "jsl.ml.RandomForest",
-     "doc": {
-      "summary": "自助聚合的直方图森林，节点级特征子采样",
-      "body": [
-       "每棵树对行做有放回采样，随后在同一份全局 BinnedFeatures 上以直方图分裂生长。树之间相互独立，拟合通过 ForkJoinPool 并行，并行度由 threads 决定。",
-       "分类按各树叶标签投票，得到每类的得票比例后取最大者；回归取各树叶值的算术均值。行数乘树数不小于 2000 万时，预测与投票转交 Rust 内核，失败则回退 Java 路径。",
-       "OOB 分数只用对该行未被抽中的树计算：回归为 1 - SSE/SST，分类为多数投票的准确率。某行没有任何可用树或目标方差为零时返回 NaN。"
-      ],
-      "notes": [
-       "OOB 打开时，treeCount*rows 超过 800 万会拒绝拟合",
-       "maxFeatures 为 0 时按 max(1, sqrt(featureCount)) 解析",
-       "readState 重建的森林关闭 OOB，oobScore() 会抛 IllegalStateException"
-      ],
-      "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {0.0, 1.0}, {1.0, 1.0}, {1.0, 0.0}, {2.0, 0.0},\n        {2.0, 1.0}, {3.0, 0.0}, {3.0, 1.0}, {4.0, 0.0}});\ndouble[] y = {0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0};\n\nRandomForest forest = RandomForest.builder()\n        .trees(50)\n        .maxDepth(6)\n        .minSamplesLeaf(1)\n        .maxFeatures(1)\n        .bins(64)\n        .threads(4)\n        .seed(42L)\n        .task(TreeTask.CLASSIFICATION)\n        .oob(true)\n        .build()\n        .fit(x, y);\n\ndouble[] label = forest.predict(x);\nMatrix probability = forest.predictProbability(x);\ndouble oob = forest.oobScore();",
-      "see": ["jsl.ml.DecisionTree", "jsl.ml.PackedTrees", "jsl.ml.TreeTask"]
-     },
-     "members": [
-      {
-       "key": "builder()",
-       "doc": {
-        "summary": "创建构造器，参数全部取默认值",
-        "returns": "新的 Builder 实例"
-       }
-      },
-      {
-       "key": "fit(Matrix, double[])",
-       "doc": {
-        "summary": "分箱一次并并行训练全部树",
+        "summary": "用图元数据与节点表构造模型，不做语义校验。",
         "body": [
-         "全量矩阵只分箱一次，各树在共享分箱上以自助采样行号生长。第 i 棵树的随机种子为 seed + i*31，自助采样序列由 seed + i*1000003 驱动；打开 OOB 时，每棵树还会对全量矩阵推理一次以记录袋外预测。"
+         "列表参数经 List.copyOf 复制为不可变列表，initializers 先复制进 LinkedHashMap 再包装为不可变视图，因此迭代顺序（也是写回时的编码顺序）与传入顺序一致。"
         ],
         "params": {
-         "features": "训练特征矩阵，行数为样本数",
-         "targets": "目标数组，长度须等于行数；分类为类别标签，回归为连续值"
-        },
-        "returns": "this，已完成拟合",
-        "throws": {
-         "IllegalArgumentException": "目标数量与行数不一致、含非有限值，或 OOB 评估超过 800 万次树-行预测"
+         "irVersion": "IR 版本号，写入 ir_version 字段；导出路径固定传 8",
+         "opsetVersion": "算子集版本，写入 opset_import.version；导出路径固定传 17",
+         "producerName": "生成工具名，写入 producer_name；文件缺该字段时解码回落 \"JSL\"",
+         "graphName": "计算图名，写入 graph.name；缺省为 \"jsl_graph\"",
+         "inputs": "图输入声明，run 用第一个的名字作为单输入入口",
+         "outputs": "图输出声明，run 按此顺序收集返回项",
+         "initializers": "名字到常量张量的映射，run 会为每项建张量",
+         "nodes": "节点列表，保存顺序即执行顺序"
         },
         "notes": [
-         "并行度由 threads 决定，树之间无共享可变状态",
-         "分类标签按升序去重，classes() 返回该顺序"
+         "不校验 irVersion/opsetVersion 范围，也不检查节点引用的名字是否闭合，错误延迟到 run 时才暴露",
+         "null 参数在 List.copyOf 或 LinkedHashMap 构造时抛 NullPointerException；元素内容不做判空",
+         "TensorData 与 ValueInfo 以引用保存，其内部数组由各自构造器克隆"
         ]
        }
       },
       {
-       "key": "predict(Matrix)",
+       "kind": "method",
+       "key": "load(Path)",
+       "signature": "OnnxModel load(Path path)",
+       "params": [
+        {
+         "type": "Path",
+         "name": "path"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
        "doc": {
-        "summary": "输出预测，分类为投票胜出的标签",
+        "summary": "读取 .onnx 文件并解析为模型。",
         "body": [
-         "回归对各树叶值取均值，可用原生内核一次算完整片森林；分类先取每类的平均得票比例，再按类别顺序取最大值，票数相同时取下标较小者。"
+         "Files.readAllBytes 一次性读入后交 parseModelProto 解析；graph 段内的 node、name、initializer、input、output 逐项收集，opset_import 只取 version 字段（多个导入以最后一个为准），其余字段忽略。"
         ],
         "params": {
-         "features": "特征矩阵，列数须等于拟合时的特征数"
+         "path": "标准 .onnx 文件路径，须为可读普通文件"
         },
-        "returns": "长度为行数的预测数组",
+        "returns": "解析出的 OnnxModel，缺失字段按缺省值填充",
         "throws": {
-         "IllegalStateException": "尚未拟合",
-         "IllegalArgumentException": "列数不匹配或含非有限值"
-        }
-       }
-      },
-      {
-       "key": "predictProbability(Matrix)",
-       "doc": {
-         "summary": "输出各类得票比例矩阵",
-        "body": [
-         "每棵树对一行预测一个叶标签，映射到类别列后累加 1/treeCount，因此每行元素之和为 1。叶标签必须能在 classes() 中二分查到，否则抛 IllegalStateException。"
-        ],
-        "params": {
-         "features": "特征矩阵，列数须等于拟合时的特征数"
-        },
-        "returns": "rows × classes 的矩阵，列顺序与 classes() 一致",
-        "throws": {
-         "IllegalStateException": "任务不是分类，或尚未拟合",
-         "IllegalArgumentException": "列数不匹配或含非有限值"
-        }
-       }
-      },
-      {
-       "key": "classes()",
-       "doc": {
-        "summary": "分类任务的类别标签，按升序排列",
-        "returns": "类别标签副本；回归任务返回 null"
-       }
-      },
-      {
-       "key": "task()",
-       "doc": {
-        "summary": "构造时指定的任务类型",
-        "returns": "CLASSIFICATION 或 REGRESSION"
-       }
-      },
-      {
-       "key": "oobScore()",
-       "doc": {
-        "summary": "袋外评估分数",
-        "body": [
-         "回归为袋外预测的决定系数 1 - SSE/SST，分类为袋外多数投票的准确率。只用对该行未被抽中的树参与计算。"
-        ],
-        "returns": "OOB 分数；无可用袋外样本或 SST 为 0 时为 NaN",
-        "throws": {
-         "IllegalStateException": "构建时未启用 oob"
-        },
-        "notes": ["启用 oob 但尚未拟合时返回 NaN，因为分数初值为 NaN"]
-       }
-      },
-      {
-       "key": "featureImportances()",
-       "doc": {
-       "summary": "森林级特征重要性，总和为 1",
-        "body": [
-         "先对各树已归一化的重要性求平均，再对平均值整体归一化。单叶树的重要性全为 0，因此对结果没有贡献。"
-        ],
-        "returns": "长度为特征数的数组，总和为 1",
-        "throws": {
-         "IllegalStateException": "尚未拟合"
-        }
-       }
-      },
-      {
-       "key": "treeCount()",
-       "doc": {
-        "summary": "已拟合的树数",
-        "returns": "树数；未拟合为 0"
-       }
-      },
-      {
-       "key": "writeState(ModelWriter)",
-       "doc": {
-        "summary": "写出任务、类别与逐棵树的状态",
-        "body": [
-         "写入任务序号、特征数、类别数（回归写 0）与类别标签、树数，随后逐棵调用 DecisionTree.writeState。超参数与 OOB 配置不落盘。"
-        ],
-        "params": {
-         "writer": "目标二进制写入器"
-        },
-        "throws": {
-         "IllegalStateException": "尚未拟合"
-        }
-       }
-      },
-      {
-       "key": "readState(ModelReader)",
-       "doc": {
-        "summary": "从二进制流重建森林",
-        "params": {
-         "reader": "已定位到本对象载荷起点的读取器"
-        },
-        "returns": "新的 RandomForest 实例，已完成树拼接",
-        "throws": {
-         "ModelFormatException": "任务序号越界、分类森林缺少类别标签，或树数不在 [1, 100000]"
+         "UncheckedIOException": "文件不存在、不可读或读取失败",
+         "IllegalStateException": "线格式损坏，例如 varint 在缓冲区末尾被截断或出现未知线类型"
         },
         "notes": [
-         "重建后 OOB 关闭，oobScore() 会抛 IllegalStateException",
-         "重建后的特征重要性全为 0"
+         "ONNX 没有魔数，非 ONNX 文件可能被解析成空图而不报错",
+         "不解析 external_data，权重指向外部文件时数据为空",
+         "整文件驻留堆内存，大模型（数百 MB）需相应堆空间"
         ]
        }
       },
       {
-       "key": "kind()",
+       "kind": "method",
+       "key": "save(Path)",
+       "signature": "void save(Path path)",
+       "params": [
+        {
+         "type": "Path",
+         "name": "path"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
        "doc": {
-        "summary": "持久化类型标识",
-        "returns": "ModelKind.RANDOM_FOREST"
-       }
-      },
-      {
-       "key": "write(ModelWriter)",
-       "doc": {
-        "summary": "按 Persistable 契约写模型",
-        "params": {
-         "writer": "目标二进制写入器"
-        },
-        "notes": ["实现为直接调用 writeState"]
-       }
-      }
-     ]
-    },
-    {
-     "qualified": "jsl.ml.TreeModel",
-     "doc": {
-      "summary": "数组化的扁平树，推理与打包共用",
-      "body": [
-       "节点存放在 feature、threshold、left、right、value 五个平行数组中，feature 等于 -1 标记叶。预测是从根开始的循环指针行走，不做虚分派，热路径对缓存友好；同一套表示被森林与提升共用。",
-       "该类型为包内可见，不出现在 jsl.ml 的公开 API 上。它出现在骨架里是因为 DecisionTree.model() 与 PackedTrees.pack(List<TreeModel>) 在包内以它作为交换格式：森林、提升与原生打包器都通过它共享同一份推理实现。",
-       "节点数组按需倍增扩容，compact() 裁掉尾部空槽；copyInto 在复制时把子节点下标平移为全局下标，使多棵树可以拼成一份连续数组。"
-      ],
-      "notes": [
-       "feature[node] == -1 表示叶，其余值必须不小于 0",
-       "分支条件为 sample[offset + feature] <= threshold ? left : right",
-       "addInto 只累加不分配，适合集成模型逐树相加",
-       "包内可见类型，调用方需与 jsl.ml 同包"
-      ],
-      "example": "DecisionTree tree = DecisionTree.builder().maxDepth(2).build().fit(x, y);\n\nTreeModel model = tree.model();\nint nodes = model.size();\nint height = model.depth();\ndouble firstRow = model.predict(x.data(), 0);\nboolean rootIsLeaf = model.isLeaf(0);",
-      "see": ["jsl.ml.DecisionTree", "jsl.ml.PackedTrees", "jsl.ml.RandomForest"]
-     },
-     "members": [
-      {
-       "key": "addNode()",
-       "doc": {
-       "summary": "追加一个空节点并返回其下标",
+        "summary": "把模型编码为 .onnx 文件并写出。",
         "body": [
-         "新节点初始为叶：feature 与左右子节点置 -1，threshold 与 value 置 0。容量用尽时五个数组同步翻倍。"
-        ],
-        "returns": "新节点下标，等于追加前的节点数",
-        "notes": ["节点按添加顺序排列，根节点恒为下标 0"]
-       }
-      },
-      {
-       "key": "setLeaf(int, double)",
-       "doc": {
-        "summary": "把节点标记为叶并写入输出值",
-        "params": {
-         "node": "节点下标，取值 [0, size())",
-         "leafValue": "叶输出值：分类为类别标签，回归为均值或叶权重"
-        },
-        "notes": ["同时把 feature 与左右子节点置 -1，覆盖此前的分裂信息"]
-       }
-      },
-      {
-       "key": "setSplit(int, int, double, int, int)",
-       "doc": {
-        "summary": "把节点标记为分裂并挂上左右子节点",
-        "params": {
-         "node": "节点下标，取值 [0, size())",
-         "splitFeature": "分裂特征下标，须不小于 0",
-         "splitThreshold": "分裂阈值，满足 value <= 阈值 走左",
-         "leftChild": "左子节点下标，须不小于 0",
-         "rightChild": "右子节点下标，须不小于 0"
-        },
-        "throws": {
-         "IllegalArgumentException": "splitFeature、leftChild 或 rightChild 为负"
-        },
-        "notes": ["不校验子节点下标是否已分配，调用方须保证其小于 size()"]
-       }
-      },
-      {
-       "key": "size()",
-       "doc": {
-       "summary": "已分配的节点数",
-        "returns": "节点数，等于 addNode 的调用次数，含叶节点"
-       }
-      },
-      {
-       "key": "depth()",
-       "doc": {
-       "summary": "根到叶的最大边数",
-        "returns": "树深，单叶为 0",
-        "notes": ["递归实现，深度受调用栈限制"]
-       }
-      },
-      {
-       "key": "isLeaf(int)",
-       "doc": {
-       "summary": "判断节点是否为叶",
-        "params": {
-         "node": "节点下标，取值 [0, size())"
-        },
-        "returns": "feature[node] 小于 0 时为 true"
-       }
-      },
-      {
-       "key": "feature(int)",
-       "doc": {
-       "summary": "读取节点的分裂特征",
-        "params": {
-         "node": "节点下标，取值 [0, size())"
-        },
-        "returns": "特征下标；叶节点为 -1"
-       }
-      },
-      {
-       "key": "left(int)",
-       "doc": {
-       "summary": "读取左子节点下标",
-        "params": {
-         "node": "节点下标，取值 [0, size())"
-        },
-        "returns": "左子节点下标；叶节点为 -1"
-       }
-      },
-      {
-       "key": "right(int)",
-       "doc": {
-       "summary": "读取右子节点下标",
-        "params": {
-         "node": "节点下标，取值 [0, size())"
-        },
-        "returns": "右子节点下标；叶节点为 -1"
-       }
-      },
-      {
-       "key": "compact()",
-       "doc": {
-       "summary": "裁掉扩容留下的空槽",
-        "body": [
-         "节点数与数组容量相等时直接返回 this；否则新建容量恰为 size() 的实例并复制五个数组。"
-        ],
-        "returns": "紧凑后的树，可能返回 this",
-        "notes": ["拟合结束时调用，避免把扩容冗余带入集成模型"]
-       }
-      },
-      {
-       "key": "predict(double[], int)",
-       "doc": {
-       "summary": "对单行样本预测叶值",
-        "params": {
-         "sample": "行优先存放的样本数组",
-         "offset": "该行首元素在数组中的下标"
-        },
-        "returns": "命中的叶值",
-        "notes": ["不做边界检查，offset + feature 必须落在数组内"]
-       }
-      },
-      {
-       "key": "addInto(double[], int, int, double[], double)",
-       "doc": {
-       "summary": "把整批预测按比例累加进目标数组",
-        "body": [
-         "对每一行执行 target[row] += scale * tree(sample[row])，不分配逐行中间结果。集成模型用它在学习率或 1/树数 的缩放下累加各棵树的输出。"
+         "先用 toBytes() 得到完整 ModelProto 编码，再以 Files.write 覆盖写出；父目录不存在时不创建，直接失败。"
         ],
         "params": {
-         "sample": "行优先的样本数组，长度为 rows*columns",
-         "rows": "样本行数",
-         "columns": "特征列数，即每行的步长",
-         "target": "累加目标，长度须不小于 rows",
-         "scale": "缩放系数，提升器传 learningRate，森林传 1/树数"
-        }
-       }
-      },
-      {
-       "key": "predictInto(double[], int, int, double[])",
-       "doc": {
-       "summary": "把整批预测写入目标数组并覆盖原值",
-        "params": {
-         "sample": "行优先的样本数组，长度为 rows*columns",
-         "rows": "样本行数",
-         "columns": "特征列数，即每行的步长",
-         "target": "输出数组，长度须不小于 rows，原有内容被覆盖"
+         "path": "输出文件路径，已存在时被截断覆盖"
         },
-        "notes": ["森林的投票路径用它取得每棵树的叶标签"]
-       }
-      },
-      {
-       "key": "copyInto(int, int[], double[], int[], int[], double[])",
-       "doc": {
-       "summary": "把整棵树复制到目标数组的指定偏移",
-        "body": [
-         "五个数组按 size() 整段复制，左右子节点下标加上 offset 变成全局下标，-1 保持 -1。PackedTrees 依赖该平移把多棵树拼成连续块。"
-        ],
-        "params": {
-         "offset": "写入起始下标",
-         "targetFeature": "目标特征数组",
-         "targetThreshold": "目标阈值数组",
-         "targetLeft": "目标左子节点数组",
-         "targetRight": "目标右子节点数组",
-         "targetValue": "目标叶值数组"
-        },
-        "notes": ["目标数组须能容纳 offset + size() 个元素"]
-       }
-      },
-      {
-       "key": "write(ModelWriter)",
-       "doc": {
-       "summary": "写出节点数与五个节点数组",
-        "params": {
-         "writer": "目标二进制写入器"
-        },
-        "notes": ["先写 size，再依次写 feature、threshold、left、right、value，均截断到 size"]
-       }
-      },
-      {
-       "key": "read(ModelReader)",
-       "doc": {
-       "summary": "从二进制流重建树结构",
-        "params": {
-         "reader": "已定位到节点数起点的读取器"
-        },
-        "returns": "重建的 TreeModel，容量恰为节点数",
         "throws": {
-         "ModelFormatException": "节点数不在 [1, 10000000]、feature 小于 -1，或分裂节点的子下标越界"
-        }
-       }
-      }
-     ]
-    },
-    {
-     "qualified": "jsl.ml.TreeTask",
-     "doc": {
-      "summary": "单棵决策树的监督目标：分类或回归",
-      "body": [
-       "CLASSIFICATION 用类别计数与 GINI 或 ENTROPY 评估分裂，叶值为多数类标签；REGRESSION 用和与平方和计算方差下降，叶值为均值。任务同时决定 fit 的编码方式、predict 的输出语义以及 Builder 对准则的校验。"
-      ],
-      "notes": [
-       "task 与 criterion 必须匹配，否则 DecisionTree.Builder.build() 抛 IllegalArgumentException",
-       "RandomForest 与 DecisionTree 都把任务作为构造期常量，拟合后不可更改"
-      ],
-      "example": "DecisionTree regressor = DecisionTree.builder()\n        .task(TreeTask.REGRESSION)\n        .maxDepth(6)\n        .build();\n\nTreeTask task = regressor.task();",
-      "see": ["jsl.ml.DecisionTree", "jsl.ml.ImpurityCriterion", "jsl.ml.RandomForest"]
-     },
-     "members": []
-    },
-    {
-     "qualified": "jsl.ml.DecisionTree.Builder",
-     "doc": {
-      "summary": "DecisionTree 的流式构造器",
-      "body": [
-       "默认值为 maxDepth 8、minSamplesSplit 2、minSamplesLeaf 1、criterion GINI、task CLASSIFICATION、maxFeatures 0（全部特征）、bins 64、seed 42。所有 setter 返回 this，build() 统一校验并返回未拟合的估计器。",
-       "criterion 一旦被显式设置就锁定，之后调用 task() 不会改写它；未显式设置时，task(REGRESSION) 自动切到 MSE，task(CLASSIFICATION) 自动切到 GINI。"
-      ],
-      "notes": [
-       "maxDepth 为 0 表示根节点即叶，可用于得到常数模型",
-       "minSamplesSplit 的下限是 2，低于该值在 build() 时被拒绝"
-      ],
-      "example": "DecisionTree tree = DecisionTree.builder()\n        .task(TreeTask.REGRESSION)\n        .maxDepth(5)\n        .minSamplesSplit(4)\n        .minSamplesLeaf(2)\n        .maxFeatures(2)\n        .bins(32)\n        .seed(11L)\n        .build();",
-      "see": ["jsl.ml.DecisionTree", "jsl.ml.ImpurityCriterion", "jsl.ml.TreeTask"]
-     },
-     "members": [
-      {
-       "key": "maxDepth(int)",
-       "doc": {
-        "summary": "设置树的最大深度，默认 8",
-        "params": {
-         "maxDepth": "最大深度，须不小于 0；0 表示根节点直接成为叶"
+         "UncheckedIOException": "路径不可写、父目录不存在或写入失败"
         },
-        "returns": "this",
-        "notes": ["深度从 0 起计，节点深度达到该值即停止分裂"]
-       }
-      },
-      {
-       "key": "minSamplesSplit(int)",
-       "doc": {
-        "summary": "设置允许分裂的最小节点样本数，默认 2",
-        "params": {
-         "minSamplesSplit": "节点样本数低于该值即转为叶，须不小于 2"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "key": "minSamplesLeaf(int)",
-       "doc": {
-        "summary": "设置每个子节点最少样本数，默认 1",
-        "params": {
-         "minSamplesLeaf": "分裂后左右两侧各自的最小样本数，须不小于 1"
-        },
-        "returns": "this",
-        "notes": ["同时约束 fit 的入口：总样本数小于该值直接抛 IllegalArgumentException"]
-       }
-      },
-      {
-       "key": "criterion(ImpurityCriterion)",
-       "doc": {
-        "summary": "设置不纯度准则，默认 GINI",
-        "params": {
-         "criterion": "准则常量，非 null；其 task() 必须与最终 task 一致"
-        },
-        "returns": "this",
-        "throws": {
-         "NullPointerException": "criterion 为 null"
-        },
-        "notes": ["调用后标记为显式设置，后续 task() 不再覆盖该准则"]
-       }
-      },
-      {
-       "key": "task(TreeTask)",
-       "doc": {
-        "summary": "设置任务类型，默认 CLASSIFICATION",
-        "params": {
-         "task": "CLASSIFICATION 或 REGRESSION，非 null"
-        },
-        "returns": "this",
-        "throws": {
-         "NullPointerException": "task 为 null"
-        },
-        "notes": ["未显式设置 criterion 时，同步切换为 MSE 或 GINI"]
-       }
-      },
-      {
-       "key": "maxFeatures(int)",
-       "doc": {
-        "summary": "设置每次分裂的候选特征数，默认 0",
-        "params": {
-         "maxFeatures": "候选特征数；0 表示使用全部特征，大于特征数时按特征数截断"
-        },
-        "returns": "this",
-        "notes": ["小于特征数时，每个节点用部分洗牌抽取子集，随机源为 seed"]
-       }
-      },
-      {
-       "key": "bins(int)",
-       "doc": {
-        "summary": "设置单特征最大桶数，默认 64",
-        "params": {
-         "maxBins": "桶数上限，取值 [2, 255]"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "key": "seed(long)",
-       "doc": {
-        "summary": "设置特征子采样的随机种子，默认 42",
-        "params": {
-         "seed": "随机种子；仅影响 maxFeatures 的特征抽取"
-        },
-        "returns": "this",
-        "notes": ["行选择不受该种子影响，fit 固定使用全部行"]
-       }
-      },
-      {
-       "key": "build()",
-       "doc": {
-        "summary": "校验配置并创建估计器",
-        "returns": "配置好的 DecisionTree，尚未拟合",
-        "throws": {
-         "IllegalArgumentException": "maxDepth 小于 0、minSamplesSplit 小于 2、minSamplesLeaf 小于 1、maxFeatures 小于 0、bins 越界，或准则与任务不匹配"
-        }
-       }
-      }
-     ]
-    },
-    {
-     "qualified": "jsl.ml.DecisionTree.Workspace",
-     "doc": {
-      "summary": "单次拟合复用的临时数组集合",
-      "body": [
-       "持有分箱引用、每特征每桶的类别直方图（features*maxBins*classes）、左右子节点计数缓冲，或回归路径的和、平方和与计数数组。所有数组在递归前一次性分配，避免每个节点重新申请。",
-       "数组按分箱的 maxBinCount() 定长，桶数较少的特征只使用各自前缀，因此直方图的清理也只覆盖实际桶区间。"
-      ],
-      "notes": [
-       "私有嵌套类型，不属于公开 API，仅用于说明拟合期的内存布局",
-       "同一份工作区在整棵树的递归中共享，因此拟合过程不可重入"
-      ],
-      "see": ["jsl.ml.DecisionTree"]
-     },
-     "members": []
-    },
-    {
-     "qualified": "jsl.ml.HistogramGradientBoosting.Builder",
-     "doc": {
-      "summary": "HistogramGradientBoosting 的流式构造器",
-      "body": [
-       "默认值为 algorithm XGBOOST、objective SQUARED_ERROR、iterations 100、learningRate 0.1、maxDepth 6、maxLeaves 31、bins 64、minSamplesLeaf 1、minChildWeight 1e-12、lambda 1.0、gamma 0、threads 为可用处理器数、featureFraction 1.0、validationFraction 0、earlyStoppingRounds 0、seed 42。",
-       "build() 集中校验数值范围与组合约束：早停必须配正的验证集比例，各比例参数有各自的半开区间。"
-      ],
-      "notes": [
-       "maxLeaves 只在 LIGHTGBM 策略下生效，XGBOOST 由 maxDepth 决定形状",
-       "lambda 参与叶权重与增益的分母，gamma 是每次分裂需超过的增益门槛"
-      ],
-      "example": "HistogramGradientBoosting model = HistogramGradientBoosting.builder()\n        .algorithm(BoostingAlgorithm.LIGHTGBM)\n        .objective(BoostingObjective.SQUARED_ERROR)\n        .iterations(300)\n        .learningRate(0.05)\n        .maxLeaves(31)\n        .minChildWeight(1e-3)\n        .lambda(1.0)\n        .gamma(0.0)\n        .featureFraction(0.8)\n        .validationFraction(0.2)\n        .earlyStoppingRounds(20)\n        .threads(4)\n        .seed(42L)\n        .build();",
-      "see": ["jsl.ml.HistogramGradientBoosting", "jsl.ml.BoostingAlgorithm", "jsl.ml.BoostingObjective"]
-     },
-     "members": [
-      {
-       "key": "algorithm(BoostingAlgorithm)",
-       "doc": {
-        "summary": "设置生长策略，默认 XGBOOST",
-        "params": {
-         "algorithm": "XGBOOST（深度优先）或 LIGHTGBM（叶优先），非 null"
-        },
-        "returns": "this",
-        "throws": {
-         "NullPointerException": "algorithm 为 null"
-        }
-       }
-      },
-      {
-       "key": "objective(BoostingObjective)",
-       "doc": {
-        "summary": "设置目标函数，默认 SQUARED_ERROR",
-        "params": {
-         "objective": "SQUARED_ERROR 或 LOGISTIC，非 null"
-        },
-        "returns": "this",
-        "throws": {
-         "NullPointerException": "objective 为 null"
-        }
-       }
-      },
-      {
-       "key": "iterations(int)",
-       "doc": {
-        "summary": "设置提升轮数，默认 100",
-        "params": {
-         "iterations": "最大树数，须大于 0；早停可能提前结束"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "key": "learningRate(double)",
-       "doc": {
-        "summary": "设置每棵树的收缩系数，默认 0.1",
-        "params": {
-         "learningRate": "叶值的缩放系数，须为正有限值"
-        },
-        "returns": "this",
-        "notes": ["原始得分为 baseScore 加上 learningRate 加权的各树叶值"]
-       }
-      },
-      {
-       "key": "maxDepth(int)",
-       "doc": {
-        "summary": "设置单棵树最大深度，默认 6",
-        "params": {
-         "maxDepth": "深度上限，须大于 0；两种生长策略都受其约束"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "key": "maxLeaves(int)",
-       "doc": {
-        "summary": "设置最大叶数，默认 31",
-        "params": {
-         "maxLeaves": "叶数上限，须不小于 2"
-        },
-        "returns": "this",
-        "notes": ["仅 LIGHTGBM 策略读取该值，XGBOOST 下不生效"]
-       }
-      },
-      {
-       "key": "bins(int)",
-       "doc": {
-        "summary": "设置单特征最大桶数，默认 64",
-        "params": {
-         "binCount": "桶数上限，取值 [2, 255]"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "key": "minSamplesLeaf(int)",
-       "doc": {
-        "summary": "设置叶节点最小样本数，默认 1",
-        "params": {
-         "minSamplesLeaf": "分裂后左右两侧各自的最小样本数，须大于 0"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "key": "minChildWeight(double)",
-       "doc": {
-        "summary": "设置子节点 hessian 和下限，默认 1e-12",
-        "params": {
-         "minChildWeight": "左右子节点 hessian 之和的最小值，须为非负有限值"
-        },
-        "returns": "this",
-        "notes": ["LOGISTIC 目标的 hessian 很小，该值决定能否继续细分"]
-       }
-      },
-      {
-       "key": "lambda(double)",
-       "doc": {
-       "summary": "设置叶权重的 L2 正则系数，默认 1.0",
-        "params": {
-         "lambda": "正则系数，须为非负有限值；作为 hessian 的加项出现"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "key": "gamma(double)",
-       "doc": {
-        "summary": "设置分裂所需的最小增益，默认 0",
-        "params": {
-         "gamma": "每次分裂从增益中扣除的阈值，须为非负有限值"
-        },
-        "returns": "this",
-        "notes": ["增益扣除 gamma 后不大于 0 的候选不产生分裂"]
-       }
-      },
-      {
-       "key": "threads(int)",
-       "doc": {
-        "summary": "设置并行度，默认可用处理器数",
-        "params": {
-         "threads": "工作线程数，须大于 0；同时决定直方图分块数"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "key": "featureFraction(double)",
-       "doc": {
-        "summary": "设置每轮特征采样比例，默认 1.0",
-        "params": {
-         "featureFraction": "每轮参与分裂搜索的特征比例，取值 (0, 1]"
-        },
-        "returns": "this",
-        "notes": ["按 ceil(fraction*featureCount) 取整且至少 1 个，第 i 轮用 seed + i*7919 抽取"]
-       }
-      },
-      {
-       "key": "validationFraction(double)",
-       "doc": {
-       "summary": "设置验证集比例，默认 0",
-        "params": {
-         "validationFraction": "切作验证集的样本比例，取值 [0, 0.5)；0 表示不切分"
-        },
-        "returns": "this",
-        "notes": ["验证集大小取 round(rows*比例)，下限 1，上限 rows-2，切分前用 seed 打乱行号"]
-       }
-      },
-      {
-       "key": "earlyStoppingRounds(int)",
-       "doc": {
-        "summary": "设置早停容忍轮数，默认 0（关闭）",
-        "params": {
-         "earlyStoppingRounds": "验证损失连续无改善的轮数上限，须不小于 0"
-        },
-        "returns": "this",
-        "notes": ["大于 0 时必须同时给出正的 validationFraction，否则 build() 拒绝"]
-       }
-      },
-      {
-       "key": "seed(long)",
-       "doc": {
-        "summary": "设置切分与特征采样种子，默认 42",
-        "params": {
-         "seed": "随机种子；驱动验证集打乱与逐轮特征子集"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "key": "build()",
-       "doc": {
-        "summary": "校验配置并创建估计器",
-        "returns": "配置好的 HistogramGradientBoosting，尚未拟合",
-        "throws": {
-         "IllegalArgumentException": "轮数、深度、叶数、桶数、叶样本数或线程数越界，比例超出区间，早停缺少验证集，或学习率与正则项不是合法有限值"
-        }
-       }
-      }
-     ]
-    },
-    {
-     "qualified": "jsl.ml.HistogramGradientBoosting.HistogramWorkspace",
-     "doc": {
-      "summary": "分块并行累加直方图的工作区",
-      "body": [
-       "按块持有 gradient、hessian、count 三组二维数组，每块长度 featureCount*maxBins。clear 只清理活跃特征的桶区间，reduce 把各块逐项累加到第 0 块，再由调用方拷回节点直方图。",
-       "块数由线程数与样本数共同决定，工作量低于阈值时退化为单块串行累加，不进入并行归约。"
-      ],
-      "notes": [
-       "私有嵌套类型，不属于公开 API",
-       "块数等于创建时的线程数，因此内存占用随 threads 线性增长"
-      ],
-      "see": ["jsl.ml.HistogramGradientBoosting"]
-     },
-     "members": []
-    },
-    {
-     "qualified": "jsl.ml.HistogramGradientBoosting.LeafCandidate",
-     "doc": {
-      "summary": "叶优先生长时待分裂叶的队列条目",
-      "body": [
-       "记录节点下标、该叶的样本行号、深度、已算出的分裂决策以及对应的直方图。优先队列按增益降序排列，每轮取出增益最大的条目展开，因此叶优先策略总在全局最优点分裂。"
-      ],
-      "notes": [
-       "私有嵌套类型，不属于公开 API",
-       "条目携带直方图引用，展开后直方图归还池中复用"
-      ],
-      "see": ["jsl.ml.HistogramGradientBoosting", "jsl.ml.BoostingAlgorithm"]
-     },
-     "members": []
-    },
-    {
-     "qualified": "jsl.ml.HistogramGradientBoosting.NodeHistogram",
-     "doc": {
-      "summary": "单节点的梯度、hessian 与计数直方图",
-      "body": [
-       "三个平行数组按 feature*maxBins + bin 索引，长度均为 featureCount*maxBins。实例由 ArrayDeque 池化复用，避免每个节点重复申请大数组。",
-       "较大子节点的直方图不重新累加，而是由父节点逐桶减去较小子节点得到，这是相减技巧的落点。"
-      ],
-      "notes": [
-       "私有嵌套类型，不属于公开 API",
-       "池化意味着数组内容在复用前必须按活跃特征区间清零"
-      ],
-      "see": ["jsl.ml.HistogramGradientBoosting"]
-     },
-     "members": []
-    },
-    {
-     "qualified": "jsl.ml.HistogramGradientBoosting.SplitDecision",
-     "doc": {
-      "summary": "一次候选分裂的结果记录",
-      "body": [
-       "包含分裂特征、数值阈值、左侧末桶下标与增益四个分量。分区判据为 bin(sample, feature) <= bin，阈值只用于写入树模型与推理，训练期分区完全在桶编号上进行。"
-      ],
-      "notes": [
-       "私有嵌套类型，不属于公开 API",
-       "增益已扣除 gamma，可直接与 0 比较判断是否值得分裂"
-      ],
-      "see": ["jsl.ml.HistogramGradientBoosting"]
-     },
-     "members": []
-    },
-    {
-     "qualified": "jsl.ml.RandomForest.Builder",
-     "doc": {
-      "summary": "RandomForest 的流式构造器",
-      "body": [
-       "默认值为 trees 100、maxDepth 8、minSamplesLeaf 1、maxFeatures 0（按平方根解析）、bins 64、threads 为可用处理器数、seed 42、task CLASSIFICATION、oob 关闭。build() 校验后返回未拟合的森林。",
-       "maxFeatures 的 0 值不在构造期解析，而是在 fit 时按 max(1, sqrt(featureCount)) 计算，因此特征数由训练数据决定。"
-      ],
-      "notes": [
-       "threads 决定 ForkJoinPool 的并行度，须大于 0",
-       "打开 oob 会增加每棵树一次全量推理的开销，并受 800 万次树-行预测上限约束"
-      ],
-      "example": "RandomForest forest = RandomForest.builder()\n        .trees(200)\n        .maxDepth(10)\n        .minSamplesLeaf(2)\n        .maxFeatures(3)\n        .bins(64)\n        .threads(8)\n        .seed(42L)\n        .task(TreeTask.REGRESSION)\n        .oob(true)\n        .build();",
-      "see": ["jsl.ml.RandomForest", "jsl.ml.TreeTask"]
-     },
-     "members": [
-      {
-       "key": "trees(int)",
-       "doc": {
-        "summary": "设置树的数量，默认 100",
-        "params": {
-         "treeCount": "树数，须大于 0"
-        },
-        "returns": "this",
-        "notes": ["树数与行数的乘积决定 OOB 评估的规模上限"]
-       }
-      },
-      {
-       "key": "maxDepth(int)",
-       "doc": {
-        "summary": "设置每棵树的最大深度，默认 8",
-        "params": {
-         "maxDepth": "深度上限，须不小于 0；0 表示单叶"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "key": "minSamplesLeaf(int)",
-       "doc": {
-        "summary": "设置叶节点最小样本数，默认 1",
-        "params": {
-         "minSamplesLeaf": "分裂后左右两侧各自的最小样本数，须大于 0"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "key": "maxFeatures(int)",
-       "doc": {
-        "summary": "设置每次分裂的候选特征数，默认 0",
-        "params": {
-         "maxFeatures": "候选特征数；0 表示在 fit 时解析为 max(1, sqrt(featureCount))"
-        },
-        "returns": "this",
-        "notes": ["大于特征数时由 DecisionTree 的候选抽取按特征数截断"]
-       }
-      },
-      {
-       "key": "bins(int)",
-       "doc": {
-        "summary": "设置单特征最大桶数，默认 64",
-        "params": {
-         "maxBins": "桶数上限，取值 [2, 255]"
-        },
-        "returns": "this",
-        "notes": ["全森林共用一份分箱，该值只在 fit 开始时使用一次"]
-       }
-      },
-      {
-       "key": "threads(int)",
-       "doc": {
-        "summary": "设置拟合并行度，默认可用处理器数",
-        "params": {
-         "threads": "工作线程数，须大于 0"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "key": "seed(long)",
-       "doc": {
-        "summary": "设置随机种子，默认 42",
-        "params": {
-         "seed": "基础种子；第 i 棵树的种子为 seed + i*31"
-        },
-        "returns": "this",
-        "notes": ["自助采样序列由 seed + i*1000003 驱动，与树的特征种子相互独立"]
-       }
-      },
-      {
-       "key": "task(TreeTask)",
-       "doc": {
-        "summary": "设置任务类型，默认 CLASSIFICATION",
-        "params": {
-         "task": "CLASSIFICATION 或 REGRESSION，非 null"
-        },
-        "returns": "this",
-        "throws": {
-         "NullPointerException": "task 为 null"
-        }
-       }
-      },
-      {
-       "key": "oob(boolean)",
-       "doc": {
-        "summary": "设置是否计算袋外分数，默认关闭",
-        "params": {
-         "oob": "true 时每棵树额外对全量矩阵推理并累计袋外预测"
-        },
-        "returns": "this",
         "notes": [
-         "打开后 treeCount*rows 超过 800 万，fit 抛 IllegalArgumentException",
-         "关闭时 oobScore() 抛 IllegalStateException"
+         "编码整体持有一个 byte[]，写入期间峰值内存约为文件大小加编码缓冲",
+         "producer_version 恒写 2.4.0，不从原文件保留"
         ]
        }
       },
       {
-       "key": "build()",
+       "kind": "method",
+       "key": "irVersion()",
+       "signature": "long irVersion()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
        "doc": {
-        "summary": "校验配置并创建森林",
-        "returns": "配置好的 RandomForest，尚未拟合",
-        "throws": {
-         "IllegalArgumentException": "树数不大于 0、maxDepth 小于 0、minSamplesLeaf 不大于 0、maxFeatures 小于 0、threads 不大于 0，或 bins 越界"
+        "summary": "返回 IR 版本号。",
+        "returns": "ir_version 字段值；文件未写该字段时为 8"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "opsetVersion()",
+       "signature": "long opsetVersion()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回算子集版本。",
+        "returns": "opset_import.version；缺省 17，文件含多项导入时取最后解析到的值"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "producerName()",
+       "signature": "String producerName()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回生成工具名。",
+        "returns": "producer_name；缺省为 \"JSL\"，JSL 自身导出的模型即为该值"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "graphName()",
+       "signature": "String graphName()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回计算图名。",
+        "returns": "graph.name；缺省为 \"jsl_graph\"，导出路径按来源写成 jsl_ml_graph、jsl_torch_graph 或 jsl_dag_graph"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "inputs()",
+       "signature": "List<ValueInfo> inputs()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回图输入声明。",
+        "returns": "不可变列表，顺序与文件中的 input 字段一致；首元素的名字被单输入 run 采用",
+        "notes": [
+         "只含声明，不含形状推断结果；形状可能为 null 或带 -1 维"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "outputs()",
+       "signature": "List<ValueInfo> outputs()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回图输出声明。",
+        "returns": "不可变列表，run 按其中的名字与顺序收集结果",
+        "notes": [
+         "声明名必须在执行环境中存在，否则 run 抛 IllegalStateException"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "initializers()",
+       "signature": "Map<String, TensorData> initializers()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回常量张量表。",
+        "returns": "名字到 TensorData 的不可变映射，迭代顺序即构造或解码顺序",
+        "notes": [
+         "run 每次调用都会为表中每一项新建张量，不做缓存",
+         "权重按名字与节点 inputs 中的字符串匹配，键须与训练侧导出的一致"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "nodes()",
+       "signature": "List<Node> nodes()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "返回计算图节点。",
+        "returns": "不可变列表，按文件中的出现顺序排列，该顺序就是执行顺序"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "predictMatrix(Matrix)",
+       "signature": "Matrix predictMatrix(Matrix features)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
         }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "以二维 Matrix 为输入做一次性推理。",
+        "body": [
+         "创建线程数为 1 的 NativeContext，把 double 特征逐元素转成 float 并按 rows×cols 构造 rank 2 张量，走单输入 run 取回输出，再把 float 结果转回 double 构造 Matrix。输出列数取输出张量形状的第 1 维，输出秩小于 2 时按 1 列处理。上下文在方法内用 try-with-resources 关闭，所有中间张量随之释放。"
+        ],
+        "params": {
+         "features": "二维特征矩阵，行数为样本数，列数须与模型期望的每样本元素数一致"
+        },
+        "returns": "rows × outCols 的预测结果矩阵，元素为 double",
+        "throws": {
+         "IllegalStateException": "模型未声明输入（\"ONNX graph has no declared inputs\"），或输出名未被任何节点产生",
+         "JSLUnsupportedOperationException": "图中出现白名单外的算子"
+        },
+        "notes": [
+         "只使用第一个输入与第一个输出，多输入模型须改用 run(NativeContext, Map)",
+         "每次调用独立建上下文，循环推理时建议直接用 run 复用上下文",
+         "输入输出都是 float32，double 往返存在舍入误差",
+         "不检查特征列数与模型声明是否一致，形状不匹配由算子内部报错"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "run(NativeContext, Tensor)",
+       "signature": "Tensor run(NativeContext context, Tensor input)",
+       "params": [
+        {
+         "type": "NativeContext",
+         "name": "context"
+        },
+        {
+         "type": "Tensor",
+         "name": "input"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "单输入单输出的推理入口。",
+        "body": [
+         "要求模型至少声明一个输入，用 inputs.get(0).name() 作为键构造单元素 feed，委托 Map 版本执行整图，再按 outputs.get(0).name() 从结果中取回张量。"
+        ],
+        "params": {
+         "context": "活跃的 NativeContext，常量与中间张量都在其中分配，由调用方负责关闭",
+         "input": "与第一输入对应的张量，元素为 float32，形状由模型第一输入的实际约束决定"
+        },
+        "returns": "第一个输出名对应的张量",
+        "throws": {
+         "IllegalStateException": "inputs 为空，或第一个输出名未被执行环境产生",
+         "JSLUnsupportedOperationException": "图中出现白名单外的算子"
+        },
+        "notes": [
+         "context 为 null 时由 Map 版本抛 NullPointerException",
+         "忽略 outputs 中除第一个以外的其余输出",
+         "不做形状与元素类型校验，张量须属于同一 context"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "run(NativeContext, Map<String, Tensor>)",
+       "signature": "Map<String, Tensor> run(NativeContext context, Map<String, Tensor> feed)",
+       "params": [
+        {
+         "type": "NativeContext",
+         "name": "context"
+        },
+        {
+         "type": "Map<String, Tensor>",
+         "name": "feed"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "按名字喂入张量，执行整图并返回全部输出。",
+        "body": [
+         "先为 initializers 的每一项创建张量（dims 长度为 0 时按形状 {1} 处理），再以 feed 覆盖同名条目，然后按 nodes 顺序逐个执行节点，中间结果以输出名写入同一张环境表；最后按 outputs 的声明顺序取值，装入 LinkedHashMap 返回。"
+        ],
+        "params": {
+         "context": "活跃上下文，常量、中间张量与输出张量都在其中分配",
+         "feed": "输入名到张量的映射，键须与 inputs 中声明的 name 完全一致；与常量同名时覆盖常量"
+        },
+        "returns": "保持 outputs 声明顺序的映射，值为对应名字的张量，同样属于 context",
+        "throws": {
+         "NullPointerException": "context 或 feed 为 null",
+         "IllegalStateException": "某个输出名在执行环境中不存在（\"ONNX execution did not produce output\"）",
+         "JSLUnsupportedOperationException": "节点算子不在支持集合内"
+        },
+        "notes": [
+         "每次调用都重新为 initializers 建张量，重复推理时这部分开销固定存在",
+         "环境表在方法返回后丢弃，输出张量之外不再保留引用",
+         "不校验 feed 覆盖了全部输入，缺失输入会在使用该名字的节点上以空张量失败"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "toBytes()",
+       "signature": "byte[] toBytes()",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+       "summary": "把模型编码为标准 ONNX 字节。",
+        "body": [
+         "按 onnx.proto3 的字段号手写线格式：ir_version(1)、opset_import(8，domain 写空串)、producer_name(2)、producer_version(3，固定 \"2.4.0\")、graph(7)；图内依次写 node(1)、name(2)、initializer(5)、input(11)、output(12)。张量恒写 data_type = FLOAT(1) 与 little-endian raw_data(9)；ValueInfo 写 elem_type(1) 与 shape(2)，维度值大于 0 写 dim_value，否则写 dim_param \"N\"。"
+        ],
+        "returns": "完整 ModelProto 编码，可被 onnxruntime 等标准实现读取",
+        "notes": [
+         "不写 doc_string、metadata_props、value_info 与 training_info，往返一次这些信息即丢失",
+         "属性只编码 FLOAT、INT、STRING、FLOATS、INTS 五种，其余类型（TENSOR、GRAPH 等）被省略",
+         "每次调用重新编码，无缓存；大模型的返回值占满一段连续堆内存"
+        ]
        }
       }
      ]
+    },
+    {
+     "qualified": "jsl.io.OnnxModel.Attribute",
+     "simple_qualified": "OnnxModel.Attribute",
+     "kind": "record",
+     "modifiers": [
+      "public"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/io/OnnxModel.java",
+     "line": 40,
+     "javadoc": "",
+     "nested": [],
+     "doc": {
+      "summary": "ONNX 节点属性的不可变记录，涵盖标量与数组两类载荷。",
+      "body": [
+       "对应 AttributeProto 的常用子集：name、type 与五个按类型取用的载荷字段 intVal、floatVal、stringVal、intsVal、floatsVal；当前类型未使用的字段保持 0、空串或空数组。",
+       "type 取 FLOAT=1、INT=2、STRING=3、FLOATS=6、INTS=7，与官方 AttributeType 编号一致，写回时以字段 20 记录，读取方据此决定取哪个载荷。",
+       "静态工厂 ofInt、ofFloat、ofInts、ofFloats 用于构造标量与数组属性，数组入参在构造时克隆。"
+      ],
+      "notes": [
+       "数组分量在构造时克隆，后续修改入参不会影响已建属性；但访问器返回内部数组引用，不要就地改写",
+       "STRING 类型没有工厂方法，需要直接构造：new Attribute(name, Attribute.STRING, 0L, 0.0f, text, new long[0], new float[0])",
+       "只覆盖这五种类型；TENSOR、GRAPH、SPARSE_TENSOR 等属性解码时 type 保留但载荷为空，再编码时被丢弃",
+       "记录本身不做 name 判空与载荷一致性校验"
+      ]
+     },
+     "members": [
+      {
+       "kind": "field",
+       "key": "1",
+       "signature": "int FLOAT = 1",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "类型码 1，单精度标量属性。",
+        "body": [
+         "载荷在 floatVal；Node.attrFloat 只接受 type 等于该值的属性。"
+        ]
+       }
+      },
+      {
+       "kind": "field",
+       "key": "2",
+       "signature": "int INT = 2",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "类型码 2，int64 标量属性。",
+        "body": [
+         "载荷在 intVal；Node.attrInt 只接受 type 等于该值的属性。"
+        ]
+       }
+      },
+      {
+       "kind": "field",
+       "key": "3",
+       "signature": "int STRING = 3",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "类型码 3，UTF-8 字符串属性。",
+        "body": [
+         "载荷在 stringVal；Node 没有对应的读取方法，需要自行访问 stringVal。"
+        ]
+       }
+      },
+      {
+       "kind": "field",
+       "key": "6",
+       "signature": "int FLOATS = 6",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "类型码 6，float 数组属性。",
+        "body": [
+         "载荷在 floatsVal；编码时按重复的 float 字段写出，解码同时接受打包与非打包两种线格式。"
+        ]
+       }
+      },
+      {
+       "kind": "field",
+       "key": "7",
+       "signature": "int INTS = 7",
+       "params": [],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "类型码 7，int64 数组属性。",
+        "body": [
+         "载荷在 intsVal；Node.attrInts 读取该类型并逐项窄化为 int。"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "ofInt(String, long)",
+       "signature": "Attribute ofInt(String name, long value)",
+       "params": [
+        {
+         "type": "String",
+         "name": "name"
+        },
+        {
+         "type": "long",
+         "name": "value"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "构造 INT 型属性。",
+        "params": {
+         "name": "属性名，写回时作为 AttributeProto.name，节点内须唯一",
+         "value": "属性值，存入 intVal"
+        },
+        "returns": "type 为 INT 的新属性，其余载荷为空值"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "ofFloat(String, float)",
+       "signature": "Attribute ofFloat(String name, float value)",
+       "params": [
+        {
+         "type": "String",
+         "name": "name"
+        },
+        {
+         "type": "float",
+         "name": "value"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "构造 FLOAT 型属性。",
+        "params": {
+         "name": "属性名，例如 LeakyRelu 的 alpha、BatchNormalization 的 epsilon",
+         "value": "属性值，存入 floatVal"
+        },
+        "returns": "type 为 FLOAT 的新属性，其余载荷为空值"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "ofInts(String, long...)",
+       "signature": "Attribute ofInts(String name, long... values)",
+       "params": [
+        {
+         "type": "String",
+         "name": "name"
+        },
+        {
+         "type": "long...",
+         "name": "values"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "构造 INTS 型属性。",
+        "params": {
+         "name": "属性名，例如 Conv 的 strides、pads、kernel_shape",
+         "values": "属性值数组，构造时克隆；传空表示空列表"
+        },
+        "returns": "type 为 INTS 的新属性，intsVal 为入参副本"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "ofFloats(String, float...)",
+       "signature": "Attribute ofFloats(String name, float... values)",
+       "params": [
+        {
+         "type": "String",
+         "name": "name"
+        },
+        {
+         "type": "float...",
+         "name": "values"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "构造 FLOATS 型属性。",
+        "params": {
+         "name": "属性名，例如 Clip 的边界值",
+         "values": "属性值数组，构造时克隆；传空表示空列表"
+        },
+        "returns": "type 为 FLOATS 的新属性，floatsVal 为入参副本"
+       }
+      }
+     ]
+    },
+    {
+     "qualified": "jsl.io.OnnxModel.Node",
+     "simple_qualified": "OnnxModel.Node",
+     "kind": "record",
+     "modifiers": [
+      "public"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/io/OnnxModel.java",
+     "line": 65,
+     "javadoc": "",
+     "nested": [],
+     "doc": {
+      "summary": "ONNX 计算图节点：算子类型、输入输出值名与属性表。",
+      "body": [
+       "inputs 与 outputs 是值名字符串而非张量，执行时按名字在同一张环境表中查找与写入；空串表示该位置的可选参数缺省，例如 Conv 的 bias、Gemm 的 C。执行器只写 outputs 的第一个名字。",
+       "attributes 以属性名为键，值为 Attribute；attrInt、attrFloat、attrInts 在属性缺失或类型不符时返回调用方给的默认值，不抛异常，因此算子缺省参数就靠这里的默认值表达。",
+       "节点不携带形状信息，元素类型与维度都由执行期张量决定，这与 ONNX 把 shape 推断交给运行时的设计一致。"
+      ],
+      "notes": [
+       "按列表顺序执行，不做拓扑排序；节点顺序须与数据依赖一致",
+       "属性类型不匹配时静默回落到默认值，语义可能与训练侧产生差异且不报警",
+       "多输出节点（如 LayerNormalization 的 mean、var）只保留第一个输出名对应的结果"
+      ]
+     },
+     "members": [
+      {
+       "kind": "method",
+       "key": "attrInt(String, long)",
+       "signature": "long attrInt(String key, long defaultVal)",
+       "params": [
+        {
+         "type": "String",
+         "name": "key"
+        },
+        {
+         "type": "long",
+         "name": "defaultVal"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "读取整数属性，缺失时取默认值。",
+        "params": {
+         "key": "属性名，例如 axis、group、transA",
+         "defaultVal": "属性缺失或类型不是 INT 时返回的值"
+        },
+        "returns": "属性的 intVal，或 defaultVal",
+        "notes": [
+         "只认 Attribute.INT；属性存在但类型不符同样返回 defaultVal，不报错"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "attrFloat(String, float)",
+       "signature": "float attrFloat(String key, float defaultVal)",
+       "params": [
+        {
+         "type": "String",
+         "name": "key"
+        },
+        {
+         "type": "float",
+         "name": "defaultVal"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "读取浮点属性，缺失时取默认值。",
+        "params": {
+         "key": "属性名，例如 alpha、epsilon、momentum",
+         "defaultVal": "属性缺失或类型不是 FLOAT 时返回的值"
+        },
+        "returns": "属性的 floatVal，或 defaultVal",
+        "notes": [
+         "与 ONNX 规范一致，缺省值由调用方给出，记录本身不存规范默认值"
+        ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "attrInts(String, int[])",
+       "signature": "int[] attrInts(String key, int[] defaultVal)",
+       "params": [
+        {
+         "type": "String",
+         "name": "key"
+        },
+        {
+         "type": "int[]",
+         "name": "defaultVal"
+        }
+       ],
+       "throws": [],
+       "javadoc": "",
+       "doc": {
+        "summary": "读取整数数组属性，缺失时取默认值。",
+        "params": {
+         "key": "属性名，例如 strides、pads、dilations、perm",
+         "defaultVal": "属性缺失或类型不是 INTS 时原样返回的数组"
+        },
+        "returns": "由 intsVal 逐项窄化得到的新 int 数组，或 defaultVal 本身",
+        "notes": [
+         "走默认值分支时直接返回传入的引用，不克隆，调用方不要就地修改",
+         "窄化不做范围检查，超出 int 范围的值被截断",
+         "属性为 INTS 但数组为空时返回空数组，不会回落到默认值"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "qualified": "jsl.io.OnnxModel.TensorData",
+     "simple_qualified": "OnnxModel.TensorData",
+     "kind": "record",
+     "modifiers": [
+      "public"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/io/OnnxModel.java",
+     "line": 32,
+     "javadoc": "",
+     "nested": [],
+     "doc": {
+      "summary": "ONNX 常量张量：名字、维度与 float32 载荷。",
+      "body": [
+       "对应 GraphProto.initializer（TensorProto）中执行器实际用到的部分：name 是图中引用该常量的键，dims 是形状，floatData 是按行优先排列的元素，长度应与 dims 的乘积一致。",
+       "紧凑构造器要求 name 非空（否则抛 NullPointerException），并克隆 dims 与 floatData 两个数组；不校验 floatData 长度与形状是否匹配。",
+       "执行时 dims 长度为 0 的常量按形状 {1} 建张量，因此标量初始化器也能参与逐元素运算。"
+      ],
+      "notes": [
+       "解码时 raw_data 按 data_type 转换：INT64 与 DOUBLE 逐元素转 float，其余类型按 FLOAT 解释；raw_data 缺失时回退 float_data，再回退 int64_data",
+       "编码恒写 DataType.FLOAT 与 little-endian raw_data，原始元素类型在往返中丢失",
+       "名字必须与节点 inputs 中的字符串逐字一致，否则执行时取不到张量",
+       "只承载 float32，float64 与 int 权重在加载时即已降精度"
+      ]
+     },
+     "members": []
+    },
+    {
+     "qualified": "jsl.io.OnnxModel.ValueInfo",
+     "simple_qualified": "OnnxModel.ValueInfo",
+     "kind": "record",
+     "modifiers": [
+      "public"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/io/OnnxModel.java",
+     "line": 86,
+     "javadoc": "",
+     "nested": [],
+     "doc": {
+      "summary": "ONNX 值声明：名字、元素类型与形状。",
+      "body": [
+       "对应 ValueInfoProto，用于 graph.input 与 graph.output。elemType 取 TensorProto.DataType 编码，1 表示 float32，执行器不据此转换数据类型。",
+       "shape 为维度数组，元素来自文件中的 dim_value；为 null 表示形状未知（写回时整个 shape 段省略），元素小于等于 0 的维按下标写成 dim_param \"N\"。",
+       "解码遇到 dim_param 的维度记为 -1，符号名本身不保存。"
+      ],
+      "notes": [
+       "没有紧凑构造器，字段不做校验，shape 可为 null、可为空数组",
+       "执行器完全不使用 shape 与 elemType，仅作元数据；实际形状由传入张量决定",
+       "JSL 导出时 elemType 恒为 1，批维写 -1，因此同一模型可接受任意批大小"
+      ]
+     },
+     "members": []
     }
    ]
   }

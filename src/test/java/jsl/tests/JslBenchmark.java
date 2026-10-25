@@ -809,11 +809,12 @@ public final class JslBenchmark {
         return medianMs(task, warmup, repetitions) / 1000.0;
     }
 
+    @SuppressWarnings("deprecation")
     private static long allocatedBytes(Runnable task) {
         try {
             com.sun.management.ThreadMXBean bean =
                     (com.sun.management.ThreadMXBean) ManagementFactory.getThreadMXBean();
-            long threadId = Thread.currentThread().threadId();
+            long threadId = Thread.currentThread().getId();
             long before = bean.getThreadAllocatedBytes(threadId);
             task.run();
             long after = bean.getThreadAllocatedBytes(threadId);
