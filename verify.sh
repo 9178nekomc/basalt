@@ -21,7 +21,7 @@ TEST_CP="$CLASSES$CP_SEP$TEST_CLASSES"
 if [ "${BASALT_SKIP_NATIVE:-0}" != "1" ]; then
   printf '==> building and testing native kernels
 '
-  ./native-build.sh
+  bash ./native-build.sh
 fi
 
 if command -v javac >/dev/null 2>&1; then

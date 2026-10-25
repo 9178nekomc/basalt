@@ -70,7 +70,11 @@ jobs:
 
       - name: Run full Basalt verification suite on host platform
         shell: bash
-        run: ./verify.sh
+        run: |
+          # Invoke through bash rather than relying on the +x bit: a checkout made
+          # on Windows (core.filemode=false) records every script as 100644, and
+          # `./verify.sh` then dies with "Permission denied" (exit 126).
+          bash ./verify.sh
 
       - name: Upload native binary artifact
         uses: actions/upload-artifact@v4
@@ -108,7 +112,7 @@ jobs:
 
       - name: Verify full test suite & package Maven artifacts
         run: |
-          ./verify.sh
+          bash ./verify.sh
           mvn -B package -DskipTests
 
       - name: Upload release JARs
