@@ -169,6 +169,11 @@ def slug(text: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.]", "_", text)
 
 
+def module_anchor(module: str) -> str:
+    """Stable in-page anchor for a module heading."""
+    return "module-" + re.sub(r"[^A-Za-z0-9_]", "_", module)
+
+
 def page_name(module: str) -> str:
     """Module -> output file.  Dots become underscores so the name is portable."""
     return "api/" + re.sub(r"[^A-Za-z0-9]", "_", module) + ".html"
@@ -232,18 +237,24 @@ def visible_members(t: dict) -> list[dict]:
 # --------------------------------------------------------------------------- #
 CSS = r"""/* JSL documentation — Sphinx / docs.python.org inspired theme */
 :root{
-  --bg:#ffffff; --fg:#1a1a1a; --muted:#666666; --border:#dcdcdc; --border-soft:#ececec;
+  --bg:#ffffff; --fg:#1a1a1a; --muted:#5c6673; --border:#dfe3e8; --border-soft:#eef1f4;
+  --surface:#f8fafc; --surface-2:#edf1f6;
   --sidebar-bg:#f8f8f8; --topbar-bg:#2b2b2b; --topbar-fg:#e6e6e6; --topbar-muted:#b4b4b4;
   --link:#0055bb; --link-hover:#003f8a; --link-visited:#6b2e8a;
-  --sig-bg:#f0f0f0; --sig-border:#d0d0d0; --code-bg:#f6f6f6; --code-fg:#1a1a1a;
+  --sig-bg:#eef2f6; --sig-border:#d6dee7; --code-bg:#edf1f6; --code-fg:#1a1a1a;
+  --shadow-soft:0 1px 2px rgba(16,24,40,.04), 0 6px 20px -14px rgba(16,24,40,.20);
+  --shadow-pop:0 16px 40px -16px rgba(16,24,40,.30), 0 2px 8px rgba(16,24,40,.06);
   --admon-bg:#f3f7fb; --admon-border:#4a7fb5; --table-head:#f2f2f2;
   --tok-kw:#8a2be2; --tok-str:#0a7a3d; --tok-com:#777777; --tok-num:#b45309; --tok-ann:#0f766e;
 }
 html[data-theme="dark"]{
-  --bg:#1c1c1c; --fg:#d6d6d6; --muted:#9a9a9a; --border:#3a3a3a; --border-soft:#2c2c2c;
+  --bg:#1a1c1f; --fg:#d8dde3; --muted:#939dab; --border:#2e343b; --border-soft:#252b32;
+  --surface:#20242a; --surface-2:#272d35;
   --sidebar-bg:#262626; --topbar-bg:#1a1a1a; --topbar-fg:#e0e0e0; --topbar-muted:#9a9a9a;
   --link:#7ab7ff; --link-hover:#a6cdff; --link-visited:#c39bf0;
-  --sig-bg:#2b2b2b; --sig-border:#3f3f3f; --code-bg:#242424; --code-fg:#e0e0e0;
+  --sig-bg:#22272e; --sig-border:#333b44; --code-bg:#272d35; --code-fg:#e0e0e0;
+  --shadow-soft:0 1px 2px rgba(0,0,0,.30), 0 6px 20px -14px rgba(0,0,0,.60);
+  --shadow-pop:0 16px 40px -16px rgba(0,0,0,.65), 0 2px 8px rgba(0,0,0,.40);
   --admon-bg:#212a33; --admon-border:#4f86bd; --table-head:#2a2a2a;
   --tok-kw:#c792ea; --tok-str:#8fd3a3; --tok-com:#8a8a8a; --tok-num:#e2b93d; --tok-ann:#66c2b5;
 }
@@ -404,6 +415,90 @@ body.nav-open .nav-mask{display:block}
 .search-results .sr-meta{display:block;color:var(--muted);font-size:.78rem;margin-top:.15rem}
 .search-empty{padding:1rem;color:var(--muted);font-size:.9rem}
 
+
+/* ---------- motion, depth, tree ---------- */
+:root{ --dur:180ms; --dur-slow:260ms; --ease:cubic-bezier(.2,.7,.3,1); }
+
+/* Only while switching: painting a 200 ms cross-fade beats an instant flip. */
+html.theme-anim, html.theme-anim *{
+  transition:background-color var(--dur) var(--ease), color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease) !important;
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;scroll-behavior:auto !important}
+}
+
+/* content rises in once instead of appearing in a single frame */
+main{animation:pageIn var(--dur-slow) var(--ease) both}
+@keyframes pageIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* top progress bar: real feedback for same-document + cross-page navigation */
+#pbar{position:fixed;top:0;left:0;height:2px;width:0;z-index:80;background:var(--accent);
+  opacity:0;transition:width 260ms var(--ease),opacity 200ms linear}
+#pbar.on{opacity:1}
+
+/* three-dot loader */
+.dots{display:inline-flex;gap:4px;align-items:center;vertical-align:middle}
+.dots i{display:block;width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.3;
+  animation:dot 1.05s var(--ease) infinite}
+.dots i:nth-child(2){animation-delay:.14s}
+.dots i:nth-child(3){animation-delay:.28s}
+@keyframes dot{0%,100%{opacity:.25;transform:translateY(0)}45%{opacity:.95;transform:translateY(-2px)}}
+
+/* sidebar tree: rotating caret, guide rail, active marker */
+.nav-modules{margin:0 0 .7rem;padding:0;list-style:none}
+.nav-modules>li{margin:.08rem 0}
+.nav-modules summary a{font-weight:600;color:var(--fg);display:inline}
+.nav-modules summary:hover a{color:var(--link)}
+.nav-modules ul{margin:.1rem 0 .3rem .55rem;padding-left:.45rem;
+  border-left:1px solid var(--border);list-style:none}
+.nav-modules ul a{display:block;font-size:.78rem;color:var(--muted);
+  padding:.1rem .35rem;border-radius:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-modules ul a:hover{color:var(--link)}
+.nav-modules details>summary{position:relative;padding:.1rem 0 .1rem 1.2rem;cursor:pointer;
+  list-style:none}
+.nav-modules details>summary::-webkit-details-marker{display:none}
+.nav-modules details>summary::marker{content:""}
+.nav-modules details>summary::before{content:"";position:absolute;left:.3rem;top:50%;
+  margin-top:-3px;width:0;height:0;border-left:5px solid currentColor;
+  border-top:3.5px solid transparent;border-bottom:3.5px solid transparent;
+  opacity:.45;transition:transform var(--dur) var(--ease)}
+.nav-modules details[open]>summary::before{transform:rotate(90deg)}
+.nav-modules details[open]>ul{animation:treeIn var(--dur) var(--ease) both}
+@keyframes treeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.nav-modules ul li a{position:relative;transition:background-color var(--dur) var(--ease),
+  color var(--dur) var(--ease)}
+.nav-modules ul li a:hover{background:var(--surface-2);border-radius:4px;text-decoration:none}
+.nav-modules li.active>a{color:var(--link);font-weight:650}
+.nav-modules li.active>a::before{content:"";position:absolute;left:0;top:.32em;bottom:.32em;
+  width:2px;border-radius:1px;background:var(--link)}
+.sidebar-head{letter-spacing:.02em}
+
+/* interaction polish */
+.sidebar a,.topbar a,.tool-btn,.genlist a{transition:color var(--dur) var(--ease),
+  background-color var(--dur) var(--ease),border-color var(--dur) var(--ease)}
+ul.chapters a{transition:color var(--dur) var(--ease),transform var(--dur) var(--ease)}
+ul.chapters li:hover a{transform:translateX(2px)}
+
+/* depth by background, not by borders; shadows only for floating layers */
+dl.py.class{background:var(--surface);border:1px solid var(--border-soft);border-radius:10px;
+  padding:.25rem 1rem .8rem;margin:0 0 1.35rem}
+dl.py.class>dt{background:transparent;border-left:0;padding-left:0;padding-bottom:.5rem;
+  border-bottom:1px solid var(--border-soft);border-radius:0}
+dl.py.class>dd{margin-top:.2rem}
+dl.py.method>dt,dl.py.constructor>dt{border-bottom:1px solid var(--border-soft)}
+table{background:var(--surface);border-radius:8px;overflow:hidden}
+table thead th{background:var(--surface-2)}
+.abstract{background:var(--surface);box-shadow:none}
+.search-dialog{box-shadow:var(--shadow-pop);opacity:0;transform:translateX(-50%) translateY(-6px);
+  transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease)}
+.search-dialog.open{opacity:1;transform:translateX(-50%) translateY(0)}
+.search-mask{opacity:0;transition:opacity var(--dur) linear}
+.search-mask.open{opacity:1}
+.genindex-section li{transition:background-color var(--dur) var(--ease)}
+ul.genindex-section li:hover{background:var(--surface-2);border-radius:4px}
+
 /* ---------- tablet ---------- */
 @media (max-width:1024px){
   .sidebar{flex:0 0 260px;width:260px}
@@ -432,7 +527,7 @@ body.nav-open .nav-mask{display:block}
   .shell{display:block}
   .sidebar{position:fixed;top:0;left:0;bottom:0;width:min(84vw,320px);max-height:none;
     transform:translateX(-102%);transition:transform .22s ease;z-index:50;
-    border-right:1px solid var(--border);padding-top:1rem;box-shadow:2px 0 18px rgba(0,0,0,.25)}
+    padding-top:1rem;box-shadow:0 0 0 1px var(--border), 0 18px 44px -18px rgba(0,0,0,.45)}
   body.nav-open .sidebar{transform:none}
   main{padding:1rem .95rem 3rem;max-width:none}
   article{max-width:none}
@@ -475,7 +570,13 @@ JS = r"""(function(){
   var root=document.documentElement;
   var media=window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)'):null;
   function resolve(pref){return pref==='auto'?(media&&media.matches?'dark':'light'):pref;}
-  function apply(pref){
+  var animTimer=null;
+  function apply(pref,animate){
+    if(animate){
+      root.classList.add('theme-anim');
+      clearTimeout(animTimer);
+      animTimer=setTimeout(function(){root.classList.remove('theme-anim');},320);
+    }
     root.setAttribute('data-theme',resolve(pref));
     root.setAttribute('data-theme-pref',pref);
     var sel=document.getElementById('theme-select');
@@ -488,10 +589,34 @@ JS = r"""(function(){
   if(qm){pref=qm[1];}
   apply(pref);
   var sel=document.getElementById('theme-select');
-  if(sel){sel.addEventListener('change',function(){apply(sel.value);});}
+  if(sel){sel.addEventListener('change',function(){apply(sel.value,true);});}
   if(media&&media.addEventListener){media.addEventListener('change',function(){
-    if((root.getAttribute('data-theme-pref')||'auto')==='auto'){apply('auto');}
+    if((root.getAttribute('data-theme-pref')||'auto')==='auto'){apply('auto',true);}
   });}
+
+  // ---- navigation progress bar ----
+  var pbar=document.getElementById('pbar');
+  function barStart(){
+    if(!pbar){return;}
+    pbar.classList.add('on');
+    pbar.style.width='16%';
+    setTimeout(function(){if(pbar.style.width==='16%'){pbar.style.width='68%';}},160);
+  }
+  function barDone(){
+    if(!pbar){return;}
+    pbar.style.width='100%';
+    setTimeout(function(){pbar.classList.remove('on');pbar.style.width='0';},240);
+  }
+  window.addEventListener('pageshow',barDone);
+  document.addEventListener('click',function(e){
+    var a=e.target.closest?e.target.closest('a'):null;
+    if(!a){return;}
+    var href=a.getAttribute('href')||'';
+    if(!href||href.charAt(0)==='#'||a.target==='_blank'
+       ||href.indexOf('http')===0||href.indexOf('mailto:')===0){return;}
+    if(e.metaKey||e.ctrlKey||e.shiftKey||e.button!==0){return;}
+    barStart();
+  });
 
   // ---- mobile drawer ----
   var navToggle=document.getElementById('nav-toggle');
@@ -527,9 +652,11 @@ JS = r"""(function(){
     dlg.classList.add('open');if(mask){mask.classList.add('open');}
     input.value='';input.focus();box.innerHTML='';
   }
+  var dotsHtml='<div class="search-empty"><span class="dots"><i></i><i></i><i></i></span></div>';
   function render(q){
     q=q.trim().toLowerCase();
     if(!q){box.innerHTML='';return;}
+    var t0=window.performance&&performance.now?performance.now():0;
     var out=[];
     for(var i=0;i<data.length&&out.length<50;i++){
       var it=data[i];
@@ -544,7 +671,14 @@ JS = r"""(function(){
       h+='<a href="'+ROOT+o[4]+'"><span class="sr-name">'+o[1]+'</span>'+
          '<span class="sr-meta">'+o[2]+(o[3]?' · '+o[3]:'')+'</span></a>';
     }
-    box.innerHTML=h;
+    var elapsed=(window.performance&&performance.now?performance.now():0)-t0;
+    if(elapsed>50){
+      // filter was slow: paint the spinner first, then the rows on the next frame
+      box.innerHTML=dotsHtml;
+      requestAnimationFrame(function(){box.innerHTML=h;});
+    }else{
+      box.innerHTML=h;
+    }
   }
   if(input){input.addEventListener('input',function(){render(input.value);});}
   document.addEventListener('keydown',function(e){
@@ -572,10 +706,18 @@ def sidebar_html(active: str, page_toc: list[tuple[str, str]] | None = None,
         return f'<li{cls}><a href="{full}">{label}</a></li>'
 
     parts = ['<aside class="sidebar">']
-    if page_toc:
-        parts.append('<div class="sidebar-head">本页目录</div><ul>')
-        for label, href in page_toc:
-            parts.append(f'<li><a href="#{href}">{esc(label)}</a></li>')
+    if NAV_MODULES:
+        parts.append('<div class="sidebar-head">模块</div><ul class="nav-modules">')
+        for name, page_file, types in NAV_MODULES:
+            current = name == active
+            parts.append(
+                f'<li class="{"active" if current else ""}">'
+                f'<details{" open" if current else ""}>'
+                f'<summary><a href="{root}{page_file}#{module_anchor(name)}">{esc(name)}</a></summary><ul>')
+            for simple, anchor in types:
+                href = f"#{anchor}" if current else f"{root}{page_file}#{anchor}"
+                parts.append(f'<li><a href="{href}">{esc(simple)}</a></li>')
+            parts.append("</ul></details></li>")
         parts.append("</ul>")
 
     parts.append('<div class="sidebar-head">下载</div><ul>')
@@ -639,6 +781,9 @@ def topbar_html(crumbs: list[tuple[str, str | None]], root: str) -> str:
 # Inlined into every page by page(); assigned in main() before rendering.
 SEARCH_JSON = "[]"
 
+# (module, page file, [(simple type name, anchor)]) built once in main().
+NAV_MODULES: list[tuple[str, str, list[tuple[str, str]]]] = []
+
 SEARCH_OVERLAY = '''<div id="search-mask" class="search-mask"></div>
 <div id="search-dialog" class="search-dialog" role="dialog" aria-label="搜索">
   <input id="search-input" type="search" placeholder="搜索类型、方法或说明…" autocomplete="off" />
@@ -660,16 +805,29 @@ def page(title: str, crumbs: list[tuple[str, str | None]], body: str, *,
     # stretching the whole page
     body = body.replace("<table", '<div class="table-wrap"><table')
     body = body.replace("</table>", "</table></div>")
+    # Runs before the first paint: without it the document paints light and then
+    # flips to dark as soon as the footer script executes (a visible white flash).
+    theme_boot = (
+        "(function(){var r=document.documentElement;try{"
+        "var p=localStorage.getItem('jsl-docs-theme')||'auto';"
+        "var q=/[?&]theme=(light|dark|auto)/.exec(location.search);if(q){p=q[1];}"
+        "var d=p==='dark'||(p==='auto'&&window.matchMedia&&"
+        "window.matchMedia('(prefers-color-scheme: dark)').matches);"
+        "r.setAttribute('data-theme',d?'dark':'light');"
+        "r.setAttribute('data-theme-pref',p);}catch(e){r.setAttribute('data-theme','light');}})();"
+    )
     return f'''<!DOCTYPE html>
-<html lang="zh-CN" data-theme="light">
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8" />
+<script>{theme_boot}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>{esc(title)}</title>
 <meta name="generator" content="tools/build_api_docs.py" />
 <style>{CSS}</style>
 </head>
 <body>
+<div id="pbar"></div>
 {topbar_html(crumbs, root)}
 <div class="shell">
 {sidebar_html(active, toc, root)}
@@ -853,8 +1011,9 @@ def render_module_page(module: dict, docs: dict, href_for, crumbs, prev_next) ->
     internal = [t for t in types if "public" not in t["modifiers"]]
 
     toc = [(t["simple_qualified"], anchor_type(t["qualified"])) for t in public]
-    body = [f'<h1>模块 <code>{esc(name)}</code>'
-            '<a class="headerlink" href="#" title="永久链接">¶</a></h1>',
+    body = [f'<h1 id="{module_anchor(name)}">模块 <code>{esc(name)}</code>'
+            f'<a class="headerlink" href="#{module_anchor(name)}" '
+            'title="永久链接">¶</a></h1>',
             f'<p class="welcome">{len(public)} 个公开类型'
             + (f" · {len(internal)} 个包内可见类型" if internal else "") + "</p>"]
     for para in intro:
@@ -1159,6 +1318,15 @@ def main() -> int:
         "documented_members": documented,
         "generated": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
+
+    global NAV_MODULES
+    NAV_MODULES = [
+        (m["name"],
+         page_name(m["name"]),
+         [(t["simple_qualified"], anchor_type(t["qualified"]))
+          for t in m["types"] if "public" in t["modifiers"]])
+        for m in modules
+    ]
 
     out = args.out
     api_dir = os.path.join(out, "api")
