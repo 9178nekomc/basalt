@@ -1,0 +1,124 @@
+name: JSL Cross-Platform Native Build & Release
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-native:
+    name: Build Native (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-x86_64
+            rust_target: x86_64-unknown-linux-gnu
+            artifact_name: libjsl_native.so
+          - os: ubuntu-24.04-arm
+            platform: linux-aarch64
+            rust_target: aarch64-unknown-linux-gnu
+            artifact_name: libjsl_native.so
+          - os: windows-latest
+            platform: windows-x86_64
+            rust_target: x86_64-pc-windows-msvc
+            artifact_name: jsl_native.dll
+          - os: macos-13
+            platform: macos-x86_64
+            rust_target: x86_64-apple-darwin
+            artifact_name: libjsl_native.dylib
+          - os: macos-14
+            platform: macos-aarch64
+            rust_target: aarch64-apple-darwin
+            artifact_name: libjsl_native.dylib
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_target }}
+
+      - name: Build and test native Rust kernels
+        working-directory: native
+        run: |
+          cargo test --release --target ${{ matrix.rust_target }}
+          cargo build --release --target ${{ matrix.rust_target }}
+
+      - name: Stage native binary into classpath layout
+        shell: bash
+        run: |
+          mkdir -p "src/main/resources/native/${{ matrix.platform }}"
+          cp "native/target/${{ matrix.rust_target }}/release/${{ matrix.artifact_name }}" \
+             "src/main/resources/native/${{ matrix.platform }}/${{ matrix.artifact_name }}"
+
+      - name: Run full JSL verification suite on host platform
+        shell: bash
+        run: ./verify.sh
+
+      - name: Upload native binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.platform }}
+          path: src/main/resources/native/${{ matrix.platform }}/${{ matrix.artifact_name }}
+
+  package-and-verify:
+    name: Assemble Fat JAR & Verify All Suites
+    needs: build-native
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Download all platform native binaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: native-*
+          path: staged-natives
+
+      - name: Populate multi-platform resources
+        run: |
+          for dir in staged-natives/native-*; do
+            plat="${dir#staged-natives/native-}"
+            mkdir -p "src/main/resources/native/$plat"
+            cp "$dir"/* "src/main/resources/native/$plat/"
+          done
+
+      - name: Verify full test suite & package Maven artifacts
+        run: |
+          ./verify.sh
+          mvn -B package -DskipTests
+
+      - name: Upload release JARs
+        uses: actions/upload-artifact@v4
+        with:
+          name: jsl-release-jars
+          path: target/*.jar
+
+      - name: Publish GitHub Release on Tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/*.jar
