@@ -6,6 +6,7 @@
 //! selected at runtime; every kernel has a scalar fallback for non-x86 hosts and for CPUs without
 //! FMA.
 
+#[cfg(target_arch = "x86_64")]
 use std::sync::OnceLock;
 
 #[cfg(target_arch = "x86_64")]

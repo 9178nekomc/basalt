@@ -263,6 +263,10 @@ pub(crate) fn pool_for(threads: usize) -> Arc<ThreadPool> {
         .clone()
 }
 
+// x86-only: `avx2`/`fma` are not target features on aarch64, and the intrinsic
+// module below does not exist there at all.  Without this gate the whole crate
+// fails to compile on Apple Silicon and on ARM Linux.
+#[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2,fma")]
 unsafe fn squared_distance_avx2(a: &[f64], b: &[f64]) -> f64 {
     use std::arch::x86_64::*;
@@ -297,6 +301,34 @@ unsafe fn squared_distance_avx2(a: &[f64], b: &[f64]) -> f64 {
     sum
 }
 
+/// Plain path, and the only path aarch64 ever takes.
+fn squared_distance_scalar(a: &[f64], b: &[f64]) -> f64 {
+    let mut sum = 0.0;
+    for feature in 0..a.len() {
+        let delta = a[feature] - b[feature];
+        sum = delta.mul_add(delta, sum);
+    }
+    sum
+}
+
+#[cfg(target_arch = "x86_64")]
+#[inline]
+fn squared_distance(a: &[f64], b: &[f64], avx: bool) -> f64 {
+    if avx {
+        // SAFETY: `avx` is true only after is_x86_feature_detected! confirmed both
+        // features, which is the precondition of the target_feature function.
+        unsafe { squared_distance_avx2(a, b) }
+    } else {
+        squared_distance_scalar(a, b)
+    }
+}
+
+#[cfg(not(target_arch = "x86_64"))]
+#[inline]
+fn squared_distance(a: &[f64], b: &[f64], _avx: bool) -> f64 {
+    squared_distance_scalar(a, b)
+}
+
 fn kmeans_assign(
     data: &[f64],
     centers: &[f64],
@@ -307,7 +339,10 @@ fn kmeans_assign(
     features: usize,
     threads: usize,
 ) {
+    #[cfg(target_arch = "x86_64")]
     let avx = is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma");
+    #[cfg(not(target_arch = "x86_64"))]
+    let avx = false;
     let workers = threads.max(1).min(rows.max(1));
     let chunk = (rows + workers - 1) / workers;
     let assign_chunk = |assignment_chunk: &mut [i32], distance_chunk: &mut [f64], start: usize| {
@@ -319,16 +354,7 @@ fn kmeans_assign(
             let mut best_distance = f64::INFINITY;
             for cluster in 0..clusters {
                 let center = &centers[cluster * features..(cluster + 1) * features];
-                let distance = if avx {
-                    unsafe { squared_distance_avx2(point, center) }
-                } else {
-                    let mut sum = 0.0;
-                    for feature in 0..features {
-                        let delta = point[feature] - center[feature];
-                        sum = delta.mul_add(delta, sum);
-                    }
-                    sum
-                };
+                let distance = squared_distance(point, center, avx);
                 if distance < best_distance {
                     best_distance = distance;
                     best = cluster;

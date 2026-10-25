@@ -31,14 +31,16 @@ jobs:
             platform: windows-x86_64
             rust_target: x86_64-pc-windows-msvc
             artifact_name: basalt_native.dll
-          - os: macos-13
-            platform: macos-x86_64
-            rust_target: x86_64-apple-darwin
-            artifact_name: libbasalt_native.dylib
           - os: macos-14
             platform: macos-aarch64
             rust_target: aarch64-apple-darwin
             artifact_name: libbasalt_native.dylib
+          # macos-13 (Intel) is gone on purpose.  The pool is being retired and a
+          # job sat queued for 45+ minutes without ever starting, which blocks the
+          # whole run because package-and-verify waits on every matrix leg.  Intel
+          # Macs can still build the dylib locally with ./native-build.sh; if the
+          # artifact is needed again, cross-compile x86_64-apple-darwin on this
+          # arm64 runner (Apple's SDK is universal) instead of booking an Intel VM.
 
     steps:
       - name: Checkout repository
