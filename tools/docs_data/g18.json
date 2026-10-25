@@ -25,7 +25,7 @@
      "members": [
       {
        "kind": "field",
-       "key": "1",
+       "key": "OP_MATMUL",
        "signature": "int OP_MATMUL = 1",
        "params": [],
        "throws": [],
@@ -39,7 +39,7 @@
       },
       {
        "kind": "field",
-       "key": "2",
+       "key": "OP_ADD",
        "signature": "int OP_ADD = 2",
        "params": [],
        "throws": [],
@@ -50,7 +50,7 @@
       },
       {
        "kind": "field",
-       "key": "3",
+       "key": "OP_RELU",
        "signature": "int OP_RELU = 3",
        "params": [],
        "throws": [],
@@ -61,7 +61,7 @@
       },
       {
        "kind": "field",
-       "key": "4",
+       "key": "OP_SUB",
        "signature": "int OP_SUB = 4",
        "params": [],
        "throws": [],
@@ -72,7 +72,7 @@
       },
       {
        "kind": "field",
-       "key": "5",
+       "key": "OP_MUL",
        "signature": "int OP_MUL = 5",
        "params": [],
        "throws": [],
@@ -83,7 +83,7 @@
       },
       {
        "kind": "field",
-       "key": "6",
+       "key": "OP_SIGMOID",
        "signature": "int OP_SIGMOID = 6",
        "params": [],
        "throws": [],
@@ -94,7 +94,7 @@
       },
       {
        "kind": "field",
-       "key": "7",
+       "key": "OP_TANH",
        "signature": "int OP_TANH = 7",
        "params": [],
        "throws": [],
@@ -105,7 +105,7 @@
       },
       {
        "kind": "field",
-       "key": "8",
+       "key": "OP_MSE",
        "signature": "int OP_MSE = 8",
        "params": [],
        "throws": [],
@@ -116,7 +116,7 @@
       },
       {
        "kind": "field",
-       "key": "9",
+       "key": "OP_SOFTMAX",
        "signature": "int OP_SOFTMAX = 9",
        "params": [],
        "throws": [],
@@ -130,7 +130,7 @@
       },
       {
        "kind": "field",
-       "key": "10",
+       "key": "OP_CROSS_ENTROPY",
        "signature": "int OP_CROSS_ENTROPY = 10",
        "params": [],
        "throws": [],
@@ -141,7 +141,7 @@
       },
       {
        "kind": "field",
-       "key": "11",
+       "key": "OP_GELU",
        "signature": "int OP_GELU = 11",
        "params": [],
        "throws": [],
@@ -152,7 +152,7 @@
       },
       {
        "kind": "field",
-       "key": "12",
+       "key": "OP_SILU",
        "signature": "int OP_SILU = 12",
        "params": [],
        "throws": [],
@@ -163,7 +163,7 @@
       },
       {
        "kind": "field",
-       "key": "13",
+       "key": "OP_LAYER_NORM",
        "signature": "int OP_LAYER_NORM = 13",
        "params": [],
        "throws": [],
@@ -177,7 +177,7 @@
       },
       {
        "kind": "field",
-       "key": "14",
+       "key": "OP_BATCH_NORM",
        "signature": "int OP_BATCH_NORM = 14",
        "params": [],
        "throws": [],
@@ -191,7 +191,7 @@
       },
       {
        "kind": "field",
-       "key": "15",
+       "key": "OP_CONV2D",
        "signature": "int OP_CONV2D = 15",
        "params": [],
        "throws": [],
@@ -205,7 +205,7 @@
       },
       {
        "kind": "field",
-       "key": "16",
+       "key": "OP_MAX_POOL2D",
        "signature": "int OP_MAX_POOL2D = 16",
        "params": [],
        "throws": [],
@@ -219,7 +219,7 @@
       },
       {
        "kind": "field",
-       "key": "17",
+       "key": "OP_DROPOUT",
        "signature": "int OP_DROPOUT = 17",
        "params": [],
        "throws": [],
@@ -233,7 +233,7 @@
       },
       {
        "kind": "field",
-       "key": "18",
+       "key": "OP_EMBEDDING",
        "signature": "int OP_EMBEDDING = 18",
        "params": [],
        "throws": [],
@@ -244,7 +244,7 @@
       },
       {
        "kind": "field",
-       "key": "19",
+       "key": "OP_BATCHED_MATMUL",
        "signature": "int OP_BATCHED_MATMUL = 19",
        "params": [],
        "throws": [],
@@ -255,7 +255,7 @@
       },
       {
        "kind": "field",
-       "key": "20",
+       "key": "OP_PERMUTE",
        "signature": "int OP_PERMUTE = 20",
        "params": [],
        "throws": [],
@@ -269,7 +269,7 @@
       },
       {
        "kind": "field",
-       "key": "21",
+       "key": "OP_RESHAPE",
        "signature": "int OP_RESHAPE = 21",
        "params": [],
        "throws": [],
@@ -283,7 +283,7 @@
       },
       {
        "kind": "field",
-       "key": "22",
+       "key": "OP_GROUP_NORM",
        "signature": "int OP_GROUP_NORM = 22",
        "params": [],
        "throws": [],
@@ -297,7 +297,7 @@
       },
       {
        "kind": "field",
-       "key": "128",
+       "key": "COMMAND_BYTES",
        "signature": "int COMMAND_BYTES = 128",
        "params": [],
        "throws": [],

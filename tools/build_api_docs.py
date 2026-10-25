@@ -583,15 +583,16 @@ def sidebar_html(active: str, page_toc: list[tuple[str, str]] | None = None,
     # Release assets are the canonical download location.
     rel = f"{REPO}/releases/download/v{VERSION}"
     parts.append(item(f"JSL {VERSION} 发布页（全部资产）", f"{REPO}/releases/tag/v{VERSION}"))
-    parts.append(item("jsl-runtime-2.4.0-all.jar", f"{rel}/jsl-runtime-2.4.0-all.jar"))
-    parts.append(item("jsl-runtime-2.4.0.jar", f"{rel}/jsl-runtime-2.4.0.jar"))
-    parts.append(item("jsl-runtime-2.4.0-sources.jar", f"{rel}/jsl-runtime-2.4.0-sources.jar"))
+    parts.append(item(f"jsl-runtime-{VERSION}-all.jar", f"{rel}/jsl-runtime-{VERSION}-all.jar"))
+    parts.append(item(f"jsl-runtime-{VERSION}.jar", f"{rel}/jsl-runtime-{VERSION}.jar"))
+    parts.append(item(f"jsl-runtime-{VERSION}-sources.jar",
+                      f"{rel}/jsl-runtime-{VERSION}-sources.jar"))
     parts.append(item("jsl_native.dll（Windows x86_64）", f"{rel}/jsl_native.dll"))
     parts.append(item(f"jsl-docs-{VERSION}.zip（离线文档）", f"{rel}/jsl-docs-{VERSION}.zip"))
     parts.append("</ul>")
 
     parts.append('<div class="sidebar-head">各版文档</div><ul>')
-    parts.append(item("JSL 2.4.0 (stable)", "index.html", "index"))
+    parts.append(item(f"JSL {VERSION} (stable)", "index.html", "index"))
     parts.append(item("模块索引", "api/index.html", "modindex"))
     parts.append(item("总索引", "genindex.html", "genindex"))
     parts.append("</ul>")
@@ -909,7 +910,7 @@ def render_index(modules: list[dict], stats: dict) -> str:
     install = """<dependency>
     <groupId>io.github.jsl</groupId>
     <artifactId>jsl-runtime</artifactId>
-    <version>2.4.0</version>
+    <version>{VERSION}</version>
 </dependency>"""
     quick = """try (JSL jsl = JSL.create()) {
     Tensor x = jsl.randn(32, 8);
@@ -996,7 +997,7 @@ def render_index(modules: list[dict], stats: dict) -> str:
 签名来源 <code>build/api/api.json</code>，说明来源 <code>tools/docs_data/</code>。</p>
 <p><a href="{REPO}" rel="noopener">{REPO}</a></p>
 </footer>'''
-    return page(TITLE, [("JSL", "index.html"), ("2.4.0", None), (f"{VERSION} 文档", None)],
+    return page(TITLE, [("JSL", "index.html"), (VERSION, None), (f"{VERSION} 文档", None)],
                 body, active="index", root="")
 
 
@@ -1019,7 +1020,7 @@ def render_readme_page(stats: dict) -> str:
         '<span class="spacer"></span><a class="next" href="api/index.html">模块索引</a></div>'
     )
     return page(f"README — {TITLE}",
-                [("JSL", "index.html"), ("2.4.0", None), ("README", None)],
+                [("JSL", "index.html"), (VERSION, None), ("README", None)],
                 body, active="readme", root="")
 
 
@@ -1046,7 +1047,7 @@ def render_module_index(modules: list[dict]) -> str:
 <div class="relbar"><a class="prev" href="../index.html">JSL {VERSION} 文档</a>
 <span class="spacer"></span><a class="next" href="jsl.html">jsl</a></div>'''
     return page(f"模块索引 — {TITLE}",
-                [("JSL", "../index.html"), ("2.4.0", None), ("模块索引", None)],
+                [("JSL", "../index.html"), (VERSION, None), ("模块索引", None)],
                 body, active="modindex", root="../")
 
 
@@ -1076,7 +1077,7 @@ def render_genindex(modules: list[dict]) -> str:
             '<div class="relbar"><a class="prev" href="index.html">JSL 3.4.0 文档</a>'
             '<span class="spacer"></span><a class="next" href="api/index.html">模块索引</a></div>')
     return page(f"总索引 — {TITLE}",
-                [("JSL", "index.html"), ("2.4.0", None), ("总索引", None)],
+                [("JSL", "index.html"), (VERSION, None), ("总索引", None)],
                 body, active="genindex", root="")
 
 
@@ -1180,7 +1181,7 @@ def main() -> int:
                      if prev_mod else ("JSL 3.4.0 文档", "../index.html"))
         next_link = ((next_mod["name"], os.path.basename(page_name(next_mod["name"])))
                      if next_mod else ("模块索引", "index.html"))
-        crumbs = [("JSL", "../index.html"), ("2.4.0", None),
+        crumbs = [("JSL", "../index.html"), (VERSION, None),
                   ("API 参考", "index.html"), (module["name"], None)]
         doc_html = render_module_page(module, docs, href_for, crumbs,
                                       relbar(prev_link, next_link))

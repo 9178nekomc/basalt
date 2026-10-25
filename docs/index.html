@@ -249,7 +249,7 @@ body.nav-open .nav-mask{display:block}
 <header class="topbar">
 <button id="nav-toggle" class="nav-toggle" type="button" aria-label="打开目录"
         aria-controls="sidebar" aria-expanded="false">☰</button>
-<div class="crumbs"><a href="index.html">JSL</a><span class="sep">»</span><span class="cur">2.4.0</span><span class="sep">»</span><span class="cur">3.4.0 文档</span></div>
+<div class="crumbs"><a href="index.html">JSL</a><span class="sep">»</span><span class="cur crumb-version">3.4.0</span><span class="sep">»</span><span class="cur">3.4.0 文档</span></div>
 <div class="topbar-tools">
   <label>主题 <select id="theme-select" class="theme-select" aria-label="主题">
     <option value="auto">自动</option><option value="light">浅色</option><option value="dark">深色</option>
@@ -261,7 +261,7 @@ body.nav-open .nav-mask{display:block}
 </div>
 </header>
 <div class="shell">
-<aside class="sidebar"><div class="sidebar-head">下载</div><ul><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/tag/v3.4.0">JSL 3.4.0 发布页（全部资产）</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v3.4.0/jsl-runtime-2.4.0-all.jar">jsl-runtime-2.4.0-all.jar</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v3.4.0/jsl-runtime-2.4.0.jar">jsl-runtime-2.4.0.jar</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v3.4.0/jsl-runtime-2.4.0-sources.jar">jsl-runtime-2.4.0-sources.jar</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v3.4.0/jsl_native.dll">jsl_native.dll（Windows x86_64）</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v3.4.0/jsl-docs-3.4.0.zip">jsl-docs-3.4.0.zip（离线文档）</a></li></ul><div class="sidebar-head">各版文档</div><ul><li class="active"><a href="index.html">JSL 2.4.0 (stable)</a></li><li><a href="api/index.html">模块索引</a></li><li><a href="genindex.html">总索引</a></li></ul><div class="sidebar-head">Other resources</div><ul><li><a href="readme.html">README</a></li><li><a href="report/JSL_ARCHITECTURE_AND_BENCHMARK.html">架构与基准报告</a></li><li><a href="report/JSL_VS_SKLEARN.html">与 scikit-learn 对比</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn">GitHub 仓库</a></li></ul></aside>
+<aside class="sidebar"><div class="sidebar-head">下载</div><ul><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/tag/v3.4.0">JSL 3.4.0 发布页（全部资产）</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v3.4.0/jsl-runtime-3.4.0-all.jar">jsl-runtime-3.4.0-all.jar</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v3.4.0/jsl-runtime-3.4.0.jar">jsl-runtime-3.4.0.jar</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v3.4.0/jsl-runtime-3.4.0-sources.jar">jsl-runtime-3.4.0-sources.jar</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v3.4.0/jsl_native.dll">jsl_native.dll（Windows x86_64）</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn/releases/download/v3.4.0/jsl-docs-3.4.0.zip">jsl-docs-3.4.0.zip（离线文档）</a></li></ul><div class="sidebar-head">各版文档</div><ul><li class="active"><a href="index.html">JSL 3.4.0 (stable)</a></li><li><a href="api/index.html">模块索引</a></li><li><a href="genindex.html">总索引</a></li></ul><div class="sidebar-head">Other resources</div><ul><li><a href="readme.html">README</a></li><li><a href="report/JSL_ARCHITECTURE_AND_BENCHMARK.html">架构与基准报告</a></li><li><a href="report/JSL_VS_SKLEARN.html">与 scikit-learn 对比</a></li><li><a href="https://github.com/9178nekomc/java-scikit-learn">GitHub 仓库</a></li></ul></aside>
 <main><article>
 <h1>JSL 3.4.0 文档</h1>
 <p class="welcome">欢迎！这里是 JSL 3.4.0 的官方文档。JSL 是一个 Java 调度、Rust 托管底层的
@@ -277,7 +277,7 @@ body.nav-open .nav-mask{display:block}
 <pre class="code"><code>&lt;dependency&gt;
     &lt;groupId&gt;io.github.jsl&lt;/groupId&gt;
     &lt;artifactId&gt;jsl-runtime&lt;/artifactId&gt;
-    &lt;version&gt;<span class="tok-num">2.4</span>.<span class="tok-num">0</span>&lt;/version&gt;
+    &lt;version&gt;{VERSION}&lt;/version&gt;
 &lt;/dependency&gt;</code></pre>
 <p>运行期需要开启 Vector API 孵化模块：<code>--add-modules jdk.incubator.vector</code>。
 原生库已随 <code>jsl-runtime-3.4.0-all.jar</code> 打包；加载失败时经典模型自动回退纯 Java 路径。</p>
@@ -328,7 +328,7 @@ body.nav-open .nav-mask{display:block}
 <div class="relbar"><span></span><span class="spacer"></span>
 <a class="next" href="api/index.html">API 参考</a></div>
 <footer class="doc-footer">
-<p>JSL 3.4.0 · 文档由 <code>tools/build_api_docs.py</code> 生成于 2026-10-25 18:41。
+<p>JSL 3.4.0 · 文档由 <code>tools/build_api_docs.py</code> 生成于 2026-10-25 18:53。
 签名来源 <code>build/api/api.json</code>，说明来源 <code>tools/docs_data/</code>。</p>
 <p><a href="https://github.com/9178nekomc/java-scikit-learn" rel="noopener">https://github.com/9178nekomc/java-scikit-learn</a></p>
 </footer>

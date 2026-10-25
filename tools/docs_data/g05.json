@@ -23,7 +23,7 @@
      "members": [
       {
        "kind": "field",
-       "key": "0x4A534C4D",
+       "key": "MAGIC",
        "signature": "int MAGIC = 0x4A534C4D",
        "params": [],
        "throws": [],
@@ -40,7 +40,7 @@
       },
       {
        "kind": "field",
-       "key": "2",
+       "key": "VERSION",
        "signature": "int VERSION = 2",
        "params": [],
        "throws": [],
@@ -878,7 +878,7 @@
        "throws": [],
        "javadoc": "",
        "doc": {
-       "summary": "把模型编码为标准 ONNX 字节。",
+        "summary": "把模型编码为标准 ONNX 字节。",
         "body": [
          "按 onnx.proto3 的字段号手写线格式：ir_version(1)、opset_import(8，domain 写空串)、producer_name(2)、producer_version(3，固定 \"2.4.0\")、graph(7)；图内依次写 node(1)、name(2)、initializer(5)、input(11)、output(12)。张量恒写 data_type = FLOAT(1) 与 little-endian raw_data(9)；ValueInfo 写 elem_type(1) 与 shape(2)，维度值大于 0 写 dim_value，否则写 dim_param \"N\"。"
         ],
@@ -923,7 +923,7 @@
      "members": [
       {
        "kind": "field",
-       "key": "1",
+       "key": "FLOAT",
        "signature": "int FLOAT = 1",
        "params": [],
        "throws": [],
@@ -937,7 +937,7 @@
       },
       {
        "kind": "field",
-       "key": "2",
+       "key": "INT",
        "signature": "int INT = 2",
        "params": [],
        "throws": [],
@@ -951,7 +951,7 @@
       },
       {
        "kind": "field",
-       "key": "3",
+       "key": "STRING",
        "signature": "int STRING = 3",
        "params": [],
        "throws": [],
@@ -965,7 +965,7 @@
       },
       {
        "kind": "field",
-       "key": "6",
+       "key": "FLOATS",
        "signature": "int FLOATS = 6",
        "params": [],
        "throws": [],
@@ -979,7 +979,7 @@
       },
       {
        "kind": "field",
-       "key": "7",
+       "key": "INTS",
        "signature": "int INTS = 7",
        "params": [],
        "throws": [],

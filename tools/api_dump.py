@@ -340,7 +340,10 @@ def parse_member(src: str, masked: str, start: int, end: int) -> Member | None:
             javadoc=javadoc,
         )
 
-    field_tokens = remainder.split()
+    # `int MAGIC = 0x4A534C4D` -> the declaration is everything before '=',
+    # otherwise the initialiser would be taken as the field name.
+    declaration = remainder.split("=", 1)[0].strip()
+    field_tokens = declaration.split()
     if len(field_tokens) < 2:
         return None
     type_text = " ".join(field_tokens[:-1]).strip()
@@ -348,9 +351,12 @@ def parse_member(src: str, masked: str, start: int, end: int) -> Member | None:
     if not name or not type_text:
         return None
     value = remainder_src_value(header_src, name)
+    signature = f"{type_text} {name}"
+    if value:
+        signature += f" = {value}"
     return Member(
         kind="field", name=name, type=type_text, key=name,
-        signature=f"{type_text} {name}", modifiers=modifiers,
+        signature=signature, modifiers=modifiers,
         static="static" in modifiers, javadoc=javadoc, value=value,
     )
 
