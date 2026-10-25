@@ -7,9 +7,9 @@ Output layout (docs/):
     api/index.html         模块索引
     api/<module>.html      每个模块一页
     genindex.html          总索引
-    _static/style.css      样式
-    _static/docs.js        主题切换 + 快速搜索
-    _static/searchindex.js 搜索索引（JS 赋值，file:// 下也可用）
+Each page is self-contained: CSS, the theme/search script and the search index
+are inlined, so the site works from file://, from GitHub Pages (Jekyll) and from
+static hosts that drop underscore-prefixed directories.
 
 Signatures come from build/api/api.json (machine extracted from src/main/java);
 prose comes from tools/docs_data/*.json (curated).  Neither is invented here.
@@ -533,6 +533,9 @@ def topbar_html(crumbs: list[tuple[str, str | None]], root: str) -> str:
 </header>'''
 
 
+# Inlined into every page by page(); assigned in main() before rendering.
+SEARCH_JSON = "[]"
+
 SEARCH_OVERLAY = '''<div id="search-mask" class="search-mask"></div>
 <div id="search-dialog" class="search-dialog" role="dialog" aria-label="搜索">
   <input id="search-input" type="search" placeholder="搜索类型、方法或说明…" autocomplete="off" />
@@ -543,6 +546,13 @@ SEARCH_OVERLAY = '''<div id="search-mask" class="search-mask"></div>
 def page(title: str, crumbs: list[tuple[str, str | None]], body: str, *,
          active: str = "", toc: list[tuple[str, str]] | None = None,
          root: str = "") -> str:
+    """Render one fully self-contained page.
+
+    CSS, the theme/search script and the search index are inlined on purpose:
+    static hosts (including the WorkBuddy publish preview and Jekyll on GitHub
+    Pages) skip directories whose name starts with an underscore, so an external
+    ``_static/`` folder silently 404s and the page renders unstyled.
+    """
     return f'''<!DOCTYPE html>
 <html lang="zh-CN" data-theme="light">
 <head>
@@ -550,7 +560,7 @@ def page(title: str, crumbs: list[tuple[str, str | None]], body: str, *,
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>{esc(title)}</title>
 <meta name="generator" content="tools/build_api_docs.py" />
-<link rel="stylesheet" href="{root}_static/style.css" />
+<style>{CSS}</style>
 </head>
 <body>
 {topbar_html(crumbs, root)}
@@ -561,9 +571,8 @@ def page(title: str, crumbs: list[tuple[str, str | None]], body: str, *,
 </article></main>
 </div>
 {SEARCH_OVERLAY}
-<script>window.__DOCS_ROOT__="{root}";</script>
-<script src="{root}_static/searchindex.js"></script>
-<script src="{root}_static/docs.js"></script>
+<script>window.__DOCS_ROOT__="{root}";window.__SEARCH_INDEX__={SEARCH_JSON};</script>
+<script>{JS}</script>
 </body>
 </html>
 '''
@@ -1020,15 +1029,15 @@ def main() -> int:
     }
 
     out = args.out
-    static = os.path.join(out, "_static")
     api_dir = os.path.join(out, "api")
-    os.makedirs(static, exist_ok=True)
     os.makedirs(api_dir, exist_ok=True)
 
-    with open(os.path.join(static, "style.css"), "w", encoding="utf-8") as fh:
-        fh.write(CSS)
-    with open(os.path.join(static, "docs.js"), "w", encoding="utf-8") as fh:
-        fh.write(JS)
+    # Assets are inlined into every page: a sibling `_static/` directory is
+    # dropped by hosts that ignore underscore-prefixed paths (Jekyll, the
+    # WorkBuddy publish preview), which left the pages unstyled.
+    global SEARCH_JSON
+    search = build_search_index(modules, docs)
+    SEARCH_JSON = json.dumps(search, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 
     with open(os.path.join(out, "index.html"), "w", encoding="utf-8") as fh:
         fh.write(render_index(modules, stats))
@@ -1053,12 +1062,6 @@ def main() -> int:
 
     with open(os.path.join(out, "genindex.html"), "w", encoding="utf-8") as fh:
         fh.write(render_genindex(modules))
-
-    search = build_search_index(modules, docs)
-    with open(os.path.join(static, "searchindex.js"), "w", encoding="utf-8") as fh:
-        fh.write("window.__SEARCH_INDEX__=")
-        json.dump(search, fh, ensure_ascii=False, separators=(",", ":"))
-        fh.write(";\n")
 
     total = 0
     for base, _dirs, files in os.walk(out):
