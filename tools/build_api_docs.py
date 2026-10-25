@@ -491,10 +491,13 @@ def sidebar_html(active: str, page_toc: list[tuple[str, str]] | None = None,
         parts.append("</ul>")
 
     parts.append('<div class="sidebar-head">下载</div><ul>')
-    parts.append(item("jsl-runtime-2.4.0-all.jar", "../target/jsl-runtime-2.4.0-all.jar"))
-    parts.append(item("jsl-runtime-2.4.0.jar", "../target/jsl-runtime-2.4.0.jar"))
-    parts.append(item("jsl-runtime-2.4.0-sources.jar", "../target/jsl-runtime-2.4.0-sources.jar"))
-    parts.append(item("jsl_native.dll（Windows x86_64）", "../build/native/jsl_native.dll"))
+    # absolute URLs: the published site only ships docs/, so ../target would 404
+    raw = f"{REPO}/raw/main"
+    parts.append(item("jsl-runtime-2.4.0-all.jar", f"{raw}/target/jsl-runtime-2.4.0-all.jar"))
+    parts.append(item("jsl-runtime-2.4.0.jar", f"{raw}/target/jsl-runtime-2.4.0.jar"))
+    parts.append(item("jsl-runtime-2.4.0-sources.jar",
+                      f"{raw}/target/jsl-runtime-2.4.0-sources.jar"))
+    parts.append(item("jsl_native.dll（Windows x86_64）", f"{raw}/src/main/resources/native/windows-x86_64/jsl_native.dll"))
     parts.append("</ul>")
 
     parts.append('<div class="sidebar-head">各版文档</div><ul>')
