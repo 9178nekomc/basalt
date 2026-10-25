@@ -2,7 +2,8 @@
 
 > **Maven coordinates** — `io.github.jsl:jsl-runtime:2.4.0`  
 > **Runtime** — Java 21 (`--add-modules jdk.incubator.vector`) + bundled Rust native library  
-> **One dependency, no Python, no GIL, no manual native build on Windows x86_64.**
+> **One dependency, no Python, no GIL, no manual native build on Windows x86_64.**  
+> **Docs** — <https://9178nekomc.github.io/java-scikit-learn/>
 
 ## English
 
