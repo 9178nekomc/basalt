@@ -19,6 +19,7 @@
   --tok-kw:#8a2be2; --tok-str:#0a7a3d; --tok-com:#777777; --tok-num:#b45309; --tok-ann:#0f766e;
 }
 html[data-theme="dark"]{
+  color-scheme:dark;
   --bg:#1a1c1f; --fg:#d8dde3; --muted:#939dab; --border:#2e343b; --border-soft:#252b32;
   --surface:#20242a; --surface-2:#272d35;
   --sidebar-bg:#262626; --topbar-bg:#1a1a1a; --topbar-fg:#e0e0e0; --topbar-muted:#9a9a9a;
@@ -199,6 +200,18 @@ html.theme-anim, html.theme-anim *{
   *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
     transition-duration:.001ms !important;scroll-behavior:auto !important}
 }
+
+/* cross-document fade (Chrome 126+): the chrome and background stay put and only
+   the article cross-fades, so navigating between pages no longer hard-cuts. */
+@view-transition { navigation: auto; }
+.topbar{view-transition-name:jsl-topbar}
+main{view-transition-name:jsl-main}
+::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
+::view-transition-old(jsl-main){animation:fadeOut 90ms ease both}
+::view-transition-new(jsl-main){animation:fadeIn 220ms var(--ease) both}
+::view-transition-old(jsl-topbar),::view-transition-new(jsl-topbar){animation:none}
+@keyframes fadeOut{to{opacity:0}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
 /* content rises in once instead of appearing in a single frame */
 main{animation:pageIn var(--dur-slow) var(--ease) both}
@@ -420,7 +433,7 @@ ul.genindex-section li:hover{background:var(--surface-2);border-radius:4px}
 <div class="relbar"><span></span><span class="spacer"></span>
 <a class="next" href="api/index.html">API 参考</a></div>
 <footer class="doc-footer">
-<p>JSL 3.4.0 · 文档由 <code>tools/build_api_docs.py</code> 生成于 2026-10-25 19:47。
+<p>JSL 3.4.0 · 文档由 <code>tools/build_api_docs.py</code> 生成于 2026-10-25 20:03。
 签名来源 <code>build/api/api.json</code>，说明来源 <code>tools/docs_data/</code>。</p>
 <p><a href="https://github.com/9178nekomc/java-scikit-learn" rel="noopener">https://github.com/9178nekomc/java-scikit-learn</a></p>
 </footer>
