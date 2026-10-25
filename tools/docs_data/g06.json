@@ -195,7 +195,28 @@
      "line": 4,
      "javadoc": "Histogram tree growth strategy: depth-wise XGBoost or best-leaf-first LightGBM.",
      "nested": [],
-     "members": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "XGBOOST",
+       "signature": "XGBOOST",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "深度优先（level-wise）逐层分裂节点"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "LIGHTGBM",
+       "signature": "LIGHTGBM",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "叶子优先（leaf-wise）按最大增益继续分裂"
+       }
+      }
+     ],
      "doc": {
       "summary": "直方图树的生长策略：深度优先或叶优先",
       "body": [
@@ -225,7 +246,28 @@
      "line": 4,
      "javadoc": "Objectives supported by the histogram gradient boosting core.",
      "nested": [],
-     "members": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "SQUARED_ERROR",
+       "signature": "SQUARED_ERROR",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "平方误差，用于回归"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "LOGISTIC",
+       "signature": "LOGISTIC",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "二分类逻辑损失"
+       }
+      }
+     ],
      "doc": {
       "summary": "直方图提升支持的目标：平方误差与二分类逻辑",
       "body": [
@@ -1144,7 +1186,38 @@
      "line": 4,
      "javadoc": "Available symmetric eigensolvers for PCA.",
      "nested": [],
-     "members": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "AUTO",
+       "signature": "AUTO",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "特征数多于样本数时选 GRAM，否则选 JACOBI"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "JACOBI",
+       "signature": "JACOBI",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "对 p×p 协方差做 Jacobi 对角化，O(n·p²)"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "GRAM",
+       "signature": "GRAM",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "对 n×n Gram 矩阵做对角化，适合宽表，O(n²·p)"
+       }
+      }
+     ],
      "doc": {
       "summary": "PCA 可选的对称特征分解求解器。",
       "body": [
@@ -1505,6 +1578,17 @@
       },
       {
        "kind": "method",
+       "key": "parameterCount()",
+       "signature": "int parameterCount()",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "按协方差类型计算的自由参数个数",
+        "returns": "DIAG 为 K·2p+K−1，FULL 为 K·(p+p(p+1)/2)+K−1，TIED 为 K·p+p(p+1)/2+K−1"
+       }
+      },
+      {
+       "kind": "method",
        "key": "aic(Matrix)",
        "signature": "double aic(Matrix features)",
        "params": [
@@ -1583,6 +1667,17 @@
       },
       {
        "kind": "method",
+       "key": "covarianceType()",
+       "signature": "CovarianceType covarianceType()",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "拟合时使用的协方差参数化",
+        "returns": "FULL、TIED 或 DIAG"
+       }
+      },
+      {
+       "kind": "method",
        "key": "means()",
        "signature": "Matrix means()",
        "params": [],
@@ -1615,6 +1710,29 @@
         "notes": [
          "只保存对角元素，非对角协方差不在模型中"
         ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "covariance(int)",
+       "signature": "Matrix covariance(int component)",
+       "params": [
+        {
+         "type": "int",
+         "name": "component"
+        }
+       ],
+       "throws": [],
+       "doc": {
+        "summary": "返回某个分量的 p×p 协方差矩阵",
+        "params": {
+         "component": "分量下标，需满足 0 ≤ component < components"
+        },
+        "returns": "形状 [featureCount, featureCount] 的稠密对称矩阵；DIAG 时非对角为 0",
+        "throws": {
+         "IllegalArgumentException": "component 越界",
+         "IllegalStateException": "模型尚未拟合"
+        }
        }
       },
       {
@@ -1731,25 +1849,18 @@
       }
      ],
      "doc": {
-      "summary": "K-Means++ 初始化、EM 估计的对角协方差高斯混合模型。",
+      "summary": "EM 估计的高斯混合模型，协方差可选 FULL / TIED / DIAG。",
       "body": [
-       "协方差是对角的：每个分量只保存 p 个方差而不是 p×p 矩阵，对数密度只需累加 log(var) 与马氏项 (x−μ)²/var，单次求值 O(p)、存储 O(K·p)。接口不暴露完整协方差或精度矩阵，分量内的特征相关结构无法表达，这与 sklearn 的 full 协方差不是同一模型。",
-       "拟合先用 KMeans 初始化：簇数等于 components、maxIterations 固定为 30、使用同一 seed。均值取其质心，权重先取均匀的 1/K，方差取各初始簇内的平均平方离差加 regCovar，并夹到不小于 regCovar。随后每轮 E 步计算各分量的「log 权重 + 对数密度」并按行做 log-sum-exp，既得到责任度，也把该轮的平均每样本对数似然记入 lowerBound。",
-       "收敛判据是相邻两轮 lowerBound 之差的绝对值不超过 tolerance。满足时置 converged 并跳出，该轮跳过 M 步，所以最终参数仍是上一轮 M 步的结果；跑满 maxIterations 仍不满足时 converged 为 false，iterations 等于 maxIterations。首轮的 prevBound 是负无穷，因此至少执行一轮 M 步。",
-       "信息准则按 nParams = K·2p + (K−1) 计数，即每个分量的 p 个均值与 p 个方差，加上 K−1 个自由权重。AIC = 2·nParams − 2·logLik，BIC = nParams·ln(n) − 2·logLik，其中 logLik 是 scoreSamples 在给定矩阵上的求和，n 为该矩阵行数。"
+       "协方差由 `covarianceType` 决定：FULL 为每个分量存一个 p×p 矩阵，TIED 让全部分量共享一个矩阵，DIAG 只存 p 个方差。FULL 与 TIED 在每轮 E 步前先做 Cholesky 分解，用前代把马氏距离换成 ‖L⁻¹(x−μ)‖²，对数行列式取 2·Σlog L_ii；分解失败时按 regCovar·10ⁿ 追加 jitter 重试，6 次仍非正定则抛 IllegalStateException。",
+       "拟合先用 KMeans 初始化：簇数等于 components、maxIterations 固定 30、使用同一 seed。均值取质心，权重取簇占比，协方差取簇内样本协方差（TIED 取全局共享）。随后每轮 E 步计算「log 权重 + 对数密度」并按行做 log-sum-exp 得到责任度，M 步更新权重、均值与协方差，相邻两轮平均对数似然差不超过 tolerance 即收敛。",
+       "AIC/BIC 的自由参数个数随协方差类型变化：DIAG 为 K·2p+K−1，FULL 为 K·(p+p(p+1)/2)+K−1，TIED 为 K·p+p(p+1)/2+K−1。相关特征上 FULL 的对数似然明显更高，但参数更多，需用 AIC/BIC 权衡。"
       ],
       "notes": [
-       "源码实现对角协方差，没有 covarianceType 开关，也没有 covariances 或 precisions 接口",
-       "regCovar 在初始化与每轮 M 步都加到方差上，保证对数密度不会因零方差发散",
-       "E 步取 max(1e-15, 权重) 后再取对数，某个分量被压到 0 时不会产生负无穷",
+       "默认 covarianceType 为 FULL；改回 DIAG 可获得 O(K·p) 的存储与求值，代价是无法表达分量内的特征相关",
+       "E 步对权重取 max(1e-15, w) 后再取对数，某个分量被压到 0 时不会出现负无穷",
        "lowerBound 是平均每样本对数似然而非总似然，量纲与 sklearn 的 lower_bound_ 一致",
-       "write 落盘 components、统计量与收敛状态；read 之后 maxIterations、tolerance、regCovar、seed 回落到 Builder 默认值"
-      ],
-      "example": "Matrix features = Matrix.fromRows(new double[][] {\n    {0.0, 0.0}, {0.3, 0.2}, {-0.2, 0.1},\n    {4.0, 4.0}, {4.3, 3.8}, {3.7, 4.2}\n});\nGaussianMixture gmm = GaussianMixture.builder()\n        .components(2)\n        .maxIterations(200)\n        .tolerance(1e-6)\n        .regCovar(1e-6)\n        .seed(42L)\n        .build()\n        .fit(features);\ndouble[] labels = gmm.predict(features);\nMatrix posterior = gmm.predictProbability(features);\ndouble aic = gmm.aic(features);\ndouble bic = gmm.bic(features);",
-      "see": [
-       "jsl.ml.KMeans",
-       "jsl.ml.Estimator",
-       "jsl.core.Persistable"
+       "write 落盘协方差类型与完整 p×p 矩阵；read 之后 maxIterations、tolerance、regCovar、seed 回落到 Builder 默认值",
+       "DIAG 的非对角项恒为 0，但 covariance(k) 仍返回 p×p 稠密矩阵，便于统一处理"
       ]
      }
     },
@@ -2035,6 +2146,61 @@
       "see": [
        "jsl.ml.Estimator",
        "jsl.core.Persistable"
+      ]
+     }
+    },
+    {
+     "qualified": "jsl.ml.GaussianMixture.CovarianceType",
+     "simple_qualified": "GaussianMixture.CovarianceType",
+     "kind": "enum",
+     "modifiers": [
+      "public"
+     ],
+     "generic": "",
+     "extends": "",
+     "implements": [],
+     "file": "jsl/ml/GaussianMixture.java",
+     "line": 23,
+     "nested": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "FULL",
+       "signature": "FULL",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "每个分量独立估计一个 p×p 协方差"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "TIED",
+       "signature": "TIED",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "所有分量共享一个 p×p 协方差"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "DIAG",
+       "signature": "DIAG",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "每个分量只有 p 个方差（对角协方差）"
+       }
+      }
+     ],
+     "doc": {
+      "summary": "GMM 的协方差参数化方式。",
+      "body": [
+       "FULL 为每个分量估计独立的 p×p 协方差，能表达分量内的特征相关，参数最多；TIED 让所有分量共享一个矩阵，适合各簇形状相近、单簇样本偏少的场景；DIAG 只保留对角方差，参数最少、求值最快，但无法表达相关结构。"
+      ],
+      "notes": [
+       "三种参数化的参数个数差异直接反映在 aic/bic 上，可用同一份数据比较拟合代价"
       ]
      }
     }

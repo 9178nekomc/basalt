@@ -1056,7 +1056,28 @@
      "line": 110,
      "javadoc": "Reduction applied along the time axis.",
      "nested": [],
-     "members": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "LAST",
+       "signature": "LAST",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "取时间步序列的最后一步"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "MEAN",
+       "signature": "MEAN",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "对时间步维取平均"
+       }
+      }
+     ],
      "doc": {
       "summary": "时间轴归约策略。",
       "body": [

@@ -961,7 +961,48 @@
      "line": 55,
      "javadoc": "",
      "nested": [],
-     "members": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "ACCURACY",
+       "signature": "ACCURACY",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "分类准确率"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "MACRO_F1",
+       "signature": "MACRO_F1",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "宏平均 F1，各类别等权"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "R2",
+       "signature": "R2",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "决定系数 R²"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "RMSE",
+       "signature": "RMSE",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "均方根误差"
+       }
+      }
+     ],
      "doc": {
       "summary": "交叉验证可选的评估指标。",
       "body": [
@@ -992,7 +1033,38 @@
      "line": 13,
      "javadoc": "",
      "nested": [],
-     "members": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "CLASSIFICATION",
+       "signature": "CLASSIFICATION",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "监督分类任务"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "REGRESSION",
+       "signature": "REGRESSION",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "监督回归任务"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "UNSUPERVISED",
+       "signature": "UNSUPERVISED",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "无监督任务（聚类、降维）"
+       }
+      }
+     ],
      "doc": {
       "summary": "算法的任务类型分类。",
       "body": [
@@ -1142,7 +1214,28 @@
      "line": 23,
      "javadoc": "",
      "nested": [],
-     "members": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "ORDINAL",
+       "signature": "ORDINAL",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "输出单个整数列，按分箱下标编码"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "ONEHOT_DENSE",
+       "signature": "ONEHOT_DENSE",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "每个特征展开为 nBins 列稠密独热编码"
+       }
+      }
+     ],
      "doc": {
       "summary": "离散化结果的编码方式。",
       "body": [
@@ -1173,7 +1266,38 @@
      "line": 17,
      "javadoc": "",
      "nested": [],
-     "members": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "UNIFORM",
+       "signature": "UNIFORM",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "等宽分箱，边界均匀铺满取值区间"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "QUANTILE",
+       "signature": "QUANTILE",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "等频分箱，每个边界落在相同分位点"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "KMEANS",
+       "signature": "KMEANS",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "对单特征做一维 KMeans，用簇中心作边界"
+       }
+      }
+     ],
      "doc": {
       "summary": "分箱边界的计算策略。",
       "body": [

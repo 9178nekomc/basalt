@@ -19,7 +19,38 @@
      "line": 19,
      "javadoc": "",
      "nested": [],
-     "members": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "F_CLASSIF",
+       "signature": "F_CLASSIF",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "单因素方差分析 F 值，用于分类标签"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "F_REGRESSION",
+       "signature": "F_REGRESSION",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "回归 F 值（方差解释比），用于连续标签"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "CHI2",
+       "signature": "CHI2",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "卡方统计量，要求非负特征与分类标签"
+       }
+      }
+     ],
      "doc": {
       "summary": "特征打分的统计检验：分类 F、回归 F、卡方",
       "body": [
@@ -189,7 +220,48 @@
      "line": 19,
      "javadoc": "",
      "nested": [],
-     "members": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "MEAN",
+       "signature": "MEAN",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "用该列非缺失值的均值填充"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "MEDIAN",
+       "signature": "MEDIAN",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "用该列非缺失值的中位数填充"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "MOST_FREQUENT",
+       "signature": "MOST_FREQUENT",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "用该列出现次数最多的值填充"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "CONSTANT",
+       "signature": "CONSTANT",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "用固定常量填充（缺失指示列另算）"
+       }
+      }
+     ],
      "doc": {
       "summary": "缺失值填充策略：均值、中位数、众数、常数",
       "body": [

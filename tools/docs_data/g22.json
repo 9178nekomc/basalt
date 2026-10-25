@@ -300,7 +300,48 @@
      "line": 27,
      "javadoc": "",
      "nested": [],
-     "members": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "MODULE",
+       "signature": "MODULE",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "顶点执行一个 Module"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "ADD",
+       "signature": "ADD",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "两个输入逐元素相加（残差）"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "SUB",
+       "signature": "SUB",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "两个输入逐元素相减"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "MUL",
+       "signature": "MUL",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "两个输入逐元素相乘（门控）"
+       }
+      }
+     ],
      "doc": {
       "summary": "节点算子类型：模块调用、相加、相减、相乘",
       "body": [

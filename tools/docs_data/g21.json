@@ -3017,7 +3017,78 @@
      "line": 8,
      "javadoc": "",
      "nested": [],
-     "members": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "RELU",
+       "signature": "RELU",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "max(0, x)"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "GELU",
+       "signature": "GELU",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "高斯误差线性单元"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "SILU",
+       "signature": "SILU",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "Swish：x·sigmoid(x)"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "SIGMOID",
+       "signature": "SIGMOID",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "1 / (1 + e^(−x))"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "TANH",
+       "signature": "TANH",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "双曲正切"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "LEAKY_RELU",
+       "signature": "LEAKY_RELU",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "负半轴保留小斜率，避免神经元死亡"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "ELU",
+       "signature": "ELU",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "负半轴指数衰减到 −α"
+       }
+      }
+     ],
      "doc": {
       "summary": "Activation 支持的激活函数种类",
       "body": [

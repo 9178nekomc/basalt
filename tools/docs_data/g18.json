@@ -2720,7 +2720,38 @@
      "line": 25,
      "javadoc": "",
      "nested": [],
-     "members": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "RELU",
+       "signature": "RELU",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "max(0, x)"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "TANH",
+       "signature": "TANH",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "双曲正切"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "SIGMOID",
+       "signature": "SIGMOID",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "1 / (1 + e^(−x))"
+       }
+      }
+     ],
      "doc": {
       "summary": "隐藏层可选激活函数：RELU、TANH、SIGMOID。",
       "body": [
@@ -2746,7 +2777,38 @@
      "line": 29,
      "javadoc": "",
      "nested": [],
-     "members": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "NONE",
+       "signature": "NONE",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "输出层不做激活，直接返回 logits"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "SIGMOID",
+       "signature": "SIGMOID",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "输出层接 sigmoid，配合二分类交叉熵"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "TANH",
+       "signature": "TANH",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "输出层接 tanh，输出落在 (−1, 1)"
+       }
+      }
+     ],
      "doc": {
       "summary": "输出层激活：NONE 表示线性输出，另有 SIGMOID、TANH。",
       "body": [

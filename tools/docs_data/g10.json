@@ -53,7 +53,28 @@
      "line": 4,
      "javadoc": "Supervised objective of a single decision tree.",
      "nested": [],
-     "members": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "CLASSIFICATION",
+       "signature": "CLASSIFICATION",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "分类树，叶子输出类别或类分布"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "REGRESSION",
+       "signature": "REGRESSION",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "回归树，叶子输出均值"
+       }
+      }
+     ],
      "doc": {
       "summary": "单棵决策树的监督目标：分类或回归",
       "body": [
@@ -185,7 +206,48 @@
      "line": 15,
      "javadoc": "",
      "nested": [],
-     "members": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "WARD",
+       "signature": "WARD",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "最小化合并带来的簇内平方和增量"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "COMPLETE",
+       "signature": "COMPLETE",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "取两簇间最远点距离"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "AVERAGE",
+       "signature": "AVERAGE",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "取两簇间所有点对距离的均值"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "SINGLE",
+       "signature": "SINGLE",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "取两簇间最近点距离"
+       }
+      }
+     ],
      "doc": {
       "summary": "层次聚类的簇间连接准则",
       "body": [
@@ -696,6 +758,24 @@
         "notes": [
          "fit 时还会校验 components 不超过样本数"
         ]
+       }
+      },
+      {
+       "kind": "method",
+       "key": "covarianceType(CovarianceType)",
+       "signature": "Builder covarianceType(CovarianceType covarianceType)",
+       "params": [
+        {
+         "type": "CovarianceType",
+         "name": "covarianceType"
+        }
+       ],
+       "throws": [],
+       "doc": {
+        "summary": "指定协方差参数化，默认 FULL",
+        "params": {
+         "covarianceType": "FULL、TIED 或 DIAG；影响存储、求值成本与 AIC 的参数计数"
+        }
        }
       },
       {

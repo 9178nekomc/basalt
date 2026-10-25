@@ -366,7 +366,28 @@
      "line": 4,
      "javadoc": "Convolution padding mode.",
      "nested": [],
-     "members": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "VALID",
+       "signature": "VALID",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "不补零，输出 (in − k) / stride + 1"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "SAME",
+       "signature": "SAME",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "补零使输出为 ceil(in / stride)"
+       }
+      }
+     ],
      "doc": {
       "summary": "卷积补零模式：VALID 不补，SAME 补到按步长整除。",
       "body": [

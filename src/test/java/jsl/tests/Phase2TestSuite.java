@@ -65,8 +65,12 @@ public final class Phase2TestSuite {
 
     public static void main(String[] args) throws Exception {
         run("RBF & Polynomial SVC non-linear XOR classification & persistence", Phase2TestSuite::testKernelSvc);
+        run("SVC Platt probability calibration (sum-to-one, monotonicity, persistence)",
+                Phase2TestSuite::testSvcProbability);
         run("KernelRidge & KernelPCA non-linear regression and projection", Phase2TestSuite::testKernelRidgeAndPca);
         run("GaussianMixture (GMM) EM clustering, probabilities, AIC/BIC & persistence", Phase2TestSuite::testGmm);
+        run("GMM FULL/TIED/DIAG covariance parametrisations & AIC penalty",
+                Phase2TestSuite::testGmmCovarianceTypes);
         run("AgglomerativeClustering (WARD, COMPLETE, AVERAGE, SINGLE)", Phase2TestSuite::testAgglomerative);
         run("IsolationForest anomaly detection & KernelDensity estimation", Phase2TestSuite::testIsolationForestAndKde);
         run("SelectKBest, RFE, PolynomialFeatures & KBinsDiscretizer", Phase2TestSuite::testFeatureEngineering);
@@ -165,6 +169,135 @@ public final class Phase2TestSuite {
         ModelCodec.save(gmmPath, gmm);
         GaussianMixture gmmLoaded = ModelCodec.load(gmmPath, GaussianMixture.class);
         assertArray(preds, gmmLoaded.predict(x), 0.0, "GMM .jsl round-trip");
+    }
+
+    private static void testSvcProbability() throws Exception {
+        Path dir = Path.of(System.getProperty("user.dir"), "build");
+        Files.createDirectories(dir);
+        Random rng = new Random(11);
+        int rows = 160;
+        double[] data = new double[rows * 2];
+        double[] labels = new double[rows];
+        for (int r = 0; r < rows; r++) {
+            double a = rng.nextGaussian();
+            double b = rng.nextGaussian();
+            boolean positive = a + b > 0;
+            data[r * 2] = a + (positive ? 0.6 : -0.6);
+            data[r * 2 + 1] = b + (positive ? 0.6 : -0.6);
+            labels[r] = positive ? 1.0 : -1.0;
+        }
+        Matrix x = new Matrix(rows, 2, data);
+
+        SVC calibrated = SVC.builder().rbf(0.5).c(1.0).probability(true).build().fit(x, labels);
+        check(calibrated.probabilityEnabled(), "probability flag is reported");
+
+        Matrix proba = calibrated.predictProbability(x);
+        check(proba.columns() == 2, "SVC probabilities have one column per class");
+        double[] decision = calibrated.decisionFunction(x);
+        for (int r = 0; r < rows; r++) {
+            assertClose(1.0, proba.get(r, 0) + proba.get(r, 1), 1e-9,
+                    "SVC class probabilities sum to 1");
+        }
+
+        // higher decision value must never yield a lower positive-class probability
+        double slope = plattSlope(decision, proba, rows);
+        check(slope > 0.0, "positive-class probability increases with the decision value");
+
+        int correct = 0;
+        for (int r = 0; r < rows; r++) {
+            double predicted = proba.get(r, 1) >= 0.5 ? 1.0 : -1.0;
+            if (predicted == labels[r]) {
+                correct++;
+            }
+        }
+        double accuracy = correct / (double) rows;
+        check(accuracy >= 0.95, "probability threshold reproduces the labels, got " + accuracy);
+
+        Path path = dir.resolve("test-svc-probability.jsl");
+        ModelCodec.save(path, calibrated);
+        SVC loaded = ModelCodec.load(path, SVC.class);
+        check(loaded.probabilityEnabled(), "probability flag survives serialization");
+        Matrix reloaded = loaded.predictProbability(x);
+        for (int r = 0; r < rows; r++) {
+            assertClose(proba.get(r, 1), reloaded.get(r, 1), 1e-12,
+                    "calibrated probability is bit-exact after reload");
+        }
+
+        SVC plain = SVC.builder().rbf(0.5).build().fit(x, labels);
+        boolean threw = false;
+        try {
+            plain.predictProbability(x);
+        } catch (IllegalStateException expected) {
+            threw = true;
+        }
+        check(threw, "predictProbability rejects uncalibrated models");
+    }
+
+    /** Spearman-style sign test: does the positive-class probability grow with the decision value? */
+    private static double plattSlope(double[] decision, Matrix proba, int rows) {
+        double meanF = 0.0;
+        double meanP = 0.0;
+        for (int r = 0; r < rows; r++) {
+            meanF += decision[r];
+            meanP += proba.get(r, 1);
+        }
+        meanF /= rows;
+        meanP /= rows;
+        double covariance = 0.0;
+        for (int r = 0; r < rows; r++) {
+            covariance += (decision[r] - meanF) * (proba.get(r, 1) - meanP);
+        }
+        return covariance;
+    }
+
+    private static void testGmmCovarianceTypes() throws Exception {
+        Path dir = Path.of(System.getProperty("user.dir"), "build");
+        Files.createDirectories(dir);
+        Random rng = new Random(7);
+        int rows = 400;
+        double[] data = new double[rows * 2];
+        for (int r = 0; r < rows; r++) {
+            double z = rng.nextGaussian();
+            data[r * 2] = z;
+            data[r * 2 + 1] = 3.0 * z + 0.35 * rng.nextGaussian();
+        }
+        Matrix x = new Matrix(rows, 2, data);
+
+        GaussianMixture full = GaussianMixture.builder().components(1).seed(42L)
+                .covarianceType(GaussianMixture.CovarianceType.FULL).build().fit(x);
+        GaussianMixture tied = GaussianMixture.builder().components(2).seed(42L)
+                .covarianceType(GaussianMixture.CovarianceType.TIED).build().fit(x);
+        GaussianMixture diag = GaussianMixture.builder().components(1).seed(42L)
+                .covarianceType(GaussianMixture.CovarianceType.DIAG).build().fit(x);
+
+        check(full.covarianceType() == GaussianMixture.CovarianceType.FULL, "covariance type is reported");
+        check(Math.abs(full.covariance(0).get(0, 1)) > 0.5,
+                "FULL captures the off-diagonal entry, got " + full.covariance(0).get(0, 1));
+        assertClose(0.0, diag.covariance(0).get(0, 1), 1e-15, "DIAG keeps the covariance diagonal");
+
+        check(full.lowerBound() > diag.lowerBound() + 0.5,
+                "FULL fits correlated data better than DIAG, got " + full.lowerBound()
+                        + " vs " + diag.lowerBound());
+        check(full.aic(x) < diag.aic(x), "AIC prefers FULL on correlated data");
+        check(full.parameterCount() == 1 * (2 + 3) + 0, "FULL parameter count");
+        check(diag.parameterCount() == 1 * 2 * 2 + 0, "DIAG parameter count");
+        check(tied.parameterCount() == 2 * 2 + 3 + 1, "TIED parameter count");
+
+        double[] tiedWeights = tied.weights();
+        assertClose(1.0, tiedWeights[0] + tiedWeights[1], 1e-12, "TIED weights sum to 1");
+        check(tied.converged(), "TIED converges on bimodal-free data");
+
+        for (GaussianMixture.CovarianceType type : GaussianMixture.CovarianceType.values()) {
+            GaussianMixture model = GaussianMixture.builder().components(2).seed(42L)
+                    .covarianceType(type).build().fit(x);
+            Path path = dir.resolve("test-gmm-" + type.name().toLowerCase(java.util.Locale.ROOT) + ".jsl");
+            ModelCodec.save(path, model);
+            GaussianMixture loaded = ModelCodec.load(path, GaussianMixture.class);
+            check(loaded.covarianceType() == type, type + " covariance type survives serialization");
+            assertArray(model.predict(x), loaded.predict(x), 0.0, type + " GMM round-trip");
+            assertClose(model.lowerBound(), loaded.lowerBound(), 1e-12,
+                    type + " log-likelihood survives reload");
+        }
     }
 
     private static void testAgglomerative() {

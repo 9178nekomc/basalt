@@ -19,7 +19,28 @@
      "line": 22,
      "javadoc": "",
      "nested": [],
-     "members": [],
+     "members": [
+      {
+       "kind": "enum_constant",
+       "key": "ERROR",
+       "signature": "ERROR",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "transform 时遇到未见类别抛 IllegalArgumentException"
+       }
+      },
+      {
+       "kind": "enum_constant",
+       "key": "IGNORE",
+       "signature": "IGNORE",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "未见类别编码为全 0 行"
+       }
+      }
+     ],
      "doc": {
       "summary": "transform 遇到未见类别时的处理策略。",
       "body": [
@@ -1443,6 +1464,24 @@
          "核函数退化为内积 K(x, y) = x·y，不引入 gamma、degree、coef0 等超参数。"
         ],
         "returns": "this，便于链式调用"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "probability(boolean)",
+       "signature": "Builder probability(boolean probability)",
+       "params": [
+        {
+         "type": "boolean",
+         "name": "probability"
+        }
+       ],
+       "throws": [],
+       "doc": {
+        "summary": "开启 Platt 概率校准，默认关闭",
+        "params": {
+         "probability": "true 时 fit 末尾为每个二分类子问题额外拟合一组 A、B"
+        }
        }
       },
       {

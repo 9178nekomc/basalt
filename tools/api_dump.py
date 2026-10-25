@@ -520,6 +520,23 @@ def parse_file(path: str, root: str) -> list[JClass]:
     return classes
 
 
+ENUM_CONST_RE = re.compile(r"^([A-Za-z_$][\w$]*)\s*(\((.*)\))?$", re.S)
+
+
+def append_enum_constants(members: list, const_text: str) -> None:
+    """Parse an enum constant list terminated by ';' or by the closing brace."""
+    if not const_text.strip():
+        return
+    for piece in split_top_level(const_text, ","):
+        piece = strip_annotations(piece).strip()
+        if not piece:
+            continue
+        mm = ENUM_CONST_RE.match(piece)
+        if mm:
+            members.append(Member(kind="enum_constant", name=mm.group(1),
+                                  key=mm.group(1), signature=piece, javadoc=None))
+
+
 def parse_body(src: str, masked: str, brace: int, body_end: int, kind: str,
                skip: list[tuple[int, int]] | None = None) -> list[Member]:
     skip = sorted(skip or [])
@@ -562,18 +579,7 @@ def parse_body(src: str, masked: str, brace: int, body_end: int, kind: str,
                 continue
             if depth == 0 and ch == ";":
                 if kind == "enum" and not enum_done:
-                    const_text = masked[seg_start:i]
-                    if const_text.strip():
-                        for piece in split_top_level(const_text, ","):
-                            piece = strip_annotations(piece).strip()
-                            if not piece:
-                                continue
-                            mm = re.match(r"^([A-Za-z_$][\w$]*)\s*(\((.*)\))?$", piece, re.S)
-                            if mm:
-                                members.append(Member(
-                                    kind="enum_constant", name=mm.group(1), key=mm.group(1),
-                                    signature=piece, javadoc=None,
-                                ))
+                    append_enum_constants(members, masked[seg_start:i])
                     enum_done = True
                     i += 1
                     seg_start = i
@@ -585,6 +591,10 @@ def parse_body(src: str, masked: str, brace: int, body_end: int, kind: str,
             i += 1
             continue
         continue
+    if kind == "enum" and not enum_done:
+        # No ';' inside the body: the whole body is the constant list, and the
+        # closing brace sits at body_end so the loop above never reaches it.
+        append_enum_constants(members, masked[brace + 1:body_end])
     return members
 
 

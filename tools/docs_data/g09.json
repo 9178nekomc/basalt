@@ -1604,6 +1604,28 @@
       },
       {
        "kind": "method",
+       "key": "predictProbability(Matrix)",
+       "signature": "Matrix predictProbability(Matrix features)",
+       "params": [
+        {
+         "type": "Matrix",
+         "name": "features"
+        }
+       ],
+       "throws": [],
+       "doc": {
+        "summary": "返回校准后的类别概率，形状 [n, classes.length]",
+        "params": {
+         "features": "与训练集列数一致的特征矩阵"
+        },
+        "returns": "每行之和为 1；二分类两列依次为 P(classes[0])、P(classes[1])",
+        "throws": {
+         "IllegalStateException": "构建时未开启 probability(true)"
+        }
+       }
+      },
+      {
+       "kind": "method",
        "key": "predict(Matrix)",
        "signature": "double[] predict(Matrix features)",
        "params": [
@@ -1639,6 +1661,17 @@
        "doc": {
         "summary": "构建时指定的核函数",
         "returns": "Kernel 实例，含类型、gamma、degree 与 coef0"
+       }
+      },
+      {
+       "kind": "method",
+       "key": "probabilityEnabled()",
+       "signature": "boolean probabilityEnabled()",
+       "params": [],
+       "throws": [],
+       "doc": {
+        "summary": "是否启用了 Platt 概率校准",
+        "returns": "构建时传入的 probability 标志"
        }
       },
       {
@@ -1718,25 +1751,18 @@
       }
      ],
      "doc": {
-      "summary": "SMO 求解的核支持向量分类器，支持 OvR 多分类",
+      "summary": "SMO 求解的核支持向量分类器，支持 OvR 多分类与 Platt 概率校准。",
       "body": [
-       "fit 对整个训练集计算一次核 Gram 矩阵并把它整体留作支持向量集合，随后用 SMO 求解对偶问题：外层遍历样本，内层挑选使 |E_i − E_j| 最大的样本做联合更新，并以 15% 概率改取随机合作样本以跳出平台；连续 5 轮没有任何样本被更新或达到 maxIterations 时停止。",
-       "核由 Kernel 描述：LINEAR 为内积，RBF 为 exp(−gamma·‖x−y‖²)，POLY 为 (gamma·x·y + coef0)^degree，SIGMOID 为 tanh(gamma·x·y + coef0)。c 是对偶变量的上界，越小正则越强；RBF 与 POLY 的 gamma 控制单点影响半径，越大决策边界越弯曲。",
-       "二分类只训练一个模型，以 classes[1] 为正类；多分类按 One-vs-Rest 为每个类别训练一个模型，预测时取判别值最大的类别。判别值是未校准的间隔，实现不提供概率输出：需要概率时应改用概率模型，或对 decisionFunction 的间隔另行校准。"
+       "fit 对整个训练集计算一次核 Gram 矩阵并整体留作支持向量集合，随后用 SMO 求解对偶问题：外层遍历样本，内层挑选使 |E_i − E_j| 最大的样本做联合更新，并以 15% 概率改取随机合作样本以跳出平台；连续 5 轮无更新或达到 maxIterations 时停止。",
+       "核由 Kernel 描述：LINEAR 为内积，RBF 为 exp(−gamma·‖x−y‖²)，POLY 为 (gamma·x·y + coef0)^degree，SIGMOID 为 tanh(gamma·x·y + coef0)。c 是对偶变量上界，越小正则越强；RBF 与 POLY 的 gamma 控制单点影响半径，越大决策边界越弯曲。",
+       "开启 probability(true) 后，fit 末尾对每个二分类子问题做 Platt 校准：标签先平滑（正类 (N₊+1)/(N₊+2)，负类 1/(N₋+2)），再用带阻尼的牛顿法最小化负对数似然，求出 P(y=+1|f) = 1/(1+exp(A·f+B)) 的 A、B。多分类对每个 OvR 模型各自校准，再按概率和归一化。"
       ],
       "notes": [
-       "默认 kernel 为 rbf(1.0)、c=1.0、tolerance=1e-4、maxIterations=600、seed=42",
-       "Gram 矩阵为 n×n，内存开销随样本数平方增长；预测对每个样本遍历全部训练行",
+       "默认 kernel 为 rbf(1.0)、c=1.0、tolerance=1e-4、maxIterations=600、seed=42、probability=false",
+       "未开启 probability 时调用 predictProbability 抛 IllegalStateException；校准参数 A、B 随模型一起序列化",
+       "Gram 矩阵为 n×n，内存随样本数平方增长；预测对每个样本遍历全部训练行",
        "所有训练行都保留为支持向量，不做 alpha 为零的剪枝，模型体积与训练集同阶",
-       "多分类时第 m 个模型的随机种子为 seed + m*101，保证可复现",
-       "没有 predictProbability，也没有 Platt 或 Sigmoid 概率校准"
-      ],
-      "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {0.0, 0.0}, {0.5, 0.2}, {1.0, 0.0},\n        {0.2, 0.8}, {0.8, 1.0}, {1.0, 0.9}});\ndouble[] y = {0.0, 0.0, 0.0, 1.0, 1.0, 1.0};\n\nSVC svc = SVC.builder()\n        .rbf(0.5)\n        .c(1.0)\n        .tolerance(1e-4)\n        .maxIterations(600)\n        .seed(42L)\n        .build()\n        .fit(x, y);\n\ndouble[] labels = svc.predict(x);\ndouble[] margins = svc.decisionFunction(x);\ndouble[] classes = svc.classes();",
-      "see": [
-       "jsl.ml.Kernel",
-       "jsl.ml.KernelRidge",
-       "jsl.ml.LinearSVM",
-       "jsl.ml.LogisticRegression"
+       "校准在训练集决策值上拟合，样本很少或数据近似可分时 |A| 会很大，概率贴近 0/1"
       ]
      }
     },
