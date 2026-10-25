@@ -27,7 +27,10 @@ import html
 import json
 import os
 import re
+import shutil
 import sys
+
+from md_render import render_markdown, set_java_highlighter
 
 VERSION = "2.4.0"
 TITLE = f"JSL {VERSION} 文档"
@@ -501,9 +504,9 @@ def sidebar_html(active: str, page_toc: list[tuple[str, str]] | None = None,
     parts.append("</ul>")
 
     parts.append('<div class="sidebar-head">Other resources</div><ul>')
-    parts.append(item("README", "../README.md"))
-    parts.append(item("架构与基准报告", "../report/JSL_ARCHITECTURE_AND_BENCHMARK.html"))
-    parts.append(item("与 scikit-learn 对比", "../report/JSL_VS_SKLEARN.html"))
+    parts.append(item("README", "readme.html", "readme"))
+    parts.append(item("架构与基准报告", "report/JSL_ARCHITECTURE_AND_BENCHMARK.html"))
+    parts.append(item("与 scikit-learn 对比", "report/JSL_VS_SKLEARN.html"))
     parts.append(item("GitHub 仓库", REPO))
     parts.append("</ul>")
     parts.append("</aside>")
@@ -795,8 +798,8 @@ def render_index(modules: list[dict], stats: dict) -> str:
     resources = [
         ("JSL 开发者指南", "构建、验证与基准脚本", "api/index.html"),
         ("架构与基准报告", "原生 GEMM、自动求导与实测数据",
-         "../report/JSL_ARCHITECTURE_AND_BENCHMARK.html"),
-        ("与 scikit-learn 对比", "同一份 JSLD 数据下的十项对比", "../report/JSL_VS_SKLEARN.html"),
+         "report/JSL_ARCHITECTURE_AND_BENCHMARK.html"),
+        ("与 scikit-learn 对比", "同一份 JSLD 数据下的十项对比", "report/JSL_VS_SKLEARN.html"),
         ("GitHub 仓库", "源码、发布产物与问题追踪", REPO),
     ]
     install = """<dependency>
@@ -893,6 +896,29 @@ def render_index(modules: list[dict], stats: dict) -> str:
                 body, active="index", root="")
 
 
+def render_readme_page(stats: dict) -> str:
+    """Render README.md as a styled page so static hosts never serve raw text."""
+    source = open("README.md", encoding="utf-8").read()
+    body_html = render_markdown(source)
+    # rewrite repository-relative targets to the copies that live inside docs/
+    body_html = body_html.replace('href="docs/index.html"', 'href="index.html"')
+    body_html = re.sub(r'href="report/([\w.-]+)\.md"', r'href="report/\1.html"', body_html)
+    body_html = re.sub(r'href="(target/[^"]+)"',
+                       r'href="https://github.com/9178nekomc/java-scikit-learn/raw/main/\1"',
+                       body_html)
+    body = (
+        '<p class="welcome">本页由 <code>README.md</code> 自动渲染，内容与仓库根目录的 '
+        f'<a href="{REPO}/blob/main/README.md" rel="noopener">README</a> 一致。'
+        f'生成于 {stats["generated"]}。</p>'
+        + body_html +
+        '<div class="relbar"><a class="prev" href="index.html">JSL 2.4.0 文档</a>'
+        '<span class="spacer"></span><a class="next" href="api/index.html">模块索引</a></div>'
+    )
+    return page(f"README — {TITLE}",
+                [("JSL", "index.html"), ("2.4.0", None), ("README", None)],
+                body, active="readme", root="")
+
+
 def render_module_index(modules: list[dict]) -> str:
     rows = "".join(
         f'<tr><td><a href="{os.path.basename(page_name(m["name"]))}">'
@@ -987,6 +1013,7 @@ def main() -> int:
     ap.add_argument("--out", default="docs")
     args = ap.parse_args()
 
+    set_java_highlighter(highlight_java)
     api = load_api(args.api)
     docs = load_docs(args.docs)
     modules = sorted(api["modules"],
@@ -1057,6 +1084,17 @@ def main() -> int:
                   "w", encoding="utf-8") as fh:
             fh.write(doc_html)
 
+    with open(os.path.join(out, "readme.html"), "w", encoding="utf-8") as fh:
+        fh.write(render_readme_page(stats))
+
+    # The report HTMLs are self-contained (base64 images) but live outside docs/,
+    # so static hosts that publish only docs/ would 404 on them.  Copy the built
+    # snapshots next to the documentation.
+    report_out = os.path.join(out, "report")
+    os.makedirs(report_out, exist_ok=True)
+    for path in sorted(glob.glob("report/*.html")):
+        shutil.copy2(path, os.path.join(report_out, os.path.basename(path)))
+
     with open(os.path.join(api_dir, "index.html"), "w", encoding="utf-8") as fh:
         fh.write(render_module_index(modules))
 
@@ -1069,7 +1107,7 @@ def main() -> int:
             total += os.path.getsize(os.path.join(base, name))
 
     print(f"output      : {out}/")
-    print(f"pages       : {len(modules) + 3} html")
+    print(f"pages       : {len(modules) + 4} html (+ readme)")
     print(f"total size  : {total / 1024:.1f} KiB")
     print(f"types       : {stats['public_types']} public")
     print(f"members     : {stats['members']} public, {stats['documented_members']} documented")

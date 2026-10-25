@@ -138,6 +138,7 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 | `docs/api/jsl_nativebridge.html` | `NativeContext`、`NativeTensorHandle`、`CommandQueueBuilder`、`NativeMLP` |
 | `docs/api/jsl_torch.html` | eager `Tensor`、`Module`/`Sequential`、CNN/Transformer 模块、优化器、损失 |
 | `docs/genindex.html` | 总索引（按首字母） |
+| `docs/readme.html` | 本 README 的 HTML 版（同一版式，静态托管下不会退化成纯文本） |
 
 覆盖范围：**136 个公开类型、826 个公开成员**，其中 826 个成员全部带逐参数说明
 （共 883 条参数条目、722 组 `参数/返回/抛出` 字段列表），另有 18 个包内可见类型
@@ -167,8 +168,12 @@ python tools/check_docs.py --root docs
 - `tools/docs_data/g*.json`：说明数据层，契约见 `tools/docs_data/SCHEMA.md`。
   渲染器按 `(qualified, key)` 匹配，**匹配不上的说明直接丢弃并报错**，
   所以文档不可能描述一个不存在的参数。
-- `tools/build_api_docs.py`：零外部依赖渲染器，输出 12 个 HTML 页 + `_static/`
-  （样式、主题脚本、搜索索引）。
+- `tools/build_api_docs.py`：零外部依赖渲染器，输出 13 个 HTML 页（含 `readme.html`）。
+  **每页自包含**：CSS、主题/搜索脚本、932 条搜索索引全部内联，不引用任何外部
+  `_static/` 目录——静态托管（Jekyll、各类预览服务）会跳过下划线开头的目录，
+  外部资源一旦 404，页面就会退化成无样式纯文本。
+- `tools/md_render.py`：README 的 Markdown 渲染器（标题、围栏代码、GFM 表格、
+  嵌套列表、引用块、行内标记），CJK 换行不插空格，`java` 代码块复用同一套高亮。
 - `tools/check_docs.py`：退出码非 0 即视为文档损坏，可用于 CI 门禁。
 
 当前 `check_docs.py` 结果：12 页、154 个类型块、724 个方法块、722 组字段列表、
