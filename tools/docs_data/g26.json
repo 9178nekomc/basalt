@@ -1,0 +1,451 @@
+{
+  "group": "g26",
+  "title": "模型库与训练",
+  "modules": [
+    {
+      "name": "basalt.zoo",
+      "types": [
+        {
+          "qualified": "basalt.zoo.History",
+          "simple_qualified": "History",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "basalt/zoo/History.java",
+          "line": 11,
+          "javadoc": "Per-epoch loss record produced by {@link Trainer}.\n\n<p>Losses are the mean over the batches of one epoch, so they are comparable across epochs even\nwhen the last batch is short.</p>",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "losses()",
+              "signature": "List<Double> losses()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "每轮一个值，从旧到新",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "epochs()",
+              "signature": "int epochs()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "实际跑完的轮数",
+                "body": [
+                  "开启早停时会小于请求的轮数。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "lastLoss()",
+              "signature": "double lastLoss()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "最后一轮的损失，没有跑过任何轮时为 NaN",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "bestLoss()",
+              "signature": "double bestLoss()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "最低损失，没有跑过任何轮时为 NaN",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "bestEpoch()",
+              "signature": "int bestEpoch()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "最低损失出现在第几轮，从 0 开始；没有记录时为 -1",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "toString()",
+              "signature": "String toString()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "轮数与首末损失的摘要",
+                "body": []
+              }
+            }
+          ],
+          "doc": {
+            "summary": "逐轮损失记录",
+            "body": [
+              "每轮的损失是该轮所有批次损失的均值，因此最后一批不满时也能与前面的轮次直接比较。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.zoo.Trainer",
+          "simple_qualified": "Trainer",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "basalt/zoo/Trainer.java",
+          "line": 37,
+          "javadoc": "The training loop, written once.\n\n<p>This is the middle tier's counterpart to {@link Auto}: you still choose the architecture, the\noptimiser and the loss, but you do not rewrite the batch loop, the graph reset or the epoch\nbookkeeping. Every step is exactly what a hand-written loop would do — forward, loss, backward,\noptimiser step, zero the gradients, clear the graph — so a model trained here behaves identically\nto one trained by hand.</p>\n\n<pre>{@code\ntry (Basalt engine = Basalt.create()) {\nSequential<BC, BC> net = Zoo.tabularClassifier(engine, 4, 3);\nHistory history = Trainer.of(engine.context(), net, engine.adamw(net.parameters(), 1e-2f),\nengine.crossEntropy())\n.epochs(50)\n.batchSize(16)\n.fit(engine.tensor(features, rows, 4), engine.tensor(labels, rows));\n}\n}</pre>\n\n<p>Batches are copied into fresh tensors rather than sliced in place. That costs one array copy\nper batch and keeps the graph free of views, which is the same trade the rest of the tensor\nlayer makes: no hidden aliasing, no lifetime puzzles.</p>",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "of(NativeContext, Module<?, ?>, Optimizer, Loss)",
+              "signature": "Trainer of(NativeContext context, Module<?, ?> module, Optimizer optimizer, Loss loss)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "Module<?, ?>",
+                  "name": "module"
+                },
+                {
+                  "type": "Optimizer",
+                  "name": "optimizer"
+                },
+                {
+                  "type": "Loss",
+                  "name": "loss"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "绑定模型、优化器与损失",
+                "body": [
+                  "模块必须至少暴露一个参数，否则没有可训练的东西，直接报错。"
+                ],
+                "params": {
+                  "context": "原生上下文，批次张量在它上面创建",
+                  "module": "被训练的网络",
+                  "optimizer": "参数更新规则",
+                  "loss": "损失函数"
+                },
+                "throws": {
+                  "IllegalArgumentException": "任一参数为空，或模块没有参数"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "epochs(int)",
+              "signature": "Trainer epochs(int epochs)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "epochs"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "训练轮数",
+                "body": [],
+                "params": {
+                  "epochs": "至少 1"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "batchSize(int)",
+              "signature": "Trainer batchSize(int batchSize)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "batchSize"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "每步的行数",
+                "body": [
+                  "一轮最后一批可能不足这个数量。"
+                ],
+                "params": {
+                  "batchSize": "至少 1"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "seed(long)",
+              "signature": "Trainer seed(long seed)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "打乱顺序用的种子",
+                "body": [],
+                "params": {
+                  "seed": "默认 42"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "shuffle(boolean)",
+              "signature": "Trainer shuffle(boolean shuffle)",
+              "params": [
+                {
+                  "type": "boolean",
+                  "name": "shuffle"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "每轮开始前是否重新打乱",
+                "body": [],
+                "params": {
+                  "shuffle": "默认 true"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "earlyStopping(int)",
+              "signature": "Trainer earlyStopping(int patience)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "patience"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "连续多少轮没有改善就停",
+                "body": [
+                  "0 表示关闭。改善的判定带 1e-12 的容差，避免浮点抖动被当成进步。"
+                ],
+                "params": {
+                  "patience": "非负整数"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit(Tensor, Tensor)",
+              "signature": "History fit(Tensor features, Tensor targets)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "features"
+                },
+                {
+                  "type": "Tensor",
+                  "name": "targets"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "在整份张量上训练",
+                "body": [
+                  "特征的第一维是样本轴，其余维度原样保留；目标是 1 维（类别下标或单值）或 2 维（与特征对齐）。任何一轮的平均损失变成非有限值时立刻抛异常，而不是继续训练出一个坏模型。"
+                ],
+                "params": {
+                  "features": "至少 2 维",
+                  "targets": "1 维或 2 维，首维与特征一致"
+                },
+                "throws": {
+                  "IllegalArgumentException": "维度或行数不匹配",
+                  "IllegalStateException": "某轮损失发散为非有限值"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "统一的训练循环",
+            "body": [
+              "把前向、损失、反向、优化器更新、清梯度和清图这六步写一次，模型只负责 forward 与 parameters。三步与手写循环完全一致，因此这里训出来的模型和手写循环训出来的行为相同。",
+              "批次是把行复制进新张量，而不是在原张量上切片。每个批次多一次数组拷贝，换来计算图里没有视图、也没有隐藏的别名，这与整个张量层的取舍一致。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.zoo.Zoo",
+          "simple_qualified": "Zoo",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "basalt/zoo/Zoo.java",
+          "line": 24,
+          "javadoc": "Ready-made architectures with sane defaults.\n\n<p>This is the middle tier: you still control the shape of the network, but you do not write the\nwiring, the weight initialisation or the activation placement. Every method returns an ordinary\n{@link Sequential}, so the result can be extended with {@code add(...)}, handed to a\n{@link Trainer}, inspected with {@code parameters()}, or saved with {@code stateDict()} like any\nhand-built module.</p>\n\n<p>For full control, ignore this class: {@link basalt.torch.Module} is the only contract a layer\nhas to satisfy, and {@code Sequential.add} accepts anything that implements it.</p>",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "mlp(Basalt, int, int[], int)",
+              "signature": "Sequential<BC, BC> mlp(Basalt engine, int inputs, int[] hidden, int outputs)",
+              "params": [
+                {
+                  "type": "Basalt",
+                  "name": "engine"
+                },
+                {
+                  "type": "int",
+                  "name": "inputs"
+                },
+                {
+                  "type": "int[]",
+                  "name": "hidden"
+                },
+                {
+                  "type": "int",
+                  "name": "outputs"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "全连接网络",
+                "body": [
+                  "层间用 ReLU，最后一层不带激活，可以直接接交叉熵或 MSE 损失。"
+                ],
+                "params": {
+                  "engine": "运行时入口，用来创建层",
+                  "inputs": "输入宽度",
+                  "hidden": "各隐藏层宽度，可以为空数组表示线性模型",
+                  "outputs": "输出宽度"
+                },
+                "throws": {
+                  "IllegalArgumentException": "宽度小于 1"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "tabularClassifier(Basalt, int, int)",
+              "signature": "Sequential<BC, BC> tabularClassifier(Basalt engine, int features, int classes)",
+              "params": [
+                {
+                  "type": "Basalt",
+                  "name": "engine"
+                },
+                {
+                  "type": "int",
+                  "name": "features"
+                },
+                {
+                  "type": "int",
+                  "name": "classes"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "两隐藏层的表格分类器",
+                "body": [
+                  "隐藏层宽度固定为 64 与 32，适合作为表格任务的起点。"
+                ],
+                "params": {
+                  "engine": "运行时入口",
+                  "features": "特征数",
+                  "classes": "类别数"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "cnnClassifier(Basalt, int, int, int, int)",
+              "signature": "Sequential<BCHW, BC> cnnClassifier(Basalt engine, int channels, int height, int width, int classes)",
+              "params": [
+                {
+                  "type": "Basalt",
+                  "name": "engine"
+                },
+                {
+                  "type": "int",
+                  "name": "channels"
+                },
+                {
+                  "type": "int",
+                  "name": "height"
+                },
+                {
+                  "type": "int",
+                  "name": "width"
+                },
+                {
+                  "type": "int",
+                  "name": "classes"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "小型卷积分类器",
+                "body": [
+                  "一层卷积、一次池化、一个全连接头。卷积保持空间尺寸，池化把长宽减半，因此展平后的宽度是 8 × (高/2) × (宽/2)，长宽都必须是偶数。"
+                ],
+                "params": {
+                  "engine": "运行时入口",
+                  "channels": "输入通道数",
+                  "height": "输入高度",
+                  "width": "输入宽度",
+                  "classes": "类别数"
+                },
+                "throws": {
+                  "IllegalArgumentException": "长宽小于 4 或不是偶数"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "开箱可用的网络结构",
+            "body": [
+              "三层 API 的第二层：形状由你定，接线、初始化和激活位置由这里定。每个方法返回的都是普通 Sequential，可以继续 add、交给 Trainer、读 parameters 或存 stateDict。",
+              "要完全掌控，不必用它：Module 才是层需要满足的唯一契约，Sequential.add 接受任何实现。"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

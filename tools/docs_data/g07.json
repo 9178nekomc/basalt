@@ -953,6 +953,31 @@
                   "ACCURACY 与 MACRO_F1 要求预测是类别码，R2 与 RMSE 要求连续值，错配不报错"
                 ]
               }
+            },
+            {
+              "kind": "method",
+              "key": "create(Algorithm)",
+              "signature": "Estimator create(Algorithm algorithm)",
+              "params": [
+                {
+                  "type": "Algorithm",
+                  "name": "algorithm"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "构造一个尚未拟合的估计器",
+                "body": [
+                  "fit 就是 create(algorithm).fit(features, targets)。把构造单独暴露出来，既方便先配置再拟合，也让注册表能直接拿到新实例而不必复制整张算法表。"
+                ],
+                "params": {
+                  "algorithm": "算法枚举"
+                },
+                "throws": {
+                  "IllegalArgumentException": "algorithm 为空"
+                }
+              }
             }
           ],
           "doc": {
@@ -2525,6 +2550,184 @@
               "basalt.ml.Estimator",
               "basalt.core.Persistable",
               "basalt.ml.Kernel"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.Registry",
+          "simple_qualified": "Registry",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "basalt/ml/Registry.java",
+          "line": 29,
+          "javadoc": "Named catalogue of estimators, open for third-party extension.\n\n<p>The built-in catalogue is derived from {@link Estimators.Algorithm}, so the two can never\ndrift apart. Additional estimators can be registered at runtime and immediately become visible\nto {@link basalt.auto.Auto}, which screens every entry for the detected task. That is the\nextension point for a new classical algorithm: implement {@link Estimator}, register a factory,\nand it competes with the built-ins without touching library code.</p>\n\n<p>Names are lower-case snake case ({@code linear_regression}, {@code random_forest}). A name may\nonly be registered once; registering a duplicate is rejected instead of silently replacing the\nearlier factory, because screening order and report labels depend on it.</p>\n\n<p>All methods are synchronized on the registry: registration usually happens once at start-up,\nbut {@link basalt.auto.Auto} reads the catalogue while other threads may still be registering.</p>",
+          "nested": [
+            "Entry"
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "key": "register(String, Estimators.Task, Supplier<Estimator>)",
+              "signature": "void register(String name, Estimators.Task task, Supplier<Estimator> factory)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                },
+                {
+                  "type": "Estimators.Task",
+                  "name": "task"
+                },
+                {
+                  "type": "Supplier<Estimator>",
+                  "name": "factory"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "注册一个工厂",
+                "body": [
+                  "名字大小写不敏感，内部统一转小写保存。工厂每次被调用都应返回一个全新的、未拟合的实例，因为交叉验证会对同一算法多次建模型。"
+                ],
+                "params": {
+                  "name": "唯一名字",
+                  "task": "该算法解决的任务，决定它出现在哪一组筛选里",
+                  "factory": "无参工厂"
+                },
+                "throws": {
+                  "IllegalArgumentException": "名字为空或已被占用，或任务、工厂为空"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "create(String)",
+              "signature": "Estimator create(String name)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按名字构造一个未拟合的实例",
+                "body": [],
+                "params": {
+                  "name": "注册时使用的名字"
+                },
+                "throws": {
+                  "IllegalArgumentException": "名字未注册"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "all()",
+              "signature": "List<Entry> all()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "全部条目，内置在前，按注册顺序",
+                "body": [
+                  "返回的是不可变列表。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "byTask(Estimators.Task)",
+              "signature": "List<Entry> byTask(Estimators.Task task)",
+              "params": [
+                {
+                  "type": "Estimators.Task",
+                  "name": "task"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "只返回解决该任务的条目",
+                "body": [
+                  "Auto 用它决定候选集合，所以注册时把任务写对很重要。"
+                ],
+                "params": {
+                  "task": "分类、回归或无监督"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "contains(String)",
+              "signature": "boolean contains(String name)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "名字是否已注册",
+                "body": [
+                  "大小写不敏感。"
+                ],
+                "params": {
+                  "name": "待查名字"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "size()",
+              "signature": "int size()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "已注册的算法总数",
+                "body": []
+              }
+            }
+          ],
+          "doc": {
+            "summary": "按名字索引的估计器目录，可运行时扩展",
+            "body": [
+              "内置条目由 Estimators.Algorithm 推导，两者不可能不同步。第三方算法在运行时注册后立刻对 basalt.auto.Auto 可见：Auto 会把它和内置算法放在一起筛选。这就是新增经典算法的扩展点——实现 Estimator、注册一个工厂，不需要改动库里的任何代码。",
+              "名字统一用小写蛇形（linear_regression、random_forest）。同一个名字只能注册一次；重复注册会直接报错，而不是悄悄替换，因为筛选顺序和报告标签都依赖它。",
+              "所有方法都对注册表加锁：注册通常只在启动时发生，但 Auto 读取目录时其他线程可能仍在注册。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.Registry.Entry",
+          "simple_qualified": "Registry.Entry",
+          "kind": "record",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "basalt/ml/Registry.java",
+          "line": 32,
+          "javadoc": "One catalogue entry: its public name, the task it solves, and whether it ships built in.",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "目录中的一条记录",
+            "body": [
+              "builtIn 用来区分随库发布的算法与运行时注册的算法，报告里可以据此标注来源。"
             ]
           }
         }

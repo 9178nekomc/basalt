@@ -73,7 +73,8 @@ check_warnings "$LOG_DIR/main-javac.log"
 printf '==> compiling test sources (-Xlint:all)
 '
 emit_sources src/test/java "$LOG_DIR/test-sources.txt" \
-  ! -name "BasaltApiTest.java" ! -name "PerformanceTest.java"
+  ! -name "BasaltApiTest.java" ! -name "PerformanceTest.java" \
+  ! -name "AdvancedApiTest.java"
 "${JAVAC_CMD[@]}" "${JAVAC_FLAGS[@]}" -cp "$CLASSES" -d "$TEST_CLASSES" @"$LOG_DIR/test-sources.txt" > "$LOG_DIR/test-javac.log" 2>&1
 check_warnings "$LOG_DIR/test-javac.log"
 
@@ -96,19 +97,19 @@ printf '==> running torch eager/autograd suite
 '
 java --add-modules jdk.incubator.vector -cp "$TEST_CP" basalt.tests.TorchTestSuite
 
-if [ -f "$TEST_CLASSES/jsl/tests/Phase1TestSuite.class" ]; then
+if [ -f "$TEST_CLASSES/basalt/tests/Phase1TestSuite.class" ]; then
   printf '==> running Phase 1 suite (JNI engineering, preprocessing, model selection, pipeline)
 '
   java --add-modules jdk.incubator.vector -cp "$TEST_CP" basalt.tests.Phase1TestSuite
 fi
 
-if [ -f "$TEST_CLASSES/jsl/tests/Phase2TestSuite.class" ]; then
+if [ -f "$TEST_CLASSES/basalt/tests/Phase2TestSuite.class" ]; then
   printf '==> running Phase 2 suite (kernels, unsupervised, feature eng, DAG, LR schedulers, ONNX)
 '
   java --add-modules jdk.incubator.vector -cp "$TEST_CP" basalt.tests.Phase2TestSuite
 fi
 
-if [ -f "$TEST_CLASSES/jsl/tests/Phase3TestSuite.class" ]; then
+if [ -f "$TEST_CLASSES/basalt/tests/Phase3TestSuite.class" ]; then
   printf '==> running Phase 3 suite (explainability SHAP/LIME, JFR & observability metrics)
 '
   java --add-modules jdk.incubator.vector -cp "$TEST_CP" basalt.tests.Phase3TestSuite
@@ -125,7 +126,7 @@ fi
 
 printf '==> verifying compile-time rejection
 '
-for source in src/test/compile-fail/jsl/tests/*.java; do
+for source in src/test/compile-fail/basalt/tests/*.java; do
   if "${JAVAC_CMD[@]}" "${JAVAC_FLAGS[@]}" -cp "$CLASSES" -d "$FAIL_CLASSES" "$source"       > "$FAIL_CLASSES/diagnostic.log" 2>&1; then
     printf 'Compile-time safety failure: %s unexpectedly compiled
 ' "$source" >&2

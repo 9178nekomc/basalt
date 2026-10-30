@@ -6,7 +6,7 @@
 
     <groupId>io.github.9178nekomc</groupId>
     <artifactId>basalt</artifactId>
-    <version>3.4.0</version>
+    <version>3.5.0</version>
     <packaging>jar</packaging>
 
     <name>Basalt</name>
@@ -33,7 +33,7 @@
         <connection>scm:git:https://github.com/9178nekomc/basalt.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/9178nekomc/basalt.git</developerConnection>
         <url>https://github.com/9178nekomc/basalt</url>
-        <tag>v3.4.0</tag>
+        <tag>v3.5.0</tag>
     </scm>
 
     <properties>

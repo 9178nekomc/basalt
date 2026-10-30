@@ -1,6 +1,6 @@
 # Basalt — Java + Rust Machine Learning Runtime
 
-> **Maven coordinates** — `io.github.9178nekomc:basalt:3.4.0`  
+> **Maven coordinates** — `io.github.9178nekomc:basalt:3.5.0`  
 > **Runtime** — Java 21 (`--add-modules jdk.incubator.vector`) + bundled Rust native library  
 > **One dependency, no Python, no GIL, no manual native build on Windows x86_64.**  
 > **Docs** — <https://9178nekomc.github.io/basalt/>
@@ -13,7 +13,7 @@
 <dependency>
     <groupId>io.github.9178nekomc</groupId>
     <artifactId>basalt</artifactId>
-    <version>3.4.0</version>
+    <version>3.5.0</version>
 </dependency>
 ```
 
@@ -23,7 +23,7 @@ Build and install locally from source:
 mvn clean install
 ```
 
-The shaded, self-contained artifact is `basalt-3.4.0-all.jar` (classifier `all`).
+The shaded, self-contained artifact is `basalt-3.5.0-all.jar` (classifier `all`).
 It contains the Windows x86_64 native runtime; other platforms can add their own
 `native/<os>-<arch>/` library or point `-Dbasalt.native.path` at a locally built one.
 
@@ -121,15 +121,15 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 
 ## 下载
 
-发布资产见 [Releases · v3.4.0](https://github.com/9178nekomc/basalt/releases/tag/v3.4.0)：
+发布资产见 [Releases · v3.5.0](https://github.com/9178nekomc/basalt/releases/tag/v3.5.0)：
 
 | 文件 | 说明 |
 |---|---|
-| `basalt-3.4.0-all.jar` | Fat Jar（classifier `all`），含 Windows x86_64 原生库，可直接 `java -cp` |
-| `basalt-3.4.0.jar` | 标准 jar，原生库在 `native/windows-x86_64/` 资源目录内 |
-| `basalt-3.4.0-sources.jar` | 源码包 |
+| `basalt-3.5.0-all.jar` | Fat Jar（classifier `all`），含 Windows x86_64 原生库，可直接 `java -cp` |
+| `basalt-3.5.0.jar` | 标准 jar，原生库在 `native/windows-x86_64/` 资源目录内 |
+| `basalt-3.5.0-sources.jar` | 源码包 |
 | `basalt_native.dll` | Windows x86_64 原生库，独立分发用 |
-| `basalt-docs-3.4.0.zip` | 离线文档站（13 页 HTML + 2 个基准报告），解压后双击 `index.html` |
+| `basalt-docs-3.5.0.zip` | 离线文档站（15 页 HTML + 2 个基准报告），解压后双击 `index.html` |
 
 ---
 
@@ -145,7 +145,7 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 | 页面 | 内容 |
 |---|---|
 | `docs/index.html` | 首页：文档章节网格、安装、快速开始、三层 API 边界、模块索引 |
-| `docs/api/index.html` | 模块索引（9 个包，附阅读顺序建议） |
+| `docs/api/index.html` | 模块索引（11 个包，附阅读顺序建议） |
 | `docs/api/basalt.html` | `basalt` 门面与异常 |
 | `docs/api/basalt_core.html` | 布局标记、`Matrix`、`MatMul`、`VectorMath`、`NativeKernels`、模型容器原语 |
 | `docs/api/basalt_data.html` | `DataLoader`（BasaltD 流式 / 内存映射）、`Normalization` |
@@ -157,8 +157,8 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 | `docs/genindex.html` | 总索引（按首字母） |
 | `docs/readme.html` | 本 README 的 HTML 版（同一版式，静态托管下不会退化成纯文本） |
 
-覆盖范围：**226 个公开类型、1463 个公开成员**，其中 1463 个成员全部带逐参数说明
-（共 1423 条参数条目、1237 组 `参数/返回/抛出` 字段列表），另有 23 个包内可见类型
+覆盖范围：**235 个公开类型、1510 个公开成员**，其中 1510 个成员全部带逐参数说明
+（共 1467 条参数条目、1264 组 `参数/返回/抛出` 字段列表），另有 23 个包内可见类型
 单列在各模块页末尾，并明确标注为非稳定 API。
 
 ### 文档是怎么生成的
@@ -186,14 +186,14 @@ python tools/check_docs.py --root docs
   渲染器按 `(qualified, key)` 匹配，**匹配不上的说明直接丢弃并报错**，
   所以文档不可能描述一个不存在的参数。
 - `tools/build_api_docs.py`：零外部依赖渲染器，输出 13 个 HTML 页，另加一份 `readme.html`。
-  **每页自包含**：CSS、主题/搜索脚本、1645 条搜索索引全部内联，不引用任何外部
+  **每页自包含**：CSS、主题/搜索脚本、1700 条搜索索引全部内联，不引用任何外部
   `_static/` 目录——静态托管（Jekyll、各类预览服务）会跳过下划线开头的目录，
   外部资源一旦 404，页面就会退化成无样式纯文本。
 - `tools/md_render.py`：README 的 Markdown 渲染器（标题、围栏代码、GFM 表格、
   嵌套列表、引用块、行内标记），CJK 换行不插空格，`java` 代码块复用同一套高亮。
 - `tools/check_docs.py`：退出码非 0 即视为文档损坏，可用于 CI 门禁。
 
-当前 `check_docs.py` 结果：15 页、249 个类型块、1211 个方法块、1237 组字段列表、
+当前 `check_docs.py` 结果：17 页、258 个类型块、1257 个方法块、1264 组字段列表、
 0 个占位符、0 个断链。
 
 ---
@@ -204,7 +204,7 @@ python tools/check_docs.py --root docs
 <dependency>
     <groupId>io.github.9178nekomc</groupId>
     <artifactId>basalt</artifactId>
-    <version>3.4.0</version>
+    <version>3.5.0</version>
 </dependency>
 ```
 
@@ -215,9 +215,9 @@ mvn clean install
 ```
 
 产物：
-- `target/basalt-3.4.0.jar`：标准 jar（含 `native/windows-x86_64/basalt_native.dll` 资源）
-- `target/basalt-3.4.0-all.jar`：Fat Jar（classifier `all`，可直接 `java -cp`）
-- `target/basalt-3.4.0-sources.jar`：源码包
+- `target/basalt-3.5.0.jar`：标准 jar（含 `native/windows-x86_64/basalt_native.dll` 资源）
+- `target/basalt-3.5.0-all.jar`：Fat Jar（classifier `all`，可直接 `java -cp`）
+- `target/basalt-3.5.0-sources.jar`：源码包
 
 10 行完成一次前向 + 反向：
 
@@ -236,6 +236,79 @@ try (Basalt engine = Basalt.create()) {
 - 统一入口：`basalt.Basalt`；张量/模块：`basalt.torch.*`；经典模型：`basalt.ml.*`。
 - 用户只创建 `Tensor`，不需要手动释放；`Cleaner` 兜底，严谨场景仍可 `try-with-resources`。
 - 运行参数：`--add-modules jdk.incubator.vector`（Maven Surefire 已配置）。
+
+---
+
+## 0.5 三层 API
+
+同一个库，三种介入深度。三层共用同一套张量、同一张计算图，所以上一层永远不限制下一层。
+
+### 第一层：一行跑起来
+
+```java
+AutoModel model = Auto.quickstart(features, labels);   // 自动判断分类还是回归
+System.out.println(model.summary());                    // 候选表 + 留出成绩
+double[] prediction = model.predict(unseen);
+```
+
+它做的四件事：判断任务 → 用 5 折交叉验证把该任务下注册过的算法全部跑一遍 → 取最优者在全量数据上重训 →
+在 25% 留出集上报分。要控制细节就换成 builder：
+
+```java
+AutoModel model = Auto.builder(features, labels)
+        .folds(10)
+        .testFraction(0.2)
+        .candidates("random_forest", "gradient_boosting")
+        .fit();
+```
+
+### 第二层：拼装与训练
+
+```java
+try (Basalt engine = Basalt.create()) {
+    Sequential<BC, BC> net = Zoo.tabularClassifier(engine, 4, 3);   // 或 Zoo.mlp / Zoo.cnnClassifier
+    Trainer.of(engine.context(), net, engine.adamw(net.parameters(), 1e-2f), engine.crossEntropy())
+            .epochs(50)
+            .batchSize(16)
+            .earlyStopping(5)
+            .fit(engine.tensor(features, rows, 4), engine.tensor(labels, rows));
+}
+```
+
+`Zoo` 返回的是普通 `Sequential`，可以继续 `add`；`Trainer` 就是手写循环的封装——前向、损失、反向、
+更新、清梯度、清图，一步不省，所以训出来的模型和手写循环完全一致。
+
+### 第三层：手写一切
+
+一个层只需要满足 `Module` 的两个方法：
+
+```java
+final class MyLayer extends Module<BC, BC> {
+    private final Tensor weight = Tensor.parameter(context, 128, 64);
+
+    @Override
+    public Tensor forward(Tensor input) {
+        return input.matMul(weight).tanh();
+    }
+
+    @Override
+    public List<Tensor> parameters() {
+        return List.of(weight);
+    }
+}
+```
+
+写好的层能塞进 `Sequential`，也能直接交给 `Trainer`，因为 `Trainer` 只认 `Module`。
+算法层面同理——实现 `Estimator` 并注册，`Auto` 立刻把它纳入筛选：
+
+```java
+Registry.register("my_regressor", Task.REGRESSION, MyRegressor::new);
+Auto.quickstart(features, targets);   // 新算法与内置算法同台竞争，不需要改动库代码
+```
+
+这套组合支撑两种用法：**用现有算子拼一个全新的结构**（自定义层 + 自定义损失 + 自定义优化器，
+`Trainer` 照常训练、`stateDict()` 照常保存），以及**换掉整个学习算法**（注册自己的 `Estimator`，
+它马上和 23 个内置算法一起被交叉验证比较）。
 
 ---
 
@@ -814,7 +887,7 @@ report/                 报告、图表生成脚本、figures/
 
 ---
 
-## 11. v3.4.0 三期演进全景
+## 11. v3.5.0 三期演进全景
 
 ### 第一阶段：夯实工程底座（Phase 1）
 1. **JNI / Rust 底层核心工程强化**

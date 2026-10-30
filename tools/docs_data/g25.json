@@ -1,0 +1,528 @@
+{
+  "group": "g25",
+  "title": "自动建模",
+  "modules": [
+    {
+      "name": "basalt.auto",
+      "types": [
+        {
+          "qualified": "basalt.auto.Auto",
+          "simple_qualified": "Auto",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "basalt/auto/Auto.java",
+          "line": 40,
+          "javadoc": "Picks a model for you.\n\n<p>This is the one-call tier: hand it features and targets and it decides whether the problem is\nclassification or regression, screens every registered algorithm of that task with\ncross-validation, refits the winner on all rows, and reports how it did on a held-out slice.</p>\n\n<pre>{@code\nAutoModel model = Auto.quickstart(features, labels);\ndouble[] prediction = model.predict(unseen);\nSystem.out.println(model.summary());\n}</pre>\n\n<p>Anything you might want to control is on {@link Builder}: the seed, the number of folds, the\nheld-out fraction, the metric, and which candidates take part. Candidates come from\n{@link Registry}, so an algorithm registered by your own code is screened alongside the built-ins\nwithout any change here.</p>\n\n<p>The task is inferred from the targets: every value must be finite, and if all of them are\nwhole numbers with at most {@value #MAX_CLASSES} distinct values, the run is treated as\nclassification. Pass {@code task(...)} when the inference is wrong — a regression target that\nhappens to be integral, for example.</p>",
+          "nested": [
+            "Builder"
+          ],
+          "members": [
+            {
+              "kind": "field",
+              "key": "MAX_CLASSES",
+              "signature": "int MAX_CLASSES = 20",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "判定为分类时允许的最大类别数",
+                "body": [
+                  "默认 20。同时受样本量约束：上限取 MAX_CLASSES 与 样本数/5 的较小者，避免小样本上把回归目标误判成分类。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "quickstart(double[][], double[])",
+              "signature": "AutoModel quickstart(double[][] features, double[] targets)",
+              "params": [
+                {
+                  "type": "double[][]",
+                  "name": "features"
+                },
+                {
+                  "type": "double[]",
+                  "name": "targets"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "用二维数组直接跑一次默认配置的筛选",
+                "body": [
+                  "等价于先包装成 Matrix 再调用同名的 Matrix 版本，适合数据本来就在 double[][] 里的场景。"
+                ],
+                "params": {
+                  "features": "每行一个样本",
+                  "targets": "每行一个标签或目标值"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "quickstart(Matrix, double[])",
+              "signature": "AutoModel quickstart(Matrix features, double[] targets)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                },
+                {
+                  "type": "double[]",
+                  "name": "targets"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "跑一次默认配置的筛选",
+                "body": [
+                  "默认 5 折交叉验证、25% 留出、分类用 MACRO_F1、回归用 R2。"
+                ],
+                "params": {
+                  "features": "特征矩阵",
+                  "targets": "目标值数组，长度必须等于行数"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "builder(Matrix, double[])",
+              "signature": "Builder builder(Matrix features, double[] targets)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                },
+                {
+                  "type": "double[]",
+                  "name": "targets"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "开始一次可配置的筛选",
+                "body": [
+                  "返回的 Builder 是惰性的：所有 setter 只记录参数，真正的计算发生在 fit 时。"
+                ],
+                "params": {
+                  "features": "特征矩阵",
+                  "targets": "目标值数组"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "一行调用完成算法筛选、拟合与留出评估",
+            "body": [
+              "三层 API 的第一层。传入特征与目标，它自己判断这是分类还是回归，用交叉验证把该任务下注册过的算法全部跑一遍，取最优者在全量数据上重训，并在留出的那一份上给出分数。",
+              "任务推断规则：目标全部有限，且全为整数、不同取值不超过 MAX_CLASSES 个时判为分类；否则判为回归。整数型回归目标会被误判，用 Builder.task 显式指定即可。",
+              "候选来自 basalt.ml.Registry，所以自己注册的算法会自动参与筛选，不需要改这里的代码。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.auto.AutoModel",
+          "simple_qualified": "AutoModel",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "basalt/auto/AutoModel.java",
+          "line": 16,
+          "javadoc": "Result of a {@link Auto} run: the winning estimator, how it was chosen, and how it scored.\n\n<p>The model is already fitted on every row it was given, so {@link #predict} can be called\ndirectly. {@link #score} is measured on the held-out slice that took no part in fitting or\nscreening, which is the number worth trusting; the per-candidate scores in {@link #candidates}\ncome from cross-validation on the training slice only.</p>",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "predict(Matrix)",
+              "signature": "double[] predict(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "对每一行给一个预测值",
+                "body": [],
+                "params": {
+                  "features": "列数必须与训练时一致"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "predict(double[][])",
+              "signature": "double[] predict(double[][] features)",
+              "params": [
+                {
+                  "type": "double[][]",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "二维数组重载",
+                "body": [],
+                "params": {
+                  "features": "每行一个样本"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "algorithm()",
+              "signature": "String algorithm()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "获胜算法在注册表中的名字",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "task()",
+              "signature": "Estimators.Task task()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "本次按分类还是回归处理",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "metric()",
+              "signature": "Estimators.Metric metric()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "打分用的指标",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "score()",
+              "signature": "double score()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "留出集上的成绩",
+                "body": [
+                  "所有指标都已统一成越大越好，RMSE 取负值。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "rows()",
+              "signature": "int rows()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "拟合时用到的样本数",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "columns()",
+              "signature": "int columns()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "模型期望的特征列数",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "candidates()",
+              "signature": "List<Candidate> candidates()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按分数从高到低排列的筛选表",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "estimator()",
+              "signature": "Estimator estimator()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "底层估计器实例",
+                "body": [
+                  "需要访问具体类型（例如取森林的特征重要度）时用它。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "summary()",
+              "signature": "String summary()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "多行文本报告",
+                "body": [
+                  "包含任务、获胜算法、留出成绩与完整候选表，适合直接打印或写日志。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "toString()",
+              "signature": "String toString()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "单行摘要",
+                "body": []
+              }
+            }
+          ],
+          "doc": {
+            "summary": "筛选结果：选中的估计器、留出分数与候选表",
+            "body": [
+              "模型已经在全部数据上拟合完毕，可以直接调用 predict。score 是留出集上的成绩，没有参与拟合与筛选，是唯一可以对外报的数字；candidates 里的分数来自训练集上的交叉验证。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.auto.Candidate",
+          "simple_qualified": "Candidate",
+          "kind": "record",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "basalt/auto/Candidate.java",
+          "line": 11,
+          "javadoc": "One row of the screening table produced by {@link Auto}.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "toString()",
+              "signature": "String toString()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "定宽的一行文本，便于对齐打印",
+                "body": []
+              }
+            }
+          ],
+          "doc": {
+            "summary": "筛选表中的一行",
+            "body": [
+              "分数已经统一成越大越好，因此 RMSE 这类越小越好的指标在写入前取了负值。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.auto.Auto.Builder",
+          "simple_qualified": "Auto.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "basalt/auto/Auto.java",
+          "line": 64,
+          "javadoc": "Fluent configuration for one screening run.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "seed(long)",
+              "signature": "Builder seed(long seed)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "切分、折划分与随机型估计器共用的种子",
+                "body": [],
+                "params": {
+                  "seed": "默认 42"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "folds(int)",
+              "signature": "Builder folds(int folds)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "folds"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "请求的交叉验证折数",
+                "body": [
+                  "实际折数会被数据量夹紧：不超过样本数；分类时还不超过最小类别的样本数。夹紧后不足 2 折时退回普通 K 折。"
+                ],
+                "params": {
+                  "folds": "至少 2"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "testFraction(double)",
+              "signature": "Builder testFraction(double testFraction)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "testFraction"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "留出集比例",
+                "body": [
+                  "下限被夹到 1/行数，保证至少留出一个样本；上限必须小于 1。"
+                ],
+                "params": {
+                  "testFraction": "取值在 (0, 1)"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "metric(Estimators.Metric)",
+              "signature": "Builder metric(Estimators.Metric metric)",
+              "params": [
+                {
+                  "type": "Estimators.Metric",
+                  "name": "metric"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "打分指标",
+                "body": [
+                  "默认分类用 MACRO_F1、回归用 R2。指标与任务不匹配时不会报错，但分数没有意义，请自行保证一致。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "task(Estimators.Task)",
+              "signature": "Builder task(Estimators.Task task)",
+              "params": [
+                {
+                  "type": "Estimators.Task",
+                  "name": "task"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "强制指定任务，跳过推断",
+                "body": [
+                  "只在推断明显错误时使用，例如目标恰好都是整数但本质是回归。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "candidates(String...)",
+              "signature": "Builder candidates(String... names)",
+              "params": [
+                {
+                  "type": "String...",
+                  "name": "names"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "限定参与筛选的算法",
+                "body": [
+                  "名字来自注册表，大小写不敏感。指定了不属于该任务的算法会直接报错，而不是悄悄跳过。"
+                ],
+                "params": {
+                  "names": "至少一个注册表中的名字"
+                },
+                "throws": {
+                  "IllegalArgumentException": "列表为空"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit()",
+              "signature": "AutoModel fit()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "执行筛选并拟合获胜者",
+                "body": [
+                  "先按比例留出评估集，再在剩余数据上做交叉验证给每个候选打分，最后用全量数据重训获胜者。某个候选在数据上拟合失败时会被跳过；全部失败才报错。"
+                ],
+                "throws": {
+                  "IllegalArgumentException": "数据含非有限值、样本不足 4 行、目标只有单一取值、候选未知或任务不符"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "筛选的流式配置",
+            "body": [
+              "所有方法返回自身，可以链式调用；参数在 fit 时统一校验，错误信息会指出具体是哪一个值不合法。"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
