@@ -93,6 +93,7 @@ try (Basalt engine = Basalt.create()) {
 - **Compile-time safety Python cannot match**: `Sequential<I,O>` closes the layout chain at `javac` time; `Conv2d → Linear` is a compile error, not a runtime shape exception.
 - **One dependency**: Java 21 + one Maven coordinate. The native library is extracted from the jar and loaded automatically.
 - **Observability**: `basalt.NativeQueue` JFR events record every command-queue execution with op count, bytes, duration and stack trace.
+- **Three depths, one library**: `Auto.quickstart(x, y)` screens the whole catalogue and returns a scored model; `Zoo` + `Trainer` compose and train an architecture; `Module` + `Registry` let you write a layer or an algorithm the library has never seen.
 
 > Runtime note: add `--add-modules jdk.incubator.vector` to your application JVM arguments.
 > For Maven Surefire: `<argLine>--add-modules jdk.incubator.vector</argLine>`.
@@ -151,6 +152,8 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 | `docs/api/basalt_data.html` | `DataLoader`（BasaltD 流式 / 内存映射）、`Normalization` |
 | `docs/api/basalt_io.html` | `ModelCodec`（`.bsl` v2）、`OnnxModel` / `OnnxConverter` |
 | `docs/api/basalt_ml.html` | 经典估计器、树、梯度提升、聚类、降维、指标、切分 |
+| `docs/api/basalt_auto.html` | `Auto` 自动建模：任务推断、候选筛选、留出评分 |
+| `docs/api/basalt_zoo.html` | `Zoo` 现成结构、`Trainer` 训练循环、`History` 记录 |
 | `docs/api/basalt_nn.html` | 手写层、LSTM/GRU/RNN、注意力、序列训练、序列化 |
 | `docs/api/basalt_nativebridge.html` | `NativeContext`、`NativeTensorHandle`、`CommandQueueBuilder`、`NativeMLP` |
 | `docs/api/basalt_torch.html` | eager `Tensor`、`Module`/`Sequential`、CNN/Transformer 模块、优化器、损失 |
@@ -331,6 +334,10 @@ Auto.quickstart(features, targets);   // 新算法与内置算法同台竞争，
 | 序列训练 | `SequenceNetwork` | 池化头 + Dense 头 + 损失 + 全局范数裁剪 + 小批量 |
 | 数据 | `DataLoader` | BasaltD 流式/内存映射、零拷贝批量、epoch 洗牌、标准化 |
 | 并发 | `InferenceEngine` | Java 21 虚拟线程 + 信号量限流的批量推理编排 |
+| 自动建模 | `Auto`、`AutoModel` | 任务推断 + 全目录交叉验证筛选 + 留出评分，一行完成 |
+| 现成结构 | `Zoo` | MLP / 表格分类器 / 小卷积分类器，返回普通 `Sequential` |
+| 训练循环 | `Trainer`、`History` | 批次、洗牌、早停、逐轮损失，与手写循环等价 |
+| 扩展 | `Registry`、`Module` | 注册自定义估计器即参与筛选；自定义层只要两个方法 |
 | 剖析 | JFR（JDK 内置） | 生产级常开剖析，零开销；对比见 `report/Basalt_VS_REFERENCE.md` 第 5 节 |
 | 原生经典核 | `NativeKernels` (JNI → Rust) | AVX2/FMA f64 GEMM、KMeans 全流程、Ridge 正规方程、GNB 统计量、分箱、森林预测、直方图会话；失败自动回退 |
 | 原生张量 | `NativeContext` / `NativeTensorHandle` | `Arc<RwLock<NativeTensor>>` + slotmap、惰性梯度、幂等释放、`Cleaner` 兜底 |
@@ -552,13 +559,15 @@ try (NativeContext ctx = NativeContext.create(8)) {
 `NativeMLP` 是基于同一套 API 的完整参考实现：XOR（2-12-1）与线性回归都在
 `NativeTestSuite` 中做收敛断言，梯度用中心差分逐参数校验。
 
-三层 API 的边界是刻意设计的：
+§0.5 讲的是用法上的三层。同一件事在实现上也分成三层，越往下越接近金属：
 
-| 层级 | 入口 | 适用人群 |
+| 层次 | 入口 | 拿到什么 |
 |---|---|---|
-| 整体 | `Basalt` 门面、`Estimator.fit/predict` | 新手：一行完成训练/预测/交叉验证 |
-| 模块 | `RandomForest.builder()`、`HistogramGradientBoosting.builder()` | 老手：按模块调参、替换求解器、控制线程 |
-| 原子 | `NativeContext` + `CommandQueueBuilder` + `nativeBackward` | 大师：手写算子序列、自定义损失与优化器 |
+| 门面 | `Basalt`、`Auto`、`Estimator.fit/predict` | 一次调用完成训练、预测、筛选 |
+| 构件 | `RandomForest.builder()`、`Zoo`、`Trainer` | 逐个模块调参、替换求解器、控制线程与批次 |
+| 原子 | `NativeContext` + `CommandQueueBuilder` + `nativeBackward` | 手写算子序列、自定义损失与优化器 |
+
+越往下，能改的东西越多，需要自己保证的东西也越多。
 
 ### 3.8 eager 执行 API（`basalt.torch`）
 
@@ -826,6 +835,8 @@ src/main/java/basalt/
   io/     ModelCodec (.bsl v2)
   nativebridge/  NativeContext, NativeTensorHandle, CommandQueueBuilder, NativeMLP
   torch/       Tensor, Module, Sequential, Conv2d, MultiheadAttention, AdamW, JFR event
+  auto/        Auto, AutoModel, Candidate（任务推断 + 候选筛选）
+  zoo/         Zoo, Trainer, History（现成结构 + 训练循环）
 native/src/
   lib.rs       模块声明
   api.rs       JNI 张量/队列/反向传播入口
