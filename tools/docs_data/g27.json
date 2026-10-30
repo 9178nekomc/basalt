@@ -1,0 +1,1595 @@
+{
+  "group": "g27",
+  "title": "统一模型层",
+  "modules": [
+    {
+      "name": "basalt.model",
+      "types": [
+        {
+          "qualified": "basalt.model.Task",
+          "simple_qualified": "Task",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "basalt/model/Task.java",
+          "line": 13,
+          "javadoc": "What kind of problem a dataset describes.\n\n<p>This is the axis the whole model layer is organised around: a {@link Solver} declares the task\nit can solve, a {@link Dataset} declares the task it poses, and screening only pairs the two when\nthey match. Adding a new family means adding a constant here and a solver that reports it — no\nexisting solver has to change.</p>",
+          "nested": [],
+          "members": [
+            {
+              "kind": "enum_constant",
+              "key": "TABULAR_CLASSIFICATION",
+              "signature": "TABULAR_CLASSIFICATION",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "每行一组特征、一个类别标签",
+                "body": []
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "TABULAR_REGRESSION",
+              "signature": "TABULAR_REGRESSION",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "每行一组特征、一个连续值",
+                "body": []
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "SEQUENCE_LM",
+              "signature": "SEQUENCE_LM",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "一串 token，模型预测下一个",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "defaultMetric()",
+              "signature": "Estimators.Metric defaultMetric()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "该任务用于排序候选的默认指标",
+                "body": [
+                  "分类用 MACRO_F1，回归用 R2，序列用交叉熵。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "higherIsBetter()",
+              "signature": "boolean higherIsBetter()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "分数是否越大越好",
+                "body": [
+                  "分类与回归的指标在写入前都已统一成越大越好；交叉熵是损失，比较前取负。所以每一处比较分数的地方都不需要再判断方向。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "isTabular()",
+              "signature": "boolean isTabular()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "是否作用于特征矩阵而非 token 流",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "scoreOf(basalt.ml.Estimators.Metric, double[], double[])",
+              "signature": "double scoreOf(basalt.ml.Estimators.Metric metric, double[] expected, double[] predicted)",
+              "params": [
+                {
+                  "type": "basalt.ml.Estimators.Metric",
+                  "name": "metric"
+                },
+                {
+                  "type": "double[]",
+                  "name": "expected"
+                },
+                {
+                  "type": "double[]",
+                  "name": "predicted"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按指标给预测打分，并统一成越大越好",
+                "body": [
+                  "RMSE 在这里取负，而不是在每个调用点取负。"
+                ],
+                "params": {
+                  "metric": "指标",
+                  "expected": "真实值",
+                  "predicted": "预测值"
+                },
+                "throws": {
+                  "IllegalArgumentException": "指标为 CROSS_ENTROPY（它需要分布，不是硬预测）"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "数据集所描述的问题种类",
+            "body": [
+              "整个模型层围绕这条轴组织：Solver 声明自己能解哪种任务，Dataset 声明自己提出哪种任务，筛选只会把两者对上号的组合放在一起。新增一个任务族，就是在这里加一个常量、再写一个报告它的Solver，已有 Solver 一行都不用改。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.model.Dataset",
+          "simple_qualified": "Dataset",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "basalt/model/Dataset.java",
+          "line": 19,
+          "javadoc": "One dataset, in the shape its {@link Task} expects.\n\n<p>Two forms exist: a feature matrix with one target per row, and a token stream. Keeping both in\none type is what lets {@link basalt.auto.Auto} screen classical estimators and sequence models\nwith the same call — the dataset knows its task, and only solvers that declare the same task are\nconsidered.</p>\n\n<p>Instances are immutable views: the tabular factories keep the caller's {@link Matrix} by\nreference (copying a large matrix on every screening run would be wasteful), the sequence factory\ncopies the id array because it is small and often built inline.</p>",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "tabular(Matrix, double[])",
+              "signature": "Dataset tabular(Matrix features, double[] targets)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                },
+                {
+                  "type": "double[]",
+                  "name": "targets"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "任务由目标值推断的表格数据集",
+                "body": [
+                  "目标值全部有限、全是整数、不同取值不超过 20 个（且不超过每五行一个）时按分类处理，否则按回归处理。推断不对时用带 Task 的重载显式指定。"
+                ],
+                "params": {
+                  "features": "特征矩阵",
+                  "targets": "每行一个目标值"
+                },
+                "throws": {
+                  "IllegalArgumentException": "输入为空、行数不符、含非有限值、少于四行、或目标只有单一取值"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "tabular(Matrix, double[], Task)",
+              "signature": "Dataset tabular(Matrix features, double[] targets, Task forced)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                },
+                {
+                  "type": "double[]",
+                  "name": "targets"
+                },
+                {
+                  "type": "Task",
+                  "name": "forced"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "显式指定任务的表格数据集",
+                "body": [],
+                "params": {
+                  "features": "特征矩阵",
+                  "targets": "每行一个目标值",
+                  "forced": "分类或回归；传 null 表示走推断"
+                },
+                "throws": {
+                  "IllegalArgumentException": "指定的任务不是表格类任务"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "sequence(int[])",
+              "signature": "Dataset sequence(int[] tokens)",
+              "params": [
+                {
+                  "type": "int[]",
+                  "name": "tokens"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "用于下一个 token 预测的 token 流",
+                "body": [
+                  "id 必须非负；词表大小由 max(id) + 1 推出，所以 id 空间有空洞只会浪费参数，不会出错。"
+                ],
+                "params": {
+                  "tokens": "token id 序列"
+                },
+                "throws": {
+                  "IllegalArgumentException": "为空、少于 8 个 token、或存在负 id"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "task()",
+              "signature": "Task task()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "这份数据提出的任务",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "features()",
+              "signature": "Matrix features()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "表格数据集的特征矩阵",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "targets()",
+              "signature": "double[] targets()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "表格数据集的目标值",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "tokens()",
+              "signature": "int[] tokens()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "序列数据集的 token 流",
+                "body": [
+                  "返回副本，改动它不会影响数据集。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "rows()",
+              "signature": "int rows()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "表格行数，或 token 个数",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "vocabulary()",
+              "signature": "int vocabulary()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "由 token 流推出的词表大小",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "toString()",
+              "signature": "String toString()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "一行摘要",
+                "body": []
+              }
+            }
+          ],
+          "doc": {
+            "summary": "一份数据集，按它所属任务需要的形状组织",
+            "body": [
+              "两种形态：特征矩阵配目标值，或者一串 token。把两者放在同一个类型里，才能让筛选循环用同一次调用处理经典估计器与序列模型——数据自己知道任务，只和数据任务相同的 Solver 参与比较。",
+              "实例是不可变视图：表格工厂按引用持有调用方的 Matrix（每次筛选都拷贝大矩阵太浪费），序列工厂则复制 id 数组，因为它很小、常常是内联构造的。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.model.Fitted",
+          "simple_qualified": "Fitted",
+          "kind": "interface",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "AutoCloseable",
+          "implements": [],
+          "file": "basalt/model/Fitted.java",
+          "line": 14,
+          "javadoc": "A trained model, whatever family it came from.\n\n<p>Two capabilities, and a model only has the ones its task needs: tabular models predict one\nvalue per row, sequence models generate a continuation as token ids — mapping ids to glyphs is the\ncaller's business, because the library never assumes a charset. The unused one throws\n{@link UnsupportedOperationException} with a message that says which kind of model you are\nholding, so a mistake surfaces immediately instead of returning garbage.</p>",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "name": "predict",
+              "signature": "double[] predict(Matrix features)",
+              "key": "predict(Matrix)",
+              "return_type": "double[]",
+              "type": "",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "default"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "每行一个预测值；只有表格模型支持",
+                "body": [],
+                "params": {
+                  "features": "列数必须与训练时一致"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "generate",
+              "signature": "int[] generate(int[] seed, int steps)",
+              "key": "generate(int[], int)",
+              "return_type": "int[]",
+              "type": "",
+              "params": [
+                {
+                  "type": "int[]",
+                  "name": "seed"
+                },
+                {
+                  "type": "int",
+                  "name": "steps"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "default"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "按种子续写若干 token；只有序列模型支持",
+                "body": [],
+                "params": {
+                  "seed": "至少 window 个 token 的上下文",
+                  "steps": "要生成多少个 token"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "task",
+              "signature": "Task task()",
+              "key": "task()",
+              "return_type": "Task",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "能处理的任务；筛选只把任务相同的组合放在一起",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "name": "close",
+              "signature": "void close()",
+              "key": "close()",
+              "return_type": "void",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "default"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "释放原生资源；默认什么都不做",
+                "body": []
+              }
+            }
+          ],
+          "doc": {
+            "summary": "训练好的模型，不区分它来自哪个家族",
+            "body": [
+              "两种能力，模型只拥有其任务需要的那一种：表格模型逐行预测，序列模型续写 token。调用不适用的那一个会抛 UnsupportedOperationException，并在消息里点明当前模型的任务，让错误立刻暴露，而不是返回一堆垃圾。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.model.Solver",
+          "simple_qualified": "Solver",
+          "kind": "interface",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "basalt/model/Solver.java",
+          "line": 20,
+          "javadoc": "One trainable candidate: a named recipe that can score itself on a dataset and then be fitted on\nall of it.\n\n<p>This is the seam that lets one screening loop compare a decision forest with a neural network\nand a character-level language model. A solver is a stateless descriptor — it holds configuration,\nnot weights — so the same instance can be scored and fitted any number of times.</p>\n\n<p>Two contracts matter:</p>\n<ul>\n<li>{@link #score} must return a number where larger is better, computed without touching the\nrows it reports on. Classical solvers cross-validate; neural solvers hold out a slice and\ntrain once, because a full k-fold sweep of a network is far more expensive than the model it\nis ranking.</li>\n<li>{@link #fit} trains on everything and returns something that can predict or generate.</li>\n</ul>",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "name": "name",
+              "signature": "String name()",
+              "key": "name()",
+              "return_type": "String",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "稳定的标识，在 Solvers 里唯一",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "name": "task",
+              "signature": "Task task()",
+              "key": "task()",
+              "return_type": "Task",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "能处理的任务；筛选只把任务相同的组合放在一起",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "name": "score",
+              "signature": "double score(Dataset data, int folds, long seed)",
+              "key": "score(Dataset, int, long)",
+              "return_type": "double",
+              "type": "",
+              "params": [
+                {
+                  "type": "Dataset",
+                  "name": "data"
+                },
+                {
+                  "type": "int",
+                  "name": "folds"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "modifiers": [],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "估计自己在这份数据上能得多少分",
+                "body": [],
+                "params": {
+                  "data": "数据集",
+                  "folds": "请求折数；经典求解器遵守，神经求解器忽略",
+                  "seed": "随机种子"
+                },
+                "throws": {
+                  "IllegalArgumentException": "数据集任务与求解器任务不符"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "fit",
+              "signature": "Fitted fit(Dataset data, long seed)",
+              "key": "fit(Dataset, long)",
+              "return_type": "Fitted",
+              "type": "",
+              "params": [
+                {
+                  "type": "Dataset",
+                  "name": "data"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "modifiers": [],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "在全部数据上训练",
+                "body": [],
+                "params": {
+                  "data": "数据集",
+                  "seed": "随机种子"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "一个可训练的候选：能给自己打分，也能在全部数据上拟合",
+            "body": [
+              "这就是让同一个筛选循环可以比较决策森林、神经网络和字符级语言模型的接缝。Solver 是无状态的描述符——只持有配置，不持有权重——所以同一个实例可以被反复打分和拟合。",
+              "两条约定：score 必须返回越大越好的数字，并且不能偷看它报告的那些行；分类/回归走交叉验证，神经网络留出一片数据训一次，因为对网络做完整 k 折的开销远高于它要排序的模型本身。fit 用全部数据训练，返回可预测或可生成的对象。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.model.ClassicalSolver",
+          "simple_qualified": "ClassicalSolver",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Solver"
+          ],
+          "file": "basalt/model/ClassicalSolver.java",
+          "line": 18,
+          "javadoc": "Adapts a registered {@link Estimator} to the {@link Solver} contract.\n\n<p>Scoring uses k-fold cross-validation — these models are cheap enough that a full sweep costs\nnothing next to a single epoch of a network, and cross-validation is far less noisy than one\nholdout split when the dataset is small.</p>",
+          "nested": [
+            "ClassicalFitted"
+          ],
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "ClassicalSolver(String)",
+              "signature": "ClassicalSolver(String algorithm)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "algorithm"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按注册名包装一个估计器",
+                "body": [],
+                "params": {
+                  "algorithm": "注册表中的名字，大小写不敏感"
+                },
+                "throws": {
+                  "IllegalArgumentException": "名字未知，或指向无监督算法（它没有可比较的分数）"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "name()",
+              "signature": "String name()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "注册名",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "task()",
+              "signature": "Task task()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "由估计器任务映射而来：分类或回归",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "score(Dataset, int, long)",
+              "signature": "double score(Dataset data, int folds, long seed)",
+              "params": [
+                {
+                  "type": "Dataset",
+                  "name": "data"
+                },
+                {
+                  "type": "int",
+                  "name": "folds"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "交叉验证得分",
+                "body": [
+                  "折数会被数据量夹紧：不超过行数，分类时不超过最小类别的样本数，下限 2。"
+                ],
+                "params": {
+                  "data": "表格数据集",
+                  "folds": "请求折数",
+                  "seed": "切分种子"
+                },
+                "throws": {
+                  "IllegalArgumentException": "数据集任务与求解器任务不符"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit(Dataset, long)",
+              "signature": "Fitted fit(Dataset data, long seed)",
+              "params": [
+                {
+                  "type": "Dataset",
+                  "name": "data"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "在全部数据上拟合",
+                "body": [],
+                "params": {
+                  "data": "表格数据集",
+                  "seed": "随机种子（经典估计器多数不使用）"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "toString()",
+              "signature": "String toString()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "一行摘要",
+                "body": []
+              }
+            }
+          ],
+          "doc": {
+            "summary": "把注册表里的 Estimator 接到 Solver 契约上",
+            "body": [
+              "打分用 k 折交叉验证——这类模型便宜到一次完整扫描的开销不及网络一个 epoch，而在小数据集上交叉验证比单次留出稳定得多。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.model.NeuralSolver",
+          "simple_qualified": "NeuralSolver",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Solver"
+          ],
+          "file": "basalt/model/NeuralSolver.java",
+          "line": 33,
+          "javadoc": "A neural candidate: an architecture plus the training recipe that turns it into a model.\n\n<p>Two shapes are supported, matching the two data forms. Tabular candidates read raw feature\ncolumns and emit one class or one value per row; sequence candidates read a window of token ids\nand emit a distribution over the next one.</p>\n\n<p>Scoring holds out a slice and trains once, where {@link ClassicalSolver} cross-validates. The\nasymmetry is deliberate: a five-fold sweep of a network costs five trainings, and for the purpose\nof ranking candidates a single honest holdout is enough. The price is a noisier estimate on very\nsmall datasets, which is why the screening table reports the numbers rather than hiding them.</p>",
+          "nested": [
+            "Labels",
+            "NeuralFitted"
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "key": "tabular(String, Task, int[], int, int, float)",
+              "signature": "NeuralSolver tabular(String name, Task task, int[] hidden, int epochs, int batchSize, float learningRate)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                },
+                {
+                  "type": "Task",
+                  "name": "task"
+                },
+                {
+                  "type": "int[]",
+                  "name": "hidden"
+                },
+                {
+                  "type": "int",
+                  "name": "epochs"
+                },
+                {
+                  "type": "int",
+                  "name": "batchSize"
+                },
+                {
+                  "type": "float",
+                  "name": "learningRate"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "表格数据用的全连接候选",
+                "body": [],
+                "params": {
+                  "name": "候选名",
+                  "task": "分类或回归",
+                  "hidden": "各隐藏层宽度，可为空数组表示线性模型",
+                  "epochs": "训练轮数",
+                  "batchSize": "批次大小",
+                  "learningRate": "学习率"
+                },
+                "throws": {
+                  "IllegalArgumentException": "名字为空、轮数或批大小小于 1、学习率非正、隐藏宽度非法、或任务不是表格类"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "sequence(String, int, int, int, int, int, float)",
+              "signature": "NeuralSolver sequence(String name, int window, int dimension, int residualWidth, int epochs, int batchSize, float learningRate)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                },
+                {
+                  "type": "int",
+                  "name": "window"
+                },
+                {
+                  "type": "int",
+                  "name": "dimension"
+                },
+                {
+                  "type": "int",
+                  "name": "residualWidth"
+                },
+                {
+                  "type": "int",
+                  "name": "epochs"
+                },
+                {
+                  "type": "int",
+                  "name": "batchSize"
+                },
+                {
+                  "type": "float",
+                  "name": "learningRate"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "token 流用的窗口语言模型候选",
+                "body": [
+                  "固定报告 SEQUENCE_LM，所以只会被拿去和 token 数据比较。"
+                ],
+                "params": {
+                  "name": "候选名",
+                  "window": "用多少个 token 预测下一个",
+                  "dimension": "每个 token 的嵌入维度",
+                  "residualWidth": "残差块中隐层宽度",
+                  "epochs": "训练轮数",
+                  "batchSize": "批次大小",
+                  "learningRate": "学习率"
+                },
+                "throws": {
+                  "IllegalArgumentException": "窗口、维度或残差宽度小于 1，或通用参数非法"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "name()",
+              "signature": "String name()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "候选名",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "task()",
+              "signature": "Task task()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "候选声明的任务",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "score(Dataset, int, long)",
+              "signature": "double score(Dataset data, int folds, long seed)",
+              "params": [
+                {
+                  "type": "Dataset",
+                  "name": "data"
+                },
+                {
+                  "type": "int",
+                  "name": "folds"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "留出评估",
+                "body": [
+                  "表格数据留出 25%（分类时分层抽样），序列数据按 80/20 切开，只用切点之后的窗口计算交叉熵。folds 参数被忽略。"
+                ],
+                "params": {
+                  "data": "数据集",
+                  "folds": "忽略",
+                  "seed": "切分与初始化种子"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit(Dataset, long)",
+              "signature": "Fitted fit(Dataset data, long seed)",
+              "params": [
+                {
+                  "type": "Dataset",
+                  "name": "data"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "在全部数据上训练",
+                "body": [
+                  "返回的 Fitted 持有自己的运行时，关闭它即释放原生资源。"
+                ],
+                "params": {
+                  "data": "数据集",
+                  "seed": "切分与初始化种子"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "toString()",
+              "signature": "String toString()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "一行摘要",
+                "body": []
+              }
+            }
+          ],
+          "doc": {
+            "summary": "神经网络候选：一个结构，加上把它训成模型的一整套配方",
+            "body": [
+              "支持两种形状，对应两种数据形态。表格候选读原始特征列，每行输出一个类别或一个值；序列候选读一个 token 窗口，输出下一个 token 的分布。",
+              "打分的非对称是有意的：五折要对网络训五次，而为了排序候选，一次诚实的留出就够了。代价是在很小的数据集上估计更嘈杂——所以筛选表把数字原样列出来，而不是藏起来。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.model.Solvers",
+          "simple_qualified": "Solvers",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "basalt/model/Solvers.java",
+          "line": 26,
+          "javadoc": "Catalogue of everything that can be screened, across every model family.\n\n<p>Classical solvers are <em>derived</em>, not copied: every supervised algorithm in {@link\nRegistry} appears here as a {@link ClassicalSolver}, built on demand. That keeps the two\nextension points connected — registering an {@link basalt.ml.Estimator} with {@code Registry} is\nenough for it to be screened, without also having to wrap it. Solvers that are not classical\n(networks, language models) have no estimator behind them, so they are registered explicitly.</p>\n\n<p>Names are case-insensitive and may only be used once; replacing silently would make a\nscreening report impossible to reproduce.</p>",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "register(Solver)",
+              "signature": "void register(Solver solver)",
+              "params": [
+                {
+                  "type": "Solver",
+                  "name": "solver"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "加入一个非推导的求解器",
+                "body": [],
+                "params": {
+                  "solver": "无状态描述符，可反复使用"
+                },
+                "throws": {
+                  "IllegalArgumentException": "为空、无名字、与已注册估计器或求解器重名"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "get(String)",
+              "signature": "Solver get(String name)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按名字取求解器，名字属于估计器时现场推导一个",
+                "body": [],
+                "params": {
+                  "name": "求解器名"
+                },
+                "throws": {
+                  "IllegalArgumentException": "名字未知，或指向无监督算法"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "contains(String)",
+              "signature": "boolean contains(String name)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "名字能否解析成求解器",
+                "body": [],
+                "params": {
+                  "name": "名字"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "all()",
+              "signature": "List<Solver> all()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "全部求解器：推导的经典求解器在前，显式注册的在后",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "byTask(Task)",
+              "signature": "List<Solver> byTask(Task task)",
+              "params": [
+                {
+                  "type": "Task",
+                  "name": "task"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "只返回声明该任务的求解器",
+                "body": [],
+                "params": {
+                  "task": "任务族"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "size()",
+              "signature": "int size()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "不同求解器的数量",
+                "body": []
+              }
+            }
+          ],
+          "doc": {
+            "summary": "所有可筛选对象的目录，跨模型家族",
+            "body": [
+              "经典求解器是推导出来的，不是拷贝出来的：Registry 里每个有监督算法都会在这里以 ClassicalSolver 的身份出现，按需构造。这样两个扩展点始终连着——用 Registry 注册一个 Estimator 就足以让它参与筛选，不需要再包一层。非经典的求解器（网络、语言模型）背后没有估计器，才需要显式注册。",
+              "名字大小写不敏感且只能用一次；静默替换会让筛选报告无法复现。"
+            ]
+          }
+        },
+        {
+          "name": "NeuralFitted",
+          "qualified": "basalt.model.NeuralSolver.NeuralFitted",
+          "simple_qualified": "NeuralSolver.NeuralFitted",
+          "module": "basalt.model",
+          "kind": "class",
+          "modifiers": [
+            "private",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Fitted"
+          ],
+          "javadoc": {
+            "text": "Trained network; owns the runtime that holds its native tensors.",
+            "params": {},
+            "returns": "",
+            "throws": {},
+            "see": [],
+            "since": "",
+            "deprecated": ""
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "engine",
+              "signature": "Basalt engine",
+              "key": "engine",
+              "return_type": "",
+              "type": "Basalt",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "private",
+                "final"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "内部字段",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "network",
+              "signature": "Module<BC, BC> network",
+              "key": "network",
+              "return_type": "",
+              "type": "Module<BC, BC>",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "private",
+                "final"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "内部字段",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "labels",
+              "signature": "Labels labels",
+              "key": "labels",
+              "return_type": "",
+              "type": "Labels",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "private",
+                "final"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "内部字段",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "task",
+              "signature": "Task task",
+              "key": "task",
+              "return_type": "",
+              "type": "Task",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "private",
+                "final"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "内部字段",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "window",
+              "signature": "int window",
+              "key": "window",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "private",
+                "final"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "内部字段",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "vocabulary",
+              "signature": "int vocabulary",
+              "key": "vocabulary",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "private",
+                "final"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "内部字段",
+                "body": []
+              }
+            },
+            {
+              "kind": "constructor",
+              "name": "NeuralFitted",
+              "signature": "NeuralFitted(Basalt engine, Module<BC, BC> network, Labels labels, Task task, int window, int vocabulary)",
+              "key": "NeuralFitted(Basalt, Module<BC, BC>, Labels, Task, int, int)",
+              "return_type": "",
+              "type": "",
+              "params": [
+                {
+                  "type": "Basalt",
+                  "name": "engine"
+                },
+                {
+                  "type": "Module<BC, BC>",
+                  "name": "network"
+                },
+                {
+                  "type": "Labels",
+                  "name": "labels"
+                },
+                {
+                  "type": "Task",
+                  "name": "task"
+                },
+                {
+                  "type": "int",
+                  "name": "window"
+                },
+                {
+                  "type": "int",
+                  "name": "vocabulary"
+                }
+              ],
+              "throws": [],
+              "modifiers": [],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "绑定网络、类别映射与所属运行时",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "name": "predict",
+              "signature": "double[] predict(Matrix features)",
+              "key": "predict(Matrix)",
+              "return_type": "double[]",
+              "type": "",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "表格候选的逐行预测",
+                "body": [],
+                "params": {
+                  "features": "列数需与训练时一致"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "generate",
+              "signature": "int[] generate(int[] seed, int steps)",
+              "key": "generate(int[], int)",
+              "return_type": "int[]",
+              "type": "",
+              "params": [
+                {
+                  "type": "int[]",
+                  "name": "seed"
+                },
+                {
+                  "type": "int",
+                  "name": "steps"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "序列候选的续写",
+                "body": [],
+                "params": {
+                  "seed": "至少 window 个 token",
+                  "steps": "生成步数"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "task",
+              "signature": "Task task()",
+              "key": "task()",
+              "return_type": "Task",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "训练时针对的任务",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "name": "close",
+              "signature": "void close()",
+              "key": "close()",
+              "return_type": "void",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "关闭网络并释放它持有的运行时",
+                "body": []
+              }
+            }
+          ],
+          "nested": [],
+          "owner": "NeuralSolver",
+          "file": "basalt/model/NeuralSolver.java",
+          "line": 395,
+          "depth": 1,
+          "doc": {
+            "summary": "训练好的网络：自己持有原生运行时",
+            "body": [
+              "close() 会一并关闭运行时，所以模型关掉之后张量就不能再用了——这正是「谁创建谁释放」的边界。"
+            ]
+          }
+        },
+        {
+          "name": "ClassicalFitted",
+          "qualified": "basalt.model.ClassicalSolver.ClassicalFitted",
+          "simple_qualified": "ClassicalSolver.ClassicalFitted",
+          "module": "basalt.model",
+          "kind": "class",
+          "modifiers": [
+            "private",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Fitted"
+          ],
+          "javadoc": {
+            "text": "Wraps a fitted estimator; generation is not part of its vocabulary.",
+            "params": {},
+            "returns": "",
+            "throws": {},
+            "see": [],
+            "since": "",
+            "deprecated": ""
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "estimator",
+              "signature": "Estimator estimator",
+              "key": "estimator",
+              "return_type": "",
+              "type": "Estimator",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "private",
+                "final"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "内部字段",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "task",
+              "signature": "Task task",
+              "key": "task",
+              "return_type": "",
+              "type": "Task",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "private",
+                "final"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "内部字段",
+                "body": []
+              }
+            },
+            {
+              "kind": "constructor",
+              "name": "ClassicalFitted",
+              "signature": "ClassicalFitted(Estimator estimator, Task task)",
+              "key": "ClassicalFitted(Estimator, Task)",
+              "return_type": "",
+              "type": "",
+              "params": [
+                {
+                  "type": "Estimator",
+                  "name": "estimator"
+                },
+                {
+                  "type": "Task",
+                  "name": "task"
+                }
+              ],
+              "throws": [],
+              "modifiers": [],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "绑定估计器与任务",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "name": "predict",
+              "signature": "double[] predict(Matrix features)",
+              "key": "predict(Matrix)",
+              "return_type": "double[]",
+              "type": "",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "转交给底层估计器",
+                "body": [],
+                "params": {
+                  "features": "列数需与训练时一致"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "task",
+              "signature": "Task task()",
+              "key": "task()",
+              "return_type": "Task",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "所属任务",
+                "body": []
+              }
+            }
+          ],
+          "nested": [],
+          "owner": "ClassicalSolver",
+          "file": "basalt/model/ClassicalSolver.java",
+          "line": 118,
+          "depth": 1,
+          "doc": {
+            "summary": "已拟合估计器的包装",
+            "body": [
+              "除了转交 predict，它只做一件事：记住自己属于哪个任务，好让调用方误用 generate 时立刻收到明确的错误。"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

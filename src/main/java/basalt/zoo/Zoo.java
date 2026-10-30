@@ -4,10 +4,15 @@ import basalt.Basalt;
 import basalt.BasaltRuntimeException;
 import basalt.core.BC;
 import basalt.core.BCHW;
+import basalt.nativebridge.NativeContext;
 import basalt.nn.Activation;
+import basalt.torch.Embedding;
 import basalt.torch.Flatten;
+import basalt.torch.Linear;
 import basalt.torch.MaxPool2d;
+import basalt.torch.Module;
 import basalt.torch.Sequential;
+import basalt.torch.Tensor;
 
 /**
  * Ready-made architectures with sane defaults.
@@ -63,6 +68,32 @@ public final class Zoo {
     }
 
     /**
+     * Windowed character-level language model.
+     *
+     * <p>Takes {@code window} token ids, embeds them, flattens to one vector, passes it through a
+     * bottleneck residual block and projects to the vocabulary. Small enough to memorise a short
+     * corpus in seconds on a CPU, structured enough to be a real next-token predictor.</p>
+     *
+     * <p>The returned module is an ordinary {@link Module}: train it with {@link Trainer}, inspect
+     * it with {@code parameters()}, or wrap it further.</p>
+     */
+    public static Module<BC, BC> charLm(Basalt engine, int vocabulary, int window, int dimension,
+                                        int hidden) {
+        BasaltRuntimeException.requireNonNull(engine, "engine");
+        if (vocabulary < 2) {
+            throw new IllegalArgumentException("vocabulary must be at least 2, got " + vocabulary);
+        }
+        if (window < 1) {
+            throw new IllegalArgumentException("window must be at least 1, got " + window);
+        }
+        if (dimension < 1 || hidden < 1) {
+            throw new IllegalArgumentException("dimension and hidden must be at least 1, got "
+                    + dimension + " and " + hidden);
+        }
+        return new WindowedLanguageModel(engine.context(), vocabulary, window, dimension, hidden);
+    }
+
+    /**
      * Small convolutional classifier: one convolution, one pooling step, one dense head.
      *
      * <p>The convolution keeps the spatial size ({@code kernel 3, stride 1, padding 1}) and the
@@ -93,5 +124,57 @@ public final class Zoo {
                 .add(new MaxPool2d(2))
                 .add(new Flatten())
                 .add(engine.linear(flattened, classes));
+    }
+
+    /**
+     * The module behind {@link #charLm}: embedding → flatten → bottleneck residual block → head.
+     *
+     * <p>Kept private so the architecture is free to change without becoming part of the public
+     * surface; callers get a {@link Module} and that is all they should depend on.</p>
+     */
+    private static final class WindowedLanguageModel extends Module<BC, BC> {
+        private final Embedding embedding;
+        private final Linear expand;
+        private final Linear contract;
+        private final Linear head;
+        private final int window;
+        private final int dimension;
+
+        WindowedLanguageModel(NativeContext context, int vocabulary, int window, int dimension,
+                              int hidden) {
+            this.window = window;
+            this.dimension = dimension;
+            this.embedding = new Embedding(context, vocabulary, dimension, 17L);
+            int flat = window * dimension;
+            this.expand = new Linear(context, flat, hidden);
+            this.contract = new Linear(context, hidden, flat);
+            this.head = new Linear(context, flat, vocabulary);
+        }
+
+        @Override
+        public Tensor forward(Tensor input) {
+            if (input.rank() != 2 || input.shape()[1] != window) {
+                throw new IllegalArgumentException("expected [" + input.shape()[0] + ", " + window
+                        + "] token ids, got rank " + input.rank() + " shape "
+                        + java.util.Arrays.toString(input.shape()));
+            }
+            int batch = input.shape()[0];
+            Tensor embedded = embedding.forward(input);
+            Tensor flat = embedded.reshape(batch, window * dimension);
+            Tensor hidden = expand.forward(flat).gelu();
+            Tensor back = contract.forward(hidden);
+            Tensor mixed = back.add(flat).gelu();
+            return head.forward(mixed);
+        }
+
+        @Override
+        public java.util.List<Tensor> parameters() {
+            java.util.List<Tensor> all = new java.util.ArrayList<>();
+            all.addAll(embedding.parameters());
+            all.addAll(expand.parameters());
+            all.addAll(contract.parameters());
+            all.addAll(head.parameters());
+            return all;
+        }
     }
 }

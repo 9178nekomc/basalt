@@ -72,9 +72,10 @@ check_warnings "$LOG_DIR/main-javac.log"
 
 printf '==> compiling test sources (-Xlint:all)
 '
-emit_sources src/test/java "$LOG_DIR/test-sources.txt" \
-  ! -name "BasaltApiTest.java" ! -name "PerformanceTest.java" \
-  ! -name "AdvancedApiTest.java"
+# JUnit classes live behind "*Test.java" and are compiled by Maven, which is the
+# only toolchain here with the JUnit jars on the classpath. Everything else is a
+# legacy main() suite and is compiled here.
+emit_sources src/test/java "$LOG_DIR/test-sources.txt" ! -name "*Test.java"
 "${JAVAC_CMD[@]}" "${JAVAC_FLAGS[@]}" -cp "$CLASSES" -d "$TEST_CLASSES" @"$LOG_DIR/test-sources.txt" > "$LOG_DIR/test-javac.log" 2>&1
 check_warnings "$LOG_DIR/test-javac.log"
 

@@ -91,6 +91,8 @@ public final class GridSearchCV implements Estimator {
             case MACRO_F1 -> Metrics.macroF1(expected, predicted);
             case R2 -> Metrics.r2(expected, predicted);
             case RMSE -> -Metrics.rmse(expected, predicted);
+            case CROSS_ENTROPY -> throw new IllegalArgumentException(
+                    "cross entropy needs logits; a search over classical estimators cannot score it");
         };
     }
 

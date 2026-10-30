@@ -56,7 +56,15 @@ public final class Estimators {
         ACCURACY,
         MACRO_F1,
         R2,
-        RMSE
+        RMSE,
+        /**
+         * Mean cross entropy over the predicted class distribution.
+         *
+         * <p>Unlike the other four this is a loss, so it is smaller-is-better. {@link
+         * basalt.auto.Auto} and the model layer negate it before storing a score, which keeps
+         * "higher is better" true everywhere a score is compared.</p>
+         */
+        CROSS_ENTROPY
     }
 
     /**
@@ -126,6 +134,8 @@ public final class Estimators {
                 case MACRO_F1 -> Metrics.macroF1(fold.testTargets(), prediction);
                 case R2 -> Metrics.r2(fold.testTargets(), prediction);
                 case RMSE -> -Metrics.rmse(fold.testTargets(), prediction);
+                case CROSS_ENTROPY -> throw new IllegalArgumentException(
+                        "cross entropy needs logits; classical estimators only produce labels");
             };
         }
         return total / splits.size();

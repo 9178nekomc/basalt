@@ -1001,6 +1001,20 @@
               "doc": {
                 "summary": "均方根误差"
               }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "CROSS_ENTROPY",
+              "signature": "CROSS_ENTROPY",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "预测分布的交叉熵",
+                "body": [
+                  "与另外四个不同，这是损失，越小越好。筛选层在写入分数前取负，因此“越大越好”在比较处始终成立。"
+                ]
+              }
             }
           ],
           "doc": {

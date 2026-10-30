@@ -1,33 +1,36 @@
 package basalt.auto;
 
 import basalt.core.Matrix;
-import basalt.ml.Estimator;
 import basalt.ml.Estimators;
+import basalt.model.Fitted;
+import basalt.model.Task;
 import java.util.List;
 
 /**
- * Result of a {@link Auto} run: the winning estimator, how it was chosen, and how it scored.
+ * Result of an {@link Auto} run: the winning model, how it was chosen, and how it scored.
  *
- * <p>The model is already fitted on every row it was given, so {@link #predict} can be called
- * directly. {@link #score} is measured on the held-out slice that took no part in fitting or
- * screening, which is the number worth trusting; the per-candidate scores in {@link #candidates}
- * come from cross-validation on the training slice only.</p>
+ * <p>One type covers every family. {@link #predict} answers tabular models, {@link #generate}
+ * answers sequence models, and asking the wrong one throws with a message that names the task —
+ * rather than returning an empty array that fails somewhere else.</p>
+ *
+ * <p>{@link #score} is whatever the winning solver reported: cross-validated for classical models,
+ * a single holdout for neural ones. That difference is stated in the screening table rather than
+ * averaged away, because a cross-validated 0.91 and a holdout 0.91 are not the same evidence.</p>
  */
 public final class AutoModel {
 
-    private final Estimator estimator;
+    private final Fitted fitted;
     private final String algorithm;
-    private final Estimators.Task task;
+    private final Task task;
     private final Estimators.Metric metric;
     private final double score;
     private final int rows;
     private final int columns;
     private final List<Candidate> candidates;
 
-    AutoModel(Estimator estimator, String algorithm, Estimators.Task task,
-              Estimators.Metric metric, double score, int rows, int columns,
-              List<Candidate> candidates) {
-        this.estimator = estimator;
+    AutoModel(Fitted fitted, String algorithm, Task task, Estimators.Metric metric, double score,
+              int rows, int columns, List<Candidate> candidates) {
+        this.fitted = fitted;
         this.algorithm = algorithm;
         this.task = task;
         this.metric = metric;
@@ -37,23 +40,28 @@ public final class AutoModel {
         this.candidates = List.copyOf(candidates);
     }
 
-    /** Predicts one value per row. */
+    /** One prediction per row. Tabular models only. */
     public double[] predict(Matrix features) {
-        return estimator.predict(features);
+        return fitted.predict(features);
     }
 
     /** Convenience overload that wraps the rows into a {@link Matrix}. */
     public double[] predict(double[][] features) {
-        return estimator.predict(Matrix.fromRows(features));
+        return fitted.predict(Matrix.fromRows(features));
     }
 
-    /** Registry name of the winning algorithm. */
+    /** Continues {@code seed} by {@code steps} tokens. Sequence models only. */
+    public int[] generate(int[] seed, int steps) {
+        return fitted.generate(seed, steps);
+    }
+
+    /** Name of the winning solver. */
     public String algorithm() {
         return algorithm;
     }
 
-    /** Whether the run treated the targets as classes or as a continuous quantity. */
-    public Estimators.Task task() {
+    /** Task the run was performed for. */
+    public Task task() {
         return task;
     }
 
@@ -62,17 +70,17 @@ public final class AutoModel {
         return metric;
     }
 
-    /** Held-out score of the winner; higher is better for every metric. */
+    /** Score of the winner; larger is better for every metric. */
     public double score() {
         return score;
     }
 
-    /** Training rows the model was fitted on. */
+    /** Rows of tabular data, or tokens of a stream. */
     public int rows() {
         return rows;
     }
 
-    /** Feature columns the model expects. */
+    /** Feature columns, or vocabulary size for a token stream. */
     public int columns() {
         return columns;
     }
@@ -82,20 +90,26 @@ public final class AutoModel {
         return candidates;
     }
 
-    /** The fitted estimator, for callers that need the concrete type. */
-    public Estimator estimator() {
-        return estimator;
+    /** The trained model, for callers that need to keep it past the report. */
+    public Fitted fitted() {
+        return fitted;
     }
 
-    /** Human-readable report: task, winner, held-out score and the screening table. */
+    /** Releases the native resources held by the model. */
+    public void close() {
+        fitted.close();
+    }
+
+    /** Human-readable report: task, winner, score and the screening table. */
     public String summary() {
         StringBuilder out = new StringBuilder();
         out.append("task     : ").append(task).append('\n');
         out.append("algorithm: ").append(algorithm).append('\n');
         out.append("metric   : ").append(metric).append(" = ")
-                .append(String.format("%.4f", score)).append(" (held out)\n");
-        out.append("data     : ").append(rows).append(" rows x ").append(columns)
-                .append(" features\n");
+                .append(String.format("%.4f", score)).append('\n');
+        out.append("data     : ").append(rows)
+                .append(task.isTabular() ? " rows x " : " tokens, vocab ")
+                .append(columns).append(task.isTabular() ? " features" : "").append('\n');
         out.append("screened :\n");
         for (Candidate candidate : candidates) {
             out.append("  ").append(candidate).append('\n');

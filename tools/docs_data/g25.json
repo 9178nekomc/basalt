@@ -24,20 +24,6 @@
           ],
           "members": [
             {
-              "kind": "field",
-              "key": "MAX_CLASSES",
-              "signature": "int MAX_CLASSES = 20",
-              "params": [],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "判定为分类时允许的最大类别数",
-                "body": [
-                  "默认 20。同时受样本量约束：上限取 MAX_CLASSES 与 样本数/5 的较小者，避免小样本上把回归目标误判成分类。"
-                ]
-              }
-            },
-            {
               "kind": "method",
               "key": "quickstart(double[][], double[])",
               "signature": "AutoModel quickstart(double[][] features, double[] targets)",
@@ -93,6 +79,53 @@
             },
             {
               "kind": "method",
+              "key": "sequence(int[])",
+              "signature": "AutoModel sequence(int[] tokens)",
+              "params": [
+                {
+                  "type": "int[]",
+                  "name": "tokens"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "对 token 流做筛选",
+                "body": [
+                  "等价于 solve(Dataset.sequence(tokens))，方便直接传入语料。"
+                ],
+                "params": {
+                  "tokens": "token id 序列"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "solve(Dataset)",
+              "signature": "AutoModel solve(Dataset data)",
+              "params": [
+                {
+                  "type": "Dataset",
+                  "name": "data"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按数据集的任务筛选全部候选并拟合获胜者",
+                "body": [
+                  "所有家族共用这一条路径：数据自己声明任务，筛选只考虑声明同一任务的求解器。"
+                ],
+                "params": {
+                  "data": "数据集"
+                },
+                "throws": {
+                  "IllegalArgumentException": "没有任何候选能在该数据上打分"
+                }
+              }
+            },
+            {
+              "kind": "method",
               "key": "builder(Matrix, double[])",
               "signature": "Builder builder(Matrix features, double[] targets)",
               "params": [
@@ -115,6 +148,26 @@
                 "params": {
                   "features": "特征矩阵",
                   "targets": "目标值数组"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "builder(Dataset)",
+              "signature": "Builder builder(Dataset data)",
+              "params": [
+                {
+                  "type": "Dataset",
+                  "name": "data"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "从数据集开始一次可配置的筛选",
+                "body": [],
+                "params": {
+                  "data": "数据集"
                 }
               }
             }
@@ -186,6 +239,33 @@
             },
             {
               "kind": "method",
+              "key": "generate(int[], int)",
+              "signature": "int[] generate(int[] seed, int steps)",
+              "params": [
+                {
+                  "type": "int[]",
+                  "name": "seed"
+                },
+                {
+                  "type": "int",
+                  "name": "steps"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按种子续写若干 token",
+                "body": [
+                  "只有序列模型支持；表格模型调用会抛 UnsupportedOperationException 并说明自己的任务。"
+                ],
+                "params": {
+                  "seed": "至少 window 个 token 的上下文",
+                  "steps": "要生成多少个 token"
+                }
+              }
+            },
+            {
+              "kind": "method",
               "key": "algorithm()",
               "signature": "String algorithm()",
               "params": [],
@@ -199,7 +279,7 @@
             {
               "kind": "method",
               "key": "task()",
-              "signature": "Estimators.Task task()",
+              "signature": "Task task()",
               "params": [],
               "throws": [],
               "javadoc": "",
@@ -272,16 +352,28 @@
             },
             {
               "kind": "method",
-              "key": "estimator()",
-              "signature": "Estimator estimator()",
+              "key": "fitted()",
+              "signature": "Fitted fitted()",
               "params": [],
               "throws": [],
               "javadoc": "",
               "doc": {
-                "summary": "底层估计器实例",
+                "summary": "底层训练结果",
                 "body": [
-                  "需要访问具体类型（例如取森林的特征重要度）时用它。"
+                  "需要在报告之外继续持有模型时用它。"
                 ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "close()",
+              "signature": "void close()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "释放模型占用的原生资源",
+                "body": []
               }
             },
             {
@@ -414,28 +506,6 @@
             },
             {
               "kind": "method",
-              "key": "testFraction(double)",
-              "signature": "Builder testFraction(double testFraction)",
-              "params": [
-                {
-                  "type": "double",
-                  "name": "testFraction"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "留出集比例",
-                "body": [
-                  "下限被夹到 1/行数，保证至少留出一个样本；上限必须小于 1。"
-                ],
-                "params": {
-                  "testFraction": "取值在 (0, 1)"
-                }
-              }
-            },
-            {
-              "kind": "method",
               "key": "metric(Estimators.Metric)",
               "signature": "Builder metric(Estimators.Metric metric)",
               "params": [
@@ -450,25 +520,6 @@
                 "summary": "打分指标",
                 "body": [
                   "默认分类用 MACRO_F1、回归用 R2。指标与任务不匹配时不会报错，但分数没有意义，请自行保证一致。"
-                ]
-              }
-            },
-            {
-              "kind": "method",
-              "key": "task(Estimators.Task)",
-              "signature": "Builder task(Estimators.Task task)",
-              "params": [
-                {
-                  "type": "Estimators.Task",
-                  "name": "task"
-                }
-              ],
-              "throws": [],
-              "javadoc": "",
-              "doc": {
-                "summary": "强制指定任务，跳过推断",
-                "body": [
-                  "只在推断明显错误时使用，例如目标恰好都是整数但本质是回归。"
                 ]
               }
             },

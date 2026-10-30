@@ -393,6 +393,52 @@
             },
             {
               "kind": "method",
+              "key": "charLm(Basalt, int, int, int, int)",
+              "signature": "Module<BC, BC> charLm(Basalt engine, int vocabulary, int window, int dimension, int hidden)",
+              "params": [
+                {
+                  "type": "Basalt",
+                  "name": "engine"
+                },
+                {
+                  "type": "int",
+                  "name": "vocabulary"
+                },
+                {
+                  "type": "int",
+                  "name": "window"
+                },
+                {
+                  "type": "int",
+                  "name": "dimension"
+                },
+                {
+                  "type": "int",
+                  "name": "hidden"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "窗口式字符级语言模型",
+                "body": [
+                  "输入 window 个 token id，嵌入后展平，经过一个瓶颈残差块，投影到词表。小到能在 CPU 上几秒记住一段短语料，结构上又确实是逐 token 预测器。",
+                  "返回的是普通 Module：可以用 Trainer 训练、用 parameters() 检查、或者再包一层。"
+                ],
+                "params": {
+                  "engine": "运行时入口",
+                  "vocabulary": "词表大小",
+                  "window": "上下文长度",
+                  "dimension": "嵌入维度",
+                  "hidden": "残差块隐层宽度"
+                },
+                "throws": {
+                  "IllegalArgumentException": "词表小于 2，或窗口、维度、隐层宽度小于 1"
+                }
+              }
+            },
+            {
+              "kind": "method",
               "key": "cnnClassifier(Basalt, int, int, int, int)",
               "signature": "Sequential<BCHW, BC> cnnClassifier(Basalt engine, int channels, int height, int width, int classes)",
               "params": [
@@ -442,6 +488,265 @@
             "body": [
               "三层 API 的第二层：形状由你定，接线、初始化和激活位置由这里定。每个方法返回的都是普通 Sequential，可以继续 add、交给 Trainer、读 parameters 或存 stateDict。",
               "要完全掌控，不必用它：Module 才是层需要满足的唯一契约，Sequential.add 接受任何实现。"
+            ]
+          }
+        },
+        {
+          "name": "WindowedLanguageModel",
+          "qualified": "basalt.zoo.Zoo.WindowedLanguageModel",
+          "simple_qualified": "Zoo.WindowedLanguageModel",
+          "module": "basalt.zoo",
+          "kind": "class",
+          "modifiers": [
+            "private",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "Module<BC, BC>",
+          "implements": [],
+          "javadoc": {
+            "text": "The module behind {@link #charLm}: embedding → flatten → bottleneck residual block → head.\n\n<p>Kept private so the architecture is free to change without becoming part of the public\nsurface; callers get a {@link Module} and that is all they should depend on.</p>",
+            "params": {},
+            "returns": "",
+            "throws": {},
+            "see": [],
+            "since": "",
+            "deprecated": ""
+          },
+          "members": [
+            {
+              "kind": "field",
+              "name": "embedding",
+              "signature": "Embedding embedding",
+              "key": "embedding",
+              "return_type": "",
+              "type": "Embedding",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "private",
+                "final"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "内部字段",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "expand",
+              "signature": "Linear expand",
+              "key": "expand",
+              "return_type": "",
+              "type": "Linear",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "private",
+                "final"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "内部字段",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "contract",
+              "signature": "Linear contract",
+              "key": "contract",
+              "return_type": "",
+              "type": "Linear",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "private",
+                "final"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "内部字段",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "head",
+              "signature": "Linear head",
+              "key": "head",
+              "return_type": "",
+              "type": "Linear",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "private",
+                "final"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "内部字段",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "window",
+              "signature": "int window",
+              "key": "window",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "private",
+                "final"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "内部字段",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "dimension",
+              "signature": "int dimension",
+              "key": "dimension",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "private",
+                "final"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "内部字段",
+                "body": []
+              }
+            },
+            {
+              "kind": "constructor",
+              "name": "WindowedLanguageModel",
+              "signature": "WindowedLanguageModel(NativeContext context, int vocabulary, int window, int dimension, int hidden)",
+              "key": "WindowedLanguageModel(NativeContext, int, int, int, int)",
+              "return_type": "",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "vocabulary"
+                },
+                {
+                  "type": "int",
+                  "name": "window"
+                },
+                {
+                  "type": "int",
+                  "name": "dimension"
+                },
+                {
+                  "type": "int",
+                  "name": "hidden"
+                }
+              ],
+              "throws": [],
+              "modifiers": [],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "按词表、窗口、嵌入维度与隐层宽度建层",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "name": "forward",
+              "signature": "Tensor forward(Tensor input)",
+              "key": "forward(Tensor)",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "嵌入 → 展平 → 瓶颈残差块 → 词表投影",
+                "body": [],
+                "params": {
+                  "input": "[N, window] 的 token id"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "parameters",
+              "signature": "java.util.List<Tensor> parameters()",
+              "key": "parameters()",
+              "return_type": "java.util.List<Tensor>",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "嵌入表与三个线性层的全部参数",
+                "body": []
+              }
+            }
+          ],
+          "nested": [],
+          "owner": "Zoo",
+          "file": "basalt/zoo/Zoo.java",
+          "line": 135,
+          "depth": 1,
+          "doc": {
+            "summary": "charLm 背后的模块：嵌入 → 展平 → 瓶颈残差块 → 头",
+            "body": [
+              "保持私有，架构可以改动而不进入公开契约；调用方拿到的是 Module，也只应该依赖它。"
             ]
           }
         }

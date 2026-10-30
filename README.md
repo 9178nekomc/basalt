@@ -1,6 +1,6 @@
 # Basalt — Java + Rust Machine Learning Runtime
 
-> **Maven coordinates** — `io.github.9178nekomc:basalt:3.5.0`  
+> **Maven coordinates** — `io.github.9178nekomc:basalt:3.6.0`  
 > **Runtime** — Java 21 (`--add-modules jdk.incubator.vector`) + bundled Rust native library  
 > **One dependency, no Python, no GIL, no manual native build on Windows x86_64.**  
 > **Docs** — <https://9178nekomc.github.io/basalt/>
@@ -13,7 +13,7 @@
 <dependency>
     <groupId>io.github.9178nekomc</groupId>
     <artifactId>basalt</artifactId>
-    <version>3.5.0</version>
+    <version>3.6.0</version>
 </dependency>
 ```
 
@@ -23,7 +23,7 @@ Build and install locally from source:
 mvn clean install
 ```
 
-The shaded, self-contained artifact is `basalt-3.5.0-all.jar` (classifier `all`).
+The shaded, self-contained artifact is `basalt-3.6.0-all.jar` (classifier `all`).
 It contains the Windows x86_64 native runtime; other platforms can add their own
 `native/<os>-<arch>/` library or point `-Dbasalt.native.path` at a locally built one.
 
@@ -122,15 +122,15 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 
 ## 下载
 
-发布资产见 [Releases · v3.5.0](https://github.com/9178nekomc/basalt/releases/tag/v3.5.0)：
+发布资产见 [Releases · v3.6.0](https://github.com/9178nekomc/basalt/releases/tag/v3.6.0)：
 
 | 文件 | 说明 |
 |---|---|
-| `basalt-3.5.0-all.jar` | Fat Jar（classifier `all`），含 Windows x86_64 原生库，可直接 `java -cp` |
-| `basalt-3.5.0.jar` | 标准 jar，原生库在 `native/windows-x86_64/` 资源目录内 |
-| `basalt-3.5.0-sources.jar` | 源码包 |
+| `basalt-3.6.0-all.jar` | Fat Jar（classifier `all`），含 Windows x86_64 原生库，可直接 `java -cp` |
+| `basalt-3.6.0.jar` | 标准 jar，原生库在 `native/windows-x86_64/` 资源目录内 |
+| `basalt-3.6.0-sources.jar` | 源码包 |
 | `basalt_native.dll` | Windows x86_64 原生库，独立分发用 |
-| `basalt-docs-3.5.0.zip` | 离线文档站（15 页 HTML + 2 个基准报告），解压后双击 `index.html` |
+| `basalt-docs-3.6.0.zip` | 离线文档站（15 页 HTML + 2 个基准报告），解压后双击 `index.html` |
 
 ---
 
@@ -146,7 +146,7 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 | 页面 | 内容 |
 |---|---|
 | `docs/index.html` | 首页：文档章节网格、安装、快速开始、三层 API 边界、模块索引 |
-| `docs/api/index.html` | 模块索引（11 个包，附阅读顺序建议） |
+| `docs/api/index.html` | 模块索引（12 个包，附阅读顺序建议） |
 | `docs/api/basalt.html` | `basalt` 门面与异常 |
 | `docs/api/basalt_core.html` | 布局标记、`Matrix`、`MatMul`、`VectorMath`、`NativeKernels`、模型容器原语 |
 | `docs/api/basalt_data.html` | `DataLoader`（BasaltD 流式 / 内存映射）、`Normalization` |
@@ -154,14 +154,15 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 | `docs/api/basalt_ml.html` | 经典估计器、树、梯度提升、聚类、降维、指标、切分 |
 | `docs/api/basalt_auto.html` | `Auto` 自动建模：任务推断、候选筛选、留出评分 |
 | `docs/api/basalt_zoo.html` | `Zoo` 现成结构、`Trainer` 训练循环、`History` 记录 |
+| `docs/api/basalt_model.html` | 统一模型层：`Task`、`Dataset`、`Solver`、`Fitted`、`Solvers` |
 | `docs/api/basalt_nn.html` | 手写层、LSTM/GRU/RNN、注意力、序列训练、序列化 |
 | `docs/api/basalt_nativebridge.html` | `NativeContext`、`NativeTensorHandle`、`CommandQueueBuilder`、`NativeMLP` |
 | `docs/api/basalt_torch.html` | eager `Tensor`、`Module`/`Sequential`、CNN/Transformer 模块、优化器、损失 |
 | `docs/genindex.html` | 总索引（按首字母） |
 | `docs/readme.html` | 本 README 的 HTML 版（同一版式，静态托管下不会退化成纯文本） |
 
-覆盖范围：**235 个公开类型、1510 个公开成员**，其中 1510 个成员全部带逐参数说明
-（共 1467 条参数条目、1264 组 `参数/返回/抛出` 字段列表），另有 23 个包内可见类型
+覆盖范围：**242 个公开类型、1550 个公开成员**，其中 1550 个成员全部带逐参数说明
+（共 1517 条参数条目、1286 组 `参数/返回/抛出` 字段列表），另有 24 个包内可见类型
 单列在各模块页末尾，并明确标注为非稳定 API。
 
 ### 文档是怎么生成的
@@ -189,14 +190,14 @@ python tools/check_docs.py --root docs
   渲染器按 `(qualified, key)` 匹配，**匹配不上的说明直接丢弃并报错**，
   所以文档不可能描述一个不存在的参数。
 - `tools/build_api_docs.py`：零外部依赖渲染器，输出 13 个 HTML 页，另加一份 `readme.html`。
-  **每页自包含**：CSS、主题/搜索脚本、1700 条搜索索引全部内联，不引用任何外部
+  **每页自包含**：CSS、主题/搜索脚本、1748 条搜索索引全部内联，不引用任何外部
   `_static/` 目录——静态托管（Jekyll、各类预览服务）会跳过下划线开头的目录，
   外部资源一旦 404，页面就会退化成无样式纯文本。
 - `tools/md_render.py`：README 的 Markdown 渲染器（标题、围栏代码、GFM 表格、
   嵌套列表、引用块、行内标记），CJK 换行不插空格，`java` 代码块复用同一套高亮。
 - `tools/check_docs.py`：退出码非 0 即视为文档损坏，可用于 CI 门禁。
 
-当前 `check_docs.py` 结果：17 页、258 个类型块、1257 个方法块、1264 组字段列表、
+当前 `check_docs.py` 结果：18 页、269 个类型块、1301 个方法块、1286 组字段列表、
 0 个占位符、0 个断链。
 
 ---
@@ -207,7 +208,7 @@ python tools/check_docs.py --root docs
 <dependency>
     <groupId>io.github.9178nekomc</groupId>
     <artifactId>basalt</artifactId>
-    <version>3.5.0</version>
+    <version>3.6.0</version>
 </dependency>
 ```
 
@@ -218,9 +219,9 @@ mvn clean install
 ```
 
 产物：
-- `target/basalt-3.5.0.jar`：标准 jar（含 `native/windows-x86_64/basalt_native.dll` 资源）
-- `target/basalt-3.5.0-all.jar`：Fat Jar（classifier `all`，可直接 `java -cp`）
-- `target/basalt-3.5.0-sources.jar`：源码包
+- `target/basalt-3.6.0.jar`：标准 jar（含 `native/windows-x86_64/basalt_native.dll` 资源）
+- `target/basalt-3.6.0-all.jar`：Fat Jar（classifier `all`，可直接 `java -cp`）
+- `target/basalt-3.6.0-sources.jar`：源码包
 
 10 行完成一次前向 + 反向：
 
@@ -249,13 +250,17 @@ try (Basalt engine = Basalt.create()) {
 ### 第一层：一行跑起来
 
 ```java
-AutoModel model = Auto.quickstart(features, labels);   // 自动判断分类还是回归
-System.out.println(model.summary());                    // 候选表 + 留出成绩
-double[] prediction = model.predict(unseen);
+AutoModel model = Auto.quickstart(features, labels);   // 表格：自动判断分类还是回归
+AutoModel lm    = Auto.sequence(tokenIds);             // 序列：字符级语言模型
+System.out.println(lm.summary());                      // 候选表 + 评分
+int[] next = lm.generate(seed, 15);
 ```
 
-它做的四件事：判断任务 → 用 5 折交叉验证把该任务下注册过的算法全部跑一遍 → 取最优者在全量数据上重训 →
-在 25% 留出集上报分。要控制细节就换成 builder：
+它做的三件事：从数据本身确定任务 → 把该任务下的**全部求解器**跑一遍打分 → 取最优者在全量数据上重训。
+经典估计器用交叉验证，神经网络留出一片数据训一次——两者在同一张表里排序。
+
+任务不再是 Auto 猜的，而是数据声明的：`Dataset.tabular` 从目标值推断，`Dataset.sequence` 直接声明。
+推断不对时给 `Dataset.tabular` 传一个显式任务即可。要控制细节就换成 builder：
 
 ```java
 AutoModel model = Auto.builder(features, labels)
@@ -334,7 +339,8 @@ Auto.quickstart(features, targets);   // 新算法与内置算法同台竞争，
 | 序列训练 | `SequenceNetwork` | 池化头 + Dense 头 + 损失 + 全局范数裁剪 + 小批量 |
 | 数据 | `DataLoader` | BasaltD 流式/内存映射、零拷贝批量、epoch 洗牌、标准化 |
 | 并发 | `InferenceEngine` | Java 21 虚拟线程 + 信号量限流的批量推理编排 |
-| 自动建模 | `Auto`、`AutoModel` | 任务推断 + 全目录交叉验证筛选 + 留出评分，一行完成 |
+| 统一模型层 | `Task`、`Dataset`、`Solver`、`Fitted`、`Solvers` | 表格与序列共用一套筛选契约，新增家族只需实现 `Solver` |
+| 自动建模 | `Auto`、`AutoModel` | 任务推断 + 全目录筛选（经典估计器与神经网络同台）+ 评分，一行完成 |
 | 现成结构 | `Zoo` | MLP / 表格分类器 / 小卷积分类器，返回普通 `Sequential` |
 | 训练循环 | `Trainer`、`History` | 批次、洗牌、早停、逐轮损失，与手写循环等价 |
 | 扩展 | `Registry`、`Module` | 注册自定义估计器即参与筛选；自定义层只要两个方法 |
@@ -837,6 +843,7 @@ src/main/java/basalt/
   torch/       Tensor, Module, Sequential, Conv2d, MultiheadAttention, AdamW, JFR event
   auto/        Auto, AutoModel, Candidate（任务推断 + 候选筛选）
   zoo/         Zoo, Trainer, History（现成结构 + 训练循环）
+  model/       Task, Dataset, Solver, Fitted, Solvers（跨家族筛选契约）
 native/src/
   lib.rs       模块声明
   api.rs       JNI 张量/队列/反向传播入口
@@ -898,7 +905,7 @@ report/                 报告、图表生成脚本、figures/
 
 ---
 
-## 11. v3.5.0 三期演进全景
+## 11. v3.6.0 三期演进全景
 
 ### 第一阶段：夯实工程底座（Phase 1）
 1. **JNI / Rust 底层核心工程强化**

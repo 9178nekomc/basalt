@@ -8,6 +8,7 @@ import basalt.core.BC;
 import basalt.core.Matrix;
 import basalt.ml.Estimator;
 import basalt.ml.Estimators;
+import basalt.model.Task;
 import basalt.ml.Registry;
 import basalt.torch.Module;
 import basalt.torch.Tensor;
@@ -58,7 +59,7 @@ class AdvancedApiTest {
                 .candidates("logistic_regression", "decision_tree", "knn")
                 .fit();
 
-        assertEquals(Estimators.Task.CLASSIFICATION, model.task());
+        assertEquals(Task.TABULAR_CLASSIFICATION, model.task());
         assertEquals(Estimators.Metric.MACRO_F1, model.metric());
         assertEquals(3, model.candidates().size());
         assertTrue(model.score() > 0.8, "held-out F1 should be high, got " + model.score());
@@ -91,7 +92,7 @@ class AdvancedApiTest {
                 .candidates("linear_regression", "ridge")
                 .fit();
 
-        assertEquals(Estimators.Task.REGRESSION, model.task());
+        assertEquals(Task.TABULAR_REGRESSION, model.task());
         assertEquals(Estimators.Metric.R2, model.metric());
         assertTrue(model.score() > 0.95, "R2 should be near 1, got " + model.score());
     }
@@ -149,7 +150,7 @@ class AdvancedApiTest {
                 .fit();
 
         assertEquals("test_constant_regressor", model.algorithm());
-        assertNotNull(model.estimator());
+        assertNotNull(model.fitted());
         double[] prediction = model.predict(Matrix.fromRows(rows));
         assertEquals(60, prediction.length);
         assertTrue(Math.abs(prediction[0] - 5.0) < 1.0, "mean prediction should sit near 5");
