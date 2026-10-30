@@ -1,6 +1,6 @@
 # Basalt — Java + Rust Machine Learning Runtime
 
-> **Maven coordinates** — `io.github.9178nekomc:basalt:3.7.0`  
+> **Maven coordinates** — `io.github.9178nekomc:basalt:3.8.0`  
 > **Runtime** — Java 21 (`--add-modules jdk.incubator.vector`) + bundled Rust native library  
 > **One dependency, no Python, no GIL, no manual native build on Windows x86_64.**  
 > **Docs** — <https://9178nekomc.github.io/basalt/>
@@ -13,7 +13,7 @@
 <dependency>
     <groupId>io.github.9178nekomc</groupId>
     <artifactId>basalt</artifactId>
-    <version>3.7.0</version>
+    <version>3.8.0</version>
 </dependency>
 ```
 
@@ -23,7 +23,7 @@ Build and install locally from source:
 mvn clean install
 ```
 
-The shaded, self-contained artifact is `basalt-3.7.0-all.jar` (classifier `all`).
+The shaded, self-contained artifact is `basalt-3.8.0-all.jar` (classifier `all`).
 It contains the Windows x86_64 native runtime; other platforms can add their own
 `native/<os>-<arch>/` library or point `-Dbasalt.native.path` at a locally built one.
 
@@ -122,15 +122,15 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 
 ## 下载
 
-发布资产见 [Releases · v3.7.0](https://github.com/9178nekomc/basalt/releases/tag/v3.7.0)：
+发布资产见 [Releases · v3.8.0](https://github.com/9178nekomc/basalt/releases/tag/v3.8.0)：
 
 | 文件 | 说明 |
 |---|---|
-| `basalt-3.7.0-all.jar` | Fat Jar（classifier `all`），含 Windows x86_64 原生库，可直接 `java -cp` |
-| `basalt-3.7.0.jar` | 标准 jar，原生库在 `native/windows-x86_64/` 资源目录内 |
-| `basalt-3.7.0-sources.jar` | 源码包 |
+| `basalt-3.8.0-all.jar` | Fat Jar（classifier `all`），含 Windows x86_64 原生库，可直接 `java -cp` |
+| `basalt-3.8.0.jar` | 标准 jar，原生库在 `native/windows-x86_64/` 资源目录内 |
+| `basalt-3.8.0-sources.jar` | 源码包 |
 | `basalt_native.dll` | Windows x86_64 原生库，独立分发用 |
-| `basalt-docs-3.7.0.zip` | 离线文档站（15 页 HTML + 2 个基准报告），解压后双击 `index.html` |
+| `basalt-docs-3.8.0.zip` | 离线文档站（15 页 HTML + 2 个基准报告），解压后双击 `index.html` |
 
 ---
 
@@ -162,8 +162,8 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 | `docs/genindex.html` | 总索引（按首字母） |
 | `docs/readme.html` | 本 README 的 HTML 版（同一版式，静态托管下不会退化成纯文本） |
 
-覆盖范围：**243 个公开类型、1563 个公开成员**，其中 1563 个成员全部带逐参数说明
-（共 1534 条参数条目、1295 组 `参数/返回/抛出` 字段列表），另有 24 个包内可见类型
+覆盖范围：**243 个公开类型、1565 个公开成员**，其中 1565 个成员全部带逐参数说明
+（共 1542 条参数条目、1297 组 `参数/返回/抛出` 字段列表），另有 24 个包内可见类型
 单列在各模块页末尾，并明确标注为非稳定 API。
 
 ### 文档是怎么生成的
@@ -191,14 +191,14 @@ python tools/check_docs.py --root docs
   渲染器按 `(qualified, key)` 匹配，**匹配不上的说明直接丢弃并报错**，
   所以文档不可能描述一个不存在的参数。
 - `tools/build_api_docs.py`：零外部依赖渲染器，输出 13 个 HTML 页，另加一份 `readme.html`。
-  **每页自包含**：CSS、主题/搜索脚本、1762 条搜索索引全部内联，不引用任何外部
+  **每页自包含**：CSS、主题/搜索脚本、1764 条搜索索引全部内联，不引用任何外部
   `_static/` 目录——静态托管（Jekyll、各类预览服务）会跳过下划线开头的目录，
   外部资源一旦 404，页面就会退化成无样式纯文本。
 - `tools/md_render.py`：README 的 Markdown 渲染器（标题、围栏代码、GFM 表格、
   嵌套列表、引用块、行内标记），CJK 换行不插空格，`java` 代码块复用同一套高亮。
 - `tools/check_docs.py`：退出码非 0 即视为文档损坏，可用于 CI 门禁。
 
-当前 `check_docs.py` 结果：19 页、270 个类型块、1314 个方法块、1295 组字段列表、
+当前 `check_docs.py` 结果：19 页、270 个类型块、1316 个方法块、1297 组字段列表、
 0 个占位符、0 个断链。
 
 ---
@@ -209,7 +209,7 @@ python tools/check_docs.py --root docs
 <dependency>
     <groupId>io.github.9178nekomc</groupId>
     <artifactId>basalt</artifactId>
-    <version>3.7.0</version>
+    <version>3.8.0</version>
 </dependency>
 ```
 
@@ -220,9 +220,9 @@ mvn clean install
 ```
 
 产物：
-- `target/basalt-3.7.0.jar`：标准 jar（含 `native/windows-x86_64/basalt_native.dll` 资源）
-- `target/basalt-3.7.0-all.jar`：Fat Jar（classifier `all`，可直接 `java -cp`）
-- `target/basalt-3.7.0-sources.jar`：源码包
+- `target/basalt-3.8.0.jar`：标准 jar（含 `native/windows-x86_64/basalt_native.dll` 资源）
+- `target/basalt-3.8.0-all.jar`：Fat Jar（classifier `all`，可直接 `java -cp`）
+- `target/basalt-3.8.0-sources.jar`：源码包
 
 10 行完成一次前向 + 反向：
 
@@ -344,7 +344,7 @@ Auto.quickstart(features, targets);   // 新算法与内置算法同台竞争，
 | 自动建模 | `Auto`、`AutoModel` | 任务推断 + 全目录筛选（经典估计器与神经网络同台）+ 评分，一行完成 |
 | 现成结构 | `Zoo` | MLP / 表格分类器 / 小卷积分类器，返回普通 `Sequential` |
 | 训练循环 | `Trainer`、`History` | 批次、洗牌、早停、逐轮损失，与手写循环等价 |
-| 推理引擎 | `TextEngine` | 批量前向、贪心与采样解码、权重按名存取 |
+| 推理引擎 | `TextEngine` | 批量前向、贪心与采样解码、逐字流式输出、权重按名存取 |
 | 扩展 | `Registry`、`Module` | 注册自定义估计器即参与筛选；自定义层只要两个方法 |
 | 剖析 | JFR（JDK 内置） | 生产级常开剖析，零开销；对比见 `report/Basalt_VS_REFERENCE.md` 第 5 节 |
 | 原生经典核 | `NativeKernels` (JNI → Rust) | AVX2/FMA f64 GEMM、KMeans 全流程、Ridge 正规方程、GNB 统计量、分箱、森林预测、直方图会话；失败自动回退 |
@@ -908,7 +908,7 @@ report/                 报告、图表生成脚本、figures/
 
 ---
 
-## 11. v3.7.0 三期演进全景
+## 11. v3.8.0 三期演进全景
 
 ### 第一阶段：夯实工程底座（Phase 1）
 1. **JNI / Rust 底层核心工程强化**

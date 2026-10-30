@@ -120,6 +120,32 @@ class TextEngineTest {
     }
 
     @Test
+    void streamingEmitsTheSameTokensInOrder() {
+        try (Basalt engine = Basalt.create()) {
+            Module<BC, BC> model = new LastTokenModel(engine.context(), VOCABULARY);
+            TextEngine text = TextEngine.of(engine, model, VOCABULARY, WINDOW);
+
+            java.util.List<Integer> seen = new java.util.ArrayList<>();
+            int[] streamed = text.stream(new int[]{0, 0, 0}, 5, seen::add);
+            assertArrayEquals(text.generate(new int[]{0, 0, 0}, 5), streamed,
+                    "streaming must not change the chosen tokens");
+            assertEquals(5, seen.size(), "the sink must be called once per step");
+            for (int index = 0; index < seen.size(); index++) {
+                assertEquals(streamed[index], seen.get(index), "tokens must arrive in order");
+            }
+
+            java.util.List<Integer> sampledSeen = new java.util.ArrayList<>();
+            text.seed(3L);
+            int[] sampled = text.streamSampled(new int[]{0, 0, 0}, 4, 1.0f, 2, sampledSeen::add);
+            text.seed(3L);
+            assertArrayEquals(text.sample(new int[]{0, 0, 0}, 4, 1.0f, 2), sampled,
+                    "streamed sampling must match sample() under the same seed");
+            assertEquals(4, sampledSeen.size());
+            model.close();
+        }
+    }
+
+    @Test
     void rejectsShapesItCannotServe() {
         try (Basalt engine = Basalt.create()) {
             Module<BC, BC> model = new LastTokenModel(engine.context(), VOCABULARY);

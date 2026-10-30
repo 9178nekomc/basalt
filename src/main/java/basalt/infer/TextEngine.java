@@ -168,6 +168,59 @@ public final class TextEngine implements AutoCloseable {
     }
 
     /**
+     * Greedy continuation, delivered token by token.
+     *
+     * <p>Same decoding as {@link #generate}, but each token reaches the caller as soon as it
+     * exists instead of after the whole run. For a terminal that is the difference between a
+     * pause and watching the model write, and for a server it means the first token does not
+     * wait for the last.</p>
+     *
+     * @param sink receives each token in order; called exactly {@code steps} times
+     * @return the same array {@link #generate} would have returned
+     */
+    public int[] stream(int[] context, int steps, java.util.function.IntConsumer sink) {
+        BasaltRuntimeException.requireNonNull(sink, "sink");
+        requireSteps(steps);
+        int[] carried = tailAfter(context);
+        int[] produced = new int[steps];
+        for (int step = 0; step < steps; step++) {
+            int next = argmax(scores(carried));
+            produced[step] = next;
+            push(carried, next);
+            sink.accept(next);
+        }
+        return produced;
+    }
+
+    /**
+     * Sampled continuation, delivered token by token.
+     *
+     * <p>The sampling rules are exactly those of {@link #sample}; streaming changes when a token is
+     * handed over, never which token is chosen.</p>
+     */
+    public int[] streamSampled(int[] context, int steps, float temperature, int topK,
+                               java.util.function.IntConsumer sink) {
+        BasaltRuntimeException.requireNonNull(sink, "sink");
+        requireSteps(steps);
+        if (!(temperature > 0f) || !Float.isFinite(temperature)) {
+            throw new IllegalArgumentException("temperature must be positive and finite, got "
+                    + temperature);
+        }
+        if (topK < 1) {
+            throw new IllegalArgumentException("topK must be at least 1, got " + topK);
+        }
+        int[] carried = tailAfter(context);
+        int[] produced = new int[steps];
+        for (int step = 0; step < steps; step++) {
+            int next = draw(scores(carried), temperature, Math.min(topK, vocabulary));
+            produced[step] = next;
+            push(carried, next);
+            sink.accept(next);
+        }
+        return produced;
+    }
+
+    /**
      * Greedy continuation for several prompts at once.
      *
      * <p>Each step runs one batched forward over every prompt, so decoding N conversations costs

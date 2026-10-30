@@ -176,6 +176,82 @@
             },
             {
               "kind": "method",
+              "name": "stream",
+              "signature": "int[] stream(int[] context, int steps, java.util.function.IntConsumer sink)",
+              "key": "stream(int[], int, java.util.function.IntConsumer)",
+              "return_type": "int[]",
+              "type": "",
+              "params": [
+                {
+                  "type": "int[]",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "steps"
+                },
+                {
+                  "type": "java.util.function.IntConsumer",
+                  "name": "sink"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "见签名",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "name": "streamSampled",
+              "signature": "int[] streamSampled(int[] context, int steps, float temperature, int topK, java.util.function.IntConsumer sink)",
+              "key": "streamSampled(int[], int, float, int, java.util.function.IntConsumer)",
+              "return_type": "int[]",
+              "type": "",
+              "params": [
+                {
+                  "type": "int[]",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "steps"
+                },
+                {
+                  "type": "float",
+                  "name": "temperature"
+                },
+                {
+                  "type": "int",
+                  "name": "topK"
+                },
+                {
+                  "type": "java.util.function.IntConsumer",
+                  "name": "sink"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "见签名",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
               "key": "generateBatch(int[][], int)",
               "signature": "int[][] generateBatch(int[][] contexts, int steps)",
               "params": [
