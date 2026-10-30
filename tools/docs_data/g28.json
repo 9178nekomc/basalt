@@ -1,0 +1,337 @@
+{
+  "group": "g28",
+  "title": "推理引擎",
+  "modules": [
+    {
+      "name": "basalt.infer",
+      "types": [
+        {
+          "qualified": "basalt.infer.TextEngine",
+          "simple_qualified": "TextEngine",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "AutoCloseable"
+          ],
+          "file": "basalt/infer/TextEngine.java",
+          "line": 37,
+          "javadoc": "Decoding loop for a windowed language model.\n\n<p>The model is an ordinary {@link Module}; what this class adds is everything around it that a\ncaller would otherwise rewrite for every project: keeping the window, running several contexts\nthrough one native call, turning logits into a token, and saving the weights next to their shapes\nso a chat session does not have to retrain.</p>\n\n<p>Where the work happens: every multiply, add and activation is executed by the Rust backend.\nThe loop itself is Java because the architecture is expressed in Java — the module decides which\nops run, so a replayable native program would have to duplicate that knowledge in Rust and drift\nfrom it. The optimisation that does pay off is batching: {@link #scoresBatch} feeds N contexts\nthrough a single {@code forward}, which turns N×ops JNI crossings per step into one.</p>\n\n<p>The engine borrows the runtime and the module; it never closes them. Closing an engine only\ndrops its own state, so a caller can keep using the model afterwards.</p>",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "of(Basalt, Module<BC, BC>, int, int)",
+              "signature": "TextEngine of(Basalt runtime, Module<BC, BC> model, int vocabulary, int window)",
+              "params": [
+                {
+                  "type": "Basalt",
+                  "name": "runtime"
+                },
+                {
+                  "type": "Module<BC, BC>",
+                  "name": "model"
+                },
+                {
+                  "type": "int",
+                  "name": "vocabulary"
+                },
+                {
+                  "type": "int",
+                  "name": "window"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "绑定一个语言模型",
+                "body": [],
+                "params": {
+                  "runtime": "模型张量所在的运行时",
+                  "model": "把 [N, window] 的 token id 映射成 [N, vocabulary] logits 的模块",
+                  "vocabulary": "不同 token 的数量",
+                  "window": "模块期望的上下文长度"
+                },
+                "throws": {
+                  "IllegalArgumentException": "词表或窗口不是正数，或模块没有任何参数"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "vocabulary()",
+              "signature": "int vocabulary()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "模型可以输出的不同 token 数量",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "window()",
+              "signature": "int window()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "模型构建时使用的上下文长度",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "key": "model()",
+              "signature": "Module<BC, BC> model()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "底层模块",
+                "body": [
+                  "需要检查或继续扩展模型时用它。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "scores(int[])",
+              "signature": "double[] scores(int[] context)",
+              "params": [
+                {
+                  "type": "int[]",
+                  "name": "context"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "给定上下文后下一个 token 的 logits",
+                "body": [],
+                "params": {
+                  "context": "至少 window 个 token；只用尾部"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "scoresBatch(int[][])",
+              "signature": "double[][] scoresBatch(int[][] contexts)",
+              "params": [
+                {
+                  "type": "int[][]",
+                  "name": "contexts"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "一次前向算出多条上下文的 logits",
+                "body": [
+                  "这就是值得批处理的理由：原生边界对整批只穿越一次，而不是每行一次，第一行之后的每一行几乎不花钱。"
+                ],
+                "params": {
+                  "contexts": "每行至少 window 个 token；只用各自的尾部"
+                },
+                "throws": {
+                  "IllegalArgumentException": "数组为空，或某一行长度不足"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "generate(int[], int)",
+              "signature": "int[] generate(int[] context, int steps)",
+              "params": [
+                {
+                  "type": "int[]",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "steps"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "贪心续写：每一步都取概率最大的 token",
+                "body": [
+                  "确定性，所以同一上下文永远产出同一段文本——检查模型到底学会了什么时，需要的就是这个性质。"
+                ],
+                "params": {
+                  "context": "至少 window 个 token",
+                  "steps": "要生成的 token 数"
+                },
+                "throws": {
+                  "IllegalArgumentException": "上下文太短或步数小于 1"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "generateBatch(int[][], int)",
+              "signature": "int[][] generateBatch(int[][] contexts, int steps)",
+              "params": [
+                {
+                  "type": "int[][]",
+                  "name": "contexts"
+                },
+                {
+                  "type": "int",
+                  "name": "steps"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "同时为多条上下文做贪心续写",
+                "body": [
+                  "每一步对全部上下文做一次批量前向，所以解码 N 段对话的原生穿越次数约为一段的量级。"
+                ],
+                "params": {
+                  "contexts": "每行至少 window 个 token",
+                  "steps": "每行要生成的 token 数"
+                },
+                "throws": {
+                  "IllegalArgumentException": "上下文为空或步数小于 1"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "sample(int[], int, float, int)",
+              "signature": "int[] sample(int[] context, int steps, float temperature, int topK)",
+              "params": [
+                {
+                  "type": "int[]",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "steps"
+                },
+                {
+                  "type": "float",
+                  "name": "temperature"
+                },
+                {
+                  "type": "int",
+                  "name": "topK"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "采样续写",
+                "body": [
+                  "温度在 softmax 前缩放 logits：小于 1 更接近 argmax，大于 1 更平坦。topK 只保留最可能的 k 个 token 再抽样，这一步是为了避免小模型每步都蹦出一个罕见字符。随机数来自引擎自己的 RNG，因此 seed 能让一次运行可复现。"
+                ],
+                "params": {
+                  "context": "至少 window 个 token",
+                  "steps": "要生成的 token 数",
+                  "temperature": "正数；1.0 不改变分布",
+                  "topK": "至少 1；超过词表时按词表截断"
+                },
+                "throws": {
+                  "IllegalArgumentException": "温度非正或非有限，或 topK 小于 1"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "seed(long)",
+              "signature": "void seed(long seed)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "给采样器设种子，使采样结果可复现",
+                "body": [],
+                "params": {
+                  "seed": "随机种子"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "save(Path)",
+              "signature": "void save(Path path)",
+              "params": [
+                {
+                  "type": "Path",
+                  "name": "path"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "写入权重与它们所属的形状",
+                "body": [
+                  "按名字存储而不是按位置：加载到一个宽度不同的模块上会直接报出越界的名字，而不是悄悄变形。"
+                ],
+                "params": {
+                  "path": "目标文件"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "load(Path)",
+              "signature": "void load(Path path)",
+              "params": [
+                {
+                  "type": "Path",
+                  "name": "path"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "读取 save 写出的权重",
+                "body": [],
+                "params": {
+                  "path": "权重文件"
+                },
+                "throws": {
+                  "IllegalStateException": "文件里的词表或窗口与当前引擎不一致，或参数名对不上"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "close()",
+              "signature": "void close()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "丢弃引擎自己的状态；运行时与模块保持打开",
+                "body": []
+              }
+            }
+          ],
+          "doc": {
+            "summary": "窗口式语言模型的解码循环",
+            "body": [
+              "模型本身是普通的 Module；这里补的是它周围那些每个项目都要重写的东西：记住窗口、把多条上下文塞进一次原生调用、把 logits 变成一个 token、把权重连同形状一起存下来，使一次对话不必反复训练。",
+              "计算发生在哪里：每一次乘、加、激活都由 Rust 后端执行。循环本身是 Java，因为结构是用 Java 表达的——模块决定跑哪些算子，若要录制成原生程序，就得在 Rust 里重写这套知识并与之保持同步。真正划算的优化是批处理：scoresBatch 把 N 条上下文放进一次 forward，把每步 N×算子 次边界穿越压成一次。",
+              "引擎借用运行时与模块，不负责关闭它们。关闭引擎只丢弃自己那点状态，调用方之后仍可继续使用模型。"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
