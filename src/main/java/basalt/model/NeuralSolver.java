@@ -87,6 +87,13 @@ public final class NeuralSolver implements Solver {
      *
      * <p>Reports {@link Task#SEQUENCE_LM} regardless of {@code name}, so it is only ever screened
      * against token data.</p>
+     *
+     * <p>Be careful reading the score on a tiny corpus. The estimate is cross entropy over windows
+     * whose target was held out of training, and a few dozen tokens cannot support that: the model
+     * memorises what it sees and is confidently wrong on the tail, so the reported number can sit
+     * above {@code ln(vocabulary)}, i.e. worse than guessing uniformly. That is a measurement
+     * artefact, not a broken model — check {@code generate(...)} to see what it actually learned.
+     * Holdout scoring is meant for corpora large enough that the tail resembles the body.</p>
      */
     public static NeuralSolver sequence(String name, int window, int dimension, int residualWidth,
                                         int epochs, int batchSize, float learningRate) {
