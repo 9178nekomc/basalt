@@ -98,6 +98,13 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      # Only the documentation steps need Python, but it has to exist before the
+      # tag-only bundle step runs further down this job.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Download all platform native binaries
         uses: actions/download-artifact@v4
         with:
@@ -123,8 +130,26 @@ jobs:
           name: basalt-release-jars
           path: target/*.jar
 
+      # The site is no longer versioned (see docs.yml), so the offline bundle has
+      # to be rendered here. Same three steps the Pages job runs, so a release can
+      # never ship documentation that differs from what is published.
+      - name: Render the offline documentation bundle
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq zip >/dev/null
+          python tools/api_dump.py --src src/main/java --out build/api/api.json
+          python report/make_report.py report/Basalt_VS_REFERENCE.md
+          python report/make_report.py report/Basalt_ARCHITECTURE_AND_BENCHMARK.md
+          python tools/build_api_docs.py \
+            --api build/api/api.json --docs 'tools/docs_data/g*.json' --out docs
+          python tools/check_docs.py --root docs
+          version="${GITHUB_REF_NAME#v}"
+          cd docs && zip -qr "../target/basalt-docs-${version}.zip" . -x '.git/*'
+
       - name: Publish GitHub Release on Tag
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: target/*.jar
+          files: |
+            target/*.jar
+            target/basalt-docs-*.zip
