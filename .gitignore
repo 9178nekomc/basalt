@@ -7,6 +7,14 @@ native/target/
 # explicitly with `git add -f target/basalt-2.4.0*.jar`.
 target/
 
+# ── Generated documentation ──────────────────────────────
+# Built by .github/workflows/docs.yml and published to Pages. Keeping the
+# HTML out of git costs nothing (it is regenerated from src/ and tools/ on
+# every deploy) and stops 12 MiB of rendered pages from being uploaded on
+# every push and stored forever in history.
+docs/
+report/*.html
+
 # ── Compiled / generated artifacts ───────────────────────
 *.class
 *.bsl

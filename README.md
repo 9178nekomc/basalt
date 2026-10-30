@@ -116,7 +116,7 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 - 验证：16 个 Rust 单元测试 + 66 组 legacy Java 套件 + 12 个 JUnit 5 SDK 测试
   + 6 个编译期拒绝用例 + `-Xlint:all`（除 JDK incubating 提示外零告警）
 - 文档：[《Basalt 终极架构与性能基准测试报告》](report/Basalt_ARCHITECTURE_AND_BENCHMARK.md)
-- API 参考：[docs/index.html](docs/index.html)（离线可读）
+- API 参考：<https://9178nekomc.github.io/basalt/>（离线包见 Releases 的 `basalt-docs-*.zip`）
 
 ---
 
@@ -141,7 +141,7 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 `dl.py` 签名块、`参数 / 返回 / 抛出` 字段列表、页内永久链接、`Ctrl+K` 快速搜索，
 以及**自动 / 浅色 / 深色**三档主题（默认跟随系统）。
 
-入口：**[`docs/index.html`](docs/index.html)**
+入口：**<https://9178nekomc.github.io/basalt/>**
 
 | 页面 | 内容 |
 |---|---|

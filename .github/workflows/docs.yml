@@ -1,0 +1,76 @@
+name: Build & Deploy Docs
+
+# The HTML under docs/ is generated, so it is not in git: it is rebuilt from
+# src/main/java plus tools/docs_data on every push and published to the
+# gh-pages branch, which is what Pages serves. That keeps main small (the
+# rendered pages were ~10 MiB of the tree) and guarantees the site can never
+# drift from the sources - if a signature changes and the docs no longer match,
+# check_docs fails here and nothing is published.
+#
+# gh-pages is a disposable output branch: it is force-pushed on every build, so
+# its history costs nothing and is never merged back.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/main/java/**'
+      - 'tools/**'
+      - 'report/*.md'
+      - 'README.md'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Render and publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Extract API surface from sources
+        run: python tools/api_dump.py --src src/main/java --out build/api/api.json
+
+      - name: Render benchmark reports
+        run: |
+          python report/make_report.py report/Basalt_VS_REFERENCE.md
+          python report/make_report.py report/Basalt_ARCHITECTURE_AND_BENCHMARK.md
+
+      - name: Build the site
+        run: |
+          python tools/build_api_docs.py \
+            --api build/api/api.json \
+            --docs 'tools/docs_data/g*.json' \
+            --out docs
+
+      - name: Verify the site (links, anchors, placeholders)
+        run: python tools/check_docs.py --root docs
+
+      - name: Publish to gh-pages
+        working-directory: docs
+        run: |
+          # Pages would otherwise run Jekyll over the output and drop nothing,
+          # but .nojekyll also keeps files starting with an underscore safe.
+          touch .nojekyll
+          git init -q
+          git checkout -q -b gh-pages
+          git add -A
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -qm "docs: publish from ${GITHUB_SHA::7}"
+          git push -f \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
