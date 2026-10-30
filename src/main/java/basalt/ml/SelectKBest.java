@@ -12,8 +12,7 @@ import java.util.TreeMap;
 
 /**
  * Selects the top {@code k} features according to univariate statistical tests
- * ({@code F_CLASSIF}, {@code F_REGRESSION}, {@code CHI2}), matching
- * {@code sklearn.feature_selection.SelectKBest}.
+ * ({@code F_CLASSIF}, {@code F_REGRESSION}, {@code CHI2}).
  */
 public final class SelectKBest implements Transformer, Estimator {
     public enum ScoreFunc {

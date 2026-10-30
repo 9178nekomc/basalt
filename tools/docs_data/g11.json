@@ -1,1682 +1,1682 @@
 {
- "group": "g11",
- "title": "经典机器学习（6/9）",
- "modules": [
-  {
-   "name": "basalt.ml",
-   "types": [
+  "group": "g11",
+  "title": "经典机器学习（6/9）",
+  "modules": [
     {
-     "qualified": "basalt.ml.GridSearchCV.CandidateResult",
-     "simple_qualified": "GridSearchCV.CandidateResult",
-     "kind": "record",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/GridSearchCV.java",
-     "line": 17,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "网格搜索中单个参数组合的交叉验证结果快照。",
-      "body": [
-       "由 GridSearchCV.cvResults() 按网格笛卡尔积顺序返回。params 是该组合的超参数，meanScore 与 stdScore 为各折得分的均值与总体标准差（方差除以折数），foldScores 保留每折原始得分。",
-       "params 在构造时包装为不可修改的 LinkedHashMap，foldScores 直接引用传入数组，不做复制。"
-      ],
-      "notes": [
-       "得分方向统一为越大越好：RMSE 在累加前取负，不能与 Metrics.rmse 的原始值直接比较",
-       "记录本身不校验 params 与估计器配置是否匹配，也不校验 foldScores 长度"
-      ],
-      "see": [
-       "basalt.ml.GridSearchCV",
-       "basalt.ml.GridSearchCV.cvResults()"
+      "name": "basalt.ml",
+      "types": [
+        {
+          "qualified": "basalt.ml.GridSearchCV.CandidateResult",
+          "simple_qualified": "GridSearchCV.CandidateResult",
+          "kind": "record",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/GridSearchCV.java",
+          "line": 17,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "网格搜索中单个参数组合的交叉验证结果快照。",
+            "body": [
+              "由 GridSearchCV.cvResults() 按网格笛卡尔积顺序返回。params 是该组合的超参数，meanScore 与 stdScore 为各折得分的均值与总体标准差（方差除以折数），foldScores 保留每折原始得分。",
+              "params 在构造时包装为不可修改的 LinkedHashMap，foldScores 直接引用传入数组，不做复制。"
+            ],
+            "notes": [
+              "得分方向统一为越大越好：RMSE 在累加前取负，不能与 Metrics.rmse 的原始值直接比较",
+              "记录本身不校验 params 与估计器配置是否匹配，也不校验 foldScores 长度"
+            ],
+            "see": [
+              "basalt.ml.GridSearchCV",
+              "basalt.ml.GridSearchCV.cvResults()"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.HistogramGradientBoosting.Builder",
+          "simple_qualified": "HistogramGradientBoosting.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/HistogramGradientBoosting.java",
+          "line": 791,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "algorithm(BoostingAlgorithm)",
+              "signature": "Builder algorithm(BoostingAlgorithm algorithm)",
+              "params": [
+                {
+                  "type": "BoostingAlgorithm",
+                  "name": "algorithm"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置生长策略，默认 XGBOOST",
+                "params": {
+                  "algorithm": "XGBOOST（深度优先）或 LIGHTGBM（叶优先），非 null"
+                },
+                "returns": "this",
+                "throws": {
+                  "NullPointerException": "algorithm 为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "objective(BoostingObjective)",
+              "signature": "Builder objective(BoostingObjective objective)",
+              "params": [
+                {
+                  "type": "BoostingObjective",
+                  "name": "objective"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置目标函数，默认 SQUARED_ERROR",
+                "params": {
+                  "objective": "SQUARED_ERROR 或 LOGISTIC，非 null"
+                },
+                "returns": "this",
+                "throws": {
+                  "NullPointerException": "objective 为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "iterations(int)",
+              "signature": "Builder iterations(int iterations)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "iterations"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置提升轮数，默认 100",
+                "params": {
+                  "iterations": "最大树数，须大于 0；早停可能提前结束"
+                },
+                "returns": "this"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "learningRate(double)",
+              "signature": "Builder learningRate(double learningRate)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "learningRate"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置每棵树的收缩系数，默认 0.1",
+                "params": {
+                  "learningRate": "叶值的缩放系数，须为正有限值"
+                },
+                "returns": "this",
+                "notes": [
+                  "原始得分为 baseScore 加上 learningRate 加权的各树叶值"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "maxDepth(int)",
+              "signature": "Builder maxDepth(int maxDepth)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "maxDepth"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置单棵树最大深度，默认 6",
+                "params": {
+                  "maxDepth": "深度上限，须大于 0；两种生长策略都受其约束"
+                },
+                "returns": "this"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "maxLeaves(int)",
+              "signature": "Builder maxLeaves(int maxLeaves)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "maxLeaves"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置最大叶数，默认 31",
+                "params": {
+                  "maxLeaves": "叶数上限，须不小于 2"
+                },
+                "returns": "this",
+                "notes": [
+                  "仅 LIGHTGBM 策略读取该值，XGBOOST 下不生效"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "bins(int)",
+              "signature": "Builder bins(int binCount)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "binCount"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置单特征最大桶数，默认 64",
+                "params": {
+                  "binCount": "桶数上限，取值 [2, 255]"
+                },
+                "returns": "this"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "minSamplesLeaf(int)",
+              "signature": "Builder minSamplesLeaf(int minSamplesLeaf)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "minSamplesLeaf"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置叶节点最小样本数，默认 1",
+                "params": {
+                  "minSamplesLeaf": "分裂后左右两侧各自的最小样本数，须大于 0"
+                },
+                "returns": "this"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "minChildWeight(double)",
+              "signature": "Builder minChildWeight(double minChildWeight)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "minChildWeight"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置子节点 hessian 和下限，默认 1e-12",
+                "params": {
+                  "minChildWeight": "左右子节点 hessian 之和的最小值，须为非负有限值"
+                },
+                "returns": "this",
+                "notes": [
+                  "LOGISTIC 目标的 hessian 很小，该值决定能否继续细分"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "lambda(double)",
+              "signature": "Builder lambda(double lambda)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "lambda"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置叶权重的 L2 正则系数，默认 1.0",
+                "params": {
+                  "lambda": "正则系数，须为非负有限值；作为 hessian 的加项出现"
+                },
+                "returns": "this"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "gamma(double)",
+              "signature": "Builder gamma(double gamma)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "gamma"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置分裂所需的最小增益，默认 0",
+                "params": {
+                  "gamma": "每次分裂从增益中扣除的阈值，须为非负有限值"
+                },
+                "returns": "this",
+                "notes": [
+                  "增益扣除 gamma 后不大于 0 的候选不产生分裂"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "threads(int)",
+              "signature": "Builder threads(int threads)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "threads"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置并行度，默认可用处理器数",
+                "params": {
+                  "threads": "工作线程数，须大于 0；同时决定直方图分块数"
+                },
+                "returns": "this"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "featureFraction(double)",
+              "signature": "Builder featureFraction(double featureFraction)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "featureFraction"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置每轮特征采样比例，默认 1.0",
+                "params": {
+                  "featureFraction": "每轮参与分裂搜索的特征比例，取值 (0, 1]"
+                },
+                "returns": "this",
+                "notes": [
+                  "按 ceil(fraction*featureCount) 取整且至少 1 个，第 i 轮用 seed + i*7919 抽取"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "validationFraction(double)",
+              "signature": "Builder validationFraction(double validationFraction)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "validationFraction"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置验证集比例，默认 0",
+                "params": {
+                  "validationFraction": "切作验证集的样本比例，取值 [0, 0.5)；0 表示不切分"
+                },
+                "returns": "this",
+                "notes": [
+                  "验证集大小取 round(rows*比例)，下限 1，上限 rows-2，切分前用 seed 打乱行号"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "earlyStoppingRounds(int)",
+              "signature": "Builder earlyStoppingRounds(int earlyStoppingRounds)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "earlyStoppingRounds"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置早停容忍轮数，默认 0（关闭）",
+                "params": {
+                  "earlyStoppingRounds": "验证损失连续无改善的轮数上限，须不小于 0"
+                },
+                "returns": "this",
+                "notes": [
+                  "大于 0 时必须同时给出正的 validationFraction，否则 build() 拒绝"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "seed(long)",
+              "signature": "Builder seed(long seed)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置切分与特征采样种子，默认 42",
+                "params": {
+                  "seed": "随机种子；驱动验证集打乱与逐轮特征子集"
+                },
+                "returns": "this"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "HistogramGradientBoosting build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验配置并创建估计器",
+                "returns": "配置好的 HistogramGradientBoosting，尚未拟合",
+                "throws": {
+                  "IllegalArgumentException": "轮数、深度、叶数、桶数、叶样本数或线程数越界，比例超出区间，早停缺少验证集，或学习率与正则项不是合法有限值"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "HistogramGradientBoosting 的流式构造器",
+            "body": [
+              "默认值为 algorithm XGBOOST、objective SQUARED_ERROR、iterations 100、learningRate 0.1、maxDepth 6、maxLeaves 31、bins 64、minSamplesLeaf 1、minChildWeight 1e-12、lambda 1.0、gamma 0、threads 为可用处理器数、featureFraction 1.0、validationFraction 0、earlyStoppingRounds 0、seed 42。",
+              "build() 集中校验数值范围与组合约束：早停必须配正的验证集比例，各比例参数有各自的半开区间。"
+            ],
+            "notes": [
+              "maxLeaves 只在 LIGHTGBM 策略下生效，XGBOOST 由 maxDepth 决定形状",
+              "lambda 参与叶权重与增益的分母，gamma 是每次分裂需超过的增益门槛"
+            ],
+            "example": "HistogramGradientBoosting model = HistogramGradientBoosting.builder() .algorithm(BoostingAlgorithm.LIGHTGBM) .objective(BoostingObjective.SQUARED_ERROR) .iterations(300) .learningRate(0.05) .maxLeaves(31) .minChildWeight(1e-3) .lambda(1.0) .gamma(0.0) .featureFraction(0.8) .validationFraction(0.2) .earlyStoppingRounds(20) .threads(4) .seed(42L) .build();",
+            "see": [
+              "basalt.ml.HistogramGradientBoosting",
+              "basalt.ml.BoostingAlgorithm",
+              "basalt.ml.BoostingObjective"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.IsolationForest.Builder",
+          "simple_qualified": "IsolationForest.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/IsolationForest.java",
+          "line": 261,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "trees(int)",
+              "signature": "Builder trees(int trees)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "trees"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置隔离树数量。",
+                "params": {
+                  "trees": "树的数量，须为正；默认 100"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "trees <= 0"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "maxSamples(int)",
+              "signature": "Builder maxSamples(int maxSamples)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "maxSamples"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置每棵树的子采样规模上限。",
+                "body": [
+                  "fit 时实际子采样 min(样本数, maxSamples) 行，样本不足时该值被自动下调。"
+                ],
+                "params": {
+                  "maxSamples": "子采样行数上限，须 >= 2；默认 256"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "maxSamples < 2"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "contamination(double)",
+              "signature": "Builder contamination(double contamination)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "contamination"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置预期异常比例。",
+                "body": [
+                  "该值不参与建树，只在 fit 结束时用于确定阈值：训练集异常分数升序排序后取 floor(rows × contamination) 位置的值作为 threshold，decisionFunction 与 predict 据此切分。"
+                ],
+                "params": {
+                  "contamination": "预期异常占比，须落在 (0, 0.5) 开区间；默认 0.1"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "contamination <= 0、>= 0.5 或为 NaN"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "seed(long)",
+              "signature": "Builder seed(long seed)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置子采样与切分点选择的随机种子。",
+                "params": {
+                  "seed": "随机种子；默认 42，相同种子与数据得到相同的树集合"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "IsolationForest build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建 IsolationForest 实例。",
+                "returns": "新的 IsolationForest，尚未拟合",
+                "notes": [
+                  "参数已在各 setter 中校验，此处只转调私有构造器"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "IsolationForest 的流式构建器。",
+            "body": [
+              "四个字段默认 trees=100、maxSamples=256、contamination=0.1、seed=42；setter 返回 this 以便串联，参数越界在 setter 内立即抛 IllegalArgumentException。",
+              "build() 以字段副本构造模型，不再做额外校验。maxSamples 只是上限，fit 时每棵树实际子采样 min(样本数, maxSamples) 行。"
+            ],
+            "notes": [
+              "contamination 不参与建树，只在 fit 末尾决定判定阈值：训练集异常分数升序排序后取 floor(rows × contamination) 位置",
+              "树高上限为 ceil(log2(有效子采样数))，trees 与 maxSamples 直接决定内存占用与耗时",
+              "构建器不是线程安全的，配置完成后应尽快 build()"
+            ],
+            "example": "IsolationForest model = IsolationForest.builder() .trees(200) .maxSamples(128) .contamination(0.05) .seed(7L) .build();",
+            "see": [
+              "basalt.ml.IsolationForest",
+              "basalt.ml.IsolationForest.anomalyScore(Matrix)"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.Estimators.Algorithm",
+          "simple_qualified": "Basalt.Algorithm",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/Basalt.java",
+          "line": 19,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "enum_constant",
+              "key": "LINEAR_REGRESSION",
+              "signature": "LINEAR_REGRESSION(Task.REGRESSION)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "普通最小二乘线性回归，回归任务。",
+                "notes": [
+                  "对应 LinearRegression 的默认配置：lr=0.05、2000 轮"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "LOGISTIC_REGRESSION",
+              "signature": "LOGISTIC_REGRESSION(Task.CLASSIFICATION)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "二分类逻辑回归，分类任务。",
+                "notes": [
+                  "标签必须是 0/1，否则 fit 抛 IllegalArgumentException"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "RIDGE",
+              "signature": "RIDGE(Task.REGRESSION)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "L2 正则最小二乘，回归任务。",
+                "notes": [
+                  "对应 alpha=1.0 的默认配置"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "LASSO",
+              "signature": "LASSO(Task.REGRESSION)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "L1 正则最小二乘，回归任务。",
+                "notes": [
+                  "对应 alpha=0.1、1000 轮坐标下降的默认配置"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "KNN",
+              "signature": "KNN(Task.CLASSIFICATION)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "KNN 分类，分类任务。",
+                "notes": [
+                  "固定 k=5、欧氏距离"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "KNN_REGRESSOR",
+              "signature": "KNN_REGRESSOR(Task.REGRESSION)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "KNN 回归，回归任务。",
+                "notes": [
+                  "固定 k=5、欧氏距离，预测为邻居目标的均值"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "DECISION_TREE",
+              "signature": "DECISION_TREE(Task.CLASSIFICATION)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "单棵决策树分类，分类任务。"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "RANDOM_FOREST",
+              "signature": "RANDOM_FOREST(Task.CLASSIFICATION)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "随机森林分类，分类任务。"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "RANDOM_FOREST_REGRESSOR",
+              "signature": "RANDOM_FOREST_REGRESSOR(Task.REGRESSION)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "随机森林回归，回归任务。",
+                "notes": [
+                  "复用 RandomForest 实现，通过 task(REGRESSION) 切换"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "GRADIENT_BOOSTING",
+              "signature": "GRADIENT_BOOSTING(Task.CLASSIFICATION)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "直方图梯度提升分类，分类任务。",
+                "notes": [
+                  "绑定 LOGISTIC 目标"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "GRADIENT_BOOSTING_REGRESSOR",
+              "signature": "GRADIENT_BOOSTING_REGRESSOR(Task.REGRESSION)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "直方图梯度提升回归，回归任务。",
+                "notes": [
+                  "绑定 SQUARED_ERROR 目标"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "GAUSSIAN_NAIVE_BAYES",
+              "signature": "GAUSSIAN_NAIVE_BAYES(Task.CLASSIFICATION)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "高斯朴素贝叶斯分类，分类任务。"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "LINEAR_SVM",
+              "signature": "LINEAR_SVM(Task.CLASSIFICATION)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "PEGASOS 线性 SVM，分类任务。",
+                "notes": [
+                  "要求标签恰好两类，内部映射为 ±1"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "SVC",
+              "signature": "SVC(Task.CLASSIFICATION)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "核支持向量分类，分类任务。",
+                "notes": [
+                  "基于 SMO 求解，支持 LINEAR、RBF、POLY、SIGMOID 核与 One-vs-Rest 多分类",
+                  "门面使用默认配置：rbf(1.0) 核、C=1.0、600 轮上限"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "KERNEL_RIDGE",
+              "signature": "KERNEL_RIDGE(Task.REGRESSION)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "核岭回归，回归任务。",
+                "notes": [
+                  "对偶方程 (K + alpha·I) 用 Cholesky 分解求解",
+                  "门面使用默认配置：rbf(1.0) 核、alpha=1.0"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "KMEANS",
+              "signature": "KMEANS(Task.UNSUPERVISED)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "K 均值聚类，无监督任务。",
+                "notes": [
+                  "fit 忽略 targets，交叉验证会拒绝该算法"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "PCA",
+              "signature": "PCA(Task.UNSUPERVISED)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "主成分分析，无监督任务。",
+                "notes": [
+                  "fit 只接收特征矩阵"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "KERNEL_PCA",
+              "signature": "KERNEL_PCA(Task.UNSUPERVISED)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "核主成分分析，无监督任务。",
+                "notes": [
+                  "默认降维到 2 个主成分、rbf(1.0) 核",
+                  "fit 只接收特征矩阵，transform 输出降维后的张量"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "DBSCAN",
+              "signature": "DBSCAN(Task.UNSUPERVISED)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "密度聚类，无监督任务。",
+                "notes": [
+                  "门面以 null targets 调用 fit"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "GAUSSIAN_MIXTURE",
+              "signature": "GAUSSIAN_MIXTURE(Task.UNSUPERVISED)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "高斯混合模型聚类，无监督任务。",
+                "notes": [
+                  "EM 迭代配 K-Means++ 初始化，默认 2 个分量与对角协方差",
+                  "predict 返回后验概率最大的分量下标"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "AGGLOMERATIVE_CLUSTERING",
+              "signature": "AGGLOMERATIVE_CLUSTERING(Task.UNSUPERVISED)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "层次凝聚聚类，无监督任务。",
+                "notes": [
+                  "默认 2 个簇、WARD 连接准则",
+                  "连接准则支持 WARD、COMPLETE、AVERAGE、SINGLE"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "ISOLATION_FOREST",
+              "signature": "ISOLATION_FOREST(Task.UNSUPERVISED)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "隔离森林异常检测，无监督任务。",
+                "notes": [
+                  "predict 返回 +1 表示正常、-1 表示异常",
+                  "门面使用默认配置：100 棵树、maxSamples=256、contamination=0.1"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "KERNEL_DENSITY",
+              "signature": "KERNEL_DENSITY(Task.UNSUPERVISED)",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "核密度估计，无监督任务。",
+                "notes": [
+                  "默认 GAUSSIAN 核、带宽 1.0",
+                  "fit 只接收特征矩阵，用 scoreSamples 评估逐样本对数似然"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "task()",
+              "signature": "Task task()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回该算法所属的任务类型。",
+                "returns": "构造常量时绑定的 Task",
+                "notes": [
+                  "门面用它在 fit 前判断是否需要 targets"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "门面可选算法及其任务类型。",
+            "body": [
+              "每个常量在构造时绑定一个 Task，门面据此判断是否需要 targets，并在交叉验证时拒绝无监督算法。常量覆盖分类 8 个、回归 5 个、无监督 3 个。",
+              "RANDOM_FOREST 与 RANDOM_FOREST_REGRESSOR 共用 RandomForest 实现，靠 task 切换回归模式；两个梯度提升常量分别绑定 LOGISTIC 与 SQUARED_ERROR 目标。"
+            ],
+            "notes": [
+              "枚举常量名即门面的算法名，重命名会破坏调用方编译",
+              "task() 是唯一的实例方法，无参无副作用"
+            ],
+            "see": [
+              "basalt.ml.Estimators.Task",
+              "basalt.ml.Estimators"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.Estimators.Metric",
+          "simple_qualified": "Estimators.Metric",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/Basalt.java",
+          "line": 55,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "enum_constant",
+              "key": "ACCURACY",
+              "signature": "ACCURACY",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "分类准确率"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "MACRO_F1",
+              "signature": "MACRO_F1",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "宏平均 F1，各类别等权"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "R2",
+              "signature": "R2",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "决定系数 R²"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "RMSE",
+              "signature": "RMSE",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "均方根误差"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "交叉验证可选的评估指标。",
+            "body": [
+              "四个常量分别转发到 Metrics.accuracy、Metrics.macroF1、Metrics.r2、Metrics.rmse，是门面与指标工具之间唯一的耦合点。",
+              "门面在累加前对 RMSE 取负号，因此四个指标的返回值都满足越大越好，交叉验证均值可以直接比较。"
+            ],
+            "notes": [
+              "ACCURACY 与 MACRO_F1 面向分类，R2 与 RMSE 面向回归；错配不会报错，只会得到无意义的数值",
+              "指标在每折测试集上独立计算，不做加权平均"
+            ],
+            "see": [
+              "basalt.ml.Metrics",
+              "basalt.ml.Estimators.crossValidate(Algorithm, Matrix, double[], int, Metric)"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.Estimators.Task",
+          "simple_qualified": "Basalt.Task",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/Basalt.java",
+          "line": 13,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "enum_constant",
+              "key": "CLASSIFICATION",
+              "signature": "CLASSIFICATION",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "监督分类任务"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "REGRESSION",
+              "signature": "REGRESSION",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "监督回归任务"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "UNSUPERVISED",
+              "signature": "UNSUPERVISED",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "无监督任务（聚类、降维）"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "算法的任务类型分类。",
+            "body": [
+              "CLASSIFICATION 与 REGRESSION 属于有监督任务，门面 fit 要求 targets 非空；UNSUPERVISED 允许 targets 为 null，但会被 crossValidate 拒绝。",
+              "该枚举只用于门面的分支判断，不参与具体估计器的实现。"
+            ],
+            "notes": [
+              "三个常量之间没有层级关系，判断一律用相等比较"
+            ],
+            "see": [
+              "basalt.ml.Estimators.Algorithm"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.KBinsDiscretizer.Builder",
+          "simple_qualified": "KBinsDiscretizer.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/KBinsDiscretizer.java",
+          "line": 227,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "nBins(int)",
+              "signature": "Builder nBins(int nBins)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "nBins"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置每个特征的分箱数。",
+                "params": {
+                  "nBins": "分箱数，须 >= 2；默认 5"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "nBins < 2"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "strategy(Strategy)",
+              "signature": "Builder strategy(Strategy strategy)",
+              "params": [
+                {
+                  "type": "Strategy",
+                  "name": "strategy"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置分箱边界的计算策略。",
+                "params": {
+                  "strategy": "Strategy 常量，默认 Strategy.QUANTILE"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "strategy 为 null，在 setter 中立即抛出"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "encode(Encode)",
+              "signature": "Builder encode(Encode encode)",
+              "params": [
+                {
+                  "type": "Encode",
+                  "name": "encode"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置输出编码方式。",
+                "params": {
+                  "encode": "Encode 常量，默认 Encode.ORDINAL"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "encode 为 null，在 setter 中立即抛出"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "KBinsDiscretizer build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建 KBinsDiscretizer 实例。",
+                "returns": "新的 KBinsDiscretizer，尚未拟合",
+                "notes": [
+                  "参数已在各 setter 中校验，此处只转调私有构造器"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "KBinsDiscretizer 的流式构建器。",
+            "body": [
+              "三个字段默认 nBins=5、strategy=Strategy.QUANTILE、encode=Encode.ORDINAL；setter 返回 this，strategy 与 encode 在 setter 内立即做非空检查。",
+              "nBins 只决定分箱数，边界在 fit 时按策略从训练数据算出，缓存为每个特征一行的 binEdges。"
+            ],
+            "notes": [
+              "nBins < 2 在 setter 抛 IllegalArgumentException",
+              "选择 ONEHOT_DENSE 后 transform 的输出列数变为输入列数 × nBins",
+              "构建器不是线程安全的，配置完成后应尽快 build()"
+            ],
+            "example": "KBinsDiscretizer discretizer = KBinsDiscretizer.builder() .nBins(10) .strategy(KBinsDiscretizer.Strategy.QUANTILE) .encode(KBinsDiscretizer.Encode.ONEHOT_DENSE) .build();",
+            "see": [
+              "basalt.ml.KBinsDiscretizer",
+              "basalt.ml.KBinsDiscretizer.Strategy",
+              "basalt.ml.KBinsDiscretizer.Encode"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.KBinsDiscretizer.Encode",
+          "simple_qualified": "KBinsDiscretizer.Encode",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/KBinsDiscretizer.java",
+          "line": 23,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "enum_constant",
+              "key": "ORDINAL",
+              "signature": "ORDINAL",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "输出单个整数列，按分箱下标编码"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "ONEHOT_DENSE",
+              "signature": "ONEHOT_DENSE",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "每个特征展开为 nBins 列稠密独热编码"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "离散化结果的编码方式。",
+            "body": [
+              "ORDINAL 输出与输入同形的箱序号矩阵，取值 0 到 nBins-1；ONEHOT_DENSE 把每个特征展开为 nBins 列，命中箱置 1、其余置 0，输出列数为原列数 × nBins。",
+              "inverseTransform 按编码自动选择还原方式：ORDINAL 取对应箱区间的中点，ONEHOT_DENSE 取响应最大的箱中点。"
+            ],
+            "notes": [
+              "ONEHOT_DENSE 使用稠密矩阵，不做稀疏存储，高 nBins 时内存占用按输出列数放大",
+              "predict 返回 transform 结果的展平数组，维度取决于当前编码"
+            ],
+            "see": [
+              "basalt.ml.KBinsDiscretizer",
+              "basalt.ml.KBinsDiscretizer.Strategy"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.KBinsDiscretizer.Strategy",
+          "simple_qualified": "KBinsDiscretizer.Strategy",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/KBinsDiscretizer.java",
+          "line": 17,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "enum_constant",
+              "key": "UNIFORM",
+              "signature": "UNIFORM",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "等宽分箱，边界均匀铺满取值区间"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "QUANTILE",
+              "signature": "QUANTILE",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "等频分箱，每个边界落在相同分位点"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "KMEANS",
+              "signature": "KMEANS",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "对单特征做一维 KMeans，用簇中心作边界"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "分箱边界的计算策略。",
+            "body": [
+              "UNIFORM 在每列最小值与最大值之间等宽切分；QUANTILE 对排序列按位置 (rows-1)·b/nBins 做线性插值取分位点；KMEANS 对单列跑 KMeans（clusters=nBins、50 轮、seed=42），再取相邻质心的中点作为边界。",
+              "三种策略都把首尾边界固定为列的最小值与最大值；常数列的内部边界全部退化为该常数。"
+            ],
+            "notes": [
+              "KMEANS 内部固定 50 轮与 seed=42，不受外部随机状态影响",
+              "QUANTILE 的边界由训练数据决定，transform 时低于首边界或高于末边界恒落入首箱或末箱"
+            ],
+            "see": [
+              "basalt.ml.KBinsDiscretizer",
+              "basalt.ml.KBinsDiscretizer.Encode",
+              "basalt.ml.KMeans"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.KMeans.Builder",
+          "simple_qualified": "KMeans.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/KMeans.java",
+          "line": 338,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "clusters(int)",
+              "signature": "Builder clusters(int clusters)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "clusters"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置簇数 k。",
+                "params": {
+                  "clusters": "簇数，须为正；默认 8，拟合时不得大于样本数"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "maxIterations(int)",
+              "signature": "Builder maxIterations(int maxIterations)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "maxIterations"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置单次重启的最大迭代轮数。",
+                "params": {
+                  "maxIterations": "迭代上限，须为正；默认 300"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "tolerance(double)",
+              "signature": "Builder tolerance(double tolerance)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "tolerance"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置质心位移的收敛阈值。",
+                "body": [
+                  "停止条件为全部质心各分量位移的平方和不超过 tolerance²，即质心矩阵的 Frobenius 位移范数不超过 tolerance。"
+                ],
+                "params": {
+                  "tolerance": "收敛阈值，须非负且有限；默认 1e-6"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "seed(long)",
+              "signature": "Builder seed(long seed)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置 K-Means++ 初始化的随机种子。",
+                "params": {
+                  "seed": "随机种子；默认 42，第 r 次重启实际使用 seed + 7919r"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "restarts(int)",
+              "signature": "Builder restarts(int restarts)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "restarts"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置独立重启次数。",
+                "body": [
+                  "每次重启单独初始化并跑满迭代，最终保留惯性最小的一次，代价近似线性增长。"
+                ],
+                "params": {
+                  "restarts": "重启次数，须为正；默认 1"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "threads(int)",
+              "signature": "Builder threads(int threads)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "threads"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置分配步的并行度。",
+                "params": {
+                  "threads": "并行工作线程数，须为正；默认取可用处理器数"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "KMeans build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验参数并创建 KMeans 实例。",
+                "returns": "新的 KMeans 实例，尚未拟合",
+                "throws": {
+                  "IllegalArgumentException": "clusters、maxIterations、restarts 或 threads 非正，或 tolerance 为负或非有限"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "KMeans 的构建器，设置簇数、迭代上限、收敛阈值与随机种子。",
+            "body": [
+              "默认值：clusters = 8、maxIterations = 300、tolerance = 1e-6、seed = 42、restarts = 1、threads 取 CPU 核数。各 setter 只赋值，参数校验集中在 build 中完成。"
+            ],
+            "notes": [
+              "threads 只影响分配步的并行度，质心更新始终串行"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.KNearestNeighbors.Builder",
+          "simple_qualified": "KNearestNeighbors.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/KNearestNeighbors.java",
+          "line": 81,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "k(int)",
+              "signature": "Builder k(int k)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "k"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置近邻个数。",
+                "params": {
+                  "k": "参与投票的邻居数，必须为正；默认 5"
+                },
+                "returns": "this",
+                "notes": [
+                  "此处不校验，k <= 0 在 build() 时才抛异常",
+                  "k 大于训练样本数在 fit 时才被发现"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "metric(DistanceMetric)",
+              "signature": "Builder metric(DistanceMetric metric)",
+              "params": [
+                {
+                  "type": "DistanceMetric",
+                  "name": "metric"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置距离度量。",
+                "params": {
+                  "metric": "距离函数常量，默认 DistanceMetric.EUCLIDEAN"
+                },
+                "returns": "this",
+                "throws": {
+                  "NullPointerException": "metric 为 null，在 setter 中立即抛出"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "KNearestNeighbors build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验参数并创建分类器。",
+                "returns": "新的 KNearestNeighbors，尚未拟合",
+                "throws": {
+                  "IllegalArgumentException": "k <= 0"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "KNearestNeighbors 的流式构建器。",
+            "body": [
+              "两个字段在构建器内可变，setter 返回 this 以便串联。metric 在 setter 中立即做非空检查，k 的合法性推迟到 build() 校验。",
+              "默认 k=5、metric=DistanceMetric.EUCLIDEAN，与门面 Basalt.Algorithm.KNN 使用的配置一致。"
+            ],
+            "notes": [
+              "构建器不是线程安全的，配置完成后应尽快 build()",
+              "build() 返回的实例持有字段副本，之后修改构建器不影响已建模型"
+            ],
+            "example": "KNearestNeighbors model = KNearestNeighbors.builder() .k(3) .metric(DistanceMetric.EUCLIDEAN) .build();",
+            "see": [
+              "basalt.ml.KNearestNeighbors",
+              "basalt.ml.DistanceMetric"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.KNeighborsRegressor.Builder",
+          "simple_qualified": "KNeighborsRegressor.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/KNeighborsRegressor.java",
+          "line": 65,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "k(int)",
+              "signature": "Builder k(int k)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "k"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置参与平均的邻居数。",
+                "params": {
+                  "k": "邻居数，必须为正；默认 5"
+                },
+                "returns": "this",
+                "notes": [
+                  "k <= 0 在 build() 时才抛异常"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "metric(DistanceMetric)",
+              "signature": "Builder metric(DistanceMetric metric)",
+              "params": [
+                {
+                  "type": "DistanceMetric",
+                  "name": "metric"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置距离度量。",
+                "params": {
+                  "metric": "距离函数常量，默认 DistanceMetric.EUCLIDEAN"
+                },
+                "returns": "this",
+                "throws": {
+                  "NullPointerException": "metric 为 null，在 setter 中立即抛出"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "KNeighborsRegressor build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验参数并创建回归器。",
+                "returns": "新的 KNeighborsRegressor，尚未拟合",
+                "throws": {
+                  "IllegalArgumentException": "k <= 0"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "KNeighborsRegressor 的流式构建器。",
+            "body": [
+              "字段与分类版一致，metric 在 setter 中做非空检查，k 在 build() 中校验为正。默认 k=5、metric=DistanceMetric.EUCLIDEAN。"
+            ],
+            "notes": [
+              "构建器不是线程安全的",
+              "已建模型持有字段副本，后续修改构建器无影响"
+            ],
+            "example": "KNeighborsRegressor model = KNeighborsRegressor.builder() .k(5) .metric(DistanceMetric.MANHATTAN) .build();",
+            "see": [
+              "basalt.ml.KNeighborsRegressor",
+              "basalt.ml.DistanceMetric"
+            ]
+          }
+        }
       ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.HistogramGradientBoosting.Builder",
-     "simple_qualified": "HistogramGradientBoosting.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/HistogramGradientBoosting.java",
-     "line": 791,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "algorithm(BoostingAlgorithm)",
-       "signature": "Builder algorithm(BoostingAlgorithm algorithm)",
-       "params": [
-        {
-         "type": "BoostingAlgorithm",
-         "name": "algorithm"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置生长策略，默认 XGBOOST",
-        "params": {
-         "algorithm": "XGBOOST（深度优先）或 LIGHTGBM（叶优先），非 null"
-        },
-        "returns": "this",
-        "throws": {
-         "NullPointerException": "algorithm 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "objective(BoostingObjective)",
-       "signature": "Builder objective(BoostingObjective objective)",
-       "params": [
-        {
-         "type": "BoostingObjective",
-         "name": "objective"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置目标函数，默认 SQUARED_ERROR",
-        "params": {
-         "objective": "SQUARED_ERROR 或 LOGISTIC，非 null"
-        },
-        "returns": "this",
-        "throws": {
-         "NullPointerException": "objective 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "iterations(int)",
-       "signature": "Builder iterations(int iterations)",
-       "params": [
-        {
-         "type": "int",
-         "name": "iterations"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置提升轮数，默认 100",
-        "params": {
-         "iterations": "最大树数，须大于 0；早停可能提前结束"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "learningRate(double)",
-       "signature": "Builder learningRate(double learningRate)",
-       "params": [
-        {
-         "type": "double",
-         "name": "learningRate"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置每棵树的收缩系数，默认 0.1",
-        "params": {
-         "learningRate": "叶值的缩放系数，须为正有限值"
-        },
-        "returns": "this",
-        "notes": [
-         "原始得分为 baseScore 加上 learningRate 加权的各树叶值"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "maxDepth(int)",
-       "signature": "Builder maxDepth(int maxDepth)",
-       "params": [
-        {
-         "type": "int",
-         "name": "maxDepth"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置单棵树最大深度，默认 6",
-        "params": {
-         "maxDepth": "深度上限，须大于 0；两种生长策略都受其约束"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "maxLeaves(int)",
-       "signature": "Builder maxLeaves(int maxLeaves)",
-       "params": [
-        {
-         "type": "int",
-         "name": "maxLeaves"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置最大叶数，默认 31",
-        "params": {
-         "maxLeaves": "叶数上限，须不小于 2"
-        },
-        "returns": "this",
-        "notes": [
-         "仅 LIGHTGBM 策略读取该值，XGBOOST 下不生效"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "bins(int)",
-       "signature": "Builder bins(int binCount)",
-       "params": [
-        {
-         "type": "int",
-         "name": "binCount"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置单特征最大桶数，默认 64",
-        "params": {
-         "binCount": "桶数上限，取值 [2, 255]"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "minSamplesLeaf(int)",
-       "signature": "Builder minSamplesLeaf(int minSamplesLeaf)",
-       "params": [
-        {
-         "type": "int",
-         "name": "minSamplesLeaf"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置叶节点最小样本数，默认 1",
-        "params": {
-         "minSamplesLeaf": "分裂后左右两侧各自的最小样本数，须大于 0"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "minChildWeight(double)",
-       "signature": "Builder minChildWeight(double minChildWeight)",
-       "params": [
-        {
-         "type": "double",
-         "name": "minChildWeight"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置子节点 hessian 和下限，默认 1e-12",
-        "params": {
-         "minChildWeight": "左右子节点 hessian 之和的最小值，须为非负有限值"
-        },
-        "returns": "this",
-        "notes": [
-         "LOGISTIC 目标的 hessian 很小，该值决定能否继续细分"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "lambda(double)",
-       "signature": "Builder lambda(double lambda)",
-       "params": [
-        {
-         "type": "double",
-         "name": "lambda"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置叶权重的 L2 正则系数，默认 1.0",
-        "params": {
-         "lambda": "正则系数，须为非负有限值；作为 hessian 的加项出现"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "gamma(double)",
-       "signature": "Builder gamma(double gamma)",
-       "params": [
-        {
-         "type": "double",
-         "name": "gamma"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置分裂所需的最小增益，默认 0",
-        "params": {
-         "gamma": "每次分裂从增益中扣除的阈值，须为非负有限值"
-        },
-        "returns": "this",
-        "notes": [
-         "增益扣除 gamma 后不大于 0 的候选不产生分裂"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "threads(int)",
-       "signature": "Builder threads(int threads)",
-       "params": [
-        {
-         "type": "int",
-         "name": "threads"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置并行度，默认可用处理器数",
-        "params": {
-         "threads": "工作线程数，须大于 0；同时决定直方图分块数"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "featureFraction(double)",
-       "signature": "Builder featureFraction(double featureFraction)",
-       "params": [
-        {
-         "type": "double",
-         "name": "featureFraction"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置每轮特征采样比例，默认 1.0",
-        "params": {
-         "featureFraction": "每轮参与分裂搜索的特征比例，取值 (0, 1]"
-        },
-        "returns": "this",
-        "notes": [
-         "按 ceil(fraction*featureCount) 取整且至少 1 个，第 i 轮用 seed + i*7919 抽取"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "validationFraction(double)",
-       "signature": "Builder validationFraction(double validationFraction)",
-       "params": [
-        {
-         "type": "double",
-         "name": "validationFraction"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置验证集比例，默认 0",
-        "params": {
-         "validationFraction": "切作验证集的样本比例，取值 [0, 0.5)；0 表示不切分"
-        },
-        "returns": "this",
-        "notes": [
-         "验证集大小取 round(rows*比例)，下限 1，上限 rows-2，切分前用 seed 打乱行号"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "earlyStoppingRounds(int)",
-       "signature": "Builder earlyStoppingRounds(int earlyStoppingRounds)",
-       "params": [
-        {
-         "type": "int",
-         "name": "earlyStoppingRounds"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置早停容忍轮数，默认 0（关闭）",
-        "params": {
-         "earlyStoppingRounds": "验证损失连续无改善的轮数上限，须不小于 0"
-        },
-        "returns": "this",
-        "notes": [
-         "大于 0 时必须同时给出正的 validationFraction，否则 build() 拒绝"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置切分与特征采样种子，默认 42",
-        "params": {
-         "seed": "随机种子；驱动验证集打乱与逐轮特征子集"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "HistogramGradientBoosting build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验配置并创建估计器",
-        "returns": "配置好的 HistogramGradientBoosting，尚未拟合",
-        "throws": {
-         "IllegalArgumentException": "轮数、深度、叶数、桶数、叶样本数或线程数越界，比例超出区间，早停缺少验证集，或学习率与正则项不是合法有限值"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "HistogramGradientBoosting 的流式构造器",
-      "body": [
-       "默认值为 algorithm XGBOOST、objective SQUARED_ERROR、iterations 100、learningRate 0.1、maxDepth 6、maxLeaves 31、bins 64、minSamplesLeaf 1、minChildWeight 1e-12、lambda 1.0、gamma 0、threads 为可用处理器数、featureFraction 1.0、validationFraction 0、earlyStoppingRounds 0、seed 42。",
-       "build() 集中校验数值范围与组合约束：早停必须配正的验证集比例，各比例参数有各自的半开区间。"
-      ],
-      "notes": [
-       "maxLeaves 只在 LIGHTGBM 策略下生效，XGBOOST 由 maxDepth 决定形状",
-       "lambda 参与叶权重与增益的分母，gamma 是每次分裂需超过的增益门槛"
-      ],
-      "example": "HistogramGradientBoosting model = HistogramGradientBoosting.builder()\n        .algorithm(BoostingAlgorithm.LIGHTGBM)\n        .objective(BoostingObjective.SQUARED_ERROR)\n        .iterations(300)\n        .learningRate(0.05)\n        .maxLeaves(31)\n        .minChildWeight(1e-3)\n        .lambda(1.0)\n        .gamma(0.0)\n        .featureFraction(0.8)\n        .validationFraction(0.2)\n        .earlyStoppingRounds(20)\n        .threads(4)\n        .seed(42L)\n        .build();",
-      "see": [
-       "basalt.ml.HistogramGradientBoosting",
-       "basalt.ml.BoostingAlgorithm",
-       "basalt.ml.BoostingObjective"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.IsolationForest.Builder",
-     "simple_qualified": "IsolationForest.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/IsolationForest.java",
-     "line": 261,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "trees(int)",
-       "signature": "Builder trees(int trees)",
-       "params": [
-        {
-         "type": "int",
-         "name": "trees"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置隔离树数量。",
-        "params": {
-         "trees": "树的数量，须为正；默认 100"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "trees <= 0"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "maxSamples(int)",
-       "signature": "Builder maxSamples(int maxSamples)",
-       "params": [
-        {
-         "type": "int",
-         "name": "maxSamples"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置每棵树的子采样规模上限。",
-        "body": [
-         "fit 时实际子采样 min(样本数, maxSamples) 行，样本不足时该值被自动下调。"
-        ],
-        "params": {
-         "maxSamples": "子采样行数上限，须 >= 2；默认 256"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "maxSamples < 2"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "contamination(double)",
-       "signature": "Builder contamination(double contamination)",
-       "params": [
-        {
-         "type": "double",
-         "name": "contamination"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置预期异常比例。",
-        "body": [
-         "该值不参与建树，只在 fit 结束时用于确定阈值：训练集异常分数升序排序后取 floor(rows × contamination) 位置的值作为 threshold，decisionFunction 与 predict 据此切分。"
-        ],
-        "params": {
-         "contamination": "预期异常占比，须落在 (0, 0.5) 开区间；默认 0.1"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "contamination <= 0、>= 0.5 或为 NaN"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置子采样与切分点选择的随机种子。",
-        "params": {
-         "seed": "随机种子；默认 42，相同种子与数据得到相同的树集合"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "IsolationForest build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建 IsolationForest 实例。",
-        "returns": "新的 IsolationForest，尚未拟合",
-        "notes": [
-         "参数已在各 setter 中校验，此处只转调私有构造器"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "IsolationForest 的流式构建器。",
-      "body": [
-       "四个字段默认 trees=100、maxSamples=256、contamination=0.1、seed=42；setter 返回 this 以便串联，参数越界在 setter 内立即抛 IllegalArgumentException。",
-       "build() 以字段副本构造模型，不再做额外校验。maxSamples 只是上限，fit 时每棵树实际子采样 min(样本数, maxSamples) 行。"
-      ],
-      "notes": [
-       "contamination 不参与建树，只在 fit 末尾决定判定阈值：训练集异常分数升序排序后取 floor(rows × contamination) 位置",
-       "树高上限为 ceil(log2(有效子采样数))，trees 与 maxSamples 直接决定内存占用与耗时",
-       "构建器不是线程安全的，配置完成后应尽快 build()"
-      ],
-      "example": "IsolationForest model = IsolationForest.builder()\n        .trees(200)\n        .maxSamples(128)\n        .contamination(0.05)\n        .seed(7L)\n        .build();",
-      "see": [
-       "basalt.ml.IsolationForest",
-       "basalt.ml.IsolationForest.anomalyScore(Matrix)"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.Estimators.Algorithm",
-     "simple_qualified": "Basalt.Algorithm",
-     "kind": "enum",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/Basalt.java",
-     "line": 19,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "enum_constant",
-       "key": "LINEAR_REGRESSION",
-       "signature": "LINEAR_REGRESSION(Task.REGRESSION)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "普通最小二乘线性回归，回归任务。",
-        "notes": [
-         "对应 LinearRegression 的默认配置：lr=0.05、2000 轮"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "LOGISTIC_REGRESSION",
-       "signature": "LOGISTIC_REGRESSION(Task.CLASSIFICATION)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "二分类逻辑回归，分类任务。",
-        "notes": [
-         "标签必须是 0/1，否则 fit 抛 IllegalArgumentException"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "RIDGE",
-       "signature": "RIDGE(Task.REGRESSION)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "L2 正则最小二乘，回归任务。",
-        "notes": [
-         "对应 alpha=1.0 的默认配置"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "LASSO",
-       "signature": "LASSO(Task.REGRESSION)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "L1 正则最小二乘，回归任务。",
-        "notes": [
-         "对应 alpha=0.1、1000 轮坐标下降的默认配置"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "KNN",
-       "signature": "KNN(Task.CLASSIFICATION)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "KNN 分类，分类任务。",
-        "notes": [
-         "固定 k=5、欧氏距离"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "KNN_REGRESSOR",
-       "signature": "KNN_REGRESSOR(Task.REGRESSION)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "KNN 回归，回归任务。",
-        "notes": [
-         "固定 k=5、欧氏距离，预测为邻居目标的均值"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "DECISION_TREE",
-       "signature": "DECISION_TREE(Task.CLASSIFICATION)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "单棵决策树分类，分类任务。"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "RANDOM_FOREST",
-       "signature": "RANDOM_FOREST(Task.CLASSIFICATION)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "随机森林分类，分类任务。"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "RANDOM_FOREST_REGRESSOR",
-       "signature": "RANDOM_FOREST_REGRESSOR(Task.REGRESSION)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "随机森林回归，回归任务。",
-        "notes": [
-         "复用 RandomForest 实现，通过 task(REGRESSION) 切换"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "GRADIENT_BOOSTING",
-       "signature": "GRADIENT_BOOSTING(Task.CLASSIFICATION)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "直方图梯度提升分类，分类任务。",
-        "notes": [
-         "绑定 LOGISTIC 目标"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "GRADIENT_BOOSTING_REGRESSOR",
-       "signature": "GRADIENT_BOOSTING_REGRESSOR(Task.REGRESSION)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "直方图梯度提升回归，回归任务。",
-        "notes": [
-         "绑定 SQUARED_ERROR 目标"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "GAUSSIAN_NAIVE_BAYES",
-       "signature": "GAUSSIAN_NAIVE_BAYES(Task.CLASSIFICATION)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "高斯朴素贝叶斯分类，分类任务。"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "LINEAR_SVM",
-       "signature": "LINEAR_SVM(Task.CLASSIFICATION)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "PEGASOS 线性 SVM，分类任务。",
-        "notes": [
-         "要求标签恰好两类，内部映射为 ±1"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "SVC",
-       "signature": "SVC(Task.CLASSIFICATION)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "核支持向量分类，分类任务。",
-        "notes": [
-         "基于 SMO 求解，支持 LINEAR、RBF、POLY、SIGMOID 核与 One-vs-Rest 多分类",
-         "门面使用默认配置：rbf(1.0) 核、C=1.0、600 轮上限"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "KERNEL_RIDGE",
-       "signature": "KERNEL_RIDGE(Task.REGRESSION)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "核岭回归，回归任务。",
-        "notes": [
-         "对偶方程 (K + alpha·I) 用 Cholesky 分解求解",
-         "门面使用默认配置：rbf(1.0) 核、alpha=1.0"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "KMEANS",
-       "signature": "KMEANS(Task.UNSUPERVISED)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "K 均值聚类，无监督任务。",
-        "notes": [
-         "fit 忽略 targets，交叉验证会拒绝该算法"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "PCA",
-       "signature": "PCA(Task.UNSUPERVISED)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "主成分分析，无监督任务。",
-        "notes": [
-         "fit 只接收特征矩阵"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "KERNEL_PCA",
-       "signature": "KERNEL_PCA(Task.UNSUPERVISED)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "核主成分分析，无监督任务。",
-        "notes": [
-         "默认降维到 2 个主成分、rbf(1.0) 核",
-         "fit 只接收特征矩阵，transform 输出降维后的张量"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "DBSCAN",
-       "signature": "DBSCAN(Task.UNSUPERVISED)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "密度聚类，无监督任务。",
-        "notes": [
-         "门面以 null targets 调用 fit"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "GAUSSIAN_MIXTURE",
-       "signature": "GAUSSIAN_MIXTURE(Task.UNSUPERVISED)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "高斯混合模型聚类，无监督任务。",
-        "notes": [
-         "EM 迭代配 K-Means++ 初始化，默认 2 个分量与对角协方差",
-         "predict 返回后验概率最大的分量下标"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "AGGLOMERATIVE_CLUSTERING",
-       "signature": "AGGLOMERATIVE_CLUSTERING(Task.UNSUPERVISED)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "层次凝聚聚类，无监督任务。",
-        "notes": [
-         "默认 2 个簇、WARD 连接准则",
-         "连接准则支持 WARD、COMPLETE、AVERAGE、SINGLE"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "ISOLATION_FOREST",
-       "signature": "ISOLATION_FOREST(Task.UNSUPERVISED)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "隔离森林异常检测，无监督任务。",
-        "notes": [
-         "predict 返回 +1 表示正常、-1 表示异常",
-         "门面使用默认配置：100 棵树、maxSamples=256、contamination=0.1"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "KERNEL_DENSITY",
-       "signature": "KERNEL_DENSITY(Task.UNSUPERVISED)",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "核密度估计，无监督任务。",
-        "notes": [
-         "默认 GAUSSIAN 核、带宽 1.0",
-         "fit 只接收特征矩阵，用 scoreSamples 评估逐样本对数似然"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "task()",
-       "signature": "Task task()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回该算法所属的任务类型。",
-        "returns": "构造常量时绑定的 Task",
-        "notes": [
-         "门面用它在 fit 前判断是否需要 targets"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "门面可选算法及其任务类型。",
-      "body": [
-       "每个常量在构造时绑定一个 Task，门面据此判断是否需要 targets，并在交叉验证时拒绝无监督算法。常量覆盖分类 8 个、回归 5 个、无监督 3 个。",
-       "RANDOM_FOREST 与 RANDOM_FOREST_REGRESSOR 共用 RandomForest 实现，靠 task 切换回归模式；两个梯度提升常量分别绑定 LOGISTIC 与 SQUARED_ERROR 目标。"
-      ],
-      "notes": [
-       "枚举常量名即门面的算法名，重命名会破坏调用方编译",
-       "task() 是唯一的实例方法，无参无副作用"
-      ],
-      "see": [
-       "basalt.ml.Estimators.Task",
-       "basalt.ml.Estimators"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.Estimators.Metric",
-     "simple_qualified": "Estimators.Metric",
-     "kind": "enum",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/Basalt.java",
-     "line": 55,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "enum_constant",
-       "key": "ACCURACY",
-       "signature": "ACCURACY",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "分类准确率"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "MACRO_F1",
-       "signature": "MACRO_F1",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "宏平均 F1，各类别等权"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "R2",
-       "signature": "R2",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "决定系数 R²"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "RMSE",
-       "signature": "RMSE",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "均方根误差"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "交叉验证可选的评估指标。",
-      "body": [
-       "四个常量分别转发到 Metrics.accuracy、Metrics.macroF1、Metrics.r2、Metrics.rmse，是门面与指标工具之间唯一的耦合点。",
-       "门面在累加前对 RMSE 取负号，因此四个指标的返回值都满足越大越好，交叉验证均值可以直接比较。"
-      ],
-      "notes": [
-       "ACCURACY 与 MACRO_F1 面向分类，R2 与 RMSE 面向回归；错配不会报错，只会得到无意义的数值",
-       "指标在每折测试集上独立计算，不做加权平均"
-      ],
-      "see": [
-       "basalt.ml.Metrics",
-       "basalt.ml.Estimators.crossValidate(Algorithm, Matrix, double[], int, Metric)"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.Estimators.Task",
-     "simple_qualified": "Basalt.Task",
-     "kind": "enum",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/Basalt.java",
-     "line": 13,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "enum_constant",
-       "key": "CLASSIFICATION",
-       "signature": "CLASSIFICATION",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "监督分类任务"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "REGRESSION",
-       "signature": "REGRESSION",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "监督回归任务"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "UNSUPERVISED",
-       "signature": "UNSUPERVISED",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "无监督任务（聚类、降维）"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "算法的任务类型分类。",
-      "body": [
-       "CLASSIFICATION 与 REGRESSION 属于有监督任务，门面 fit 要求 targets 非空；UNSUPERVISED 允许 targets 为 null，但会被 crossValidate 拒绝。",
-       "该枚举只用于门面的分支判断，不参与具体估计器的实现。"
-      ],
-      "notes": [
-       "三个常量之间没有层级关系，判断一律用相等比较"
-      ],
-      "see": [
-       "basalt.ml.Estimators.Algorithm"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.KBinsDiscretizer.Builder",
-     "simple_qualified": "KBinsDiscretizer.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/KBinsDiscretizer.java",
-     "line": 227,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "nBins(int)",
-       "signature": "Builder nBins(int nBins)",
-       "params": [
-        {
-         "type": "int",
-         "name": "nBins"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置每个特征的分箱数。",
-        "params": {
-         "nBins": "分箱数，须 >= 2；默认 5"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "nBins < 2"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "strategy(Strategy)",
-       "signature": "Builder strategy(Strategy strategy)",
-       "params": [
-        {
-         "type": "Strategy",
-         "name": "strategy"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置分箱边界的计算策略。",
-        "params": {
-         "strategy": "Strategy 常量，默认 Strategy.QUANTILE"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "NullPointerException": "strategy 为 null，在 setter 中立即抛出"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "encode(Encode)",
-       "signature": "Builder encode(Encode encode)",
-       "params": [
-        {
-         "type": "Encode",
-         "name": "encode"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置输出编码方式。",
-        "params": {
-         "encode": "Encode 常量，默认 Encode.ORDINAL"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "NullPointerException": "encode 为 null，在 setter 中立即抛出"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "KBinsDiscretizer build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建 KBinsDiscretizer 实例。",
-        "returns": "新的 KBinsDiscretizer，尚未拟合",
-        "notes": [
-         "参数已在各 setter 中校验，此处只转调私有构造器"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "KBinsDiscretizer 的流式构建器。",
-      "body": [
-       "三个字段默认 nBins=5、strategy=Strategy.QUANTILE、encode=Encode.ORDINAL；setter 返回 this，strategy 与 encode 在 setter 内立即做非空检查。",
-       "nBins 只决定分箱数，边界在 fit 时按策略从训练数据算出，缓存为每个特征一行的 binEdges。"
-      ],
-      "notes": [
-       "nBins < 2 在 setter 抛 IllegalArgumentException",
-       "选择 ONEHOT_DENSE 后 transform 的输出列数变为输入列数 × nBins",
-       "构建器不是线程安全的，配置完成后应尽快 build()"
-      ],
-      "example": "KBinsDiscretizer discretizer = KBinsDiscretizer.builder()\n        .nBins(10)\n        .strategy(KBinsDiscretizer.Strategy.QUANTILE)\n        .encode(KBinsDiscretizer.Encode.ONEHOT_DENSE)\n        .build();",
-      "see": [
-       "basalt.ml.KBinsDiscretizer",
-       "basalt.ml.KBinsDiscretizer.Strategy",
-       "basalt.ml.KBinsDiscretizer.Encode"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.KBinsDiscretizer.Encode",
-     "simple_qualified": "KBinsDiscretizer.Encode",
-     "kind": "enum",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/KBinsDiscretizer.java",
-     "line": 23,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "enum_constant",
-       "key": "ORDINAL",
-       "signature": "ORDINAL",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "输出单个整数列，按分箱下标编码"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "ONEHOT_DENSE",
-       "signature": "ONEHOT_DENSE",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "每个特征展开为 nBins 列稠密独热编码"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "离散化结果的编码方式。",
-      "body": [
-       "ORDINAL 输出与输入同形的箱序号矩阵，取值 0 到 nBins-1；ONEHOT_DENSE 把每个特征展开为 nBins 列，命中箱置 1、其余置 0，输出列数为原列数 × nBins。",
-       "inverseTransform 按编码自动选择还原方式：ORDINAL 取对应箱区间的中点，ONEHOT_DENSE 取响应最大的箱中点。"
-      ],
-      "notes": [
-       "ONEHOT_DENSE 使用稠密矩阵，不做稀疏存储，高 nBins 时内存占用按输出列数放大",
-       "predict 返回 transform 结果的展平数组，维度取决于当前编码"
-      ],
-      "see": [
-       "basalt.ml.KBinsDiscretizer",
-       "basalt.ml.KBinsDiscretizer.Strategy"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.KBinsDiscretizer.Strategy",
-     "simple_qualified": "KBinsDiscretizer.Strategy",
-     "kind": "enum",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/KBinsDiscretizer.java",
-     "line": 17,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "enum_constant",
-       "key": "UNIFORM",
-       "signature": "UNIFORM",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "等宽分箱，边界均匀铺满取值区间"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "QUANTILE",
-       "signature": "QUANTILE",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "等频分箱，每个边界落在相同分位点"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "KMEANS",
-       "signature": "KMEANS",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "对单特征做一维 KMeans，用簇中心作边界"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "分箱边界的计算策略。",
-      "body": [
-       "UNIFORM 在每列最小值与最大值之间等宽切分；QUANTILE 对排序列按位置 (rows-1)·b/nBins 做线性插值取分位点；KMEANS 对单列跑 KMeans（clusters=nBins、50 轮、seed=42），再取相邻质心的中点作为边界。",
-       "三种策略都把首尾边界固定为列的最小值与最大值；常数列的内部边界全部退化为该常数。"
-      ],
-      "notes": [
-       "KMEANS 内部固定 50 轮与 seed=42，不受外部随机状态影响",
-       "QUANTILE 的边界由训练数据决定，transform 时低于首边界或高于末边界恒落入首箱或末箱"
-      ],
-      "see": [
-       "basalt.ml.KBinsDiscretizer",
-       "basalt.ml.KBinsDiscretizer.Encode",
-       "basalt.ml.KMeans"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.KMeans.Builder",
-     "simple_qualified": "KMeans.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/KMeans.java",
-     "line": 338,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "clusters(int)",
-       "signature": "Builder clusters(int clusters)",
-       "params": [
-        {
-         "type": "int",
-         "name": "clusters"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置簇数 k。",
-        "params": {
-         "clusters": "簇数，须为正；默认 8，拟合时不得大于样本数"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "maxIterations(int)",
-       "signature": "Builder maxIterations(int maxIterations)",
-       "params": [
-        {
-         "type": "int",
-         "name": "maxIterations"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置单次重启的最大迭代轮数。",
-        "params": {
-         "maxIterations": "迭代上限，须为正；默认 300"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "tolerance(double)",
-       "signature": "Builder tolerance(double tolerance)",
-       "params": [
-        {
-         "type": "double",
-         "name": "tolerance"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置质心位移的收敛阈值。",
-        "body": [
-         "停止条件为全部质心各分量位移的平方和不超过 tolerance²，即质心矩阵的 Frobenius 位移范数不超过 tolerance。"
-        ],
-        "params": {
-         "tolerance": "收敛阈值，须非负且有限；默认 1e-6"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置 K-Means++ 初始化的随机种子。",
-        "params": {
-         "seed": "随机种子；默认 42，第 r 次重启实际使用 seed + 7919r"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "restarts(int)",
-       "signature": "Builder restarts(int restarts)",
-       "params": [
-        {
-         "type": "int",
-         "name": "restarts"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置独立重启次数。",
-        "body": [
-         "每次重启单独初始化并跑满迭代，最终保留惯性最小的一次，代价近似线性增长。"
-        ],
-        "params": {
-         "restarts": "重启次数，须为正；默认 1"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "threads(int)",
-       "signature": "Builder threads(int threads)",
-       "params": [
-        {
-         "type": "int",
-         "name": "threads"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置分配步的并行度。",
-        "params": {
-         "threads": "并行工作线程数，须为正；默认取可用处理器数"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "KMeans build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验参数并创建 KMeans 实例。",
-        "returns": "新的 KMeans 实例，尚未拟合",
-        "throws": {
-         "IllegalArgumentException": "clusters、maxIterations、restarts 或 threads 非正，或 tolerance 为负或非有限"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "KMeans 的构建器，设置簇数、迭代上限、收敛阈值与随机种子。",
-      "body": [
-       "默认值：clusters = 8、maxIterations = 300、tolerance = 1e-6、seed = 42、restarts = 1、threads 取 CPU 核数。各 setter 只赋值，参数校验集中在 build 中完成。"
-      ],
-      "notes": [
-       "threads 只影响分配步的并行度，质心更新始终串行"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.KNearestNeighbors.Builder",
-     "simple_qualified": "KNearestNeighbors.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/KNearestNeighbors.java",
-     "line": 81,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "k(int)",
-       "signature": "Builder k(int k)",
-       "params": [
-        {
-         "type": "int",
-         "name": "k"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置近邻个数。",
-        "params": {
-         "k": "参与投票的邻居数，必须为正；默认 5"
-        },
-        "returns": "this",
-        "notes": [
-         "此处不校验，k <= 0 在 build() 时才抛异常",
-         "k 大于训练样本数在 fit 时才被发现"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "metric(DistanceMetric)",
-       "signature": "Builder metric(DistanceMetric metric)",
-       "params": [
-        {
-         "type": "DistanceMetric",
-         "name": "metric"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置距离度量。",
-        "params": {
-         "metric": "距离函数常量，默认 DistanceMetric.EUCLIDEAN"
-        },
-        "returns": "this",
-        "throws": {
-         "NullPointerException": "metric 为 null，在 setter 中立即抛出"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "KNearestNeighbors build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验参数并创建分类器。",
-        "returns": "新的 KNearestNeighbors，尚未拟合",
-        "throws": {
-         "IllegalArgumentException": "k <= 0"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "KNearestNeighbors 的流式构建器。",
-      "body": [
-       "两个字段在构建器内可变，setter 返回 this 以便串联。metric 在 setter 中立即做非空检查，k 的合法性推迟到 build() 校验。",
-       "默认 k=5、metric=DistanceMetric.EUCLIDEAN，与门面 Basalt.Algorithm.KNN 使用的配置一致。"
-      ],
-      "notes": [
-       "构建器不是线程安全的，配置完成后应尽快 build()",
-       "build() 返回的实例持有字段副本，之后修改构建器不影响已建模型"
-      ],
-      "example": "KNearestNeighbors model = KNearestNeighbors.builder()\n        .k(3)\n        .metric(DistanceMetric.EUCLIDEAN)\n        .build();",
-      "see": [
-       "basalt.ml.KNearestNeighbors",
-       "basalt.ml.DistanceMetric"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.KNeighborsRegressor.Builder",
-     "simple_qualified": "KNeighborsRegressor.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/KNeighborsRegressor.java",
-     "line": 65,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "k(int)",
-       "signature": "Builder k(int k)",
-       "params": [
-        {
-         "type": "int",
-         "name": "k"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置参与平均的邻居数。",
-        "params": {
-         "k": "邻居数，必须为正；默认 5"
-        },
-        "returns": "this",
-        "notes": [
-         "k <= 0 在 build() 时才抛异常"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "metric(DistanceMetric)",
-       "signature": "Builder metric(DistanceMetric metric)",
-       "params": [
-        {
-         "type": "DistanceMetric",
-         "name": "metric"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置距离度量。",
-        "params": {
-         "metric": "距离函数常量，默认 DistanceMetric.EUCLIDEAN"
-        },
-        "returns": "this",
-        "throws": {
-         "NullPointerException": "metric 为 null，在 setter 中立即抛出"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "KNeighborsRegressor build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验参数并创建回归器。",
-        "returns": "新的 KNeighborsRegressor，尚未拟合",
-        "throws": {
-         "IllegalArgumentException": "k <= 0"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "KNeighborsRegressor 的流式构建器。",
-      "body": [
-       "字段与分类版一致，metric 在 setter 中做非空检查，k 在 build() 中校验为正。默认 k=5、metric=DistanceMetric.EUCLIDEAN。"
-      ],
-      "notes": [
-       "构建器不是线程安全的",
-       "已建模型持有字段副本，后续修改构建器无影响"
-      ],
-      "example": "KNeighborsRegressor model = KNeighborsRegressor.builder()\n        .k(5)\n        .metric(DistanceMetric.MANHATTAN)\n        .build();",
-      "see": [
-       "basalt.ml.KNeighborsRegressor",
-       "basalt.ml.DistanceMetric"
-      ]
-     }
     }
-   ]
-  }
- ]
+  ]
 }

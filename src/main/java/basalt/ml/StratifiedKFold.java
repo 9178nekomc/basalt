@@ -4,8 +4,7 @@ import basalt.core.Matrix;
 import java.util.List;
 
 /**
- * Stratified K-Fold cross-validator that preserves class frequencies in each fold,
- * matching {@code sklearn.model_selection.StratifiedKFold}.
+ * Stratified K-Fold cross-validator that preserves class frequencies in each fold.
  */
 public final class StratifiedKFold {
     private final int folds;

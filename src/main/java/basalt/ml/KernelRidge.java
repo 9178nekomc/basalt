@@ -10,8 +10,7 @@ import java.util.Objects;
 
 /**
  * Kernel Ridge Regression (KRR) combining Ridge regularization with the kernel trick
- * {@code (K + alpha * I) dual_coef = y}, solved by Cholesky decomposition, matching
- * {@code sklearn.kernel_ridge.KernelRidge}.
+ * {@code (K + alpha * I) dual_coef = y}, solved by Cholesky decomposition.
  */
 public final class KernelRidge implements Estimator, Persistable {
     private final Kernel kernel;

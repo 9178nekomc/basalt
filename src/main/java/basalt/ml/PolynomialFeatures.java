@@ -9,8 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Generates polynomial and interaction features up to degree {@code degree}, matching
- * {@code sklearn.preprocessing.PolynomialFeatures}.
+ * Generates polynomial and interaction features up to degree {@code degree}.
  */
 public final class PolynomialFeatures implements Transformer, Estimator {
     private final int degree;

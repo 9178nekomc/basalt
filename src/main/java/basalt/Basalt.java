@@ -25,7 +25,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Unified SDK entry point for Basalt (Java Scikit-Learn + PyTorch-style native runtime).
+ * Unified SDK entry point for Basalt: eager tensors, autograd and classical estimators
+ * over a Rust native core.
  */
 public final class Basalt implements AutoCloseable {
     private final NativeContext context;

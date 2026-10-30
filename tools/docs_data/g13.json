@@ -1,1737 +1,1737 @@
 {
- "group": "g13",
- "title": "经典机器学习（8/9）",
- "modules": [
-  {
-   "name": "basalt.ml",
-   "types": [
+  "group": "g13",
+  "title": "经典机器学习（8/9）",
+  "modules": [
     {
-     "qualified": "basalt.ml.OneHotEncoder.HandleUnknown",
-     "simple_qualified": "OneHotEncoder.HandleUnknown",
-     "kind": "enum",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/OneHotEncoder.java",
-     "line": 22,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "enum_constant",
-       "key": "ERROR",
-       "signature": "ERROR",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "transform 时遇到未见类别抛 IllegalArgumentException"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "IGNORE",
-       "signature": "IGNORE",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "未见类别编码为全 0 行"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "transform 遇到未见类别时的处理策略。",
-      "body": [
-       "ERROR 表示训练期未出现的类别值在 transform 阶段直接抛 IllegalArgumentException；IGNORE 表示为其输出全零指示向量，不报错。",
-       "该开关只影响 transform。fit 阶段按每一列的排序去重结果建立类别表，不涉及未见类别；inverseTransform 对全零行返回 NaN。"
-      ],
-      "notes": [
-       "ERROR 的校验逐行逐列进行，首个未见值即中断，不返回部分结果",
-       "IGNORE 下未见类别与全零行无法区分，逆变换统一得到 NaN"
-      ],
-      "example": "OneHotEncoder encoder = OneHotEncoder.builder()\n        .handleUnknown(OneHotEncoder.HandleUnknown.IGNORE)\n        .build();",
-      "see": [
-       "basalt.ml.OneHotEncoder",
-       "basalt.ml.OneHotEncoder.Builder"
+      "name": "basalt.ml",
+      "types": [
+        {
+          "qualified": "basalt.ml.OneHotEncoder.HandleUnknown",
+          "simple_qualified": "OneHotEncoder.HandleUnknown",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/OneHotEncoder.java",
+          "line": 22,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "enum_constant",
+              "key": "ERROR",
+              "signature": "ERROR",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "transform 时遇到未见类别抛 IllegalArgumentException"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "IGNORE",
+              "signature": "IGNORE",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "未见类别编码为全 0 行"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "transform 遇到未见类别时的处理策略。",
+            "body": [
+              "ERROR 表示训练期未出现的类别值在 transform 阶段直接抛 IllegalArgumentException；IGNORE 表示为其输出全零指示向量，不报错。",
+              "该开关只影响 transform。fit 阶段按每一列的排序去重结果建立类别表，不涉及未见类别；inverseTransform 对全零行返回 NaN。"
+            ],
+            "notes": [
+              "ERROR 的校验逐行逐列进行，首个未见值即中断，不返回部分结果",
+              "IGNORE 下未见类别与全零行无法区分，逆变换统一得到 NaN"
+            ],
+            "example": "OneHotEncoder encoder = OneHotEncoder.builder() .handleUnknown(OneHotEncoder.HandleUnknown.IGNORE) .build();",
+            "see": [
+              "basalt.ml.OneHotEncoder",
+              "basalt.ml.OneHotEncoder.Builder"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.PCA.Builder",
+          "simple_qualified": "PCA.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/PCA.java",
+          "line": 432,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "components(int)",
+              "signature": "Builder components(int components)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "components"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置保留的主成分个数。",
+                "params": {
+                  "components": "分量数，须为正；默认 2，拟合时不得大于 min(样本数, 特征数)"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "solver(EigenSolver)",
+              "signature": "Builder solver(EigenSolver solver)",
+              "params": [
+                {
+                  "type": "EigenSolver",
+                  "name": "solver"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置特征分解求解器。",
+                "params": {
+                  "solver": "求解器，默认 EigenSolver.AUTO"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "solver 为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "maxIterations(int)",
+              "signature": "Builder maxIterations(int maxIterations)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "maxIterations"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置 Jacobi 扫描的最大轮数。",
+                "params": {
+                  "maxIterations": "扫描上限，须为正；默认 60"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "tolerance(double)",
+              "signature": "Builder tolerance(double tolerance)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "tolerance"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置 Jacobi 扫描的收敛阈值。",
+                "body": [
+                  "收敛判据为 sqrt(Σ a_pq²) 不超过 tolerance · max(1, ‖A‖_F)，其中求和覆盖全部非对角元素。"
+                ],
+                "params": {
+                  "tolerance": "收敛阈值，须为正且有限；默认 1e-12"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "whiten(boolean)",
+              "signature": "Builder whiten(boolean whiten)",
+              "params": [
+                {
+                  "type": "boolean",
+                  "name": "whiten"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置是否白化投影结果。",
+                "body": [
+                  "白化把每个投影除以其主成分标准差，使各分量方差为 1；逆变换会乘回同一标准差。"
+                ],
+                "params": {
+                  "whiten": "true 表示白化；默认 false"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "PCA build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验参数并创建 PCA 实例。",
+                "returns": "新的 PCA 实例，尚未拟合",
+                "throws": {
+                  "IllegalArgumentException": "components 或 maxIterations 非正，或 tolerance 非正或非有限"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "PCA 的构建器，设置分量数、求解器、扫描上限与白化开关。",
+            "body": [
+              "默认值：components = 2、solver = AUTO、maxIterations = 60、tolerance = 1e-12、whiten = false。各 setter 只赋值，参数校验集中在 build 中完成。"
+            ],
+            "notes": [
+              "components 的上界依赖数据形状，只能在 fit 阶段校验"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.Pipeline.Builder",
+          "simple_qualified": "Pipeline.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/Pipeline.java",
+          "line": 225,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "addStep(String, Transformer)",
+              "signature": "Builder addStep(String name, Transformer transformer)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                },
+                {
+                  "type": "Transformer",
+                  "name": "transformer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按给定名称追加一个变换步骤。",
+                "body": [
+                  "步骤按调用顺序排列，fit 时依次 fitTransform，transform 与 predict 时依次 transform，inverseTransform 时逆序回放。"
+                ],
+                "params": {
+                  "name": "步骤名，用于 namedSteps() 与持久化；不可为 null",
+                  "transformer": "变换器实例；不可为 null"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "name 或 transformer 为 null"
+                },
+                "notes": [
+                  "重名不会被拒绝，namedSteps() 中后写入者覆盖先写入者"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "addStep(Transformer)",
+              "signature": "Builder addStep(Transformer transformer)",
+              "params": [
+                {
+                  "type": "Transformer",
+                  "name": "transformer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加步骤并自动命名为 stepN。",
+                "body": [
+                  "名称取 \"step\" 拼上追加前的步骤数，首个步骤为 step0，其后依次递增。"
+                ],
+                "params": {
+                  "transformer": "变换器实例；不可为 null"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "transformer 为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "estimator(String, Estimator)",
+              "signature": "Builder estimator(String name, Estimator estimator)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                },
+                {
+                  "type": "Estimator",
+                  "name": "estimator"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置具名末端估计器。",
+                "body": [
+                  "末端估计器在所有变换步骤之后拟合与预测，并作为 namedSteps() 的最后一项。"
+                ],
+                "params": {
+                  "name": "估计器名称，用于 namedSteps() 与持久化；不可为 null",
+                  "estimator": "末端估计器；不可为 null"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "name 或 estimator 为 null"
+                },
+                "notes": [
+                  "重复调用会整体替换前一次的末端估计器与名称"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "estimator(Estimator)",
+              "signature": "Builder estimator(Estimator estimator)",
+              "params": [
+                {
+                  "type": "Estimator",
+                  "name": "estimator"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置末端估计器，名称固定为 estimator。",
+                "params": {
+                  "estimator": "末端估计器；不可为 null"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "estimator 为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "Pipeline build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验并构建流水线。",
+                "returns": "配置好的 Pipeline，尚未拟合",
+                "throws": {
+                  "IllegalArgumentException": "既没有步骤也没有末端估计器"
+                },
+                "notes": [
+                  "只校验非空，不检查步骤重名，也不检查估计器是否实现 Persistable"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "Pipeline 的构造器，按序追加步骤并挂接末端估计器。",
+            "body": [
+              "初始状态为空步骤列表、无末端估计器。addStep 负责累积变换器，estimator 设置唯一的末端估计器；至少要有其中一项才能通过 build。",
+              "build() 只做空管线校验，其余约束推迟到运行期：步骤名重复、估计器不支持持久化都在后续调用或写入时才暴露。"
+            ],
+            "notes": [
+              "步骤顺序即执行顺序，transform 正向、inverseTransform 反向",
+              "未命名步骤自动取 step0、step1 等名称",
+              "构建器不是线程安全的"
+            ],
+            "example": "Pipeline pipeline = Pipeline.builder() .addStep(PolynomialFeatures.builder().degree(2).build()) .estimator(\"ridge\", Ridge.builder().alpha(1.0).build()) .build();",
+            "see": [
+              "basalt.ml.Pipeline",
+              "basalt.ml.Pipeline.Step"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.Pipeline.Step",
+          "simple_qualified": "Pipeline.Step",
+          "kind": "record",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/Pipeline.java",
+          "line": 28,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "流水线中的具名步骤：名称与变换器的不可变组合。",
+            "body": [
+              "紧凑构造器对 name 与 transformer 做非空校验，两者一旦写入即不可更改。步骤在列表中按插入顺序存放，Pipeline 依此顺序正向执行变换、反向执行逆变换。",
+              "steps() 返回不可变列表，元素即 Step 记录本身。"
+            ],
+            "notes": [
+              "name 参与 namedSteps() 的键与 .bsl 持久化，需自行保证唯一",
+              "name 或 transformer 为 null 时构造抛 NullPointerException"
+            ],
+            "example": "Pipeline.Step step = new Pipeline.Step(\"poly\", PolynomialFeatures.builder().build());",
+            "see": [
+              "basalt.ml.Pipeline",
+              "basalt.ml.Pipeline.Builder"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.PolynomialFeatures.Builder",
+          "simple_qualified": "PolynomialFeatures.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/PolynomialFeatures.java",
+          "line": 137,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "degree(int)",
+              "signature": "Builder degree(int degree)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "degree"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置多项式最高阶数，默认 2。",
+                "body": [
+                  "阶数决定单项式的最大总次数，从 1 次逐层生成到该阶。"
+                ],
+                "params": {
+                  "degree": "最高阶数，须不小于 1；默认 2"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "degree 小于 1"
+                },
+                "notes": [
+                  "该校验在 setter 内完成，不走 build()"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "interactionOnly(boolean)",
+              "signature": "Builder interactionOnly(boolean interactionOnly)",
+              "params": [
+                {
+                  "type": "boolean",
+                  "name": "interactionOnly"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置是否只生成纯交互项，默认 false。",
+                "body": [
+                  "开启后每个特征在同一次单项式中最多出现一次，输出仅含不同特征的乘积；关闭时允许特征重复，从而包含平方及更高次项。"
+                ],
+                "params": {
+                  "interactionOnly": "true 表示只生成不同特征的乘积；默认 false"
+                },
+                "returns": "this，便于链式调用",
+                "notes": [
+                  "真实输出列数在 fit 时按输入特征数展开，构建阶段无法确定"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "includeBias(boolean)",
+              "signature": "Builder includeBias(boolean includeBias)",
+              "params": [
+                {
+                  "type": "boolean",
+                  "name": "includeBias"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置是否输出常数列，默认 true。",
+                "body": [
+                  "开启时在所有单项式之前插入一列取值恒为 1 的偏置列（对应空组合），关闭时输出从 1 次项开始。"
+                ],
+                "params": {
+                  "includeBias": "true 表示首列输出常数 1；默认 true"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "PolynomialFeatures build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建 PolynomialFeatures 实例。",
+                "returns": "新的 PolynomialFeatures，尚未拟合",
+                "notes": [
+                  "不做参数校验，degree 的合法性已在 setter 中过滤"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "PolynomialFeatures 的构造器，设置阶数与偏置项。",
+            "body": [
+              "默认 degree = 2、interactionOnly = false、includeBias = true。degree 在 setter 调用时校验，build() 只做装配，没有额外校验。",
+              "输出列的组合集合在 fit 阶段按输入特征数生成，因此构建器本身不持有任何依赖数据的形状信息。"
+            ],
+            "notes": [
+              "列数随 degree 与特征数组合增长，高阶时输出维度会迅速膨胀",
+              "interactionOnly 与 includeBias 均无取值范围约束",
+              "构建器不是线程安全的"
+            ],
+            "example": "PolynomialFeatures poly = PolynomialFeatures.builder() .degree(3) .interactionOnly(false) .includeBias(true) .build();",
+            "see": [
+              "basalt.ml.PolynomialFeatures"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.RFE.Builder",
+          "simple_qualified": "RFE.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/RFE.java",
+          "line": 173,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "nFeaturesToSelect(int)",
+              "signature": "Builder nFeaturesToSelect(int nFeaturesToSelect)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "nFeaturesToSelect"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置最终保留的特征数，默认 2。",
+                "params": {
+                  "nFeaturesToSelect": "保留特征数，须为正；默认 2，fit 时不得大于输入列数"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "nFeaturesToSelect 小于等于 0"
+                },
+                "notes": [
+                  "上界依赖数据列数，只能在 fit 阶段校验"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "step(int)",
+              "signature": "Builder step(int step)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "step"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置每轮淘汰的特征数，默认 1。",
+                "body": [
+                  "每轮实际淘汰 min(step, 剩余特征数 − 保留特征数) 个重要性最低的特征，最后不足一整步时按剩余量截断。"
+                ],
+                "params": {
+                  "step": "每轮淘汰数，须为正；默认 1"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "step 小于等于 0"
+                },
+                "notes": [
+                  "step 越大，迭代轮数与估计器拟合次数越少，但排名粒度越粗"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "RFE build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建 RFE 实例。",
+                "returns": "新的 RFE，尚未拟合",
+                "notes": [
+                  "不做参数校验，两个 setter 已在调用时过滤非法值"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "RFE 的构造器，设置保留特征数与淘汰步长。",
+            "body": [
+              "默认 nFeaturesToSelect = 2、step = 1。估计器不直接传入，而是由 builder(Supplier) 提供的工厂在每轮消除与最终拟合时各创建一个新实例，保证每轮从干净状态训练。",
+              "两个 setter 在调用时校验下界，nFeaturesToSelect 的上界与估计器能力（featureImportances() 或线性 weights()）要等 fit 才能判定。"
+            ],
+            "notes": [
+              "工厂会在 fit 过程中被反复调用，其返回的估计器必须可重复构造",
+              "不支持重要性或线性权重的估计器在 fit 时抛 IllegalArgumentException",
+              "构建器不是线程安全的"
+            ],
+            "example": "RFE rfe = RFE.builder(() -> Ridge.builder().build()) .nFeaturesToSelect(3) .step(1) .build();",
+            "see": [
+              "basalt.ml.RFE",
+              "basalt.ml.SelectKBest"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.RandomForest.Builder",
+          "simple_qualified": "RandomForest.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/RandomForest.java",
+          "line": 386,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "trees(int)",
+              "signature": "Builder trees(int treeCount)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "treeCount"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置树的数量，默认 100",
+                "params": {
+                  "treeCount": "树数，须大于 0"
+                },
+                "returns": "this",
+                "notes": [
+                  "树数与行数的乘积决定 OOB 评估的规模上限"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "maxDepth(int)",
+              "signature": "Builder maxDepth(int maxDepth)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "maxDepth"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置每棵树的最大深度，默认 8",
+                "params": {
+                  "maxDepth": "深度上限，须不小于 0；0 表示单叶"
+                },
+                "returns": "this"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "minSamplesLeaf(int)",
+              "signature": "Builder minSamplesLeaf(int minSamplesLeaf)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "minSamplesLeaf"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置叶节点最小样本数，默认 1",
+                "params": {
+                  "minSamplesLeaf": "分裂后左右两侧各自的最小样本数，须大于 0"
+                },
+                "returns": "this"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "maxFeatures(int)",
+              "signature": "Builder maxFeatures(int maxFeatures)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "maxFeatures"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置每次分裂的候选特征数，默认 0",
+                "params": {
+                  "maxFeatures": "候选特征数；0 表示在 fit 时解析为 max(1, sqrt(featureCount))"
+                },
+                "returns": "this",
+                "notes": [
+                  "大于特征数时由 DecisionTree 的候选抽取按特征数截断"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "bins(int)",
+              "signature": "Builder bins(int maxBins)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "maxBins"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置单特征最大桶数，默认 64",
+                "params": {
+                  "maxBins": "桶数上限，取值 [2, 255]"
+                },
+                "returns": "this",
+                "notes": [
+                  "全森林共用一份分箱，该值只在 fit 开始时使用一次"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "threads(int)",
+              "signature": "Builder threads(int threads)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "threads"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置拟合并行度，默认可用处理器数",
+                "params": {
+                  "threads": "工作线程数，须大于 0"
+                },
+                "returns": "this"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "seed(long)",
+              "signature": "Builder seed(long seed)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置随机种子，默认 42",
+                "params": {
+                  "seed": "基础种子；第 i 棵树的种子为 seed + i*31"
+                },
+                "returns": "this",
+                "notes": [
+                  "自助采样序列由 seed + i*1000003 驱动，与树的特征种子相互独立"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "task(TreeTask)",
+              "signature": "Builder task(TreeTask task)",
+              "params": [
+                {
+                  "type": "TreeTask",
+                  "name": "task"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置任务类型，默认 CLASSIFICATION",
+                "params": {
+                  "task": "CLASSIFICATION 或 REGRESSION，非 null"
+                },
+                "returns": "this",
+                "throws": {
+                  "NullPointerException": "task 为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "oob(boolean)",
+              "signature": "Builder oob(boolean oob)",
+              "params": [
+                {
+                  "type": "boolean",
+                  "name": "oob"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置是否计算袋外分数，默认关闭",
+                "params": {
+                  "oob": "true 时每棵树额外对全量矩阵推理并累计袋外预测"
+                },
+                "returns": "this",
+                "notes": [
+                  "打开后 treeCount*rows 超过 800 万，fit 抛 IllegalArgumentException",
+                  "关闭时 oobScore() 抛 IllegalStateException"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "RandomForest build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验配置并创建森林",
+                "returns": "配置好的 RandomForest，尚未拟合",
+                "throws": {
+                  "IllegalArgumentException": "树数不大于 0、maxDepth 小于 0、minSamplesLeaf 不大于 0、maxFeatures 小于 0、threads 不大于 0，或 bins 越界"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "RandomForest 的流式构造器",
+            "body": [
+              "默认值为 trees 100、maxDepth 8、minSamplesLeaf 1、maxFeatures 0（按平方根解析）、bins 64、threads 为可用处理器数、seed 42、task CLASSIFICATION、oob 关闭。build() 校验后返回未拟合的森林。",
+              "maxFeatures 的 0 值不在构造期解析，而是在 fit 时按 max(1, sqrt(featureCount)) 计算，因此特征数由训练数据决定。"
+            ],
+            "notes": [
+              "threads 决定 ForkJoinPool 的并行度，须大于 0",
+              "打开 oob 会增加每棵树一次全量推理的开销，并受 800 万次树-行预测上限约束"
+            ],
+            "example": "RandomForest forest = RandomForest.builder() .trees(200) .maxDepth(10) .minSamplesLeaf(2) .maxFeatures(3) .bins(64) .threads(8) .seed(42L) .task(TreeTask.REGRESSION) .oob(true) .build();",
+            "see": [
+              "basalt.ml.RandomForest",
+              "basalt.ml.TreeTask"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.RandomizedSearchCV.Builder",
+          "simple_qualified": "RandomizedSearchCV.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/RandomizedSearchCV.java",
+          "line": 123,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "paramChoices(String, Object...)",
+              "signature": "Builder paramChoices(String name, Object... choices)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                },
+                {
+                  "type": "Object...",
+                  "name": "choices"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "登记离散候选列表，等概率有放回抽取。",
+                "body": [
+                  "每轮用共享随机源取一个下标，同一次搜索内同一候选值可以被重复抽中。候选数组在登记时克隆，之后修改原数组不影响抽样结果。"
+                ],
+                "params": {
+                  "name": "参数名，须非 null",
+                  "choices": "候选值数组，至少一个元素，元素可为 null"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "name 或 choices 为 null",
+                  "IllegalArgumentException": "choices 长度为 0"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "paramUniform(String, double, double)",
+              "signature": "Builder paramUniform(String name, double low, double high)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                },
+                {
+                  "type": "double",
+                  "name": "low"
+                },
+                {
+                  "type": "double",
+                  "name": "high"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "登记 [low, high) 上的均匀分布。",
+                "body": [
+                  "抽样值为 low + U(0,1) · (high − low)，区间上界取不到。"
+                ],
+                "params": {
+                  "name": "参数名",
+                  "low": "区间下界，含",
+                  "high": "区间上界，不含，须严格大于 low"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "high 不大于 low"
+                },
+                "notes": [
+                  "不校验 name 是否为 null，也不校验端点是否有限"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "paramLogUniform(String, double, double)",
+              "signature": "Builder paramLogUniform(String name, double low, double high)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                },
+                {
+                  "type": "double",
+                  "name": "low"
+                },
+                {
+                  "type": "double",
+                  "name": "high"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "登记对数均匀分布。",
+                "body": [
+                  "先在 log(low) 与 log(high) 之间均匀取值，再取指数还原，适合同一参数跨数量级搜索的场景。"
+                ],
+                "params": {
+                  "name": "参数名",
+                  "low": "区间下界，须严格大于 0",
+                  "high": "区间上界，须严格大于 low"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "low 不大于 0，或 high 不大于 low"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "paramIntRange(String, int, int)",
+              "signature": "Builder paramIntRange(String name, int lowInclusive, int highInclusive)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                },
+                {
+                  "type": "int",
+                  "name": "lowInclusive"
+                },
+                {
+                  "type": "int",
+                  "name": "highInclusive"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "登记闭区间上的均匀整数分布。",
+                "body": [
+                  "取值覆盖 lowInclusive 到 highInclusive 的全部整数，两端均可取到。"
+                ],
+                "params": {
+                  "name": "参数名",
+                  "lowInclusive": "闭区间下界",
+                  "highInclusive": "闭区间上界，须不小于下界"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "highInclusive 小于 lowInclusive"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "nIter(int)",
+              "signature": "Builder nIter(int nIter)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "nIter"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置抽样迭代次数，默认 10。",
+                "params": {
+                  "nIter": "迭代轮数，须为正"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "nIter 小于等于 0"
+                },
+                "notes": [
+                  "每轮对全部已登记分布各抽一次，并完成一整轮 cross-validation"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "scoring(Estimators.Metric)",
+              "signature": "Builder scoring(Estimators.Metric scoring)",
+              "params": [
+                {
+                  "type": "Estimators.Metric",
+                  "name": "scoring"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置评分指标，默认 ACCURACY。",
+                "params": {
+                  "scoring": "评分指标，可选 ACCURACY、MACRO_F1、R2、RMSE；默认 ACCURACY"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "scoring 为 null"
+                },
+                "notes": [
+                  "搜索统一取折均值最大者，RMSE 这类越小越好的指标需自行留意方向"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "cv(int)",
+              "signature": "Builder cv(int cvFolds)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "cvFolds"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置交叉验证折数，默认 5。",
+                "params": {
+                  "cvFolds": "折数，须不小于 2"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "cvFolds 小于 2"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "stratified(boolean)",
+              "signature": "Builder stratified(boolean stratified)",
+              "params": [
+                {
+                  "type": "boolean",
+                  "name": "stratified"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置是否分层分折，默认关闭。",
+                "body": [
+                  "开启时按目标值分层划分折，关闭时使用普通 K 折；两种方式都带同一个 seed 做洗牌。"
+                ],
+                "params": {
+                  "stratified": "true 表示分层 K 折；默认 false"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "seed(long)",
+              "signature": "Builder seed(long seed)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置随机种子，默认 42。",
+                "params": {
+                  "seed": "随机种子，同时驱动分折与参数抽样"
+                },
+                "returns": "this，便于链式调用",
+                "notes": [
+                  "同一 seed 与同一数据下重复 fit 得到相同的折划分与抽样序列"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "RandomizedSearchCV build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验并创建搜索器。",
+                "returns": "新的 RandomizedSearchCV，尚未拟合",
+                "throws": {
+                  "IllegalArgumentException": "未登记任何参数分布"
+                },
+                "notes": [
+                  "nIter、cv、scoring 已在 setter 中校验，build 只检查分布表非空"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "随机搜索的构造器，登记参数分布与分折策略。",
+            "body": [
+              "默认 nIter = 10、scoring = ACCURACY、cv = 5 折、stratified 关闭、seed = 42，分布表为空。四个 param* 方法在登记时即完成取值校验，把抽样函数写入按插入顺序保存的映射；build() 只要求至少登记一个分布。",
+              "fit 每轮按登记顺序对每个分布抽一次，全部用同一个 Random(seed) 驱动；分层开关决定采用分层 K 折还是普通 K 折，折划分同样使用该种子。每轮对全部折拟合并以折均值为该组参数的得分。"
+            ],
+            "notes": [
+              "同名参数重复登记会覆盖旧分布，但在映射中保留首次登记的位置",
+              "paramUniform、paramLogUniform、paramIntRange 不校验 name 是否为 null，paramChoices 会校验",
+              "均值并列时保留先出现的那一组，比较使用严格大于",
+              "估计器工厂在每折与最终重训时都会被调用"
+            ],
+            "example": "RandomizedSearchCV search = RandomizedSearchCV.builder( params -> Ridge.builder().alpha((Double) params.get(\"alpha\")).build()) .paramLogUniform(\"alpha\", 1e-3, 10.0) .nIter(20) .scoring(Estimators.Metric.R2) .cv(5) .seed(42L) .build();",
+            "see": [
+              "basalt.ml.RandomizedSearchCV",
+              "basalt.ml.RandomizedSearchCV.ParameterSampler",
+              "basalt.ml.GridSearchCV"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.RandomizedSearchCV.ParameterSampler",
+          "simple_qualified": "RandomizedSearchCV.ParameterSampler",
+          "kind": "interface",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/RandomizedSearchCV.java",
+          "line": 19,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "参数分布的抽样接口，单方法返回一个参数值。",
+            "body": [
+              "函数式接口，唯一方法 sample(Random) 从外部传入的随机源抽取一个取值。Builder 的 paramChoices、paramUniform、paramLogUniform、paramIntRange 都以此为载体把分布登记进映射，fit 时每轮按登记顺序各调用一次。",
+              "随机源由 fit 统一创建并顺序传递，因此同一 seed 下抽样序列可复现。"
+            ],
+            "notes": [
+              "实现不应自行播种或缓存随机源，否则各轮取值会退化为重复",
+              "返回值直接放进参数映射交给估计器工厂，fit 不做类型转换或校验",
+              "抽样是有放回的，同一次搜索内可能抽到完全相同的参数组合"
+            ],
+            "see": [
+              "basalt.ml.RandomizedSearchCV",
+              "basalt.ml.RandomizedSearchCV.Builder"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.Ridge.Builder",
+          "simple_qualified": "Ridge.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/Ridge.java",
+          "line": 178,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "alpha(double)",
+              "signature": "Builder alpha(double alpha)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "alpha"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置 L2 正则强度。",
+                "params": {
+                  "alpha": "加到 Gram 对角线上的值，必须为正；默认 1.0"
+                },
+                "returns": "this",
+                "throws": {
+                  "IllegalArgumentException": "build() 时非有限或小于等于 0"
+                },
+                "notes": [
+                  "尺度是按行求和的，未除以样本数"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fitIntercept(boolean)",
+              "signature": "Builder fitIntercept(boolean fitIntercept)",
+              "params": [
+                {
+                  "type": "boolean",
+                  "name": "fitIntercept"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置是否中心化并拟合截距。",
+                "params": {
+                  "fitIntercept": "true 时中心化特征与目标并反推截距，false 时直接解原始正规方程；默认 true"
+                },
+                "returns": "this",
+                "notes": [
+                  "为 false 时截距恒为 0.0，且 alpha 会压缩未中心化的系数"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "Ridge build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验参数并创建模型。",
+                "returns": "新的 Ridge，尚未拟合",
+                "throws": {
+                  "IllegalArgumentException": "alpha 非有限或小于等于 0"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "Ridge 的流式构建器。",
+            "body": [
+              "alpha 是加在 Gram 矩阵对角线上的正则量，fitIntercept 决定是否中心化并反推截距。setter 只赋值，build() 只校验 alpha 为正。",
+              "默认 alpha=1.0、fitIntercept=true。"
+            ],
+            "notes": [
+              "alpha 不允许为 0；需要无正则解时改用 LinearRegression",
+              "构建器不是线程安全的"
+            ],
+            "example": "Ridge model = Ridge.builder() .alpha(0.1) .fitIntercept(true) .build();",
+            "see": [
+              "basalt.ml.Ridge"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.SVC.Builder",
+          "simple_qualified": "SVC.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/SVC.java",
+          "line": 299,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "kernel(Kernel)",
+              "signature": "Builder kernel(Kernel kernel)",
+              "params": [
+                {
+                  "type": "Kernel",
+                  "name": "kernel"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置核函数对象，默认 rbf(1.0)。",
+                "params": {
+                  "kernel": "核函数实例，不可为 null；默认 Kernel.rbf(1.0)"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "kernel 为 null"
+                },
+                "notes": [
+                  "与 rbf、poly、linear 共用同一字段，后调用者覆盖先调用者"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "rbf(double)",
+              "signature": "Builder rbf(double gamma)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "gamma"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "改用 RBF 核并设置 gamma。",
+                "body": [
+                  "核函数为 K(x, y) = exp(−gamma · ‖x − y‖²)，gamma 越大决策边界越贴合训练点。"
+                ],
+                "params": {
+                  "gamma": "RBF 的带宽倒数，须为正且有限"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "gamma 非有限或小于等于 0"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "poly(int, double, double)",
+              "signature": "Builder poly(int degree, double gamma, double coef0)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "degree"
+                },
+                {
+                  "type": "double",
+                  "name": "gamma"
+                },
+                {
+                  "type": "double",
+                  "name": "coef0"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "改用多项式核并设置阶数、gamma 与常数项。",
+                "body": [
+                  "核函数为 K(x, y) = (gamma · x·y + coef0)^degree，coef0 控制低阶项的相对权重。"
+                ],
+                "params": {
+                  "degree": "多项式阶数，须不小于 1",
+                  "gamma": "内积缩放系数，须为正且有限",
+                  "coef0": "常数项，须有限，可为负"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "gamma 非正或非有限，degree 小于 1，或 coef0 非有限"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "linear()",
+              "signature": "Builder linear()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "改用线性核。",
+                "body": [
+                  "核函数退化为内积 K(x, y) = x·y，不引入 gamma、degree、coef0 等超参数。"
+                ],
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "probability(boolean)",
+              "signature": "Builder probability(boolean probability)",
+              "params": [
+                {
+                  "type": "boolean",
+                  "name": "probability"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "开启 Platt 概率校准，默认关闭",
+                "params": {
+                  "probability": "true 时 fit 末尾为每个二分类子问题额外拟合一组 A、B"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "c(double)",
+              "signature": "Builder c(double c)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "c"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置惩罚系数 C，默认 1.0。",
+                "body": [
+                  "C 同时充当每个拉格朗日乘子的上界，值越大对间隔违例越不宽容，越容易过拟合。"
+                ],
+                "params": {
+                  "c": "惩罚系数，须为正且有限"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "c 非有限或小于等于 0"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "tolerance(double)",
+              "signature": "Builder tolerance(double tolerance)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "tolerance"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置 SMO 的 KKT 违例容差，默认 1e-4。",
+                "body": [
+                  "仅当样本的 y·E 超出 ±tolerance 且乘子未顶到 0 或 C 时才触发一次乘子更新，容差越小收敛越慢、解越精确。"
+                ],
+                "params": {
+                  "tolerance": "违例阈值，须为正且有限"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "tolerance 非有限或小于等于 0"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "maxIterations(int)",
+              "signature": "Builder maxIterations(int maxIterations)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "maxIterations"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置每个二分类子问题的最大迭代轮数，默认 600。",
+                "body": [
+                  "达到上限即停止，即使尚未满足收敛条件；连续 5 轮扫描都没有乘子更新时也会提前退出。"
+                ],
+                "params": {
+                  "maxIterations": "迭代上限，须为正"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "maxIterations 小于等于 0"
+                },
+                "notes": [
+                  "多分类按 One-vs-Rest 展开，每个子问题独立计数"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "seed(long)",
+              "signature": "Builder seed(long seed)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置随机种子，默认 42。",
+                "body": [
+                  "种子只用于第二个乘子的启发式挑选：15% 的概率改为随机选点，其余情况取误差差最大的点。"
+                ],
+                "params": {
+                  "seed": "基础种子；第 m 个子问题使用 seed + m·101"
+                },
+                "returns": "this，便于链式调用",
+                "notes": [
+                  "同一 seed 下训练结果可复现"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "SVC build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建 SVC 实例。",
+                "returns": "新的 SVC，尚未拟合",
+                "notes": [
+                  "不做额外校验，全部约束已在各 setter 中完成"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "SVC 的构造器，设置核函数、惩罚系数与 SMO 参数。",
+            "body": [
+              "默认 kernel = Kernel.rbf(1.0)、c = 1.0、tolerance = 1e-4、maxIterations = 600、seed = 42。核函数只有一个字段，kernel、rbf、poly、linear 四个 setter 互相覆盖。",
+              "c、tolerance、maxIterations 以及 rbf/poly 的 gamma 在 setter 调用时即校验并抛异常；build() 只把五个字段装进实例，没有额外检查。"
+            ],
+            "notes": [
+              "kernel 与 rbf、poly、linear 写同一字段，最终生效的是最后一次调用",
+              "poly 的 degree 下界与 coef0 有限性由 Kernel 构造器校验",
+              "松容差加小迭代上限会得到欠拟合的解，且不会报错"
+            ],
+            "example": "SVC model = SVC.builder() .rbf(0.5) .c(1.0) .tolerance(1e-4) .maxIterations(600) .seed(42L) .build();",
+            "see": [
+              "basalt.ml.SVC",
+              "basalt.ml.Kernel"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.SelectKBest.Builder",
+          "simple_qualified": "SelectKBest.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/SelectKBest.java",
+          "line": 256,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "k(int)",
+              "signature": "Builder k(int k)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "k"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置保留的特征数，默认 5。",
+                "params": {
+                  "k": "保留特征数，须为正；默认 5，fit 时不得大于输入列数"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "k 小于等于 0"
+                },
+                "notes": [
+                  "上界依赖数据列数，只能在 fit 阶段校验"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "scoreFunc(ScoreFunc)",
+              "signature": "Builder scoreFunc(ScoreFunc scoreFunc)",
+              "params": [
+                {
+                  "type": "ScoreFunc",
+                  "name": "scoreFunc"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置评分函数，默认 F_CLASSIF。",
+                "body": [
+                  "F_CLASSIF 用单因素方差分析衡量类间差异，F_REGRESSION 用相关系数换算 F 值，CHI2 用列联表的卡方统计量。"
+                ],
+                "params": {
+                  "scoreFunc": "F_CLASSIF、F_REGRESSION 或 CHI2；默认 F_CLASSIF"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "scoreFunc 为 null"
+                },
+                "notes": [
+                  "CHI2 要求全部特征非负，否则 fit 抛 IllegalArgumentException"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "SelectKBest build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建 SelectKBest 实例。",
+                "returns": "新的 SelectKBest，尚未拟合",
+                "notes": [
+                  "不做参数校验，k 与 scoreFunc 已在 setter 中过滤"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "SelectKBest 的构造器，设置保留数与评分函数。",
+            "body": [
+              "默认 k = 5、scoreFunc = F_CLASSIF。两个 setter 在调用时校验下界与空值，build() 只做装配。",
+              "k 的上界与 CHI2 的非负性要求都依赖训练数据，推迟到 fit 阶段才校验；不满足时抛 IllegalArgumentException。"
+            ],
+            "notes": [
+              "分数并列时按列索引升序优先，selectedIndices() 最终按升序返回",
+              "F_CLASSIF 与 CHI2 把目标视为离散类别，F_REGRESSION 把目标视为连续值",
+              "构建器不是线程安全的"
+            ],
+            "example": "SelectKBest selector = SelectKBest.builder() .k(10) .scoreFunc(SelectKBest.ScoreFunc.F_CLASSIF) .build();",
+            "see": [
+              "basalt.ml.SelectKBest",
+              "basalt.ml.RFE"
+            ]
+          }
+        }
       ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.PCA.Builder",
-     "simple_qualified": "PCA.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/PCA.java",
-     "line": 432,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "components(int)",
-       "signature": "Builder components(int components)",
-       "params": [
-        {
-         "type": "int",
-         "name": "components"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置保留的主成分个数。",
-        "params": {
-         "components": "分量数，须为正；默认 2，拟合时不得大于 min(样本数, 特征数)"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "solver(EigenSolver)",
-       "signature": "Builder solver(EigenSolver solver)",
-       "params": [
-        {
-         "type": "EigenSolver",
-         "name": "solver"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置特征分解求解器。",
-        "params": {
-         "solver": "求解器，默认 EigenSolver.AUTO"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "NullPointerException": "solver 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "maxIterations(int)",
-       "signature": "Builder maxIterations(int maxIterations)",
-       "params": [
-        {
-         "type": "int",
-         "name": "maxIterations"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置 Jacobi 扫描的最大轮数。",
-        "params": {
-         "maxIterations": "扫描上限，须为正；默认 60"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "tolerance(double)",
-       "signature": "Builder tolerance(double tolerance)",
-       "params": [
-        {
-         "type": "double",
-         "name": "tolerance"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置 Jacobi 扫描的收敛阈值。",
-        "body": [
-         "收敛判据为 sqrt(Σ a_pq²) 不超过 tolerance · max(1, ‖A‖_F)，其中求和覆盖全部非对角元素。"
-        ],
-        "params": {
-         "tolerance": "收敛阈值，须为正且有限；默认 1e-12"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "whiten(boolean)",
-       "signature": "Builder whiten(boolean whiten)",
-       "params": [
-        {
-         "type": "boolean",
-         "name": "whiten"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置是否白化投影结果。",
-        "body": [
-         "白化把每个投影除以其主成分标准差，使各分量方差为 1；逆变换会乘回同一标准差。"
-        ],
-        "params": {
-         "whiten": "true 表示白化；默认 false"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "PCA build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验参数并创建 PCA 实例。",
-        "returns": "新的 PCA 实例，尚未拟合",
-        "throws": {
-         "IllegalArgumentException": "components 或 maxIterations 非正，或 tolerance 非正或非有限"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "PCA 的构建器，设置分量数、求解器、扫描上限与白化开关。",
-      "body": [
-       "默认值：components = 2、solver = AUTO、maxIterations = 60、tolerance = 1e-12、whiten = false。各 setter 只赋值，参数校验集中在 build 中完成。"
-      ],
-      "notes": [
-       "components 的上界依赖数据形状，只能在 fit 阶段校验"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.Pipeline.Builder",
-     "simple_qualified": "Pipeline.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/Pipeline.java",
-     "line": 225,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "addStep(String, Transformer)",
-       "signature": "Builder addStep(String name, Transformer transformer)",
-       "params": [
-        {
-         "type": "String",
-         "name": "name"
-        },
-        {
-         "type": "Transformer",
-         "name": "transformer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按给定名称追加一个变换步骤。",
-        "body": [
-         "步骤按调用顺序排列，fit 时依次 fitTransform，transform 与 predict 时依次 transform，inverseTransform 时逆序回放。"
-        ],
-        "params": {
-         "name": "步骤名，用于 namedSteps() 与持久化；不可为 null",
-         "transformer": "变换器实例；不可为 null"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "NullPointerException": "name 或 transformer 为 null"
-        },
-        "notes": [
-         "重名不会被拒绝，namedSteps() 中后写入者覆盖先写入者"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "addStep(Transformer)",
-       "signature": "Builder addStep(Transformer transformer)",
-       "params": [
-        {
-         "type": "Transformer",
-         "name": "transformer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加步骤并自动命名为 stepN。",
-        "body": [
-         "名称取 \"step\" 拼上追加前的步骤数，首个步骤为 step0，其后依次递增。"
-        ],
-        "params": {
-         "transformer": "变换器实例；不可为 null"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "NullPointerException": "transformer 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "estimator(String, Estimator)",
-       "signature": "Builder estimator(String name, Estimator estimator)",
-       "params": [
-        {
-         "type": "String",
-         "name": "name"
-        },
-        {
-         "type": "Estimator",
-         "name": "estimator"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置具名末端估计器。",
-        "body": [
-         "末端估计器在所有变换步骤之后拟合与预测，并作为 namedSteps() 的最后一项。"
-        ],
-        "params": {
-         "name": "估计器名称，用于 namedSteps() 与持久化；不可为 null",
-         "estimator": "末端估计器；不可为 null"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "NullPointerException": "name 或 estimator 为 null"
-        },
-        "notes": [
-         "重复调用会整体替换前一次的末端估计器与名称"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "estimator(Estimator)",
-       "signature": "Builder estimator(Estimator estimator)",
-       "params": [
-        {
-         "type": "Estimator",
-         "name": "estimator"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置末端估计器，名称固定为 estimator。",
-        "params": {
-         "estimator": "末端估计器；不可为 null"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "NullPointerException": "estimator 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "Pipeline build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验并构建流水线。",
-        "returns": "配置好的 Pipeline，尚未拟合",
-        "throws": {
-         "IllegalArgumentException": "既没有步骤也没有末端估计器"
-        },
-        "notes": [
-         "只校验非空，不检查步骤重名，也不检查估计器是否实现 Persistable"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "Pipeline 的构造器，按序追加步骤并挂接末端估计器。",
-      "body": [
-       "初始状态为空步骤列表、无末端估计器。addStep 负责累积变换器，estimator 设置唯一的末端估计器；至少要有其中一项才能通过 build。",
-       "build() 只做空管线校验，其余约束推迟到运行期：步骤名重复、估计器不支持持久化都在后续调用或写入时才暴露。"
-      ],
-      "notes": [
-       "步骤顺序即执行顺序，transform 正向、inverseTransform 反向",
-       "未命名步骤自动取 step0、step1 等名称",
-       "构建器不是线程安全的"
-      ],
-      "example": "Pipeline pipeline = Pipeline.builder()\n        .addStep(PolynomialFeatures.builder().degree(2).build())\n        .estimator(\"ridge\", Ridge.builder().alpha(1.0).build())\n        .build();",
-      "see": [
-       "basalt.ml.Pipeline",
-       "basalt.ml.Pipeline.Step"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.Pipeline.Step",
-     "simple_qualified": "Pipeline.Step",
-     "kind": "record",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/Pipeline.java",
-     "line": 28,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "流水线中的具名步骤：名称与变换器的不可变组合。",
-      "body": [
-       "紧凑构造器对 name 与 transformer 做非空校验，两者一旦写入即不可更改。步骤在列表中按插入顺序存放，Pipeline 依此顺序正向执行变换、反向执行逆变换。",
-       "steps() 返回不可变列表，元素即 Step 记录本身。"
-      ],
-      "notes": [
-       "name 参与 namedSteps() 的键与 .bsl 持久化，需自行保证唯一",
-       "name 或 transformer 为 null 时构造抛 NullPointerException"
-      ],
-      "example": "Pipeline.Step step = new Pipeline.Step(\"poly\", PolynomialFeatures.builder().build());",
-      "see": [
-       "basalt.ml.Pipeline",
-       "basalt.ml.Pipeline.Builder"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.PolynomialFeatures.Builder",
-     "simple_qualified": "PolynomialFeatures.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/PolynomialFeatures.java",
-     "line": 137,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "degree(int)",
-       "signature": "Builder degree(int degree)",
-       "params": [
-        {
-         "type": "int",
-         "name": "degree"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置多项式最高阶数，默认 2。",
-        "body": [
-         "阶数决定单项式的最大总次数，从 1 次逐层生成到该阶。"
-        ],
-        "params": {
-         "degree": "最高阶数，须不小于 1；默认 2"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "degree 小于 1"
-        },
-        "notes": [
-         "该校验在 setter 内完成，不走 build()"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "interactionOnly(boolean)",
-       "signature": "Builder interactionOnly(boolean interactionOnly)",
-       "params": [
-        {
-         "type": "boolean",
-         "name": "interactionOnly"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置是否只生成纯交互项，默认 false。",
-        "body": [
-         "开启后每个特征在同一次单项式中最多出现一次，输出仅含不同特征的乘积；关闭时允许特征重复，从而包含平方及更高次项。"
-        ],
-        "params": {
-         "interactionOnly": "true 表示只生成不同特征的乘积；默认 false"
-        },
-        "returns": "this，便于链式调用",
-        "notes": [
-         "真实输出列数在 fit 时按输入特征数展开，构建阶段无法确定"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "includeBias(boolean)",
-       "signature": "Builder includeBias(boolean includeBias)",
-       "params": [
-        {
-         "type": "boolean",
-         "name": "includeBias"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置是否输出常数列，默认 true。",
-        "body": [
-         "开启时在所有单项式之前插入一列取值恒为 1 的偏置列（对应空组合），关闭时输出从 1 次项开始。"
-        ],
-        "params": {
-         "includeBias": "true 表示首列输出常数 1；默认 true"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "PolynomialFeatures build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建 PolynomialFeatures 实例。",
-        "returns": "新的 PolynomialFeatures，尚未拟合",
-        "notes": [
-         "不做参数校验，degree 的合法性已在 setter 中过滤"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "PolynomialFeatures 的构造器，设置阶数与偏置项。",
-      "body": [
-       "默认 degree = 2、interactionOnly = false、includeBias = true。degree 在 setter 调用时校验，build() 只做装配，没有额外校验。",
-       "输出列的组合集合在 fit 阶段按输入特征数生成，因此构建器本身不持有任何依赖数据的形状信息。"
-      ],
-      "notes": [
-       "列数随 degree 与特征数组合增长，高阶时输出维度会迅速膨胀",
-       "interactionOnly 与 includeBias 均无取值范围约束",
-       "构建器不是线程安全的"
-      ],
-      "example": "PolynomialFeatures poly = PolynomialFeatures.builder()\n        .degree(3)\n        .interactionOnly(false)\n        .includeBias(true)\n        .build();",
-      "see": [
-       "basalt.ml.PolynomialFeatures"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.RFE.Builder",
-     "simple_qualified": "RFE.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/RFE.java",
-     "line": 173,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "nFeaturesToSelect(int)",
-       "signature": "Builder nFeaturesToSelect(int nFeaturesToSelect)",
-       "params": [
-        {
-         "type": "int",
-         "name": "nFeaturesToSelect"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置最终保留的特征数，默认 2。",
-        "params": {
-         "nFeaturesToSelect": "保留特征数，须为正；默认 2，fit 时不得大于输入列数"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "nFeaturesToSelect 小于等于 0"
-        },
-        "notes": [
-         "上界依赖数据列数，只能在 fit 阶段校验"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "step(int)",
-       "signature": "Builder step(int step)",
-       "params": [
-        {
-         "type": "int",
-         "name": "step"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置每轮淘汰的特征数，默认 1。",
-        "body": [
-         "每轮实际淘汰 min(step, 剩余特征数 − 保留特征数) 个重要性最低的特征，最后不足一整步时按剩余量截断。"
-        ],
-        "params": {
-         "step": "每轮淘汰数，须为正；默认 1"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "step 小于等于 0"
-        },
-        "notes": [
-         "step 越大，迭代轮数与估计器拟合次数越少，但排名粒度越粗"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "RFE build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建 RFE 实例。",
-        "returns": "新的 RFE，尚未拟合",
-        "notes": [
-         "不做参数校验，两个 setter 已在调用时过滤非法值"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "RFE 的构造器，设置保留特征数与淘汰步长。",
-      "body": [
-       "默认 nFeaturesToSelect = 2、step = 1。估计器不直接传入，而是由 builder(Supplier) 提供的工厂在每轮消除与最终拟合时各创建一个新实例，保证每轮从干净状态训练。",
-       "两个 setter 在调用时校验下界，nFeaturesToSelect 的上界与估计器能力（featureImportances() 或线性 weights()）要等 fit 才能判定。"
-      ],
-      "notes": [
-       "工厂会在 fit 过程中被反复调用，其返回的估计器必须可重复构造",
-       "不支持重要性或线性权重的估计器在 fit 时抛 IllegalArgumentException",
-       "构建器不是线程安全的"
-      ],
-      "example": "RFE rfe = RFE.builder(() -> Ridge.builder().build())\n        .nFeaturesToSelect(3)\n        .step(1)\n        .build();",
-      "see": [
-       "basalt.ml.RFE",
-       "basalt.ml.SelectKBest"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.RandomForest.Builder",
-     "simple_qualified": "RandomForest.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/RandomForest.java",
-     "line": 386,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "trees(int)",
-       "signature": "Builder trees(int treeCount)",
-       "params": [
-        {
-         "type": "int",
-         "name": "treeCount"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置树的数量，默认 100",
-        "params": {
-         "treeCount": "树数，须大于 0"
-        },
-        "returns": "this",
-        "notes": [
-         "树数与行数的乘积决定 OOB 评估的规模上限"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "maxDepth(int)",
-       "signature": "Builder maxDepth(int maxDepth)",
-       "params": [
-        {
-         "type": "int",
-         "name": "maxDepth"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置每棵树的最大深度，默认 8",
-        "params": {
-         "maxDepth": "深度上限，须不小于 0；0 表示单叶"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "minSamplesLeaf(int)",
-       "signature": "Builder minSamplesLeaf(int minSamplesLeaf)",
-       "params": [
-        {
-         "type": "int",
-         "name": "minSamplesLeaf"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置叶节点最小样本数，默认 1",
-        "params": {
-         "minSamplesLeaf": "分裂后左右两侧各自的最小样本数，须大于 0"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "maxFeatures(int)",
-       "signature": "Builder maxFeatures(int maxFeatures)",
-       "params": [
-        {
-         "type": "int",
-         "name": "maxFeatures"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置每次分裂的候选特征数，默认 0",
-        "params": {
-         "maxFeatures": "候选特征数；0 表示在 fit 时解析为 max(1, sqrt(featureCount))"
-        },
-        "returns": "this",
-        "notes": [
-         "大于特征数时由 DecisionTree 的候选抽取按特征数截断"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "bins(int)",
-       "signature": "Builder bins(int maxBins)",
-       "params": [
-        {
-         "type": "int",
-         "name": "maxBins"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置单特征最大桶数，默认 64",
-        "params": {
-         "maxBins": "桶数上限，取值 [2, 255]"
-        },
-        "returns": "this",
-        "notes": [
-         "全森林共用一份分箱，该值只在 fit 开始时使用一次"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "threads(int)",
-       "signature": "Builder threads(int threads)",
-       "params": [
-        {
-         "type": "int",
-         "name": "threads"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置拟合并行度，默认可用处理器数",
-        "params": {
-         "threads": "工作线程数，须大于 0"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置随机种子，默认 42",
-        "params": {
-         "seed": "基础种子；第 i 棵树的种子为 seed + i*31"
-        },
-        "returns": "this",
-        "notes": [
-         "自助采样序列由 seed + i*1000003 驱动，与树的特征种子相互独立"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "task(TreeTask)",
-       "signature": "Builder task(TreeTask task)",
-       "params": [
-        {
-         "type": "TreeTask",
-         "name": "task"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置任务类型，默认 CLASSIFICATION",
-        "params": {
-         "task": "CLASSIFICATION 或 REGRESSION，非 null"
-        },
-        "returns": "this",
-        "throws": {
-         "NullPointerException": "task 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "oob(boolean)",
-       "signature": "Builder oob(boolean oob)",
-       "params": [
-        {
-         "type": "boolean",
-         "name": "oob"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置是否计算袋外分数，默认关闭",
-        "params": {
-         "oob": "true 时每棵树额外对全量矩阵推理并累计袋外预测"
-        },
-        "returns": "this",
-        "notes": [
-         "打开后 treeCount*rows 超过 800 万，fit 抛 IllegalArgumentException",
-         "关闭时 oobScore() 抛 IllegalStateException"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "RandomForest build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验配置并创建森林",
-        "returns": "配置好的 RandomForest，尚未拟合",
-        "throws": {
-         "IllegalArgumentException": "树数不大于 0、maxDepth 小于 0、minSamplesLeaf 不大于 0、maxFeatures 小于 0、threads 不大于 0，或 bins 越界"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "RandomForest 的流式构造器",
-      "body": [
-       "默认值为 trees 100、maxDepth 8、minSamplesLeaf 1、maxFeatures 0（按平方根解析）、bins 64、threads 为可用处理器数、seed 42、task CLASSIFICATION、oob 关闭。build() 校验后返回未拟合的森林。",
-       "maxFeatures 的 0 值不在构造期解析，而是在 fit 时按 max(1, sqrt(featureCount)) 计算，因此特征数由训练数据决定。"
-      ],
-      "notes": [
-       "threads 决定 ForkJoinPool 的并行度，须大于 0",
-       "打开 oob 会增加每棵树一次全量推理的开销，并受 800 万次树-行预测上限约束"
-      ],
-      "example": "RandomForest forest = RandomForest.builder()\n        .trees(200)\n        .maxDepth(10)\n        .minSamplesLeaf(2)\n        .maxFeatures(3)\n        .bins(64)\n        .threads(8)\n        .seed(42L)\n        .task(TreeTask.REGRESSION)\n        .oob(true)\n        .build();",
-      "see": [
-       "basalt.ml.RandomForest",
-       "basalt.ml.TreeTask"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.RandomizedSearchCV.Builder",
-     "simple_qualified": "RandomizedSearchCV.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/RandomizedSearchCV.java",
-     "line": 123,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "paramChoices(String, Object...)",
-       "signature": "Builder paramChoices(String name, Object... choices)",
-       "params": [
-        {
-         "type": "String",
-         "name": "name"
-        },
-        {
-         "type": "Object...",
-         "name": "choices"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "登记离散候选列表，等概率有放回抽取。",
-        "body": [
-         "每轮用共享随机源取一个下标，同一次搜索内同一候选值可以被重复抽中。候选数组在登记时克隆，之后修改原数组不影响抽样结果。"
-        ],
-        "params": {
-         "name": "参数名，须非 null",
-         "choices": "候选值数组，至少一个元素，元素可为 null"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "NullPointerException": "name 或 choices 为 null",
-         "IllegalArgumentException": "choices 长度为 0"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "paramUniform(String, double, double)",
-       "signature": "Builder paramUniform(String name, double low, double high)",
-       "params": [
-        {
-         "type": "String",
-         "name": "name"
-        },
-        {
-         "type": "double",
-         "name": "low"
-        },
-        {
-         "type": "double",
-         "name": "high"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "登记 [low, high) 上的均匀分布。",
-        "body": [
-         "抽样值为 low + U(0,1) · (high − low)，区间上界取不到。"
-        ],
-        "params": {
-         "name": "参数名",
-         "low": "区间下界，含",
-         "high": "区间上界，不含，须严格大于 low"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "high 不大于 low"
-        },
-        "notes": [
-         "不校验 name 是否为 null，也不校验端点是否有限"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "paramLogUniform(String, double, double)",
-       "signature": "Builder paramLogUniform(String name, double low, double high)",
-       "params": [
-        {
-         "type": "String",
-         "name": "name"
-        },
-        {
-         "type": "double",
-         "name": "low"
-        },
-        {
-         "type": "double",
-         "name": "high"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "登记对数均匀分布。",
-        "body": [
-         "先在 log(low) 与 log(high) 之间均匀取值，再取指数还原，适合同一参数跨数量级搜索的场景。"
-        ],
-        "params": {
-         "name": "参数名",
-         "low": "区间下界，须严格大于 0",
-         "high": "区间上界，须严格大于 low"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "low 不大于 0，或 high 不大于 low"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "paramIntRange(String, int, int)",
-       "signature": "Builder paramIntRange(String name, int lowInclusive, int highInclusive)",
-       "params": [
-        {
-         "type": "String",
-         "name": "name"
-        },
-        {
-         "type": "int",
-         "name": "lowInclusive"
-        },
-        {
-         "type": "int",
-         "name": "highInclusive"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "登记闭区间上的均匀整数分布。",
-        "body": [
-         "取值覆盖 lowInclusive 到 highInclusive 的全部整数，两端均可取到。"
-        ],
-        "params": {
-         "name": "参数名",
-         "lowInclusive": "闭区间下界",
-         "highInclusive": "闭区间上界，须不小于下界"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "highInclusive 小于 lowInclusive"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "nIter(int)",
-       "signature": "Builder nIter(int nIter)",
-       "params": [
-        {
-         "type": "int",
-         "name": "nIter"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置抽样迭代次数，默认 10。",
-        "params": {
-         "nIter": "迭代轮数，须为正"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "nIter 小于等于 0"
-        },
-        "notes": [
-         "每轮对全部已登记分布各抽一次，并完成一整轮 cross-validation"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "scoring(Estimators.Metric)",
-       "signature": "Builder scoring(Estimators.Metric scoring)",
-       "params": [
-        {
-         "type": "Estimators.Metric",
-         "name": "scoring"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置评分指标，默认 ACCURACY。",
-        "params": {
-         "scoring": "评分指标，可选 ACCURACY、MACRO_F1、R2、RMSE；默认 ACCURACY"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "NullPointerException": "scoring 为 null"
-        },
-        "notes": [
-         "搜索统一取折均值最大者，RMSE 这类越小越好的指标需自行留意方向"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "cv(int)",
-       "signature": "Builder cv(int cvFolds)",
-       "params": [
-        {
-         "type": "int",
-         "name": "cvFolds"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置交叉验证折数，默认 5。",
-        "params": {
-         "cvFolds": "折数，须不小于 2"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "cvFolds 小于 2"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "stratified(boolean)",
-       "signature": "Builder stratified(boolean stratified)",
-       "params": [
-        {
-         "type": "boolean",
-         "name": "stratified"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置是否分层分折，默认关闭。",
-        "body": [
-         "开启时按目标值分层划分折，关闭时使用普通 K 折；两种方式都带同一个 seed 做洗牌。"
-        ],
-        "params": {
-         "stratified": "true 表示分层 K 折；默认 false"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置随机种子，默认 42。",
-        "params": {
-         "seed": "随机种子，同时驱动分折与参数抽样"
-        },
-        "returns": "this，便于链式调用",
-        "notes": [
-         "同一 seed 与同一数据下重复 fit 得到相同的折划分与抽样序列"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "RandomizedSearchCV build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验并创建搜索器。",
-        "returns": "新的 RandomizedSearchCV，尚未拟合",
-        "throws": {
-         "IllegalArgumentException": "未登记任何参数分布"
-        },
-        "notes": [
-         "nIter、cv、scoring 已在 setter 中校验，build 只检查分布表非空"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "随机搜索的构造器，登记参数分布与分折策略。",
-      "body": [
-       "默认 nIter = 10、scoring = ACCURACY、cv = 5 折、stratified 关闭、seed = 42，分布表为空。四个 param* 方法在登记时即完成取值校验，把抽样函数写入按插入顺序保存的映射；build() 只要求至少登记一个分布。",
-       "fit 每轮按登记顺序对每个分布抽一次，全部用同一个 Random(seed) 驱动；分层开关决定采用分层 K 折还是普通 K 折，折划分同样使用该种子。每轮对全部折拟合并以折均值为该组参数的得分。"
-      ],
-      "notes": [
-       "同名参数重复登记会覆盖旧分布，但在映射中保留首次登记的位置",
-       "paramUniform、paramLogUniform、paramIntRange 不校验 name 是否为 null，paramChoices 会校验",
-       "均值并列时保留先出现的那一组，比较使用严格大于",
-       "估计器工厂在每折与最终重训时都会被调用"
-      ],
-      "example": "RandomizedSearchCV search = RandomizedSearchCV.builder(\n                params -> Ridge.builder().alpha((Double) params.get(\"alpha\")).build())\n        .paramLogUniform(\"alpha\", 1e-3, 10.0)\n        .nIter(20)\n        .scoring(Estimators.Metric.R2)\n        .cv(5)\n        .seed(42L)\n        .build();",
-      "see": [
-       "basalt.ml.RandomizedSearchCV",
-       "basalt.ml.RandomizedSearchCV.ParameterSampler",
-       "basalt.ml.GridSearchCV"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.RandomizedSearchCV.ParameterSampler",
-     "simple_qualified": "RandomizedSearchCV.ParameterSampler",
-     "kind": "interface",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/RandomizedSearchCV.java",
-     "line": 19,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "参数分布的抽样接口，单方法返回一个参数值。",
-      "body": [
-       "函数式接口，唯一方法 sample(Random) 从外部传入的随机源抽取一个取值。Builder 的 paramChoices、paramUniform、paramLogUniform、paramIntRange 都以此为载体把分布登记进映射，fit 时每轮按登记顺序各调用一次。",
-       "随机源由 fit 统一创建并顺序传递，因此同一 seed 下抽样序列可复现。"
-      ],
-      "notes": [
-       "实现不应自行播种或缓存随机源，否则各轮取值会退化为重复",
-       "返回值直接放进参数映射交给估计器工厂，fit 不做类型转换或校验",
-       "抽样是有放回的，同一次搜索内可能抽到完全相同的参数组合"
-      ],
-      "see": [
-       "basalt.ml.RandomizedSearchCV",
-       "basalt.ml.RandomizedSearchCV.Builder"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.Ridge.Builder",
-     "simple_qualified": "Ridge.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/Ridge.java",
-     "line": 178,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "alpha(double)",
-       "signature": "Builder alpha(double alpha)",
-       "params": [
-        {
-         "type": "double",
-         "name": "alpha"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置 L2 正则强度。",
-        "params": {
-         "alpha": "加到 Gram 对角线上的值，必须为正；默认 1.0"
-        },
-        "returns": "this",
-        "throws": {
-         "IllegalArgumentException": "build() 时非有限或小于等于 0"
-        },
-        "notes": [
-         "尺度是按行求和的，未除以样本数"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fitIntercept(boolean)",
-       "signature": "Builder fitIntercept(boolean fitIntercept)",
-       "params": [
-        {
-         "type": "boolean",
-         "name": "fitIntercept"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置是否中心化并拟合截距。",
-        "params": {
-         "fitIntercept": "true 时中心化特征与目标并反推截距，false 时直接解原始正规方程；默认 true"
-        },
-        "returns": "this",
-        "notes": [
-         "为 false 时截距恒为 0.0，且 alpha 会压缩未中心化的系数"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "Ridge build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验参数并创建模型。",
-        "returns": "新的 Ridge，尚未拟合",
-        "throws": {
-         "IllegalArgumentException": "alpha 非有限或小于等于 0"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "Ridge 的流式构建器。",
-      "body": [
-       "alpha 是加在 Gram 矩阵对角线上的正则量，fitIntercept 决定是否中心化并反推截距。setter 只赋值，build() 只校验 alpha 为正。",
-       "默认 alpha=1.0、fitIntercept=true。"
-      ],
-      "notes": [
-       "alpha 不允许为 0；需要无正则解时改用 LinearRegression",
-       "构建器不是线程安全的"
-      ],
-      "example": "Ridge model = Ridge.builder()\n        .alpha(0.1)\n        .fitIntercept(true)\n        .build();",
-      "see": [
-       "basalt.ml.Ridge"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.SVC.Builder",
-     "simple_qualified": "SVC.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/SVC.java",
-     "line": 299,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "kernel(Kernel)",
-       "signature": "Builder kernel(Kernel kernel)",
-       "params": [
-        {
-         "type": "Kernel",
-         "name": "kernel"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置核函数对象，默认 rbf(1.0)。",
-        "params": {
-         "kernel": "核函数实例，不可为 null；默认 Kernel.rbf(1.0)"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "NullPointerException": "kernel 为 null"
-        },
-        "notes": [
-         "与 rbf、poly、linear 共用同一字段，后调用者覆盖先调用者"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "rbf(double)",
-       "signature": "Builder rbf(double gamma)",
-       "params": [
-        {
-         "type": "double",
-         "name": "gamma"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "改用 RBF 核并设置 gamma。",
-        "body": [
-         "核函数为 K(x, y) = exp(−gamma · ‖x − y‖²)，gamma 越大决策边界越贴合训练点。"
-        ],
-        "params": {
-         "gamma": "RBF 的带宽倒数，须为正且有限"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "gamma 非有限或小于等于 0"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "poly(int, double, double)",
-       "signature": "Builder poly(int degree, double gamma, double coef0)",
-       "params": [
-        {
-         "type": "int",
-         "name": "degree"
-        },
-        {
-         "type": "double",
-         "name": "gamma"
-        },
-        {
-         "type": "double",
-         "name": "coef0"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "改用多项式核并设置阶数、gamma 与常数项。",
-        "body": [
-         "核函数为 K(x, y) = (gamma · x·y + coef0)^degree，coef0 控制低阶项的相对权重。"
-        ],
-        "params": {
-         "degree": "多项式阶数，须不小于 1",
-         "gamma": "内积缩放系数，须为正且有限",
-         "coef0": "常数项，须有限，可为负"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "gamma 非正或非有限，degree 小于 1，或 coef0 非有限"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "linear()",
-       "signature": "Builder linear()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "改用线性核。",
-        "body": [
-         "核函数退化为内积 K(x, y) = x·y，不引入 gamma、degree、coef0 等超参数。"
-        ],
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "probability(boolean)",
-       "signature": "Builder probability(boolean probability)",
-       "params": [
-        {
-         "type": "boolean",
-         "name": "probability"
-        }
-       ],
-       "throws": [],
-       "doc": {
-        "summary": "开启 Platt 概率校准，默认关闭",
-        "params": {
-         "probability": "true 时 fit 末尾为每个二分类子问题额外拟合一组 A、B"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "c(double)",
-       "signature": "Builder c(double c)",
-       "params": [
-        {
-         "type": "double",
-         "name": "c"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置惩罚系数 C，默认 1.0。",
-        "body": [
-         "C 同时充当每个拉格朗日乘子的上界，值越大对间隔违例越不宽容，越容易过拟合。"
-        ],
-        "params": {
-         "c": "惩罚系数，须为正且有限"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "c 非有限或小于等于 0"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "tolerance(double)",
-       "signature": "Builder tolerance(double tolerance)",
-       "params": [
-        {
-         "type": "double",
-         "name": "tolerance"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置 SMO 的 KKT 违例容差，默认 1e-4。",
-        "body": [
-         "仅当样本的 y·E 超出 ±tolerance 且乘子未顶到 0 或 C 时才触发一次乘子更新，容差越小收敛越慢、解越精确。"
-        ],
-        "params": {
-         "tolerance": "违例阈值，须为正且有限"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "tolerance 非有限或小于等于 0"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "maxIterations(int)",
-       "signature": "Builder maxIterations(int maxIterations)",
-       "params": [
-        {
-         "type": "int",
-         "name": "maxIterations"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置每个二分类子问题的最大迭代轮数，默认 600。",
-        "body": [
-         "达到上限即停止，即使尚未满足收敛条件；连续 5 轮扫描都没有乘子更新时也会提前退出。"
-        ],
-        "params": {
-         "maxIterations": "迭代上限，须为正"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "maxIterations 小于等于 0"
-        },
-        "notes": [
-         "多分类按 One-vs-Rest 展开，每个子问题独立计数"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置随机种子，默认 42。",
-        "body": [
-         "种子只用于第二个乘子的启发式挑选：15% 的概率改为随机选点，其余情况取误差差最大的点。"
-        ],
-        "params": {
-         "seed": "基础种子；第 m 个子问题使用 seed + m·101"
-        },
-        "returns": "this，便于链式调用",
-        "notes": [
-         "同一 seed 下训练结果可复现"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "SVC build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建 SVC 实例。",
-        "returns": "新的 SVC，尚未拟合",
-        "notes": [
-         "不做额外校验，全部约束已在各 setter 中完成"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "SVC 的构造器，设置核函数、惩罚系数与 SMO 参数。",
-      "body": [
-       "默认 kernel = Kernel.rbf(1.0)、c = 1.0、tolerance = 1e-4、maxIterations = 600、seed = 42。核函数只有一个字段，kernel、rbf、poly、linear 四个 setter 互相覆盖。",
-       "c、tolerance、maxIterations 以及 rbf/poly 的 gamma 在 setter 调用时即校验并抛异常；build() 只把五个字段装进实例，没有额外检查。"
-      ],
-      "notes": [
-       "kernel 与 rbf、poly、linear 写同一字段，最终生效的是最后一次调用",
-       "poly 的 degree 下界与 coef0 有限性由 Kernel 构造器校验",
-       "松容差加小迭代上限会得到欠拟合的解，且不会报错"
-      ],
-      "example": "SVC model = SVC.builder()\n        .rbf(0.5)\n        .c(1.0)\n        .tolerance(1e-4)\n        .maxIterations(600)\n        .seed(42L)\n        .build();",
-      "see": [
-       "basalt.ml.SVC",
-       "basalt.ml.Kernel"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.SelectKBest.Builder",
-     "simple_qualified": "SelectKBest.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/SelectKBest.java",
-     "line": 256,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "k(int)",
-       "signature": "Builder k(int k)",
-       "params": [
-        {
-         "type": "int",
-         "name": "k"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置保留的特征数，默认 5。",
-        "params": {
-         "k": "保留特征数，须为正；默认 5，fit 时不得大于输入列数"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "k 小于等于 0"
-        },
-        "notes": [
-         "上界依赖数据列数，只能在 fit 阶段校验"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "scoreFunc(ScoreFunc)",
-       "signature": "Builder scoreFunc(ScoreFunc scoreFunc)",
-       "params": [
-        {
-         "type": "ScoreFunc",
-         "name": "scoreFunc"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置评分函数，默认 F_CLASSIF。",
-        "body": [
-         "F_CLASSIF 用单因素方差分析衡量类间差异，F_REGRESSION 用相关系数换算 F 值，CHI2 用列联表的卡方统计量。"
-        ],
-        "params": {
-         "scoreFunc": "F_CLASSIF、F_REGRESSION 或 CHI2；默认 F_CLASSIF"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "NullPointerException": "scoreFunc 为 null"
-        },
-        "notes": [
-         "CHI2 要求全部特征非负，否则 fit 抛 IllegalArgumentException"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "SelectKBest build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建 SelectKBest 实例。",
-        "returns": "新的 SelectKBest，尚未拟合",
-        "notes": [
-         "不做参数校验，k 与 scoreFunc 已在 setter 中过滤"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "SelectKBest 的构造器，设置保留数与评分函数。",
-      "body": [
-       "默认 k = 5、scoreFunc = F_CLASSIF。两个 setter 在调用时校验下界与空值，build() 只做装配。",
-       "k 的上界与 CHI2 的非负性要求都依赖训练数据，推迟到 fit 阶段才校验；不满足时抛 IllegalArgumentException。"
-      ],
-      "notes": [
-       "分数并列时按列索引升序优先，selectedIndices() 最终按升序返回",
-       "F_CLASSIF 与 CHI2 把目标视为离散类别，F_REGRESSION 把目标视为连续值",
-       "构建器不是线程安全的"
-      ],
-      "example": "SelectKBest selector = SelectKBest.builder()\n        .k(10)\n        .scoreFunc(SelectKBest.ScoreFunc.F_CLASSIF)\n        .build();",
-      "see": [
-       "basalt.ml.SelectKBest",
-       "basalt.ml.RFE"
-      ]
-     }
     }
-   ]
-  }
- ]
+  ]
 }

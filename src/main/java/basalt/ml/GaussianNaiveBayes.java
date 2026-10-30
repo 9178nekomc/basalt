@@ -12,7 +12,7 @@ import java.util.TreeMap;
 /**
  * Gaussian likelihood with per-class mean, variance and prior estimation.
  *
- * <p>Variance smoothing follows the scale-invariant scikit-learn convention: a single epsilon
+ * <p>Variance smoothing follows a scale-invariant convention: a single epsilon
  * equal to {@code var_smoothing * max(variance)} is added to every variance. Adding an absolute
  * epsilon instead would behave differently for features measured in meters versus millimetres.</p>
  */

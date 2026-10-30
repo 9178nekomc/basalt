@@ -10,8 +10,7 @@ import java.util.Objects;
 import java.util.TreeSet;
 
 /**
- * One-hot encodes categorical columns into dense binary indicator features, matching
- * {@code sklearn.preprocessing.OneHotEncoder(sparse_output=False)}.
+ * One-hot encodes categorical columns into dense binary indicator features.
  *
  * <p>Supports encoding all columns or a specified subset of categorical column indices while
  * passing numeric columns through unchanged. Supports {@link HandleUnknown#ERROR} and

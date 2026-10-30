@@ -1,2826 +1,2826 @@
 {
- "group": "g18",
- "title": "原生桥接层",
- "modules": [
-  {
-   "name": "basalt.nativebridge",
-   "types": [
+  "group": "g18",
+  "title": "原生桥接层",
+  "modules": [
     {
-     "qualified": "basalt.nativebridge.CommandQueueBuilder",
-     "simple_qualified": "CommandQueueBuilder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "AutoCloseable"
-     ],
-     "file": "jsl/nativebridge/CommandQueueBuilder.java",
-     "line": 30,
-     "javadoc": "Packs a batch of tensor operations into one direct {@link ByteBuffer} and executes them with a\nsingle JNI call.\n\n<p>Wire layout per command (128 bytes, native endianness):</p>\n<pre>\noffset 0    u8   op code\noffset 1    u8   flags\noffset 2    6B   padding (zero)\noffset 8    u64  input A\noffset 16   u64  input B\noffset 24   u64  input C\noffset 32   u64  input D\noffset 40   u64  input E\noffset 48   u64  output\noffset 56   i32[16] attributes\noffset 120  8B   reserved (zero)\n</pre>\n\n<p>Complex ops carry their shape parameters inline in the 16 attribute slots, so convolution\nand batchnorm need no second allocation or pointer chase.</p>",
-     "nested": [],
-     "members": [
-      {
-       "kind": "field",
-       "key": "OP_MATMUL",
-       "signature": "int OP_MATMUL = 1",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_MATMUL = 1：rank-2 矩阵乘算子码。",
-        "body": [
-         "读取输入 A、B 与输出，不带属性；要求两侧秩均为 2 且内维相等。"
-        ]
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_ADD",
-       "signature": "int OP_ADD = 2",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_ADD = 2：逐元素加法，按广播对齐。"
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_RELU",
-       "signature": "int OP_RELU = 3",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_RELU = 3：逐元素 ReLU。"
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_SUB",
-       "signature": "int OP_SUB = 4",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_SUB = 4：逐元素减法，按广播对齐。"
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_MUL",
-       "signature": "int OP_MUL = 5",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_MUL = 5：逐元素乘法，按广播对齐。"
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_SIGMOID",
-       "signature": "int OP_SIGMOID = 6",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_SIGMOID = 6：逐元素 sigmoid。"
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_TANH",
-       "signature": "int OP_TANH = 7",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_TANH = 7：逐元素 tanh。"
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_MSE",
-       "signature": "int OP_MSE = 8",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_MSE = 8：均方误差，输出单元素标量。"
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_SOFTMAX",
-       "signature": "int OP_SOFTMAX = 9",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_SOFTMAX = 9：沿最后一维归一化。",
-        "body": [
-         "属性槽 0 存放归一化轴的长度，须与输入最后一维一致。"
-        ]
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_CROSS_ENTROPY",
-       "signature": "int OP_CROSS_ENTROPY = 10",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_CROSS_ENTROPY = 10：按类别索引的交叉熵。"
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_GELU",
-       "signature": "int OP_GELU = 11",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_GELU = 11：tanh 近似的 GELU。"
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_SILU",
-       "signature": "int OP_SILU = 12",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_SILU = 12：SiLU（swish）。"
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_LAYER_NORM",
-       "signature": "int OP_LAYER_NORM = 13",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_LAYER_NORM = 13：最后一维层归一化。",
-        "body": [
-         "读取输入 A、gamma B、beta C 与输出，属性槽 0 以 float 位存放 epsilon。"
-        ]
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_BATCH_NORM",
-       "signature": "int OP_BATCH_NORM = 14",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_BATCH_NORM = 14：NCHW 批归一化。",
-        "body": [
-         "读取输入 A、gamma B、beta C、运行均值 D、运行方差 E 与输出；属性槽 0、1 为 epsilon 与 momentum，槽 2 为训练标志。"
-        ]
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_CONV2D",
-       "signature": "int OP_CONV2D = 15",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_CONV2D = 15：NCHW 输入、OIHW 权重的卷积。",
-        "body": [
-         "属性槽 0 到 5 依次存放核高、核宽、纵向步长、横向步长、纵向填充、横向填充。"
-        ]
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_MAX_POOL2D",
-       "signature": "int OP_MAX_POOL2D = 16",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_MAX_POOL2D = 16：NCHW 最大池化。",
-        "body": [
-         "属性槽 0 到 3 依次存放核高、核宽、纵向步长、横向步长。"
-        ]
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_DROPOUT",
-       "signature": "int OP_DROPOUT = 17",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_DROPOUT = 17：inverted dropout。",
-        "body": [
-         "属性槽 0 为丢弃概率的 float 位，槽 1 为训练标志，槽 2、3 为种子的低、高 32 位。"
-        ]
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_EMBEDDING",
-       "signature": "int OP_EMBEDDING = 18",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_EMBEDDING = 18：按索引查表。"
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_BATCHED_MATMUL",
-       "signature": "int OP_BATCHED_MATMUL = 19",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_BATCHED_MATMUL = 19：rank-3 批量矩阵乘。"
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_PERMUTE",
-       "signature": "int OP_PERMUTE = 20",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_PERMUTE = 20：重排轴顺序。",
-        "body": [
-         "属性槽 0 为轴数，槽 1 起依次存放各输出轴对应的输入轴下标。"
-        ]
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_RESHAPE",
-       "signature": "int OP_RESHAPE = 21",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_RESHAPE = 21：改变形状，不改变元素顺序。",
-        "body": [
-         "属性槽 0 为维数，槽 1 起依次存放各维长度。"
-        ]
-       }
-      },
-      {
-       "kind": "field",
-       "key": "OP_GROUP_NORM",
-       "signature": "int OP_GROUP_NORM = 22",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "OP_GROUP_NORM = 22：NCHW 分组归一化。",
-        "body": [
-         "读取输入 A、gamma B、beta C 与输出；属性槽 0 为分组数，槽 1 以 float 位存放 epsilon。"
-        ]
-       }
-      },
-      {
-       "kind": "field",
-       "key": "COMMAND_BYTES",
-       "signature": "int COMMAND_BYTES = 128",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "COMMAND_BYTES = 128：单条指令的字节数。",
-        "body": [
-         "原生侧按此长度逐条解析缓冲区，因此缓冲区容量必须是它的整数倍。"
-        ]
-       }
-      },
-      {
-       "kind": "constructor",
-       "key": "CommandQueueBuilder(NativeContext)",
-       "signature": "CommandQueueBuilder(NativeContext context)",
-       "params": [
+      "name": "basalt.nativebridge",
+      "types": [
         {
-         "type": "NativeContext",
-         "name": "context"
+          "qualified": "basalt.nativebridge.CommandQueueBuilder",
+          "simple_qualified": "CommandQueueBuilder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "AutoCloseable"
+          ],
+          "file": "jsl/nativebridge/CommandQueueBuilder.java",
+          "line": 30,
+          "javadoc": "Packs a batch of tensor operations into one direct {@link ByteBuffer} and executes them with a\nsingle JNI call. <p>Wire layout per command (128 bytes, native endianness):</p>\n<pre>\noffset 0 u8 op code\noffset 1 u8 flags\noffset 2 6B padding (zero)\noffset 8 u64 input A\noffset 16 u64 input B\noffset 24 u64 input C\noffset 32 u64 input D\noffset 40 u64 input E\noffset 48 u64 output\noffset 56 i32[16] attributes\noffset 120 8B reserved (zero)\n</pre> <p>Complex ops carry their shape parameters inline in the 16 attribute slots, so convolution\nand batchnorm need no second allocation or pointer chase.</p>",
+          "nested": [],
+          "members": [
+            {
+              "kind": "field",
+              "key": "OP_MATMUL",
+              "signature": "int OP_MATMUL = 1",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_MATMUL = 1：rank-2 矩阵乘算子码。",
+                "body": [
+                  "读取输入 A、B 与输出，不带属性；要求两侧秩均为 2 且内维相等。"
+                ]
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_ADD",
+              "signature": "int OP_ADD = 2",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_ADD = 2：逐元素加法，按广播对齐。"
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_RELU",
+              "signature": "int OP_RELU = 3",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_RELU = 3：逐元素 ReLU。"
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_SUB",
+              "signature": "int OP_SUB = 4",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_SUB = 4：逐元素减法，按广播对齐。"
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_MUL",
+              "signature": "int OP_MUL = 5",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_MUL = 5：逐元素乘法，按广播对齐。"
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_SIGMOID",
+              "signature": "int OP_SIGMOID = 6",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_SIGMOID = 6：逐元素 sigmoid。"
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_TANH",
+              "signature": "int OP_TANH = 7",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_TANH = 7：逐元素 tanh。"
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_MSE",
+              "signature": "int OP_MSE = 8",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_MSE = 8：均方误差，输出单元素标量。"
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_SOFTMAX",
+              "signature": "int OP_SOFTMAX = 9",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_SOFTMAX = 9：沿最后一维归一化。",
+                "body": [
+                  "属性槽 0 存放归一化轴的长度，须与输入最后一维一致。"
+                ]
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_CROSS_ENTROPY",
+              "signature": "int OP_CROSS_ENTROPY = 10",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_CROSS_ENTROPY = 10：按类别索引的交叉熵。"
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_GELU",
+              "signature": "int OP_GELU = 11",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_GELU = 11：tanh 近似的 GELU。"
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_SILU",
+              "signature": "int OP_SILU = 12",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_SILU = 12：SiLU（swish）。"
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_LAYER_NORM",
+              "signature": "int OP_LAYER_NORM = 13",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_LAYER_NORM = 13：最后一维层归一化。",
+                "body": [
+                  "读取输入 A、gamma B、beta C 与输出，属性槽 0 以 float 位存放 epsilon。"
+                ]
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_BATCH_NORM",
+              "signature": "int OP_BATCH_NORM = 14",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_BATCH_NORM = 14：NCHW 批归一化。",
+                "body": [
+                  "读取输入 A、gamma B、beta C、运行均值 D、运行方差 E 与输出；属性槽 0、1 为 epsilon 与 momentum，槽 2 为训练标志。"
+                ]
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_CONV2D",
+              "signature": "int OP_CONV2D = 15",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_CONV2D = 15：NCHW 输入、OIHW 权重的卷积。",
+                "body": [
+                  "属性槽 0 到 5 依次存放核高、核宽、纵向步长、横向步长、纵向填充、横向填充。"
+                ]
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_MAX_POOL2D",
+              "signature": "int OP_MAX_POOL2D = 16",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_MAX_POOL2D = 16：NCHW 最大池化。",
+                "body": [
+                  "属性槽 0 到 3 依次存放核高、核宽、纵向步长、横向步长。"
+                ]
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_DROPOUT",
+              "signature": "int OP_DROPOUT = 17",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_DROPOUT = 17：inverted dropout。",
+                "body": [
+                  "属性槽 0 为丢弃概率的 float 位，槽 1 为训练标志，槽 2、3 为种子的低、高 32 位。"
+                ]
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_EMBEDDING",
+              "signature": "int OP_EMBEDDING = 18",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_EMBEDDING = 18：按索引查表。"
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_BATCHED_MATMUL",
+              "signature": "int OP_BATCHED_MATMUL = 19",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_BATCHED_MATMUL = 19：rank-3 批量矩阵乘。"
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_PERMUTE",
+              "signature": "int OP_PERMUTE = 20",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_PERMUTE = 20：重排轴顺序。",
+                "body": [
+                  "属性槽 0 为轴数，槽 1 起依次存放各输出轴对应的输入轴下标。"
+                ]
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_RESHAPE",
+              "signature": "int OP_RESHAPE = 21",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_RESHAPE = 21：改变形状，不改变元素顺序。",
+                "body": [
+                  "属性槽 0 为维数，槽 1 起依次存放各维长度。"
+                ]
+              }
+            },
+            {
+              "kind": "field",
+              "key": "OP_GROUP_NORM",
+              "signature": "int OP_GROUP_NORM = 22",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "OP_GROUP_NORM = 22：NCHW 分组归一化。",
+                "body": [
+                  "读取输入 A、gamma B、beta C 与输出；属性槽 0 为分组数，槽 1 以 float 位存放 epsilon。"
+                ]
+              }
+            },
+            {
+              "kind": "field",
+              "key": "COMMAND_BYTES",
+              "signature": "int COMMAND_BYTES = 128",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "COMMAND_BYTES = 128：单条指令的字节数。",
+                "body": [
+                  "原生侧按此长度逐条解析缓冲区，因此缓冲区容量必须是它的整数倍。"
+                ]
+              }
+            },
+            {
+              "kind": "constructor",
+              "key": "CommandQueueBuilder(NativeContext)",
+              "signature": "CommandQueueBuilder(NativeContext context)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "绑定上下文并预分配 8 条指令的直接缓冲区。",
+                "params": {
+                  "context": "指令与张量所属的上下文；入队句柄都必须属于它"
+                },
+                "throws": {
+                  "BasaltRuntimeException": "context 为 null"
+                },
+                "notes": [
+                  "缓冲区按 ByteOrder.nativeOrder() 创建，与原生 OpCommand 的字节序一致。",
+                  "构造不分配张量，也不与计算图交互。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "matMul(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle)",
+              "signature": "CommandQueueBuilder matMul(NativeTensorHandle left, NativeTensorHandle right, NativeTensorHandle output)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "left"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "right"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加矩阵乘：left[m,k] × right[k,n] → [m,n]。",
+                "params": {
+                  "left": "形状 (m, k) 的 rank-2 张量",
+                  "right": "形状 (k, n) 的 rank-2 张量",
+                  "output": "预分配的 (m, n) 张量，元素数须为 m*n"
+                },
+                "returns": "this，便于链式追加",
+                "notes": [
+                  "算子只写数据不改形状，输出必须已按目标形状分配。",
+                  "内维不相等或输出形状不符时，原生侧抛 BasaltRuntimeException。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "add(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle)",
+              "signature": "CommandQueueBuilder add(NativeTensorHandle left, NativeTensorHandle right, NativeTensorHandle output)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "left"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "right"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加逐元素加法，按广播规则对齐形状。",
+                "params": {
+                  "left": "左操作数，任意秩",
+                  "right": "右操作数，形状须可与 left 广播",
+                  "output": "形状须等于广播结果，元素数须匹配"
+                },
+                "returns": "this，便于链式追加",
+                "notes": [
+                  "广播形状由两侧形状逐轴推导，输出形状必须精确等于该结果。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "sub(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle)",
+              "signature": "CommandQueueBuilder sub(NativeTensorHandle left, NativeTensorHandle right, NativeTensorHandle output)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "left"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "right"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加逐元素减法，计算 left - right。",
+                "params": {
+                  "left": "被减数，任意秩",
+                  "right": "减数，形状须可与 left 广播",
+                  "output": "形状须等于广播结果"
+                },
+                "returns": "this，便于链式追加"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "mul(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle)",
+              "signature": "CommandQueueBuilder mul(NativeTensorHandle left, NativeTensorHandle right, NativeTensorHandle output)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "left"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "right"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加逐元素乘法，按广播规则对齐形状。",
+                "params": {
+                  "left": "左操作数，任意秩",
+                  "right": "右操作数，形状须可与 left 广播",
+                  "output": "形状须等于广播结果"
+                },
+                "returns": "this，便于链式追加"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "relu(NativeTensorHandle, NativeTensorHandle)",
+              "signature": "CommandQueueBuilder relu(NativeTensorHandle input, NativeTensorHandle output)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加 ReLU：负值置零，正负边界取零。",
+                "params": {
+                  "input": "任意秩张量",
+                  "output": "形状须与 input 相同"
+                },
+                "returns": "this，便于链式追加",
+                "notes": [
+                  "反向时按输入是否大于零决定梯度是否通过。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "sigmoid(NativeTensorHandle, NativeTensorHandle)",
+              "signature": "CommandQueueBuilder sigmoid(NativeTensorHandle input, NativeTensorHandle output)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加 sigmoid：1 / (1 + exp(-x))。",
+                "params": {
+                  "input": "任意秩张量",
+                  "output": "形状须与 input 相同"
+                },
+                "returns": "this，便于链式追加"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "tanh(NativeTensorHandle, NativeTensorHandle)",
+              "signature": "CommandQueueBuilder tanh(NativeTensorHandle input, NativeTensorHandle output)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加双曲正切，输出落在 (-1, 1)。",
+                "params": {
+                  "input": "任意秩张量",
+                  "output": "形状须与 input 相同"
+                },
+                "returns": "this，便于链式追加"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "gelu(NativeTensorHandle, NativeTensorHandle)",
+              "signature": "CommandQueueBuilder gelu(NativeTensorHandle input, NativeTensorHandle output)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加 GELU，采用 tanh 近似式。",
+                "params": {
+                  "input": "任意秩张量",
+                  "output": "形状须与 input 相同"
+                },
+                "returns": "this，便于链式追加",
+                "notes": [
+                  "近似式为 0.5x(1 + tanh(√(2/π)(x + 0.044715x³)))，非精确 erf 形式。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "silu(NativeTensorHandle, NativeTensorHandle)",
+              "signature": "CommandQueueBuilder silu(NativeTensorHandle input, NativeTensorHandle output)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加 SiLU：x * sigmoid(x)。",
+                "params": {
+                  "input": "任意秩张量",
+                  "output": "形状须与 input 相同"
+                },
+                "returns": "this，便于链式追加"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "mse(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle)",
+              "signature": "CommandQueueBuilder mse(NativeTensorHandle prediction, NativeTensorHandle target, NativeTensorHandle output)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "prediction"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "target"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加均方误差，输出单元素标量。",
+                "params": {
+                  "prediction": "预测张量",
+                  "target": "目标张量，形状须与 prediction 完全一致",
+                  "output": "形状 (1) 的单元素张量"
+                },
+                "returns": "this，便于链式追加",
+                "notes": [
+                  "按元素平方差求和后除以元素总数，得到均值而非总和。",
+                  "prediction 与 target 形状不等时原生侧报错。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "softmax(NativeTensorHandle, NativeTensorHandle, int)",
+              "signature": "CommandQueueBuilder softmax(NativeTensorHandle input, NativeTensorHandle output, int dimension)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                },
+                {
+                  "type": "int",
+                  "name": "dimension"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "沿最后一维追加 softmax 归一化。",
+                "params": {
+                  "input": "任意秩张量",
+                  "output": "形状须与 input 相同",
+                  "dimension": "归一化轴长度，须等于 input 的最后一维且大于 0"
+                },
+                "returns": "this，便于链式追加",
+                "notes": [
+                  "实现只支持最后一维，其他取值在原生侧被拒绝。",
+                  "先减去该行最大值再取指数，避免上溢。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "crossEntropy(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle)",
+              "signature": "CommandQueueBuilder crossEntropy(NativeTensorHandle logits, NativeTensorHandle targets, NativeTensorHandle output)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "logits"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "targets"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加按类别索引计算的平均交叉熵。",
+                "params": {
+                  "logits": "形状 (rows, classes) 的未归一化得分",
+                  "targets": "长度 rows 的类别索引，以 float 存放，取值 [0, classes)",
+                  "output": "形状 (1) 的单元素张量"
+                },
+                "returns": "this，便于链式追加",
+                "notes": [
+                  "内部按 log-sum-exp 计算，不要求先做 softmax。",
+                  "索引越界或非有限时原生侧报错。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "layerNorm(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, float)",
+              "signature": "CommandQueueBuilder layerNorm(NativeTensorHandle input, NativeTensorHandle gamma, NativeTensorHandle beta, NativeTensorHandle output, float epsilon)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "gamma"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "beta"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                },
+                {
+                  "type": "float",
+                  "name": "epsilon"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加最后一维的层归一化。",
+                "params": {
+                  "input": "秩至少为 1 的张量，最后一维即归一化维",
+                  "gamma": "形状 (dim) 的缩放参数",
+                  "beta": "形状 (dim) 的偏移参数",
+                  "output": "形状须与 input 相同",
+                  "epsilon": "加到方差上的稳定项，以 float 位写入属性槽 0"
+                },
+                "returns": "this，便于链式追加",
+                "notes": [
+                  "统计量按最后一维逐行计算，行数由元素总数除以 dim 得到。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "batchNorm2d(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, float, float, boolean)",
+              "signature": "CommandQueueBuilder batchNorm2d(NativeTensorHandle input, NativeTensorHandle gamma, NativeTensorHandle beta, NativeTensorHandle runningMean, NativeTensorHandle runningVar, NativeTensorHandle output, float epsilon, float momentum, boolean training)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "gamma"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "beta"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "runningMean"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "runningVar"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                },
+                {
+                  "type": "float",
+                  "name": "epsilon"
+                },
+                {
+                  "type": "float",
+                  "name": "momentum"
+                },
+                {
+                  "type": "boolean",
+                  "name": "training"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加 NCHW 批归一化，可写回运行统计。",
+                "params": {
+                  "input": "形状 (N, C, H, W) 的输入",
+                  "gamma": "形状 (C) 的缩放参数",
+                  "beta": "形状 (C) 的偏移参数",
+                  "runningMean": "形状 (C) 的运行均值缓冲，训练时被更新",
+                  "runningVar": "形状 (C) 的运行方差缓冲，训练时被更新",
+                  "output": "形状须与 input 相同",
+                  "epsilon": "数值稳定项，写入属性槽 0",
+                  "momentum": "运行统计更新系数：running = (1 - momentum) * running + momentum * batch",
+                  "training": "true 时用批内统计并写回缓冲，false 时用运行统计做推理"
+                },
+                "returns": "this，便于链式追加",
+                "notes": [
+                  "training 以 i32 存入属性槽 2，非零即真。",
+                  "归一化使用批内有偏方差，运行方差按 spatial - 1 做无偏修正后更新。",
+                  "runningMean 与 runningVar 按写锁访问，训练模式下是本批唯一的副产物。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "conv2d(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, int, int, int, int, int, int)",
+              "signature": "CommandQueueBuilder conv2d(NativeTensorHandle input, NativeTensorHandle weight, NativeTensorHandle output, int kernelHeight, int kernelWidth, int strideHeight, int strideWidth, int paddingHeight, int paddingWidth)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "weight"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                },
+                {
+                  "type": "int",
+                  "name": "kernelHeight"
+                },
+                {
+                  "type": "int",
+                  "name": "kernelWidth"
+                },
+                {
+                  "type": "int",
+                  "name": "strideHeight"
+                },
+                {
+                  "type": "int",
+                  "name": "strideWidth"
+                },
+                {
+                  "type": "int",
+                  "name": "paddingHeight"
+                },
+                {
+                  "type": "int",
+                  "name": "paddingWidth"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加二维卷积，NCHW 输入、OIHW 权重。",
+                "params": {
+                  "input": "形状 (N, C_in, H, W) 的输入",
+                  "weight": "形状 (C_out, C_in, kernelHeight, kernelWidth) 的权重",
+                  "output": "形状 (N, C_out, oh, ow)，oh = (H + 2*paddingHeight - kernelHeight) / strideHeight + 1",
+                  "kernelHeight": "卷积核高，须大于 0",
+                  "kernelWidth": "卷积核宽，须大于 0",
+                  "strideHeight": "纵向步长，≤0 时按 1 处理",
+                  "strideWidth": "横向步长，≤0 时按 1 处理",
+                  "paddingHeight": "纵向两侧填充，负值按 0 处理",
+                  "paddingWidth": "横向两侧填充，负值按 0 处理"
+                },
+                "returns": "this，便于链式追加",
+                "notes": [
+                  "属性槽 0 到 5 依次存放 kernelHeight、kernelWidth、strideHeight、strideWidth、paddingHeight、paddingWidth。",
+                  "输出宽 ow 用同一公式按宽度计算，除法向下取整。",
+                  "不支持分组卷积与膨胀；输入通道数须等于权重第二维。",
+                  "核大于填充后的输入时原生侧报错。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "conv2d(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, int, int, int, int, int, int, int, int, int)",
+              "signature": "CommandQueueBuilder conv2d(NativeTensorHandle input, NativeTensorHandle weight, NativeTensorHandle output, int kernelHeight, int kernelWidth, int strideHeight, int strideWidth, int paddingHeight, int paddingWidth, int dilationHeight, int dilationWidth, int groups)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "weight"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                },
+                {
+                  "type": "int",
+                  "name": "kernelHeight"
+                },
+                {
+                  "type": "int",
+                  "name": "kernelWidth"
+                },
+                {
+                  "type": "int",
+                  "name": "strideHeight"
+                },
+                {
+                  "type": "int",
+                  "name": "strideWidth"
+                },
+                {
+                  "type": "int",
+                  "name": "paddingHeight"
+                },
+                {
+                  "type": "int",
+                  "name": "paddingWidth"
+                },
+                {
+                  "type": "int",
+                  "name": "dilationHeight"
+                },
+                {
+                  "type": "int",
+                  "name": "dilationWidth"
+                },
+                {
+                  "type": "int",
+                  "name": "groups"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加带膨胀与分组参数的二维卷积。",
+                "params": {
+                  "input": "形状 (N, C_in, H, W) 的输入",
+                  "weight": "形状 (C_out, C_in / groups, kernelHeight, kernelWidth) 的权重",
+                  "output": "形状 (N, C_out, oh, ow)，oh = (H + 2*paddingHeight - eh) / strideHeight + 1，eh = dilationHeight * (kernelHeight - 1) + 1",
+                  "kernelHeight": "卷积核高，须大于 0",
+                  "kernelWidth": "卷积核宽，须大于 0",
+                  "strideHeight": "纵向步长，≤0 时按 1 处理",
+                  "strideWidth": "横向步长，≤0 时按 1 处理",
+                  "paddingHeight": "纵向两侧填充，负值按 0 处理",
+                  "paddingWidth": "横向两侧填充，负值按 0 处理",
+                  "dilationHeight": "纵向膨胀系数，≤0 时按 1 处理",
+                  "dilationWidth": "横向膨胀系数，≤0 时按 1 处理",
+                  "groups": "卷积分组数，≤0 时按 1 处理；输入与输出通道数都须被它整除"
+                },
+                "returns": "this，便于链式追加",
+                "throws": {
+                  "BasaltRuntimeException": "input、weight 或 output 为 null",
+                  "IllegalArgumentException": "某个句柄属于其他上下文"
+                },
+                "notes": [
+                  "属性槽 0 到 8 依次存放 kernelHeight、kernelWidth、strideHeight、strideWidth、paddingHeight、paddingWidth、dilationHeight、dilationWidth、groups。",
+                  "9 参数重载等价于 dilationHeight、dilationWidth、groups 都取 1。",
+                  "有效核按膨胀展开后大于填充后的输入、通道数不能被 groups 整除，或权重第二维不等于 C_in / groups 时，原生侧报错。",
+                  "输出宽 ow 用同一公式按宽度计算，除法向下取整。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "groupNorm(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, int, float)",
+              "signature": "CommandQueueBuilder groupNorm(NativeTensorHandle input, NativeTensorHandle gamma, NativeTensorHandle beta, NativeTensorHandle output, int groups, float epsilon)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "gamma"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "beta"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                },
+                {
+                  "type": "int",
+                  "name": "groups"
+                },
+                {
+                  "type": "float",
+                  "name": "epsilon"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加 NCHW 分组归一化。",
+                "params": {
+                  "input": "秩至少为 2 的输入，第 0 轴为批、第 1 轴为通道，其后各轴合并为空间维",
+                  "gamma": "形状 (C) 的缩放参数",
+                  "beta": "形状 (C) 的偏移参数",
+                  "output": "形状须与 input 完全相同",
+                  "groups": "分组数，≤0 时按 1 处理；须整除通道数 C",
+                  "epsilon": "加到方差上的稳定项，以 float 位写入属性槽 1"
+                },
+                "returns": "this，便于链式追加",
+                "throws": {
+                  "BasaltRuntimeException": "input、gamma、beta 或 output 为 null",
+                  "IllegalArgumentException": "某个句柄属于其他上下文"
+                },
+                "notes": [
+                  "属性槽 0 为分组数，槽 1 为 epsilon 的 float 位。",
+                  "每组在连续的 channelsPerGroup 个通道及其全部空间位置上统计均值与有偏方差，再按通道做 gamma、beta 仿射。",
+                  "输入秩小于 2、C 不能被 groups 整除、gamma 或 beta 长度不等于 C、输出形状与输入不同时，原生侧报错。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "maxPool2d(NativeTensorHandle, NativeTensorHandle, int, int, int, int)",
+              "signature": "CommandQueueBuilder maxPool2d(NativeTensorHandle input, NativeTensorHandle output, int kernelHeight, int kernelWidth, int strideHeight, int strideWidth)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                },
+                {
+                  "type": "int",
+                  "name": "kernelHeight"
+                },
+                {
+                  "type": "int",
+                  "name": "kernelWidth"
+                },
+                {
+                  "type": "int",
+                  "name": "strideHeight"
+                },
+                {
+                  "type": "int",
+                  "name": "strideWidth"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加 NCHW 最大池化，无填充。",
+                "params": {
+                  "input": "形状 (N, C, H, W) 的输入",
+                  "output": "形状 (N, C, oh, ow)，oh = (H - kernelHeight) / strideHeight + 1",
+                  "kernelHeight": "池化窗高，≤0 时按 1 处理",
+                  "kernelWidth": "池化窗宽，≤0 时按 1 处理",
+                  "strideHeight": "纵向步长，≤0 时按 1 处理",
+                  "strideWidth": "横向步长，≤0 时按 1 处理"
+                },
+                "returns": "this，便于链式追加",
+                "notes": [
+                  "属性槽 0 到 3 依次存放 kernelHeight、kernelWidth、strideHeight、strideWidth。",
+                  "窗大于输入时报错；接口不提供填充参数。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "dropout(NativeTensorHandle, NativeTensorHandle, float, boolean, long)",
+              "signature": "CommandQueueBuilder dropout(NativeTensorHandle input, NativeTensorHandle output, float probability, boolean training, long seed)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                },
+                {
+                  "type": "float",
+                  "name": "probability"
+                },
+                {
+                  "type": "boolean",
+                  "name": "training"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加 inverted dropout，训练时按 1/(1-p) 缩放。",
+                "params": {
+                  "input": "任意秩张量",
+                  "output": "形状须与 input 相同",
+                  "probability": "丢弃概率，取值 [0, 1)，0 表示原样输出",
+                  "training": "false 时直接复制输入，不生成掩码",
+                  "seed": "掩码随机种子，低 32 位与高 32 位分别写入属性槽 2、3"
+                },
+                "returns": "this，便于链式追加",
+                "notes": [
+                  "掩码逐元素由 xorshift 生成，相同 seed 与长度得到相同掩码。",
+                  "probability 不在 [0, 1) 时原生侧报错。",
+                  "反向复用同一 seed 重建掩码，因此前向与反向必须传相同参数。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "embedding(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle)",
+              "signature": "CommandQueueBuilder embedding(NativeTensorHandle indices, NativeTensorHandle weight, NativeTensorHandle output)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "indices"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "weight"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加按索引查表，输出在索引形状后追加词向量维。",
+                "params": {
+                  "indices": "整数索引以 float 存放，元素个数即查表行数，取值 [0, vocab)",
+                  "weight": "形状 (vocab, dim) 的嵌入矩阵",
+                  "output": "indices 形状后接 dim，元素数须为 rows * dim"
+                },
+                "returns": "this，便于链式追加",
+                "notes": [
+                  "索引按 float 截断取整，越界或非有限时报错。",
+                  "反向时把梯度累加到被选中的行，其余行梯度为零。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "batchedMatMul(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle)",
+              "signature": "CommandQueueBuilder batchedMatMul(NativeTensorHandle left, NativeTensorHandle right, NativeTensorHandle output)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "left"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "right"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加批量矩阵乘，左右均为 rank-3。",
+                "params": {
+                  "left": "形状 (B, M, K) 的左操作数",
+                  "right": "形状 (B, K, N) 的右操作数",
+                  "output": "形状 (B, M, N)"
+                },
+                "returns": "this，便于链式追加",
+                "notes": [
+                  "要求两边的批大小与内维分别相等。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "permute(NativeTensorHandle, NativeTensorHandle, int...)",
+              "signature": "CommandQueueBuilder permute(NativeTensorHandle input, NativeTensorHandle output, int... permutation)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                },
+                {
+                  "type": "int...",
+                  "name": "permutation"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加轴重排，最多支持 4 维。",
+                "params": {
+                  "input": "秩等于 permutation 长度的张量",
+                  "output": "形状为 input 各轴按 permutation 重排后的结果",
+                  "permutation": "输出第 i 轴取自输入的哪一轴，长度 1 到 4"
+                },
+                "returns": "this，便于链式追加",
+                "throws": {
+                  "IllegalArgumentException": "permutation 长度不在 [1, 4]"
+                },
+                "notes": [
+                  "属性槽 0 存轴数，槽 1 起依次存各轴下标。",
+                  "原生侧还要求长度等于输入秩、下标小于秩且互不重复。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "reshape(NativeTensorHandle, NativeTensorHandle, int...)",
+              "signature": "CommandQueueBuilder reshape(NativeTensorHandle input, NativeTensorHandle output, int... shape)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                },
+                {
+                  "type": "int...",
+                  "name": "shape"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加形状变换，元素顺序保持不变。",
+                "params": {
+                  "input": "任意秩张量",
+                  "output": "形状为 shape，元素总数须与 input 相同",
+                  "shape": "目标形状，1 到 4 个正维度"
+                },
+                "returns": "this，便于链式追加",
+                "throws": {
+                  "IllegalArgumentException": "shape 长度不在 [1, 4]"
+                },
+                "notes": [
+                  "属性槽 0 存维数，槽 1 起依次存各维长度。",
+                  "维度非正或元素总数不匹配时原生侧报错。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "size()",
+              "signature": "int size()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回已追加且尚未清空的指令条数。",
+                "returns": "指令条数，清空后为 0"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "capacity()",
+              "signature": "int capacity()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回缓冲区当前可容纳的指令条数。",
+                "returns": "以指令条数计的容量，初始为 8",
+                "notes": [
+                  "扩容时容量翻倍并复制已有指令；该值不是字节数。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "execute()",
+              "signature": "void execute()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "以上下文默认线程数执行整批指令，不清空队列。",
+                "notes": [
+                  "队列为空时直接返回，不进入原生层，也不产生事件。",
+                  "执行后计算图新增对应节点，再次执行同一批指令前必须先 clearGraph。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "execute(int)",
+              "signature": "void execute(int threads)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "threads"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "以指定线程数执行整批指令，不清空队列。",
+                "params": {
+                  "threads": "并行度，取值 [0, 256]；0 与 1 都落到单线程池，2 到 256 按该数量复用线程池"
+                },
+                "throws": {
+                  "IllegalArgumentException": "threads 小于 0 或大于 256"
+                },
+                "notes": [
+                  "校验先于空队列判断，threads 越界时即使队列为空也会抛出。",
+                  "线程数只影响内核的并行调度，不改变指令语义与结果。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "executeAndClear()",
+              "signature": "void executeAndClear()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "执行后立即清空队列，供逐批训练循环复用。",
+                "notes": [
+                  "等价于先 execute() 再 clear()，执行失败时不会清空。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "clear()",
+              "signature": "void clear()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "丢弃全部指令，保留已分配的缓冲区容量。",
+                "notes": [
+                  "只重置计数与缓冲位置，不影响已写入的张量与计算图。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "close()",
+              "signature": "void close()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "清空队列；不释放原生资源。",
+                "notes": [
+                  "本类未实现 AutoCloseable，close 与 clear 等价。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "toString()",
+              "signature": "String toString()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回指令条数与容量组成的描述文本。",
+                "returns": "形如 CommandQueueBuilder[commands=2, capacity=8] 的字符串"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "把算子序列编码成 128 字节定长指令，一次 JNI 调用提交。",
+            "body": [
+              "每条指令固定 128 字节，按本地字节序写入直接 ByteBuffer：偏移 0 为 u8 算子码，偏移 1 为 u8 标志位（当前恒为 0），偏移 8 到 40 依次是 5 个输入句柄地址，偏移 48 是输出句柄地址，偏移 56 起是 16 个 i32 属性槽，偏移 120 为 8 字节保留位。构造时预分配 8 条指令的容量，超出后按倍增扩容并复制已有字节。",
+              "算子按元数占用输入槽：一元算子只写 A，二元算子写 A、B，layerNorm 用 A、B、C，batchNorm2d 用满 A 到 E。形状参数不进指针：softmax 的轴、layerNorm 的 epsilon、conv2d 的核/步长/填充都写进属性槽，浮点以 Float.floatToRawIntBits 落位，dropout 的 64 位种子拆成低、高两个 i32。",
+              "原生侧按算子码重建 Op，先校验再写输出：输出不得与任一输入同址（原地算子不可微）、不得重复生产、不得覆盖已被消费的张量。批内指令按追加顺序执行，生产者必须排在消费者之前；被拒绝的指令不写输出，但先前指令已生效，队列本身不做回滚。"
+            ],
+            "notes": [
+              "非线程安全：指令缓冲、计数与扩容都无同步，跨线程共享同一实例需外部加锁。",
+              "execute() 不清空队列；对同一批指令再次执行会因输出已被当前计算图生产而失败，需先调用 NativeContext.clearGraph()。",
+              "close() 只清空队列，不释放原生资源，本类未实现 AutoCloseable。",
+              "原生错误以 BasaltRuntimeException 抛出；execute 的 JFR 事件在 finally 中提交，失败时同样记录。"
+            ],
+            "example": "try (NativeContext context = NativeContext.create(4)) { NativeTensorHandle left = context.zeros(2, 3); NativeTensorHandle right = context.zeros(3, 4); NativeTensorHandle product = context.zeros(2, 4); NativeTensorHandle activated = context.zeros(2, 4); CommandQueueBuilder queue = new CommandQueueBuilder(context); queue.matMul(left, right, product) .relu(product, activated) .executeAndClear(); float[] values = activated.data();\n}",
+            "see": [
+              "basalt.nativebridge.NativeContext",
+              "basalt.nativebridge.NativeTensorHandle",
+              "basalt.nativebridge.NativeMLP"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nativebridge.NativeContext",
+          "simple_qualified": "NativeContext",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "AutoCloseable"
+          ],
+          "file": "jsl/nativebridge/NativeContext.java",
+          "line": 18,
+          "javadoc": "Owns a native tensor context: tensor store, autodiff graph, rayon pools and optimizer state. <p>Lifecycle is enforced with a read/write lock. Every JNI call runs under the read lock, while\n{@link #close()} takes the write lock and destroys the context exactly once. Tensor handles hold\na strong reference to their context, so a context cannot be garbage-collected before its\ntensors; conversely, closing a context invalidates every handle and makes later use fail fast\ninstead of dereferencing freed memory.</p>",
+          "nested": [
+            "Guard",
+            "State"
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "key": "create()",
+              "signature": "NativeContext create()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建使用全部可用处理器的上下文",
+                "body": [
+                  "等价于 create(0)：线程数 0 交给 Rust 侧按 available_parallelism 决定，实际线程池在首次执行指令队列或反向传播时才建立。"
+                ],
+                "returns": "持有独立原生上下文的新实例"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "create(int)",
+              "signature": "NativeContext create(int threads)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "threads"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建指定原生线程数提示的上下文",
+                "params": {
+                  "threads": "原生线程数提示；0 表示由 Rust 侧选择，合法区间为 [0, 256]"
+                },
+                "returns": "持有独立原生上下文的新实例",
+                "throws": {
+                  "IllegalArgumentException": "threads 小于 0 或大于 256",
+                  "basalt.BasaltRuntimeException": "原生引擎不可用，消息含加载错误与预期路径",
+                  "IllegalStateException": "原生上下文分配返回空指针"
+                },
+                "notes": [
+                  "线程数只作为提示保存，线程池按该值缓存在上下文内，相同取值复用同一个池。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "threads()",
+              "signature": "int threads()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回构造时记录的线程数提示",
+                "returns": "线程数提示；0 表示自动"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "isOpen()",
+              "signature": "boolean isOpen()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "判断上下文是否仍持有有效原生指针",
+                "returns": "指针非零时为 true"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "guard()",
+              "signature": "Guard guard()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "获取读锁并返回携带原生指针的 Guard",
+                "body": [
+                  "先取得读锁再读取指针，因此 close() 不可能在 Guard 存活期间完成销毁。读锁与指针校验都成功后返回 Guard，调用方必须在 JNI 调用结束后关闭它。"
+                ],
+                "returns": "持有读锁的 Guard，需在 JNI 调用后关闭",
+                "throws": {
+                  "IllegalStateException": "上下文已关闭，指针为零"
+                },
+                "notes": [
+                  "Guard 关闭时只释放读锁，不销毁上下文。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "zeros(int...)",
+              "signature": "NativeTensorHandle zeros(int... shape)",
+              "params": [
+                {
+                  "type": "int...",
+                  "name": "shape"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建零初始化的推理张量，不需要梯度",
+                "params": {
+                  "shape": "各维长度，必须至少一维且全部为正"
+                },
+                "returns": "requiresGrad 为 false 的零张量句柄",
+                "throws": {
+                  "basalt.BasaltRuntimeException": "shape 为 null",
+                  "IllegalArgumentException": "shape 为空、含非正维度、元素总数溢出或超过 Integer.MAX_VALUE"
+                },
+                "notes": [
+                  "元素总数按 Math.multiplyExact 计算，超过 int 范围即拒绝，因为 Java 侧视图是 float 数组。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameter(int...)",
+              "signature": "NativeTensorHandle parameter(int... shape)",
+              "params": [
+                {
+                  "type": "int...",
+                  "name": "shape"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建零初始化的可训练张量，requiresGrad 为真",
+                "params": {
+                  "shape": "各维长度，必须至少一维且全部为正"
+                },
+                "returns": "requiresGrad 为 true 的零张量句柄",
+                "throws": {
+                  "basalt.BasaltRuntimeException": "shape 为 null",
+                  "IllegalArgumentException": "shape 为空、含非正维度、元素总数溢出或超过 Integer.MAX_VALUE"
+                },
+                "notes": [
+                  "初始值为零，通常随后调用 randomize 或 setData 赋初值。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "of(float[], int...)",
+              "signature": "NativeTensorHandle of(float[] data, int... shape)",
+              "params": [
+                {
+                  "type": "float[]",
+                  "name": "data"
+                },
+                {
+                  "type": "int...",
+                  "name": "shape"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "用给定数据创建不需要梯度的张量",
+                "params": {
+                  "data": "按行主序排列的元素，长度必须等于 shape 的元素总数",
+                  "shape": "各维长度，必须至少一维且全部为正"
+                },
+                "returns": "requiresGrad 为 false 的张量句柄",
+                "throws": {
+                  "basalt.BasaltRuntimeException": "data 或 shape 为 null，或数据含非有限值",
+                  "IllegalArgumentException": "数据长度与 shape 不符，或 shape 本身非法"
+                },
+                "notes": [
+                  "数据在构造时被复制进原生缓冲区，之后修改 Java 数组不影响张量。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "of(float[], boolean, int...)",
+              "signature": "NativeTensorHandle of(float[] data, boolean requiresGrad, int... shape)",
+              "params": [
+                {
+                  "type": "float[]",
+                  "name": "data"
+                },
+                {
+                  "type": "boolean",
+                  "name": "requiresGrad"
+                },
+                {
+                  "type": "int...",
+                  "name": "shape"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "用给定数据创建张量并可指定是否需要梯度",
+                "params": {
+                  "data": "按行主序排列的元素，长度必须等于 shape 的元素总数",
+                  "requiresGrad": "是否参与梯度计算",
+                  "shape": "各维长度，必须至少一维且全部为正"
+                },
+                "returns": "绑定到当前上下文的张量句柄",
+                "throws": {
+                  "basalt.BasaltRuntimeException": "data 或 shape 为 null，或数据含非有限值",
+                  "IllegalArgumentException": "数据长度与 shape 不符，或 shape 本身非法"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "random(int[], long, float, boolean)",
+              "signature": "NativeTensorHandle random(int[] shape, long seed, float scale, boolean requiresGrad)",
+              "params": [
+                {
+                  "type": "int[]",
+                  "name": "shape"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                },
+                {
+                  "type": "float",
+                  "name": "scale"
+                },
+                {
+                  "type": "boolean",
+                  "name": "requiresGrad"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建张量并用 seed 与 scale 填充随机值",
+                "params": {
+                  "shape": "各维长度，必须至少一维且全部为正",
+                  "seed": "伪随机种子，相同取值可复现",
+                  "scale": "幅度，必须有限且非负",
+                  "requiresGrad": "是否参与梯度计算"
+                },
+                "returns": "已填充随机数据的张量句柄",
+                "throws": {
+                  "basalt.BasaltRuntimeException": "shape 为 null、scale 为负或非有限",
+                  "IllegalArgumentException": "shape 非法或元素总数超出 int 范围"
+                },
+                "notes": [
+                  "先按 shape 分配零张量再填充；填充失败时会关闭已分配的句柄再抛出原异常，不泄漏原生内存。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "backward(NativeTensorHandle)",
+              "signature": "void backward(NativeTensorHandle root)",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "root"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "从 root 反向传播，梯度累加到各张量",
+                "params": {
+                  "root": "计算图输出张量，必须属于当前上下文"
+                },
+                "throws": {
+                  "basalt.BasaltRuntimeException": "root 为 null，或 root 已关闭",
+                  "IllegalArgumentException": "root 属于其他上下文"
+                },
+                "notes": [
+                  "梯度是累加的，重复调用前应先对参数调用 zeroGrad。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "clipGradNorm(java.util.List<NativeTensorHandle>, float)",
+              "signature": "double clipGradNorm(java.util.List<NativeTensorHandle> tensors, float maxNorm)",
+              "params": [
+                {
+                  "type": "java.util.List<NativeTensorHandle>",
+                  "name": "tensors"
+                },
+                {
+                  "type": "float",
+                  "name": "maxNorm"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按全局 L2 范数裁剪梯度，返回裁剪前范数",
+                "params": {
+                  "tensors": "参数张量列表，每一项都必须属于当前上下文",
+                  "maxNorm": "裁剪阈值，必须有限且非负"
+                },
+                "returns": "裁剪前的全局梯度范数；空列表时为 0.0",
+                "throws": {
+                  "IllegalArgumentException": "某个张量属于其他上下文",
+                  "basalt.BasaltRuntimeException": "maxNorm 为负或非有限，或某个张量已关闭"
+                },
+                "notes": [
+                  "范数不超过阈值时不修改任何梯度，但仍返回实际范数。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "clearGraph()",
+              "signature": "void clearGraph()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "清空计算图，张量数据保持不变",
+                "body": [
+                  "清空后不能再对旧节点执行反向传播，新的指令队列执行会重新建图。张量本身与其梯度缓冲不受影响。"
+                ],
+                "throws": {
+                  "IllegalStateException": "上下文已关闭"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "graphSize()",
+              "signature": "int graphSize()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回计算图节点数量",
+                "returns": "当前图中的节点数",
+                "throws": {
+                  "IllegalStateException": "上下文已关闭"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "stats()",
+              "signature": "long[] stats()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回存活张量数、存活字节数与图节点数",
+                "returns": "长度 3 的数组：存活张量数、存活字节数、图节点数",
+                "throws": {
+                  "IllegalStateException": "上下文已关闭"
+                },
+                "notes": [
+                  "字节数按数据与梯度缓冲的实际容量统计，可用于诊断内存占用。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "close()",
+              "signature": "void close()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "销毁原生上下文，重复调用无效果",
+                "body": [
+                  "取写锁后以 getAndSet(0) 取出指针，非零时调用原生销毁，再执行 Cleaner 注册的清理动作；写锁保证在途读锁调用全部退出后才真正释放，指针置零保证只销毁一次。"
+                ],
+                "notes": [
+                  "幂等：第二次调用取出的是 0，不会重复销毁。",
+                  "关闭后该上下文创建的所有句柄失效，其 close() 变为无操作。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "toString()",
+              "signature": "String toString()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回开放状态与线程数的摘要",
+                "returns": "形如 NativeContext[open=true, threads=4] 的字符串"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "持有一个原生张量上下文：存储、计算图、线程池与优化器状态",
+            "body": [
+              "上下文是原生状态的唯一所有者：张量存储（slotmap 加地址索引）、自微分计算图、按线程数缓存的 rayon 线程池，以及按张量地址保存的 Adam 一阶与二阶矩，都挂在同一个 Context 上。",
+              "生命周期由 ReentrantReadWriteLock 保护。每个 JNI 调用都在 guard() 取得的读锁内执行，close() 取写锁并把指针原子置零，因此销毁最多发生一次，并且会等待在途调用结束。",
+              "句柄持有上下文的强引用，上下文不会先于其张量被回收。关闭后 guard() 抛 IllegalStateException，句柄的后续操作在取锁阶段即失败，不会解引用已释放内存。"
+            ],
+            "notes": [
+              "线程安全：多个线程可并发调用，读锁允许多个 JNI 调用并行，close() 需等待在途调用退出。",
+              "生命周期：close() 幂等；未显式关闭时由 Cleaner 在对象不可达后兜底销毁。",
+              "失败模式：引擎不可用时构造抛 basalt.BasaltRuntimeException；关闭后调用抛 IllegalStateException。"
+            ],
+            "example": "try (NativeContext ctx = NativeContext.create(4)) { NativeTensorHandle weight = ctx.parameter(4, 3); weight.randomize(42L, 0.1f); try (NativeTensorHandle batch = ctx.of(new float[]{1f, 2f, 3f}, 1, 3)) { long[] stats = ctx.stats(); System.out.println(stats[0] + \" tensors, graph nodes \" + ctx.graphSize()); System.out.println(batch.rank() + \" dims, weight norm \" + weight.norm()); }\n}",
+            "see": [
+              "basalt.nativebridge.NativeTensorHandle",
+              "basalt.nativebridge.NativeLibrary",
+              "basalt.nativebridge.NativeContext.Guard"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nativebridge.NativeLibrary",
+          "simple_qualified": "NativeLibrary",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nativebridge/NativeLibrary.java",
+          "line": 13,
+          "javadoc": "Availability facade for the Rust tensor runtime. <p>The shared library is loaded once by {@link NativeKernels}; this class only exposes the\nengine version and a fail-fast guard. Keeping a single loader avoids the \"already loaded in\nanother class loader\" failure mode when both the classical kernels and the tensor engine are\nused in the same JVM.</p>",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "available()",
+              "signature": "boolean available()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "原生引擎是否加载成功",
+                "returns": "true 表示三步查找中任一步成功"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "loadError()",
+              "signature": "String loadError()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回加载失败摘要",
+                "returns": "异常类名与消息；加载成功时为空字符串"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "libraryPath()",
+              "signature": "String libraryPath()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回实际或预期的库文件绝对路径",
+                "returns": "加载成功时为实际文件路径，失败时为默认预期路径的绝对形式"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "version()",
+              "signature": "int version()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回引擎 ABI 版本，不可用时为 0",
+                "returns": "原生版本号；库不可用时为 0"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "requireAvailable()",
+              "signature": "void requireAvailable()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "引擎不可用时抛出带诊断信息的异常",
+                "body": [
+                  "错误消息由三段拼成：固定前缀、loadError() 的内容，以及 libraryPath() 给出的预期路径与运行 native-build.sh 的提示，便于直接定位是未编译还是路径不对。"
+                ],
+                "throws": {
+                  "basalt.BasaltRuntimeException": "原生库不可用；消息包含加载错误与预期路径"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "原生张量运行时的可用性门面",
+            "body": [
+              "动态库只由 basalt.core.NativeKernels 在类初始化时加载一次，本类仅转发可用性、错误信息与路径查询，并额外提供 version() 与 requireAvailable()。单一加载点避免经典内核与张量引擎同时使用时出现已在其他类加载器中加载的失败。",
+              "查找顺序固定为三步：先按系统属性 basalt.native.path 定位文件，存在就 System.load；否则从 classpath 的 /native/平台标签/ 解压到临时目录加载；最后回退到 System.loadLibrary，由 java.library.path 解析。",
+              "available() 表示三步中任一步成功。失败时 loadError() 保留首次捕获的异常摘要，libraryPath() 报告实际加载位置或预期位置，requireAvailable() 用两者拼出可直接采取行动的错误消息。"
+            ],
+            "notes": [
+              "basalt.native.path 的默认值是 build/native 下的平台库文件名，未设置属性时即按该路径查找。",
+              "默认文件名按平台选择：Windows 为 basalt_native.dll，macOS 为 libbasalt_native.dylib，其余为 libbasalt_native.so；classpath 资源中的平台标签形如 windows-x86_64。",
+              "加载在类初始化阶段完成，结果不可变，运行期不会重试。",
+              "加载失败不影响纯 Java 路径，经典估计器会自动回退。",
+              "requireAvailable() 抛 basalt.BasaltRuntimeException，它是 IllegalStateException 的子类。"
+            ],
+            "see": [
+              "basalt.nativebridge.NativeContext",
+              "basalt.core.NativeKernels"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nativebridge.NativeMLP",
+          "simple_qualified": "NativeMLP",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "AutoCloseable"
+          ],
+          "file": "jsl/nativebridge/NativeMLP.java",
+          "line": 24,
+          "javadoc": "A compact multilayer perceptron built entirely from the public tensor/queue API. <p>This class is the \"expert tier\" reference implementation: it shows how to compose matmul,\nbroadcast add, activation and MSE nodes, run one backward pass, and update parameters with\nAdam. It is intentionally not a high-level estimator; the classical {@code basalt.ml} models keep\ntheir own tuned implementations.</p> <p>Mini-batches are padded by wrapping to the start of the shuffled epoch when the last batch is\nshort. That keeps every native tensor shape static (no reallocation per step) at the cost of a\nsmall duplicate-sample bias in the final batch.</p>",
+          "nested": [
+            "Activation",
+            "OutputActivation"
+          ],
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "NativeMLP(NativeContext, int[], Activation, OutputActivation, long)",
+              "signature": "NativeMLP(NativeContext context, int[] layerSizes, Activation activation, OutputActivation outputActivation, long seed)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int[]",
+                  "name": "layerSizes"
+                },
+                {
+                  "type": "Activation",
+                  "name": "activation"
+                },
+                {
+                  "type": "OutputActivation",
+                  "name": "outputActivation"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按层宽建网，初始化 Xavier 权重与零偏置。",
+                "params": {
+                  "context": "张量与计算图所属的上下文",
+                  "layerSizes": "从输入到输出的各层宽度，至少两个元素且全部为正",
+                  "activation": "隐藏层激活函数",
+                  "outputActivation": "输出层激活函数，NONE 表示线性输出",
+                  "seed": "权重初始化与批次打乱的种子"
+                },
+                "throws": {
+                  "IllegalArgumentException": "layerSizes 少于两个元素或含非正宽度",
+                  "BasaltRuntimeException": "context、layerSizes、activation 或 outputActivation 为 null"
+                },
+                "notes": [
+                  "layerSizes 在构造时被复制，之后修改入参数组不影响实例。",
+                  "构造只分配参数与队列，批次张量在 fit 与 predict 时按实际批宽分配。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "layerSizes()",
+              "signature": "int[] layerSizes()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回层宽数组的副本。",
+                "returns": "与构造参数内容相同的新数组"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<NativeTensorHandle> parameters()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按层顺序返回权重与偏置，权重在前。",
+                "returns": "只读列表，元素交替为 weight(0)、bias(0)、weight(1)、bias(1)……"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "weight(int)",
+              "signature": "NativeTensorHandle weight(int layer)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "layer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回指定层的权重张量。",
+                "params": {
+                  "layer": "层索引，从 0 开始，最大为层数减一"
+                },
+                "returns": "形状 (layerSizes[layer], layerSizes[layer+1]) 的可训练张量",
+                "notes": [
+                  "索引越界由底层列表抛出 IndexOutOfBoundsException，源码未做显式校验。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "bias(int)",
+              "signature": "NativeTensorHandle bias(int layer)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "layer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回指定层的偏置张量。",
+                "params": {
+                  "layer": "层索引，从 0 开始，最大为层数减一"
+                },
+                "returns": "形状 (layerSizes[layer+1]) 的可训练张量，初值为全零"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit(float[][], float[][], int, int, float, float)",
+              "signature": "float fit(float[][] features, float[][] targets, int epochs, int batchSize, float learningRate, float weightDecay)",
+              "params": [
+                {
+                  "type": "float[][]",
+                  "name": "features"
+                },
+                {
+                  "type": "float[][]",
+                  "name": "targets"
+                },
+                {
+                  "type": "int",
+                  "name": "epochs"
+                },
+                {
+                  "type": "int",
+                  "name": "batchSize"
+                },
+                {
+                  "type": "float",
+                  "name": "learningRate"
+                },
+                {
+                  "type": "float",
+                  "name": "weightDecay"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "用 Adam 训练，返回最后一个 epoch 的平均 MSE。",
+                "params": {
+                  "features": "行优先特征矩阵，列数须等于 layerSizes[0]",
+                  "targets": "目标矩阵，行数与 features 相同，列数须等于最后一层宽度",
+                  "epochs": "完整遍历数据的轮数，须为正",
+                  "batchSize": "每批行数，须为正；超过样本数时按样本数截断",
+                  "learningRate": "Adam 学习率",
+                  "weightDecay": "解耦权重衰减系数，0 表示不衰减"
+                },
+                "returns": "最后一个 epoch 各批 MSE 的算术平均",
+                "throws": {
+                  "IllegalArgumentException": "数据集为空、行数不等、行列宽不符，或 epochs、batchSize 非正",
+                  "IllegalStateException": "实例已关闭，或某步损失为非有限值",
+                  "BasaltRuntimeException": "features 或 targets 为 null"
+                },
+                "notes": [
+                  "每个 batch 结束即更新参数并清零梯度，不累积跨批梯度。",
+                  "步数 step 在 backward 之后、adam 之前自增，并作为 Adam 偏差修正的输入。",
+                  "临时张量在方法返回前关闭，计算图在入口与 finally 中各清空一次。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "predict(float[][])",
+              "signature": "float[] predict(float[][] features)",
+              "params": [
+                {
+                  "type": "float[][]",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "批量前向，返回行优先的展平预测结果。",
+                "params": {
+                  "features": "行优先特征矩阵，每行列数须等于 layerSizes[0]"
+                },
+                "returns": "长度 rows * outputSize 的数组，按行拼接",
+                "throws": {
+                  "IllegalArgumentException": "任一行宽不等于输入宽度",
+                  "IllegalStateException": "实例已关闭"
+                },
+                "notes": [
+                  "整批一次前向，批宽等于样本数；空输入直接返回零长度数组。",
+                  "不修改参数、梯度与优化器状态。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "predictScalar(float[][])",
+              "signature": "float[] predictScalar(float[][] features)",
+              "params": [
+                {
+                  "type": "float[][]",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "单输出模型的预测包装，每行返回一个值。",
+                "params": {
+                  "features": "行优先特征矩阵"
+                },
+                "returns": "长度等于样本数的数组",
+                "throws": {
+                  "IllegalStateException": "最后一层宽度不为 1"
+                },
+                "notes": [
+                  "输出宽度校验在委托 predict 之前完成，因此宽输出模型会先报错。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "gradientNorm()",
+              "signature": "double gradientNorm()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回所有参数梯度的全局 L2 范数。",
+                "returns": "各参数梯度范数平方和的开方",
+                "notes": [
+                  "在 zeroGrad 之后调用得到 0；fit 内部每步更新后即清零。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "close()",
+              "signature": "void close()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "释放参数张量并清空队列，可重复调用。",
+                "notes": [
+                  "不关闭 NativeContext；重复调用无副作用。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "toString()",
+              "signature": "String toString()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回层宽、隐藏激活与输出激活的描述。",
+                "returns": "形如 NativeMLP[2, 16, 1][activation=RELU, output=NONE] 的字符串"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "参考实现：只用公开张量与队列 API 搭出的多层感知机。",
+            "body": [
+              "构造时按 layerSizes 逐层建立权重与偏置：权重形状 (layerSizes[i], layerSizes[i+1])，用 Xavier 均匀分布初始化，缩放系数 sqrt(6 / (fanIn + fanOut))，种子为 seed + 1009 * (i + 1)；偏置为同宽的全零可训练张量。层数等于 layerSizes 长度减一。",
+              "fit 的每个 mini-batch 依次执行：前向（matMul → add → 激活）→ mse → 执行队列 → 读取损失 → backward → 逐参数 adam → zeroGrad → clearGraph。Adam 固定 beta1=0.9、beta2=0.999、epsilon=1e-8，步数从 1 开始全局递增，weightDecay 以解耦方式加到更新量上。",
+              "批次按打乱后的索引顺序填充；末批不足 batchSize 时从 epoch 头部回绕取样本，使原生张量形状保持不变，代价是末批存在少量重复样本。"
+            ],
+            "notes": [
+              "所有张量归构造时传入的 NativeContext 所有；参数在构造时一次性分配，训练不改变形状。",
+              "训练中出现非有限损失立即抛 IllegalStateException，不继续迭代。",
+              "fit 与 predict 结束都会清空计算图并释放临时张量，返回的 float[] 是副本。",
+              "close() 只释放本实例的参数张量与队列，不关闭上下文；关闭后 fit 与 predict 抛 IllegalStateException。"
+            ],
+            "example": "try (NativeContext context = NativeContext.create(4)) { NativeMLP mlp = new NativeMLP(context, new int[]{2, 16, 1}, NativeMLP.Activation.RELU, NativeMLP.OutputActivation.NONE, 42L); float[][] features = {{0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}}; float[][] targets = {{0.0f}, {1.0f}, {1.0f}, {0.0f}}; float loss = mlp.fit(features, targets, 200, 4, 0.05f, 0.0f); float[] predictions = mlp.predictScalar(features); mlp.close();\n}",
+            "see": [
+              "basalt.nativebridge.CommandQueueBuilder",
+              "basalt.nativebridge.NativeContext",
+              "basalt.nativebridge.NativeTensorHandle"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nativebridge.NativeTensorHandle",
+          "simple_qualified": "NativeTensorHandle",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "AutoCloseable"
+          ],
+          "file": "jsl/nativebridge/NativeTensorHandle.java",
+          "line": 21,
+          "javadoc": "A Java handle to one native tensor. <p>The object stores only an opaque {@code long}. The native tensor owns a contiguous\n{@code Vec<f32>} plus a lazily allocated gradient buffer; no Java array is pinned and no bulk\ndata crosses the JNI boundary unless the caller explicitly asks for {@link #data()} or\n{@link #grad()}.</p> <p>Release is idempotent and happens exactly once: either through {@link #close()} or through\nthe {@link Cleaner}. The native side additionally rejects an unknown address, so even a buggy\ndouble release cannot cause a double free.</p>",
+          "nested": [
+            "State"
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "key": "context()",
+              "signature": "NativeContext context()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回所属上下文",
+                "returns": "构造时绑定的上下文引用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "shape()",
+              "signature": "int[] shape()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回 shape 的副本",
+                "returns": "新数组，修改它不影响句柄"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "rank()",
+              "signature": "int rank()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回张量维数",
+                "returns": "shape 的长度"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "size()",
+              "signature": "long size()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回元素总数",
+                "returns": "各维长度按 long 累乘的结果"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "requiresGrad()",
+              "signature": "boolean requiresGrad()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "是否参与梯度计算",
+                "returns": "创建时指定的标志"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "data()",
+              "signature": "float[] data()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "把张量数据复制到新数组",
+                "returns": "长度为 size() 的新 float 数组",
+                "throws": {
+                  "IllegalStateException": "句柄已关闭，或所属上下文已关闭"
+                },
+                "notes": [
+                  "每次调用都产生一次完整拷贝，热路径上应避免在循环内反复调用。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "grad()",
+              "signature": "float[] grad()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "复制梯度，未参与反向传播时全为零",
+                "returns": "长度为 size() 的新 float 数组",
+                "throws": {
+                  "IllegalStateException": "句柄已关闭，或所属上下文已关闭"
+                },
+                "notes": [
+                  "原生侧在梯度缓冲为空时按数据长度写零，调用方总能拿到等长数组。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "setData(float[])",
+              "signature": "void setData(float[] values)",
+              "params": [
+                {
+                  "type": "float[]",
+                  "name": "values"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "用新数组覆盖张量数据",
+                "params": {
+                  "values": "新数据，长度必须等于 size()"
+                },
+                "throws": {
+                  "basalt.BasaltRuntimeException": "values 为 null，或含非有限值",
+                  "IllegalArgumentException": "长度与张量元素总数不符",
+                  "IllegalStateException": "句柄或上下文已关闭"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fill(float)",
+              "signature": "void fill(float value)",
+              "params": [
+                {
+                  "type": "float",
+                  "name": "value"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "用同一数值填充全部元素",
+                "params": {
+                  "value": "填充值，必须为有限数"
+                },
+                "throws": {
+                  "basalt.BasaltRuntimeException": "value 非有限",
+                  "IllegalStateException": "句柄或上下文已关闭"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "randomize(long, float)",
+              "signature": "void randomize(long seed, float scale)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                },
+                {
+                  "type": "float",
+                  "name": "scale"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "用伪随机数原地填充张量",
+                "params": {
+                  "seed": "伪随机种子，原生侧与 1 取或后作为初始状态",
+                  "scale": "幅度，必须有限且非负"
+                },
+                "throws": {
+                  "basalt.BasaltRuntimeException": "scale 为负或非有限",
+                  "IllegalStateException": "句柄或上下文已关闭"
+                },
+                "notes": [
+                  "使用 xorshift 生成 [0, 1) 上的均匀值，再映射到 [-scale, scale)；同参数结果可复现。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "zeroGrad()",
+              "signature": "void zeroGrad()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "把梯度缓冲清零",
+                "throws": {
+                  "IllegalStateException": "句柄或上下文已关闭"
+                },
+                "notes": [
+                  "梯度尚未分配时不做任何事，不会为清零而分配缓冲。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "sgd(float)",
+              "signature": "void sgd(float learningRate)",
+              "params": [
+                {
+                  "type": "float",
+                  "name": "learningRate"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "以零权重衰减执行一步 SGD",
+                "params": {
+                  "learningRate": "学习率，必须有限且非负"
+                },
+                "throws": {
+                  "basalt.BasaltRuntimeException": "learningRate 为负或非有限",
+                  "IllegalStateException": "句柄或上下文已关闭"
+                },
+                "notes": [
+                  "等价于 sgd(learningRate, 0.0f)。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "sgd(float, float)",
+              "signature": "void sgd(float learningRate, float weightDecay)",
+              "params": [
+                {
+                  "type": "float",
+                  "name": "learningRate"
+                },
+                {
+                  "type": "float",
+                  "name": "weightDecay"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "执行一步带动量衰减的 SGD",
+                "params": {
+                  "learningRate": "学习率，必须有限且非负",
+                  "weightDecay": "权重衰减系数"
+                },
+                "throws": {
+                  "basalt.BasaltRuntimeException": "learningRate 为负或非有限",
+                  "IllegalStateException": "句柄或上下文已关闭"
+                },
+                "notes": [
+                  "更新前确保梯度缓冲已分配，梯度为空时按零梯度处理。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "adam(float, float, float, float, float, long)",
+              "signature": "void adam(float learningRate, float beta1, float beta2, float epsilon, float weightDecay, long step)",
+              "params": [
+                {
+                  "type": "float",
+                  "name": "learningRate"
+                },
+                {
+                  "type": "float",
+                  "name": "beta1"
+                },
+                {
+                  "type": "float",
+                  "name": "beta2"
+                },
+                {
+                  "type": "float",
+                  "name": "epsilon"
+                },
+                {
+                  "type": "float",
+                  "name": "weightDecay"
+                },
+                {
+                  "type": "long",
+                  "name": "step"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "执行一步 Adam 更新",
+                "params": {
+                  "learningRate": "学习率，必须有限且非负",
+                  "beta1": "一阶矩衰减，必须落在 [0, 1)",
+                  "beta2": "二阶矩衰减，必须落在 [0, 1)",
+                  "epsilon": "数值稳定项，必须为正",
+                  "weightDecay": "权重衰减系数",
+                  "step": "步数，必须为正，用于偏差校正"
+                },
+                "throws": {
+                  "basalt.BasaltRuntimeException": "学习率非法、beta 越界、epsilon 非正或 step 非正",
+                  "IllegalStateException": "句柄或上下文已关闭"
+                },
+                "notes": [
+                  "一阶与二阶矩按张量地址保存在所属上下文内，首次使用时按数据长度分配，长度变化时重置为零。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "norm()",
+              "signature": "double norm()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回数据的 L2 范数",
+                "returns": "平方和以 double 累加后开方",
+                "throws": {
+                  "IllegalStateException": "句柄或上下文已关闭"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "gradNorm()",
+              "signature": "double gradNorm()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回梯度的 L2 范数",
+                "returns": "梯度平方和开方；梯度未分配时为 0.0",
+                "throws": {
+                  "IllegalStateException": "句柄或上下文已关闭"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "isFinite()",
+              "signature": "boolean isFinite()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "判断数据是否全部为有限值",
+                "returns": "所有元素均有限时为 true",
+                "throws": {
+                  "IllegalStateException": "句柄或上下文已关闭"
+                },
+                "notes": [
+                  "只检查数据，不检查梯度缓冲。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "close()",
+              "signature": "void close()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "释放原生张量，重复调用无效果",
+                "body": [
+                  "触发 Cleaner 注册的清理动作：State 以 getAndSet(0) 取走地址，非零时请求所属上下文释放。上下文已关闭时释放被跳过，因为销毁过程已回收全部张量。"
+                ],
+                "notes": [
+                  "幂等：清理动作由同一个 Cleanable 承载，close() 与 Cleaner 合计只执行一次。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "toString()",
+              "signature": "String toString()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回 shape、梯度标志与地址的摘要",
+                "returns": "形如 NativeTensor[3, 2][requiresGrad=true, live=...] 的字符串"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "一个原生张量的 Java 句柄，持有不透明地址与所属上下文",
+            "body": [
+              "对象只保存一个不透明 long 与 shape 副本。数据是 Rust 侧的连续 f32 缓冲区，梯度缓冲惰性分配，Java 数组不会被 pin；除非显式调用 data() 或 grad()，否则没有批量数据穿越 JNI 边界。",
+              "句柄持有 NativeContext 的强引用，因此上下文不会先于张量被回收。每个操作都先经 context.guard() 取得读锁再调用原生方法，上下文一旦关闭，取锁阶段就抛异常，句柄随之失效。",
+              "释放幂等且只发生一次：close() 触发 Cleaner 注册的清理动作，State 以 getAndSet(0) 取走地址并交给上下文释放；原生侧对未知地址返回未找到，即使重复释放也不会二次 free。"
+            ],
+            "notes": [
+              "元数据访问器（context、shape、rank、size、requiresGrad）读取 Java 侧字段，关闭后仍可用。",
+              "跨上下文传参会抛 IllegalArgumentException，例如把句柄交给另一个上下文的 backward 或 clipGradNorm。",
+              "未显式关闭时由 Cleaner 在对象不可达后释放；若上下文已先销毁，则统一回收，句柄释放变为无操作。"
+            ],
+            "example": "try (NativeContext ctx = NativeContext.create(); NativeTensorHandle weight = ctx.parameter(3, 2)) { weight.randomize(7L, 0.5f); weight.fill(0.1f); float[] flat = weight.data(); System.out.println(weight + \" -> \" + flat.length);\n}",
+            "see": [
+              "basalt.nativebridge.NativeContext",
+              "basalt.nativebridge.NativeContext.Guard",
+              "basalt.nativebridge.CommandQueueBuilder"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nativebridge.NativeContext.Guard",
+          "simple_qualified": "NativeContext.Guard",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "AutoCloseable"
+          ],
+          "file": "jsl/nativebridge/NativeContext.java",
+          "line": 228,
+          "javadoc": "Read-lock guard; closing it releases the lock, not the context.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "handle()",
+              "signature": "long handle()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回原生上下文指针，Guard 关闭后抛异常",
+                "returns": "获取 Guard 时读取到的非零指针",
+                "throws": {
+                  "IllegalStateException": "Guard 已关闭"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "close()",
+              "signature": "void close()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "释放读锁，重复调用无效果",
+                "body": [
+                  "首次调用置位内部标志并解锁一次，之后的调用直接返回；即使被调用两次也不会多释放锁，避免破坏读锁计数。"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "读锁守卫，关闭它只释放读锁，不销毁上下文",
+            "body": [
+              "guard() 在成功取得读锁并确认指针非零后返回 Guard。Guard 保存指针副本，handle() 在 Guard 关闭后抛异常，close() 只释放一次读锁，因此 try-with-resources 是唯一安全用法。"
+            ],
+            "notes": [
+              "读锁来自 ReentrantReadWriteLock，Guard 必须在获取它的线程上关闭。",
+              "Guard 存活期间 close() 会阻塞在写锁上，长耗时操作应尽量缩短持锁区间。"
+            ],
+            "see": [
+              "basalt.nativebridge.NativeContext"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nativebridge.NativeMLP.Activation",
+          "simple_qualified": "NativeMLP.Activation",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nativebridge/NativeMLP.java",
+          "line": 25,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "enum_constant",
+              "key": "RELU",
+              "signature": "RELU",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "max(0, x)"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "TANH",
+              "signature": "TANH",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "双曲正切"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "SIGMOID",
+              "signature": "SIGMOID",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "1 / (1 + e^(−x))"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "隐藏层可选激活函数：RELU、TANH、SIGMOID。",
+            "body": [
+              "每个隐藏层在 matMul 与加偏置之后按该枚举选择算子，分别对应指令队列的 relu、tanh、sigmoid。"
+            ],
+            "notes": [
+              "枚举无属性字段，选择只决定前向图写入哪种节点。",
+              "该枚举不作用于输出层，输出层由 OutputActivation 控制。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nativebridge.NativeMLP.OutputActivation",
+          "simple_qualified": "NativeMLP.OutputActivation",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nativebridge/NativeMLP.java",
+          "line": 29,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "enum_constant",
+              "key": "NONE",
+              "signature": "NONE",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "输出层不做激活，直接返回 logits"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "SIGMOID",
+              "signature": "SIGMOID",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "输出层接 sigmoid，配合二分类交叉熵"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "TANH",
+              "signature": "TANH",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "输出层接 tanh，输出落在 (−1, 1)"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "输出层激活：NONE 表示线性输出，另有 SIGMOID、TANH。",
+            "body": [
+              "NONE 时最后一层直接输出加偏置后的线性结果，适用于回归；SIGMOID 与 TANH 把输出分别压到 (0, 1) 与 (-1, 1)。"
+            ],
+            "notes": [
+              "只作用于最后一层，隐藏层仍使用 Activation。",
+              "选择 NONE 时最后一层不再写入激活指令，输出张量就是加偏置的结果。"
+            ]
+          }
         }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "绑定上下文并预分配 8 条指令的直接缓冲区。",
-        "params": {
-         "context": "指令与张量所属的上下文；入队句柄都必须属于它"
-        },
-        "throws": {
-         "BasaltRuntimeException": "context 为 null"
-        },
-        "notes": [
-         "缓冲区按 ByteOrder.nativeOrder() 创建，与原生 OpCommand 的字节序一致。",
-         "构造不分配张量，也不与计算图交互。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "matMul(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle)",
-       "signature": "CommandQueueBuilder matMul(NativeTensorHandle left, NativeTensorHandle right, NativeTensorHandle output)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "left"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "right"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加矩阵乘：left[m,k] × right[k,n] → [m,n]。",
-        "params": {
-         "left": "形状 (m, k) 的 rank-2 张量",
-         "right": "形状 (k, n) 的 rank-2 张量",
-         "output": "预分配的 (m, n) 张量，元素数须为 m*n"
-        },
-        "returns": "this，便于链式追加",
-        "notes": [
-         "算子只写数据不改形状，输出必须已按目标形状分配。",
-         "内维不相等或输出形状不符时，原生侧抛 BasaltRuntimeException。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "add(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle)",
-       "signature": "CommandQueueBuilder add(NativeTensorHandle left, NativeTensorHandle right, NativeTensorHandle output)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "left"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "right"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加逐元素加法，按广播规则对齐形状。",
-        "params": {
-         "left": "左操作数，任意秩",
-         "right": "右操作数，形状须可与 left 广播",
-         "output": "形状须等于广播结果，元素数须匹配"
-        },
-        "returns": "this，便于链式追加",
-        "notes": [
-         "广播形状由两侧形状逐轴推导，输出形状必须精确等于该结果。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "sub(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle)",
-       "signature": "CommandQueueBuilder sub(NativeTensorHandle left, NativeTensorHandle right, NativeTensorHandle output)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "left"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "right"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加逐元素减法，计算 left - right。",
-        "params": {
-         "left": "被减数，任意秩",
-         "right": "减数，形状须可与 left 广播",
-         "output": "形状须等于广播结果"
-        },
-        "returns": "this，便于链式追加"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "mul(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle)",
-       "signature": "CommandQueueBuilder mul(NativeTensorHandle left, NativeTensorHandle right, NativeTensorHandle output)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "left"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "right"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加逐元素乘法，按广播规则对齐形状。",
-        "params": {
-         "left": "左操作数，任意秩",
-         "right": "右操作数，形状须可与 left 广播",
-         "output": "形状须等于广播结果"
-        },
-        "returns": "this，便于链式追加"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "relu(NativeTensorHandle, NativeTensorHandle)",
-       "signature": "CommandQueueBuilder relu(NativeTensorHandle input, NativeTensorHandle output)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "input"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加 ReLU：负值置零，正负边界取零。",
-        "params": {
-         "input": "任意秩张量",
-         "output": "形状须与 input 相同"
-        },
-        "returns": "this，便于链式追加",
-        "notes": [
-         "反向时按输入是否大于零决定梯度是否通过。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "sigmoid(NativeTensorHandle, NativeTensorHandle)",
-       "signature": "CommandQueueBuilder sigmoid(NativeTensorHandle input, NativeTensorHandle output)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "input"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加 sigmoid：1 / (1 + exp(-x))。",
-        "params": {
-         "input": "任意秩张量",
-         "output": "形状须与 input 相同"
-        },
-        "returns": "this，便于链式追加"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "tanh(NativeTensorHandle, NativeTensorHandle)",
-       "signature": "CommandQueueBuilder tanh(NativeTensorHandle input, NativeTensorHandle output)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "input"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加双曲正切，输出落在 (-1, 1)。",
-        "params": {
-         "input": "任意秩张量",
-         "output": "形状须与 input 相同"
-        },
-        "returns": "this，便于链式追加"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "gelu(NativeTensorHandle, NativeTensorHandle)",
-       "signature": "CommandQueueBuilder gelu(NativeTensorHandle input, NativeTensorHandle output)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "input"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加 GELU，采用 tanh 近似式。",
-        "params": {
-         "input": "任意秩张量",
-         "output": "形状须与 input 相同"
-        },
-        "returns": "this，便于链式追加",
-        "notes": [
-         "近似式为 0.5x(1 + tanh(√(2/π)(x + 0.044715x³)))，非精确 erf 形式。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "silu(NativeTensorHandle, NativeTensorHandle)",
-       "signature": "CommandQueueBuilder silu(NativeTensorHandle input, NativeTensorHandle output)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "input"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加 SiLU：x * sigmoid(x)。",
-        "params": {
-         "input": "任意秩张量",
-         "output": "形状须与 input 相同"
-        },
-        "returns": "this，便于链式追加"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "mse(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle)",
-       "signature": "CommandQueueBuilder mse(NativeTensorHandle prediction, NativeTensorHandle target, NativeTensorHandle output)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "prediction"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "target"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加均方误差，输出单元素标量。",
-        "params": {
-         "prediction": "预测张量",
-         "target": "目标张量，形状须与 prediction 完全一致",
-         "output": "形状 (1) 的单元素张量"
-        },
-        "returns": "this，便于链式追加",
-        "notes": [
-         "按元素平方差求和后除以元素总数，得到均值而非总和。",
-         "prediction 与 target 形状不等时原生侧报错。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "softmax(NativeTensorHandle, NativeTensorHandle, int)",
-       "signature": "CommandQueueBuilder softmax(NativeTensorHandle input, NativeTensorHandle output, int dimension)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "input"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        },
-        {
-         "type": "int",
-         "name": "dimension"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "沿最后一维追加 softmax 归一化。",
-        "params": {
-         "input": "任意秩张量",
-         "output": "形状须与 input 相同",
-         "dimension": "归一化轴长度，须等于 input 的最后一维且大于 0"
-        },
-        "returns": "this，便于链式追加",
-        "notes": [
-         "实现只支持最后一维，其他取值在原生侧被拒绝。",
-         "先减去该行最大值再取指数，避免上溢。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "crossEntropy(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle)",
-       "signature": "CommandQueueBuilder crossEntropy(NativeTensorHandle logits, NativeTensorHandle targets, NativeTensorHandle output)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "logits"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "targets"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加按类别索引计算的平均交叉熵。",
-        "params": {
-         "logits": "形状 (rows, classes) 的未归一化得分",
-         "targets": "长度 rows 的类别索引，以 float 存放，取值 [0, classes)",
-         "output": "形状 (1) 的单元素张量"
-        },
-        "returns": "this，便于链式追加",
-        "notes": [
-         "内部按 log-sum-exp 计算，不要求先做 softmax。",
-         "索引越界或非有限时原生侧报错。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "layerNorm(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, float)",
-       "signature": "CommandQueueBuilder layerNorm(NativeTensorHandle input, NativeTensorHandle gamma, NativeTensorHandle beta, NativeTensorHandle output, float epsilon)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "input"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "gamma"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "beta"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        },
-        {
-         "type": "float",
-         "name": "epsilon"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加最后一维的层归一化。",
-        "params": {
-         "input": "秩至少为 1 的张量，最后一维即归一化维",
-         "gamma": "形状 (dim) 的缩放参数",
-         "beta": "形状 (dim) 的偏移参数",
-         "output": "形状须与 input 相同",
-         "epsilon": "加到方差上的稳定项，以 float 位写入属性槽 0"
-        },
-        "returns": "this，便于链式追加",
-        "notes": [
-         "统计量按最后一维逐行计算，行数由元素总数除以 dim 得到。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "batchNorm2d(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, float, float, boolean)",
-       "signature": "CommandQueueBuilder batchNorm2d(NativeTensorHandle input, NativeTensorHandle gamma, NativeTensorHandle beta, NativeTensorHandle runningMean, NativeTensorHandle runningVar, NativeTensorHandle output, float epsilon, float momentum, boolean training)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "input"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "gamma"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "beta"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "runningMean"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "runningVar"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        },
-        {
-         "type": "float",
-         "name": "epsilon"
-        },
-        {
-         "type": "float",
-         "name": "momentum"
-        },
-        {
-         "type": "boolean",
-         "name": "training"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加 NCHW 批归一化，可写回运行统计。",
-        "params": {
-         "input": "形状 (N, C, H, W) 的输入",
-         "gamma": "形状 (C) 的缩放参数",
-         "beta": "形状 (C) 的偏移参数",
-         "runningMean": "形状 (C) 的运行均值缓冲，训练时被更新",
-         "runningVar": "形状 (C) 的运行方差缓冲，训练时被更新",
-         "output": "形状须与 input 相同",
-         "epsilon": "数值稳定项，写入属性槽 0",
-         "momentum": "运行统计更新系数：running = (1 - momentum) * running + momentum * batch",
-         "training": "true 时用批内统计并写回缓冲，false 时用运行统计做推理"
-        },
-        "returns": "this，便于链式追加",
-        "notes": [
-         "training 以 i32 存入属性槽 2，非零即真。",
-         "归一化使用批内有偏方差，运行方差按 spatial - 1 做无偏修正后更新。",
-         "runningMean 与 runningVar 按写锁访问，训练模式下是本批唯一的副产物。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "conv2d(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, int, int, int, int, int, int)",
-       "signature": "CommandQueueBuilder conv2d(NativeTensorHandle input, NativeTensorHandle weight, NativeTensorHandle output, int kernelHeight, int kernelWidth, int strideHeight, int strideWidth, int paddingHeight, int paddingWidth)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "input"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "weight"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        },
-        {
-         "type": "int",
-         "name": "kernelHeight"
-        },
-        {
-         "type": "int",
-         "name": "kernelWidth"
-        },
-        {
-         "type": "int",
-         "name": "strideHeight"
-        },
-        {
-         "type": "int",
-         "name": "strideWidth"
-        },
-        {
-         "type": "int",
-         "name": "paddingHeight"
-        },
-        {
-         "type": "int",
-         "name": "paddingWidth"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加二维卷积，NCHW 输入、OIHW 权重。",
-        "params": {
-         "input": "形状 (N, C_in, H, W) 的输入",
-         "weight": "形状 (C_out, C_in, kernelHeight, kernelWidth) 的权重",
-         "output": "形状 (N, C_out, oh, ow)，oh = (H + 2*paddingHeight - kernelHeight) / strideHeight + 1",
-         "kernelHeight": "卷积核高，须大于 0",
-         "kernelWidth": "卷积核宽，须大于 0",
-         "strideHeight": "纵向步长，≤0 时按 1 处理",
-         "strideWidth": "横向步长，≤0 时按 1 处理",
-         "paddingHeight": "纵向两侧填充，负值按 0 处理",
-         "paddingWidth": "横向两侧填充，负值按 0 处理"
-        },
-        "returns": "this，便于链式追加",
-        "notes": [
-         "属性槽 0 到 5 依次存放 kernelHeight、kernelWidth、strideHeight、strideWidth、paddingHeight、paddingWidth。",
-         "输出宽 ow 用同一公式按宽度计算，除法向下取整。",
-         "不支持分组卷积与膨胀；输入通道数须等于权重第二维。",
-         "核大于填充后的输入时原生侧报错。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "conv2d(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, int, int, int, int, int, int, int, int, int)",
-       "signature": "CommandQueueBuilder conv2d(NativeTensorHandle input, NativeTensorHandle weight, NativeTensorHandle output, int kernelHeight, int kernelWidth, int strideHeight, int strideWidth, int paddingHeight, int paddingWidth, int dilationHeight, int dilationWidth, int groups)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "input"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "weight"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        },
-        {
-         "type": "int",
-         "name": "kernelHeight"
-        },
-        {
-         "type": "int",
-         "name": "kernelWidth"
-        },
-        {
-         "type": "int",
-         "name": "strideHeight"
-        },
-        {
-         "type": "int",
-         "name": "strideWidth"
-        },
-        {
-         "type": "int",
-         "name": "paddingHeight"
-        },
-        {
-         "type": "int",
-         "name": "paddingWidth"
-        },
-        {
-         "type": "int",
-         "name": "dilationHeight"
-        },
-        {
-         "type": "int",
-         "name": "dilationWidth"
-        },
-        {
-         "type": "int",
-         "name": "groups"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加带膨胀与分组参数的二维卷积。",
-        "params": {
-         "input": "形状 (N, C_in, H, W) 的输入",
-         "weight": "形状 (C_out, C_in / groups, kernelHeight, kernelWidth) 的权重",
-         "output": "形状 (N, C_out, oh, ow)，oh = (H + 2*paddingHeight - eh) / strideHeight + 1，eh = dilationHeight * (kernelHeight - 1) + 1",
-         "kernelHeight": "卷积核高，须大于 0",
-         "kernelWidth": "卷积核宽，须大于 0",
-         "strideHeight": "纵向步长，≤0 时按 1 处理",
-         "strideWidth": "横向步长，≤0 时按 1 处理",
-         "paddingHeight": "纵向两侧填充，负值按 0 处理",
-         "paddingWidth": "横向两侧填充，负值按 0 处理",
-         "dilationHeight": "纵向膨胀系数，≤0 时按 1 处理",
-         "dilationWidth": "横向膨胀系数，≤0 时按 1 处理",
-         "groups": "卷积分组数，≤0 时按 1 处理；输入与输出通道数都须被它整除"
-        },
-        "returns": "this，便于链式追加",
-        "throws": {
-         "BasaltRuntimeException": "input、weight 或 output 为 null",
-         "IllegalArgumentException": "某个句柄属于其他上下文"
-        },
-        "notes": [
-         "属性槽 0 到 8 依次存放 kernelHeight、kernelWidth、strideHeight、strideWidth、paddingHeight、paddingWidth、dilationHeight、dilationWidth、groups。",
-         "9 参数重载等价于 dilationHeight、dilationWidth、groups 都取 1。",
-         "有效核按膨胀展开后大于填充后的输入、通道数不能被 groups 整除，或权重第二维不等于 C_in / groups 时，原生侧报错。",
-         "输出宽 ow 用同一公式按宽度计算，除法向下取整。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "groupNorm(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, int, float)",
-       "signature": "CommandQueueBuilder groupNorm(NativeTensorHandle input, NativeTensorHandle gamma, NativeTensorHandle beta, NativeTensorHandle output, int groups, float epsilon)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "input"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "gamma"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "beta"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        },
-        {
-         "type": "int",
-         "name": "groups"
-        },
-        {
-         "type": "float",
-         "name": "epsilon"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加 NCHW 分组归一化。",
-        "params": {
-         "input": "秩至少为 2 的输入，第 0 轴为批、第 1 轴为通道，其后各轴合并为空间维",
-         "gamma": "形状 (C) 的缩放参数",
-         "beta": "形状 (C) 的偏移参数",
-         "output": "形状须与 input 完全相同",
-         "groups": "分组数，≤0 时按 1 处理；须整除通道数 C",
-         "epsilon": "加到方差上的稳定项，以 float 位写入属性槽 1"
-        },
-        "returns": "this，便于链式追加",
-        "throws": {
-         "BasaltRuntimeException": "input、gamma、beta 或 output 为 null",
-         "IllegalArgumentException": "某个句柄属于其他上下文"
-        },
-        "notes": [
-         "属性槽 0 为分组数，槽 1 为 epsilon 的 float 位。",
-         "每组在连续的 channelsPerGroup 个通道及其全部空间位置上统计均值与有偏方差，再按通道做 gamma、beta 仿射。",
-         "输入秩小于 2、C 不能被 groups 整除、gamma 或 beta 长度不等于 C、输出形状与输入不同时，原生侧报错。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "maxPool2d(NativeTensorHandle, NativeTensorHandle, int, int, int, int)",
-       "signature": "CommandQueueBuilder maxPool2d(NativeTensorHandle input, NativeTensorHandle output, int kernelHeight, int kernelWidth, int strideHeight, int strideWidth)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "input"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        },
-        {
-         "type": "int",
-         "name": "kernelHeight"
-        },
-        {
-         "type": "int",
-         "name": "kernelWidth"
-        },
-        {
-         "type": "int",
-         "name": "strideHeight"
-        },
-        {
-         "type": "int",
-         "name": "strideWidth"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加 NCHW 最大池化，无填充。",
-        "params": {
-         "input": "形状 (N, C, H, W) 的输入",
-         "output": "形状 (N, C, oh, ow)，oh = (H - kernelHeight) / strideHeight + 1",
-         "kernelHeight": "池化窗高，≤0 时按 1 处理",
-         "kernelWidth": "池化窗宽，≤0 时按 1 处理",
-         "strideHeight": "纵向步长，≤0 时按 1 处理",
-         "strideWidth": "横向步长，≤0 时按 1 处理"
-        },
-        "returns": "this，便于链式追加",
-        "notes": [
-         "属性槽 0 到 3 依次存放 kernelHeight、kernelWidth、strideHeight、strideWidth。",
-         "窗大于输入时报错；接口不提供填充参数。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "dropout(NativeTensorHandle, NativeTensorHandle, float, boolean, long)",
-       "signature": "CommandQueueBuilder dropout(NativeTensorHandle input, NativeTensorHandle output, float probability, boolean training, long seed)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "input"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        },
-        {
-         "type": "float",
-         "name": "probability"
-        },
-        {
-         "type": "boolean",
-         "name": "training"
-        },
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加 inverted dropout，训练时按 1/(1-p) 缩放。",
-        "params": {
-         "input": "任意秩张量",
-         "output": "形状须与 input 相同",
-         "probability": "丢弃概率，取值 [0, 1)，0 表示原样输出",
-         "training": "false 时直接复制输入，不生成掩码",
-         "seed": "掩码随机种子，低 32 位与高 32 位分别写入属性槽 2、3"
-        },
-        "returns": "this，便于链式追加",
-        "notes": [
-         "掩码逐元素由 xorshift 生成，相同 seed 与长度得到相同掩码。",
-         "probability 不在 [0, 1) 时原生侧报错。",
-         "反向复用同一 seed 重建掩码，因此前向与反向必须传相同参数。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "embedding(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle)",
-       "signature": "CommandQueueBuilder embedding(NativeTensorHandle indices, NativeTensorHandle weight, NativeTensorHandle output)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "indices"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "weight"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加按索引查表，输出在索引形状后追加词向量维。",
-        "params": {
-         "indices": "整数索引以 float 存放，元素个数即查表行数，取值 [0, vocab)",
-         "weight": "形状 (vocab, dim) 的嵌入矩阵",
-         "output": "indices 形状后接 dim，元素数须为 rows * dim"
-        },
-        "returns": "this，便于链式追加",
-        "notes": [
-         "索引按 float 截断取整，越界或非有限时报错。",
-         "反向时把梯度累加到被选中的行，其余行梯度为零。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "batchedMatMul(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle)",
-       "signature": "CommandQueueBuilder batchedMatMul(NativeTensorHandle left, NativeTensorHandle right, NativeTensorHandle output)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "left"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "right"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加批量矩阵乘，左右均为 rank-3。",
-        "params": {
-         "left": "形状 (B, M, K) 的左操作数",
-         "right": "形状 (B, K, N) 的右操作数",
-         "output": "形状 (B, M, N)"
-        },
-        "returns": "this，便于链式追加",
-        "notes": [
-         "要求两边的批大小与内维分别相等。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "permute(NativeTensorHandle, NativeTensorHandle, int...)",
-       "signature": "CommandQueueBuilder permute(NativeTensorHandle input, NativeTensorHandle output, int... permutation)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "input"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        },
-        {
-         "type": "int...",
-         "name": "permutation"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加轴重排，最多支持 4 维。",
-        "params": {
-         "input": "秩等于 permutation 长度的张量",
-         "output": "形状为 input 各轴按 permutation 重排后的结果",
-         "permutation": "输出第 i 轴取自输入的哪一轴，长度 1 到 4"
-        },
-        "returns": "this，便于链式追加",
-        "throws": {
-         "IllegalArgumentException": "permutation 长度不在 [1, 4]"
-        },
-        "notes": [
-         "属性槽 0 存轴数，槽 1 起依次存各轴下标。",
-         "原生侧还要求长度等于输入秩、下标小于秩且互不重复。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "reshape(NativeTensorHandle, NativeTensorHandle, int...)",
-       "signature": "CommandQueueBuilder reshape(NativeTensorHandle input, NativeTensorHandle output, int... shape)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "input"
-        },
-        {
-         "type": "NativeTensorHandle",
-         "name": "output"
-        },
-        {
-         "type": "int...",
-         "name": "shape"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加形状变换，元素顺序保持不变。",
-        "params": {
-         "input": "任意秩张量",
-         "output": "形状为 shape，元素总数须与 input 相同",
-         "shape": "目标形状，1 到 4 个正维度"
-        },
-        "returns": "this，便于链式追加",
-        "throws": {
-         "IllegalArgumentException": "shape 长度不在 [1, 4]"
-        },
-        "notes": [
-         "属性槽 0 存维数，槽 1 起依次存各维长度。",
-         "维度非正或元素总数不匹配时原生侧报错。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "size()",
-       "signature": "int size()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回已追加且尚未清空的指令条数。",
-        "returns": "指令条数，清空后为 0"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "capacity()",
-       "signature": "int capacity()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回缓冲区当前可容纳的指令条数。",
-        "returns": "以指令条数计的容量，初始为 8",
-        "notes": [
-         "扩容时容量翻倍并复制已有指令；该值不是字节数。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "execute()",
-       "signature": "void execute()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "以上下文默认线程数执行整批指令，不清空队列。",
-        "notes": [
-         "队列为空时直接返回，不进入原生层，也不产生事件。",
-         "执行后计算图新增对应节点，再次执行同一批指令前必须先 clearGraph。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "execute(int)",
-       "signature": "void execute(int threads)",
-       "params": [
-        {
-         "type": "int",
-         "name": "threads"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "以指定线程数执行整批指令，不清空队列。",
-        "params": {
-         "threads": "并行度，取值 [0, 256]；0 与 1 都落到单线程池，2 到 256 按该数量复用线程池"
-        },
-        "throws": {
-         "IllegalArgumentException": "threads 小于 0 或大于 256"
-        },
-        "notes": [
-         "校验先于空队列判断，threads 越界时即使队列为空也会抛出。",
-         "线程数只影响内核的并行调度，不改变指令语义与结果。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "executeAndClear()",
-       "signature": "void executeAndClear()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "执行后立即清空队列，供逐批训练循环复用。",
-        "notes": [
-         "等价于先 execute() 再 clear()，执行失败时不会清空。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "clear()",
-       "signature": "void clear()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "丢弃全部指令，保留已分配的缓冲区容量。",
-        "notes": [
-         "只重置计数与缓冲位置，不影响已写入的张量与计算图。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "close()",
-       "signature": "void close()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "清空队列；不释放原生资源。",
-        "notes": [
-         "本类未实现 AutoCloseable，close 与 clear 等价。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "toString()",
-       "signature": "String toString()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回指令条数与容量组成的描述文本。",
-        "returns": "形如 CommandQueueBuilder[commands=2, capacity=8] 的字符串"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "把算子序列编码成 128 字节定长指令，一次 JNI 调用提交。",
-      "body": [
-       "每条指令固定 128 字节，按本地字节序写入直接 ByteBuffer：偏移 0 为 u8 算子码，偏移 1 为 u8 标志位（当前恒为 0），偏移 8 到 40 依次是 5 个输入句柄地址，偏移 48 是输出句柄地址，偏移 56 起是 16 个 i32 属性槽，偏移 120 为 8 字节保留位。构造时预分配 8 条指令的容量，超出后按倍增扩容并复制已有字节。",
-       "算子按元数占用输入槽：一元算子只写 A，二元算子写 A、B，layerNorm 用 A、B、C，batchNorm2d 用满 A 到 E。形状参数不进指针：softmax 的轴、layerNorm 的 epsilon、conv2d 的核/步长/填充都写进属性槽，浮点以 Float.floatToRawIntBits 落位，dropout 的 64 位种子拆成低、高两个 i32。",
-       "原生侧按算子码重建 Op，先校验再写输出：输出不得与任一输入同址（原地算子不可微）、不得重复生产、不得覆盖已被消费的张量。批内指令按追加顺序执行，生产者必须排在消费者之前；被拒绝的指令不写输出，但先前指令已生效，队列本身不做回滚。"
-      ],
-      "notes": [
-       "非线程安全：指令缓冲、计数与扩容都无同步，跨线程共享同一实例需外部加锁。",
-       "execute() 不清空队列；对同一批指令再次执行会因输出已被当前计算图生产而失败，需先调用 NativeContext.clearGraph()。",
-       "close() 只清空队列，不释放原生资源，本类未实现 AutoCloseable。",
-       "原生错误以 BasaltRuntimeException 抛出；execute 的 JFR 事件在 finally 中提交，失败时同样记录。"
-      ],
-      "example": "try (NativeContext context = NativeContext.create(4)) {\n    NativeTensorHandle left = context.zeros(2, 3);\n    NativeTensorHandle right = context.zeros(3, 4);\n    NativeTensorHandle product = context.zeros(2, 4);\n    NativeTensorHandle activated = context.zeros(2, 4);\n    CommandQueueBuilder queue = new CommandQueueBuilder(context);\n    queue.matMul(left, right, product)\n            .relu(product, activated)\n            .executeAndClear();\n    float[] values = activated.data();\n}",
-      "see": [
-       "basalt.nativebridge.NativeContext",
-       "basalt.nativebridge.NativeTensorHandle",
-       "basalt.nativebridge.NativeMLP"
       ]
-     }
-    },
-    {
-     "qualified": "basalt.nativebridge.NativeContext",
-     "simple_qualified": "NativeContext",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "AutoCloseable"
-     ],
-     "file": "jsl/nativebridge/NativeContext.java",
-     "line": 18,
-     "javadoc": "Owns a native tensor context: tensor store, autodiff graph, rayon pools and optimizer state.\n\n<p>Lifecycle is enforced with a read/write lock. Every JNI call runs under the read lock, while\n{@link #close()} takes the write lock and destroys the context exactly once. Tensor handles hold\na strong reference to their context, so a context cannot be garbage-collected before its\ntensors; conversely, closing a context invalidates every handle and makes later use fail fast\ninstead of dereferencing freed memory.</p>",
-     "nested": [
-      "Guard",
-      "State"
-     ],
-     "members": [
-      {
-       "kind": "method",
-       "key": "create()",
-       "signature": "NativeContext create()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建使用全部可用处理器的上下文",
-        "body": [
-         "等价于 create(0)：线程数 0 交给 Rust 侧按 available_parallelism 决定，实际线程池在首次执行指令队列或反向传播时才建立。"
-        ],
-        "returns": "持有独立原生上下文的新实例"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "create(int)",
-       "signature": "NativeContext create(int threads)",
-       "params": [
-        {
-         "type": "int",
-         "name": "threads"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建指定原生线程数提示的上下文",
-        "params": {
-         "threads": "原生线程数提示；0 表示由 Rust 侧选择，合法区间为 [0, 256]"
-        },
-        "returns": "持有独立原生上下文的新实例",
-        "throws": {
-         "IllegalArgumentException": "threads 小于 0 或大于 256",
-         "basalt.BasaltRuntimeException": "原生引擎不可用，消息含加载错误与预期路径",
-         "IllegalStateException": "原生上下文分配返回空指针"
-        },
-        "notes": [
-         "线程数只作为提示保存，线程池按该值缓存在上下文内，相同取值复用同一个池。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "threads()",
-       "signature": "int threads()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回构造时记录的线程数提示",
-        "returns": "线程数提示；0 表示自动"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "isOpen()",
-       "signature": "boolean isOpen()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "判断上下文是否仍持有有效原生指针",
-        "returns": "指针非零时为 true"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "guard()",
-       "signature": "Guard guard()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "获取读锁并返回携带原生指针的 Guard",
-        "body": [
-         "先取得读锁再读取指针，因此 close() 不可能在 Guard 存活期间完成销毁。读锁与指针校验都成功后返回 Guard，调用方必须在 JNI 调用结束后关闭它。"
-        ],
-        "returns": "持有读锁的 Guard，需在 JNI 调用后关闭",
-        "throws": {
-         "IllegalStateException": "上下文已关闭，指针为零"
-        },
-        "notes": [
-         "Guard 关闭时只释放读锁，不销毁上下文。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "zeros(int...)",
-       "signature": "NativeTensorHandle zeros(int... shape)",
-       "params": [
-        {
-         "type": "int...",
-         "name": "shape"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建零初始化的推理张量，不需要梯度",
-        "params": {
-         "shape": "各维长度，必须至少一维且全部为正"
-        },
-        "returns": "requiresGrad 为 false 的零张量句柄",
-        "throws": {
-         "basalt.BasaltRuntimeException": "shape 为 null",
-         "IllegalArgumentException": "shape 为空、含非正维度、元素总数溢出或超过 Integer.MAX_VALUE"
-        },
-        "notes": [
-         "元素总数按 Math.multiplyExact 计算，超过 int 范围即拒绝，因为 Java 侧视图是 float 数组。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "parameter(int...)",
-       "signature": "NativeTensorHandle parameter(int... shape)",
-       "params": [
-        {
-         "type": "int...",
-         "name": "shape"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建零初始化的可训练张量，requiresGrad 为真",
-        "params": {
-         "shape": "各维长度，必须至少一维且全部为正"
-        },
-        "returns": "requiresGrad 为 true 的零张量句柄",
-        "throws": {
-         "basalt.BasaltRuntimeException": "shape 为 null",
-         "IllegalArgumentException": "shape 为空、含非正维度、元素总数溢出或超过 Integer.MAX_VALUE"
-        },
-        "notes": [
-         "初始值为零，通常随后调用 randomize 或 setData 赋初值。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "of(float[], int...)",
-       "signature": "NativeTensorHandle of(float[] data, int... shape)",
-       "params": [
-        {
-         "type": "float[]",
-         "name": "data"
-        },
-        {
-         "type": "int...",
-         "name": "shape"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "用给定数据创建不需要梯度的张量",
-        "params": {
-         "data": "按行主序排列的元素，长度必须等于 shape 的元素总数",
-         "shape": "各维长度，必须至少一维且全部为正"
-        },
-        "returns": "requiresGrad 为 false 的张量句柄",
-        "throws": {
-         "basalt.BasaltRuntimeException": "data 或 shape 为 null，或数据含非有限值",
-         "IllegalArgumentException": "数据长度与 shape 不符，或 shape 本身非法"
-        },
-        "notes": [
-         "数据在构造时被复制进原生缓冲区，之后修改 Java 数组不影响张量。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "of(float[], boolean, int...)",
-       "signature": "NativeTensorHandle of(float[] data, boolean requiresGrad, int... shape)",
-       "params": [
-        {
-         "type": "float[]",
-         "name": "data"
-        },
-        {
-         "type": "boolean",
-         "name": "requiresGrad"
-        },
-        {
-         "type": "int...",
-         "name": "shape"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "用给定数据创建张量并可指定是否需要梯度",
-        "params": {
-         "data": "按行主序排列的元素，长度必须等于 shape 的元素总数",
-         "requiresGrad": "是否参与梯度计算",
-         "shape": "各维长度，必须至少一维且全部为正"
-        },
-        "returns": "绑定到当前上下文的张量句柄",
-        "throws": {
-         "basalt.BasaltRuntimeException": "data 或 shape 为 null，或数据含非有限值",
-         "IllegalArgumentException": "数据长度与 shape 不符，或 shape 本身非法"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "random(int[], long, float, boolean)",
-       "signature": "NativeTensorHandle random(int[] shape, long seed, float scale, boolean requiresGrad)",
-       "params": [
-        {
-         "type": "int[]",
-         "name": "shape"
-        },
-        {
-         "type": "long",
-         "name": "seed"
-        },
-        {
-         "type": "float",
-         "name": "scale"
-        },
-        {
-         "type": "boolean",
-         "name": "requiresGrad"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建张量并用 seed 与 scale 填充随机值",
-        "params": {
-         "shape": "各维长度，必须至少一维且全部为正",
-         "seed": "伪随机种子，相同取值可复现",
-         "scale": "幅度，必须有限且非负",
-         "requiresGrad": "是否参与梯度计算"
-        },
-        "returns": "已填充随机数据的张量句柄",
-        "throws": {
-         "basalt.BasaltRuntimeException": "shape 为 null、scale 为负或非有限",
-         "IllegalArgumentException": "shape 非法或元素总数超出 int 范围"
-        },
-        "notes": [
-         "先按 shape 分配零张量再填充；填充失败时会关闭已分配的句柄再抛出原异常，不泄漏原生内存。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "backward(NativeTensorHandle)",
-       "signature": "void backward(NativeTensorHandle root)",
-       "params": [
-        {
-         "type": "NativeTensorHandle",
-         "name": "root"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "从 root 反向传播，梯度累加到各张量",
-        "params": {
-         "root": "计算图输出张量，必须属于当前上下文"
-        },
-        "throws": {
-         "basalt.BasaltRuntimeException": "root 为 null，或 root 已关闭",
-         "IllegalArgumentException": "root 属于其他上下文"
-        },
-        "notes": [
-         "梯度是累加的，重复调用前应先对参数调用 zeroGrad。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "clipGradNorm(java.util.List<NativeTensorHandle>, float)",
-       "signature": "double clipGradNorm(java.util.List<NativeTensorHandle> tensors, float maxNorm)",
-       "params": [
-        {
-         "type": "java.util.List<NativeTensorHandle>",
-         "name": "tensors"
-        },
-        {
-         "type": "float",
-         "name": "maxNorm"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按全局 L2 范数裁剪梯度，返回裁剪前范数",
-        "params": {
-         "tensors": "参数张量列表，每一项都必须属于当前上下文",
-         "maxNorm": "裁剪阈值，必须有限且非负"
-        },
-        "returns": "裁剪前的全局梯度范数；空列表时为 0.0",
-        "throws": {
-         "IllegalArgumentException": "某个张量属于其他上下文",
-         "basalt.BasaltRuntimeException": "maxNorm 为负或非有限，或某个张量已关闭"
-        },
-        "notes": [
-         "范数不超过阈值时不修改任何梯度，但仍返回实际范数。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "clearGraph()",
-       "signature": "void clearGraph()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "清空计算图，张量数据保持不变",
-        "body": [
-         "清空后不能再对旧节点执行反向传播，新的指令队列执行会重新建图。张量本身与其梯度缓冲不受影响。"
-        ],
-        "throws": {
-         "IllegalStateException": "上下文已关闭"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "graphSize()",
-       "signature": "int graphSize()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回计算图节点数量",
-        "returns": "当前图中的节点数",
-        "throws": {
-         "IllegalStateException": "上下文已关闭"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "stats()",
-       "signature": "long[] stats()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回存活张量数、存活字节数与图节点数",
-        "returns": "长度 3 的数组：存活张量数、存活字节数、图节点数",
-        "throws": {
-         "IllegalStateException": "上下文已关闭"
-        },
-        "notes": [
-         "字节数按数据与梯度缓冲的实际容量统计，可用于诊断内存占用。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "close()",
-       "signature": "void close()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "销毁原生上下文，重复调用无效果",
-        "body": [
-         "取写锁后以 getAndSet(0) 取出指针，非零时调用原生销毁，再执行 Cleaner 注册的清理动作；写锁保证在途读锁调用全部退出后才真正释放，指针置零保证只销毁一次。"
-        ],
-        "notes": [
-         "幂等：第二次调用取出的是 0，不会重复销毁。",
-         "关闭后该上下文创建的所有句柄失效，其 close() 变为无操作。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "toString()",
-       "signature": "String toString()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回开放状态与线程数的摘要",
-        "returns": "形如 NativeContext[open=true, threads=4] 的字符串"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "持有一个原生张量上下文：存储、计算图、线程池与优化器状态",
-      "body": [
-       "上下文是原生状态的唯一所有者：张量存储（slotmap 加地址索引）、自微分计算图、按线程数缓存的 rayon 线程池，以及按张量地址保存的 Adam 一阶与二阶矩，都挂在同一个 Context 上。",
-       "生命周期由 ReentrantReadWriteLock 保护。每个 JNI 调用都在 guard() 取得的读锁内执行，close() 取写锁并把指针原子置零，因此销毁最多发生一次，并且会等待在途调用结束。",
-       "句柄持有上下文的强引用，上下文不会先于其张量被回收。关闭后 guard() 抛 IllegalStateException，句柄的后续操作在取锁阶段即失败，不会解引用已释放内存。"
-      ],
-      "notes": [
-       "线程安全：多个线程可并发调用，读锁允许多个 JNI 调用并行，close() 需等待在途调用退出。",
-       "生命周期：close() 幂等；未显式关闭时由 Cleaner 在对象不可达后兜底销毁。",
-       "失败模式：引擎不可用时构造抛 basalt.BasaltRuntimeException；关闭后调用抛 IllegalStateException。"
-      ],
-      "example": "try (NativeContext ctx = NativeContext.create(4)) {\n    NativeTensorHandle weight = ctx.parameter(4, 3);\n    weight.randomize(42L, 0.1f);\n    try (NativeTensorHandle batch = ctx.of(new float[]{1f, 2f, 3f}, 1, 3)) {\n        long[] stats = ctx.stats();\n        System.out.println(stats[0] + \" tensors, graph nodes \" + ctx.graphSize());\n        System.out.println(batch.rank() + \" dims, weight norm \" + weight.norm());\n    }\n}",
-      "see": [
-       "basalt.nativebridge.NativeTensorHandle",
-       "basalt.nativebridge.NativeLibrary",
-       "basalt.nativebridge.NativeContext.Guard"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nativebridge.NativeLibrary",
-     "simple_qualified": "NativeLibrary",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nativebridge/NativeLibrary.java",
-     "line": 13,
-     "javadoc": "Availability facade for the Rust tensor runtime.\n\n<p>The shared library is loaded once by {@link NativeKernels}; this class only exposes the\nengine version and a fail-fast guard. Keeping a single loader avoids the \"already loaded in\nanother class loader\" failure mode when both the classical kernels and the tensor engine are\nused in the same JVM.</p>",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "available()",
-       "signature": "boolean available()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "原生引擎是否加载成功",
-        "returns": "true 表示三步查找中任一步成功"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "loadError()",
-       "signature": "String loadError()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回加载失败摘要",
-        "returns": "异常类名与消息；加载成功时为空字符串"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "libraryPath()",
-       "signature": "String libraryPath()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回实际或预期的库文件绝对路径",
-        "returns": "加载成功时为实际文件路径，失败时为默认预期路径的绝对形式"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "version()",
-       "signature": "int version()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回引擎 ABI 版本，不可用时为 0",
-        "returns": "原生版本号；库不可用时为 0"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "requireAvailable()",
-       "signature": "void requireAvailable()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "引擎不可用时抛出带诊断信息的异常",
-        "body": [
-         "错误消息由三段拼成：固定前缀、loadError() 的内容，以及 libraryPath() 给出的预期路径与运行 native-build.sh 的提示，便于直接定位是未编译还是路径不对。"
-        ],
-        "throws": {
-         "basalt.BasaltRuntimeException": "原生库不可用；消息包含加载错误与预期路径"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "原生张量运行时的可用性门面",
-      "body": [
-       "动态库只由 basalt.core.NativeKernels 在类初始化时加载一次，本类仅转发可用性、错误信息与路径查询，并额外提供 version() 与 requireAvailable()。单一加载点避免经典内核与张量引擎同时使用时出现已在其他类加载器中加载的失败。",
-       "查找顺序固定为三步：先按系统属性 basalt.native.path 定位文件，存在就 System.load；否则从 classpath 的 /native/平台标签/ 解压到临时目录加载；最后回退到 System.loadLibrary，由 java.library.path 解析。",
-       "available() 表示三步中任一步成功。失败时 loadError() 保留首次捕获的异常摘要，libraryPath() 报告实际加载位置或预期位置，requireAvailable() 用两者拼出可直接采取行动的错误消息。"
-      ],
-      "notes": [
-       "basalt.native.path 的默认值是 build/native 下的平台库文件名，未设置属性时即按该路径查找。",
-       "默认文件名按平台选择：Windows 为 basalt_native.dll，macOS 为 libbasalt_native.dylib，其余为 libbasalt_native.so；classpath 资源中的平台标签形如 windows-x86_64。",
-       "加载在类初始化阶段完成，结果不可变，运行期不会重试。",
-       "加载失败不影响纯 Java 路径，经典估计器会自动回退。",
-       "requireAvailable() 抛 basalt.BasaltRuntimeException，它是 IllegalStateException 的子类。"
-      ],
-      "see": [
-       "basalt.nativebridge.NativeContext",
-       "basalt.core.NativeKernels"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nativebridge.NativeMLP",
-     "simple_qualified": "NativeMLP",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "AutoCloseable"
-     ],
-     "file": "jsl/nativebridge/NativeMLP.java",
-     "line": 24,
-     "javadoc": "A compact multilayer perceptron built entirely from the public tensor/queue API.\n\n<p>This class is the \"expert tier\" reference implementation: it shows how to compose matmul,\nbroadcast add, activation and MSE nodes, run one backward pass, and update parameters with\nAdam. It is intentionally not a high-level estimator; the classical {@code basalt.ml} models keep\ntheir own tuned implementations.</p>\n\n<p>Mini-batches are padded by wrapping to the start of the shuffled epoch when the last batch is\nshort. That keeps every native tensor shape static (no reallocation per step) at the cost of a\nsmall duplicate-sample bias in the final batch.</p>",
-     "nested": [
-      "Activation",
-      "OutputActivation"
-     ],
-     "members": [
-      {
-       "kind": "constructor",
-       "key": "NativeMLP(NativeContext, int[], Activation, OutputActivation, long)",
-       "signature": "NativeMLP(NativeContext context, int[] layerSizes, Activation activation, OutputActivation outputActivation, long seed)",
-       "params": [
-        {
-         "type": "NativeContext",
-         "name": "context"
-        },
-        {
-         "type": "int[]",
-         "name": "layerSizes"
-        },
-        {
-         "type": "Activation",
-         "name": "activation"
-        },
-        {
-         "type": "OutputActivation",
-         "name": "outputActivation"
-        },
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按层宽建网，初始化 Xavier 权重与零偏置。",
-        "params": {
-         "context": "张量与计算图所属的上下文",
-         "layerSizes": "从输入到输出的各层宽度，至少两个元素且全部为正",
-         "activation": "隐藏层激活函数",
-         "outputActivation": "输出层激活函数，NONE 表示线性输出",
-         "seed": "权重初始化与批次打乱的种子"
-        },
-        "throws": {
-         "IllegalArgumentException": "layerSizes 少于两个元素或含非正宽度",
-         "BasaltRuntimeException": "context、layerSizes、activation 或 outputActivation 为 null"
-        },
-        "notes": [
-         "layerSizes 在构造时被复制，之后修改入参数组不影响实例。",
-         "构造只分配参数与队列，批次张量在 fit 与 predict 时按实际批宽分配。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "layerSizes()",
-       "signature": "int[] layerSizes()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回层宽数组的副本。",
-        "returns": "与构造参数内容相同的新数组"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "parameters()",
-       "signature": "List<NativeTensorHandle> parameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按层顺序返回权重与偏置，权重在前。",
-        "returns": "只读列表，元素交替为 weight(0)、bias(0)、weight(1)、bias(1)……"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "weight(int)",
-       "signature": "NativeTensorHandle weight(int layer)",
-       "params": [
-        {
-         "type": "int",
-         "name": "layer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回指定层的权重张量。",
-        "params": {
-         "layer": "层索引，从 0 开始，最大为层数减一"
-        },
-        "returns": "形状 (layerSizes[layer], layerSizes[layer+1]) 的可训练张量",
-        "notes": [
-         "索引越界由底层列表抛出 IndexOutOfBoundsException，源码未做显式校验。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "bias(int)",
-       "signature": "NativeTensorHandle bias(int layer)",
-       "params": [
-        {
-         "type": "int",
-         "name": "layer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回指定层的偏置张量。",
-        "params": {
-         "layer": "层索引，从 0 开始，最大为层数减一"
-        },
-        "returns": "形状 (layerSizes[layer+1]) 的可训练张量，初值为全零"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fit(float[][], float[][], int, int, float, float)",
-       "signature": "float fit(float[][] features, float[][] targets, int epochs, int batchSize, float learningRate, float weightDecay)",
-       "params": [
-        {
-         "type": "float[][]",
-         "name": "features"
-        },
-        {
-         "type": "float[][]",
-         "name": "targets"
-        },
-        {
-         "type": "int",
-         "name": "epochs"
-        },
-        {
-         "type": "int",
-         "name": "batchSize"
-        },
-        {
-         "type": "float",
-         "name": "learningRate"
-        },
-        {
-         "type": "float",
-         "name": "weightDecay"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "用 Adam 训练，返回最后一个 epoch 的平均 MSE。",
-        "params": {
-         "features": "行优先特征矩阵，列数须等于 layerSizes[0]",
-         "targets": "目标矩阵，行数与 features 相同，列数须等于最后一层宽度",
-         "epochs": "完整遍历数据的轮数，须为正",
-         "batchSize": "每批行数，须为正；超过样本数时按样本数截断",
-         "learningRate": "Adam 学习率",
-         "weightDecay": "解耦权重衰减系数，0 表示不衰减"
-        },
-        "returns": "最后一个 epoch 各批 MSE 的算术平均",
-        "throws": {
-         "IllegalArgumentException": "数据集为空、行数不等、行列宽不符，或 epochs、batchSize 非正",
-         "IllegalStateException": "实例已关闭，或某步损失为非有限值",
-         "BasaltRuntimeException": "features 或 targets 为 null"
-        },
-        "notes": [
-         "每个 batch 结束即更新参数并清零梯度，不累积跨批梯度。",
-         "步数 step 在 backward 之后、adam 之前自增，并作为 Adam 偏差修正的输入。",
-         "临时张量在方法返回前关闭，计算图在入口与 finally 中各清空一次。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "predict(float[][])",
-       "signature": "float[] predict(float[][] features)",
-       "params": [
-        {
-         "type": "float[][]",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "批量前向，返回行优先的展平预测结果。",
-        "params": {
-         "features": "行优先特征矩阵，每行列数须等于 layerSizes[0]"
-        },
-        "returns": "长度 rows * outputSize 的数组，按行拼接",
-        "throws": {
-         "IllegalArgumentException": "任一行宽不等于输入宽度",
-         "IllegalStateException": "实例已关闭"
-        },
-        "notes": [
-         "整批一次前向，批宽等于样本数；空输入直接返回零长度数组。",
-         "不修改参数、梯度与优化器状态。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "predictScalar(float[][])",
-       "signature": "float[] predictScalar(float[][] features)",
-       "params": [
-        {
-         "type": "float[][]",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "单输出模型的预测包装，每行返回一个值。",
-        "params": {
-         "features": "行优先特征矩阵"
-        },
-        "returns": "长度等于样本数的数组",
-        "throws": {
-         "IllegalStateException": "最后一层宽度不为 1"
-        },
-        "notes": [
-         "输出宽度校验在委托 predict 之前完成，因此宽输出模型会先报错。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "gradientNorm()",
-       "signature": "double gradientNorm()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回所有参数梯度的全局 L2 范数。",
-        "returns": "各参数梯度范数平方和的开方",
-        "notes": [
-         "在 zeroGrad 之后调用得到 0；fit 内部每步更新后即清零。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "close()",
-       "signature": "void close()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "释放参数张量并清空队列，可重复调用。",
-        "notes": [
-         "不关闭 NativeContext；重复调用无副作用。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "toString()",
-       "signature": "String toString()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回层宽、隐藏激活与输出激活的描述。",
-        "returns": "形如 NativeMLP[2, 16, 1][activation=RELU, output=NONE] 的字符串"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "参考实现：只用公开张量与队列 API 搭出的多层感知机。",
-      "body": [
-       "构造时按 layerSizes 逐层建立权重与偏置：权重形状 (layerSizes[i], layerSizes[i+1])，用 Xavier 均匀分布初始化，缩放系数 sqrt(6 / (fanIn + fanOut))，种子为 seed + 1009 * (i + 1)；偏置为同宽的全零可训练张量。层数等于 layerSizes 长度减一。",
-       "fit 的每个 mini-batch 依次执行：前向（matMul → add → 激活）→ mse → 执行队列 → 读取损失 → backward → 逐参数 adam → zeroGrad → clearGraph。Adam 固定 beta1=0.9、beta2=0.999、epsilon=1e-8，步数从 1 开始全局递增，weightDecay 以解耦方式加到更新量上。",
-       "批次按打乱后的索引顺序填充；末批不足 batchSize 时从 epoch 头部回绕取样本，使原生张量形状保持不变，代价是末批存在少量重复样本。"
-      ],
-      "notes": [
-       "所有张量归构造时传入的 NativeContext 所有；参数在构造时一次性分配，训练不改变形状。",
-       "训练中出现非有限损失立即抛 IllegalStateException，不继续迭代。",
-       "fit 与 predict 结束都会清空计算图并释放临时张量，返回的 float[] 是副本。",
-       "close() 只释放本实例的参数张量与队列，不关闭上下文；关闭后 fit 与 predict 抛 IllegalStateException。"
-      ],
-      "example": "try (NativeContext context = NativeContext.create(4)) {\n    NativeMLP mlp = new NativeMLP(context, new int[]{2, 16, 1},\n            NativeMLP.Activation.RELU, NativeMLP.OutputActivation.NONE, 42L);\n    float[][] features = {{0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}};\n    float[][] targets = {{0.0f}, {1.0f}, {1.0f}, {0.0f}};\n    float loss = mlp.fit(features, targets, 200, 4, 0.05f, 0.0f);\n    float[] predictions = mlp.predictScalar(features);\n    mlp.close();\n}",
-      "see": [
-       "basalt.nativebridge.CommandQueueBuilder",
-       "basalt.nativebridge.NativeContext",
-       "basalt.nativebridge.NativeTensorHandle"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nativebridge.NativeTensorHandle",
-     "simple_qualified": "NativeTensorHandle",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "AutoCloseable"
-     ],
-     "file": "jsl/nativebridge/NativeTensorHandle.java",
-     "line": 21,
-     "javadoc": "A Java handle to one native tensor.\n\n<p>The object stores only an opaque {@code long}. The native tensor owns a contiguous\n{@code Vec<f32>} plus a lazily allocated gradient buffer; no Java array is pinned and no bulk\ndata crosses the JNI boundary unless the caller explicitly asks for {@link #data()} or\n{@link #grad()}.</p>\n\n<p>Release is idempotent and happens exactly once: either through {@link #close()} or through\nthe {@link Cleaner}. The native side additionally rejects an unknown address, so even a buggy\ndouble release cannot cause a double free.</p>",
-     "nested": [
-      "State"
-     ],
-     "members": [
-      {
-       "kind": "method",
-       "key": "context()",
-       "signature": "NativeContext context()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回所属上下文",
-        "returns": "构造时绑定的上下文引用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "shape()",
-       "signature": "int[] shape()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回 shape 的副本",
-        "returns": "新数组，修改它不影响句柄"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "rank()",
-       "signature": "int rank()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回张量维数",
-        "returns": "shape 的长度"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "size()",
-       "signature": "long size()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回元素总数",
-        "returns": "各维长度按 long 累乘的结果"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "requiresGrad()",
-       "signature": "boolean requiresGrad()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "是否参与梯度计算",
-        "returns": "创建时指定的标志"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "data()",
-       "signature": "float[] data()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把张量数据复制到新数组",
-        "returns": "长度为 size() 的新 float 数组",
-        "throws": {
-         "IllegalStateException": "句柄已关闭，或所属上下文已关闭"
-        },
-        "notes": [
-         "每次调用都产生一次完整拷贝，热路径上应避免在循环内反复调用。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "grad()",
-       "signature": "float[] grad()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "复制梯度，未参与反向传播时全为零",
-        "returns": "长度为 size() 的新 float 数组",
-        "throws": {
-         "IllegalStateException": "句柄已关闭，或所属上下文已关闭"
-        },
-        "notes": [
-         "原生侧在梯度缓冲为空时按数据长度写零，调用方总能拿到等长数组。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "setData(float[])",
-       "signature": "void setData(float[] values)",
-       "params": [
-        {
-         "type": "float[]",
-         "name": "values"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "用新数组覆盖张量数据",
-        "params": {
-         "values": "新数据，长度必须等于 size()"
-        },
-        "throws": {
-         "basalt.BasaltRuntimeException": "values 为 null，或含非有限值",
-         "IllegalArgumentException": "长度与张量元素总数不符",
-         "IllegalStateException": "句柄或上下文已关闭"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fill(float)",
-       "signature": "void fill(float value)",
-       "params": [
-        {
-         "type": "float",
-         "name": "value"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "用同一数值填充全部元素",
-        "params": {
-         "value": "填充值，必须为有限数"
-        },
-        "throws": {
-         "basalt.BasaltRuntimeException": "value 非有限",
-         "IllegalStateException": "句柄或上下文已关闭"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "randomize(long, float)",
-       "signature": "void randomize(long seed, float scale)",
-       "params": [
-        {
-         "type": "long",
-         "name": "seed"
-        },
-        {
-         "type": "float",
-         "name": "scale"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "用伪随机数原地填充张量",
-        "params": {
-         "seed": "伪随机种子，原生侧与 1 取或后作为初始状态",
-         "scale": "幅度，必须有限且非负"
-        },
-        "throws": {
-         "basalt.BasaltRuntimeException": "scale 为负或非有限",
-         "IllegalStateException": "句柄或上下文已关闭"
-        },
-        "notes": [
-         "使用 xorshift 生成 [0, 1) 上的均匀值，再映射到 [-scale, scale)；同参数结果可复现。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "zeroGrad()",
-       "signature": "void zeroGrad()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把梯度缓冲清零",
-        "throws": {
-         "IllegalStateException": "句柄或上下文已关闭"
-        },
-        "notes": [
-         "梯度尚未分配时不做任何事，不会为清零而分配缓冲。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "sgd(float)",
-       "signature": "void sgd(float learningRate)",
-       "params": [
-        {
-         "type": "float",
-         "name": "learningRate"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "以零权重衰减执行一步 SGD",
-        "params": {
-         "learningRate": "学习率，必须有限且非负"
-        },
-        "throws": {
-         "basalt.BasaltRuntimeException": "learningRate 为负或非有限",
-         "IllegalStateException": "句柄或上下文已关闭"
-        },
-        "notes": [
-         "等价于 sgd(learningRate, 0.0f)。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "sgd(float, float)",
-       "signature": "void sgd(float learningRate, float weightDecay)",
-       "params": [
-        {
-         "type": "float",
-         "name": "learningRate"
-        },
-        {
-         "type": "float",
-         "name": "weightDecay"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "执行一步带动量衰减的 SGD",
-        "params": {
-         "learningRate": "学习率，必须有限且非负",
-         "weightDecay": "权重衰减系数"
-        },
-        "throws": {
-         "basalt.BasaltRuntimeException": "learningRate 为负或非有限",
-         "IllegalStateException": "句柄或上下文已关闭"
-        },
-        "notes": [
-         "更新前确保梯度缓冲已分配，梯度为空时按零梯度处理。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "adam(float, float, float, float, float, long)",
-       "signature": "void adam(float learningRate, float beta1, float beta2, float epsilon, float weightDecay, long step)",
-       "params": [
-        {
-         "type": "float",
-         "name": "learningRate"
-        },
-        {
-         "type": "float",
-         "name": "beta1"
-        },
-        {
-         "type": "float",
-         "name": "beta2"
-        },
-        {
-         "type": "float",
-         "name": "epsilon"
-        },
-        {
-         "type": "float",
-         "name": "weightDecay"
-        },
-        {
-         "type": "long",
-         "name": "step"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "执行一步 Adam 更新",
-        "params": {
-         "learningRate": "学习率，必须有限且非负",
-         "beta1": "一阶矩衰减，必须落在 [0, 1)",
-         "beta2": "二阶矩衰减，必须落在 [0, 1)",
-         "epsilon": "数值稳定项，必须为正",
-         "weightDecay": "权重衰减系数",
-         "step": "步数，必须为正，用于偏差校正"
-        },
-        "throws": {
-         "basalt.BasaltRuntimeException": "学习率非法、beta 越界、epsilon 非正或 step 非正",
-         "IllegalStateException": "句柄或上下文已关闭"
-        },
-        "notes": [
-         "一阶与二阶矩按张量地址保存在所属上下文内，首次使用时按数据长度分配，长度变化时重置为零。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "norm()",
-       "signature": "double norm()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回数据的 L2 范数",
-        "returns": "平方和以 double 累加后开方",
-        "throws": {
-         "IllegalStateException": "句柄或上下文已关闭"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "gradNorm()",
-       "signature": "double gradNorm()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回梯度的 L2 范数",
-        "returns": "梯度平方和开方；梯度未分配时为 0.0",
-        "throws": {
-         "IllegalStateException": "句柄或上下文已关闭"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "isFinite()",
-       "signature": "boolean isFinite()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "判断数据是否全部为有限值",
-        "returns": "所有元素均有限时为 true",
-        "throws": {
-         "IllegalStateException": "句柄或上下文已关闭"
-        },
-        "notes": [
-         "只检查数据，不检查梯度缓冲。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "close()",
-       "signature": "void close()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "释放原生张量，重复调用无效果",
-        "body": [
-         "触发 Cleaner 注册的清理动作：State 以 getAndSet(0) 取走地址，非零时请求所属上下文释放。上下文已关闭时释放被跳过，因为销毁过程已回收全部张量。"
-        ],
-        "notes": [
-         "幂等：清理动作由同一个 Cleanable 承载，close() 与 Cleaner 合计只执行一次。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "toString()",
-       "signature": "String toString()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回 shape、梯度标志与地址的摘要",
-        "returns": "形如 NativeTensor[3, 2][requiresGrad=true, live=...] 的字符串"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "一个原生张量的 Java 句柄，持有不透明地址与所属上下文",
-      "body": [
-       "对象只保存一个不透明 long 与 shape 副本。数据是 Rust 侧的连续 f32 缓冲区，梯度缓冲惰性分配，Java 数组不会被 pin；除非显式调用 data() 或 grad()，否则没有批量数据穿越 JNI 边界。",
-       "句柄持有 NativeContext 的强引用，因此上下文不会先于张量被回收。每个操作都先经 context.guard() 取得读锁再调用原生方法，上下文一旦关闭，取锁阶段就抛异常，句柄随之失效。",
-       "释放幂等且只发生一次：close() 触发 Cleaner 注册的清理动作，State 以 getAndSet(0) 取走地址并交给上下文释放；原生侧对未知地址返回未找到，即使重复释放也不会二次 free。"
-      ],
-      "notes": [
-       "元数据访问器（context、shape、rank、size、requiresGrad）读取 Java 侧字段，关闭后仍可用。",
-       "跨上下文传参会抛 IllegalArgumentException，例如把句柄交给另一个上下文的 backward 或 clipGradNorm。",
-       "未显式关闭时由 Cleaner 在对象不可达后释放；若上下文已先销毁，则统一回收，句柄释放变为无操作。"
-      ],
-      "example": "try (NativeContext ctx = NativeContext.create();\n     NativeTensorHandle weight = ctx.parameter(3, 2)) {\n    weight.randomize(7L, 0.5f);\n    weight.fill(0.1f);\n    float[] flat = weight.data();\n    System.out.println(weight + \" -> \" + flat.length);\n}",
-      "see": [
-       "basalt.nativebridge.NativeContext",
-       "basalt.nativebridge.NativeContext.Guard",
-       "basalt.nativebridge.CommandQueueBuilder"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nativebridge.NativeContext.Guard",
-     "simple_qualified": "NativeContext.Guard",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "AutoCloseable"
-     ],
-     "file": "jsl/nativebridge/NativeContext.java",
-     "line": 228,
-     "javadoc": "Read-lock guard; closing it releases the lock, not the context.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "handle()",
-       "signature": "long handle()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回原生上下文指针，Guard 关闭后抛异常",
-        "returns": "获取 Guard 时读取到的非零指针",
-        "throws": {
-         "IllegalStateException": "Guard 已关闭"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "close()",
-       "signature": "void close()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "释放读锁，重复调用无效果",
-        "body": [
-         "首次调用置位内部标志并解锁一次，之后的调用直接返回；即使被调用两次也不会多释放锁，避免破坏读锁计数。"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "读锁守卫，关闭它只释放读锁，不销毁上下文",
-      "body": [
-       "guard() 在成功取得读锁并确认指针非零后返回 Guard。Guard 保存指针副本，handle() 在 Guard 关闭后抛异常，close() 只释放一次读锁，因此 try-with-resources 是唯一安全用法。"
-      ],
-      "notes": [
-       "读锁来自 ReentrantReadWriteLock，Guard 必须在获取它的线程上关闭。",
-       "Guard 存活期间 close() 会阻塞在写锁上，长耗时操作应尽量缩短持锁区间。"
-      ],
-      "see": [
-       "basalt.nativebridge.NativeContext"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nativebridge.NativeMLP.Activation",
-     "simple_qualified": "NativeMLP.Activation",
-     "kind": "enum",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nativebridge/NativeMLP.java",
-     "line": 25,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "enum_constant",
-       "key": "RELU",
-       "signature": "RELU",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "max(0, x)"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "TANH",
-       "signature": "TANH",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "双曲正切"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "SIGMOID",
-       "signature": "SIGMOID",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "1 / (1 + e^(−x))"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "隐藏层可选激活函数：RELU、TANH、SIGMOID。",
-      "body": [
-       "每个隐藏层在 matMul 与加偏置之后按该枚举选择算子，分别对应指令队列的 relu、tanh、sigmoid。"
-      ],
-      "notes": [
-       "枚举无属性字段，选择只决定前向图写入哪种节点。",
-       "该枚举不作用于输出层，输出层由 OutputActivation 控制。"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nativebridge.NativeMLP.OutputActivation",
-     "simple_qualified": "NativeMLP.OutputActivation",
-     "kind": "enum",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nativebridge/NativeMLP.java",
-     "line": 29,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "enum_constant",
-       "key": "NONE",
-       "signature": "NONE",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "输出层不做激活，直接返回 logits"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "SIGMOID",
-       "signature": "SIGMOID",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "输出层接 sigmoid，配合二分类交叉熵"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "TANH",
-       "signature": "TANH",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "输出层接 tanh，输出落在 (−1, 1)"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "输出层激活：NONE 表示线性输出，另有 SIGMOID、TANH。",
-      "body": [
-       "NONE 时最后一层直接输出加偏置后的线性结果，适用于回归；SIGMOID 与 TANH 把输出分别压到 (0, 1) 与 (-1, 1)。"
-      ],
-      "notes": [
-       "只作用于最后一层，隐藏层仍使用 Activation。",
-       "选择 NONE 时最后一层不再写入激活指令，输出张量就是加偏置的结果。"
-      ]
-     }
     }
-   ]
-  }
- ]
+  ]
 }

@@ -8,7 +8,7 @@ import java.util.Map;
 
 /**
  * Multi-head self-attention over [batch, time, channels], composed from reshape, permute,
- * batched matmul and softmax. This is the transformer primitive modern PyTorch users expect,
+ * batched matmul and softmax. This is the standard transformer attention primitive,
  * built entirely on the same public tensor API.
  */
 public final class MultiheadAttention extends Module<BSF, BSF> {

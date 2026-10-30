@@ -9,7 +9,7 @@ import java.util.Arrays;
 /**
  * Eager tensor with reverse-mode autograd, backed by the Rust tensor engine.
  *
- * <p>This is the PyTorch-like surface: every operation immediately produces a new tensor and
+ * <p>This is the eager surface: every operation immediately produces a new tensor and
  * records a graph node. Parameters are tensors created with {@link #parameter}; calling
  * {@link #backward()} on a scalar loss accumulates gradients into them.</p>
  *

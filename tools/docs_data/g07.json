@@ -1,2534 +1,2534 @@
 {
- "group": "g07",
- "title": "经典机器学习（2/9）",
- "modules": [
-  {
-   "name": "basalt.ml",
-   "types": [
+  "group": "g07",
+  "title": "经典机器学习（2/9）",
+  "modules": [
     {
-     "qualified": "basalt.ml.GridSearchCV",
-     "simple_qualified": "GridSearchCV",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "Estimator"
-     ],
-     "file": "jsl/ml/GridSearchCV.java",
-     "line": 16,
-     "javadoc": "Exhaustive search over specified hyperparameter values for an estimator using K-Fold or\nStratified K-Fold cross-validation, matching {@code sklearn.model_selection.GridSearchCV}.",
-     "nested": [
-      "CandidateResult",
-      "Builder"
-     ],
-     "members": [
-      {
-       "kind": "method",
-       "key": "builder(Function<Map<String, Object>, Estimator>)",
-       "signature": "Builder builder(Function<Map<String, Object>, Estimator> estimatorFactory)",
-       "params": [
+      "name": "basalt.ml",
+      "types": [
         {
-         "type": "Function<Map<String, Object>, Estimator>",
-         "name": "estimatorFactory"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "以估计器工厂创建构造器。",
-        "params": {
-         "estimatorFactory": "参数组合到未拟合估计器的映射，每折调用一次且应返回新实例"
+          "qualified": "basalt.ml.GridSearchCV",
+          "simple_qualified": "GridSearchCV",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Estimator"
+          ],
+          "file": "jsl/ml/GridSearchCV.java",
+          "line": 16,
+          "javadoc": "Exhaustive search over specified hyperparameter values for an estimator using K-Fold or\nStratified K-Fold cross-validation.",
+          "nested": [
+            "CandidateResult",
+            "Builder"
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "key": "builder(Function<Map<String, Object>, Estimator>)",
+              "signature": "Builder builder(Function<Map<String, Object>, Estimator> estimatorFactory)",
+              "params": [
+                {
+                  "type": "Function<Map<String, Object>, Estimator>",
+                  "name": "estimatorFactory"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "以估计器工厂创建构造器。",
+                "params": {
+                  "estimatorFactory": "参数组合到未拟合估计器的映射，每折调用一次且应返回新实例"
+                },
+                "returns": "新的 Builder 实例，scoring=ACCURACY、cvFolds=5、stratified=false、seed=42",
+                "throws": {
+                  "NullPointerException": "estimatorFactory 为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit(Matrix, double[])",
+              "signature": "GridSearchCV fit(Matrix features, double[] targets)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                },
+                {
+                  "type": "double[]",
+                  "name": "targets"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按折评分遍历网格并重训最优模型。",
+                "body": [
+                  "先按 stratified 选择划分方式，以 cvFolds 与 seed 生成折；再对 param 网格取笛卡尔积，逐个组合在每折上新建估计器、拟合训练折、预测测试折并折算分数，得到均值与总体标准差。",
+                  "比较用严格大于，并列时保留先出现的组合；结束后用最优参数在全部数据上重新拟合一次作为 bestEstimator。"
+                ],
+                "params": {
+                  "features": "训练特征矩阵，行数为样本数",
+                  "targets": "目标数组，长度须等于行数"
+                },
+                "returns": "this，已完成拟合并持有最优估计器",
+                "throws": {
+                  "NullPointerException": "features 或 targets 为 null",
+                  "IllegalArgumentException": "目标数量与行数不一致、数据含非有限值，或分层划分时某类样本数少于折数"
+                },
+                "notes": [
+                  "折数大于样本数时同样由 DataSplit 抛 IllegalArgumentException",
+                  "同一组合的各折互不影响，分数按折序存入 foldScores"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "predict(Matrix)",
+              "signature": "double[] predict(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "用最优估计器预测。",
+                "params": {
+                  "features": "待预测特征矩阵，列数须与训练数据一致"
+                },
+                "returns": "最优估计器的预测数组，标签或回归值取决于被调优的估计器",
+                "throws": {
+                  "IllegalStateException": "尚未拟合"
+                },
+                "notes": [
+                  "列数校验由最优估计器自身的 predict 完成"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "bestEstimator()",
+              "signature": "Estimator bestEstimator()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回在全部数据上重训的估计器。",
+                "returns": "已完成拟合的 Estimator 实例",
+                "throws": {
+                  "IllegalStateException": "尚未拟合"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "bestParams()",
+              "signature": "Map<String, Object> bestParams()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回最优参数组合。",
+                "returns": "不可变的参数映射，键与 param 声明一致",
+                "throws": {
+                  "IllegalStateException": "尚未拟合"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "bestScore()",
+              "signature": "double bestScore()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回最优组合的交叉验证均分。",
+                "returns": "各折分数的算术平均；scoring 为 RMSE 时为负值",
+                "throws": {
+                  "IllegalStateException": "尚未拟合"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "cvResults()",
+              "signature": "List<CandidateResult> cvResults()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回每个候选组合的逐折成绩。",
+                "returns": "不可变列表，元素为 CandidateResult（params、meanScore、stdScore、foldScores），顺序与网格遍历顺序一致",
+                "notes": [
+                  "未拟合时返回空列表，不抛异常",
+                  "stdScore 为总体标准差，分母取折数而非折数减一",
+                  "fit 会清空并重建该列表"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "网格穷举加交叉验证的调参器，选优后全量重训。",
+            "body": [
+              "交叉验证来源是 DataSplit：stratified 为 false 时调用 DataSplit.kFold，为 true 时调用 DataSplit.stratifiedKFold，两者都以 shuffle=true 与构造时的 seed 打乱，折数为 cvFolds。",
+              "param 声明的每个键对应一组候选值，所有键做笛卡尔积并按声明顺序遍历。每个组合在每折上调用一次 estimatorFactory 新建估计器，在训练折拟合、测试折预测，再用 scoring 折算为标量：ACCURACY、MACRO_F1、R2 取原值，RMSE 取负值，因此分数一律越大越好。",
+              "组合之间用各折均值比较，严格大于才替换当前最优，并列时保留先出现的组合；均值标准差按总体公式 sqrt(Σ(s-mean)²/k) 计算。选优后以同一工厂再构造一个估计器并在全部数据上拟合，作为 bestEstimator。"
+            ],
+            "notes": [
+              "默认 scoring=ACCURACY、cvFolds=5、stratified=false、seed=42；构建时 paramGrid 为空会抛 IllegalArgumentException",
+              "RMSE 评分下 bestScore 与 cvResults 中的分数均为负值，比较时仍取最大者",
+              "分层划分要求每个类别的样本数不少于折数，否则 DataSplit 抛 IllegalArgumentException",
+              "工厂每折调用一次，估计器实例不跨折复用，工厂内部应无共享可变状态",
+              "每次 fit 会清空 cvResults 并重置最优结果"
+            ],
+            "example": "Matrix x = Matrix.fromRows(new double[][] { {0.0, 0.0}, {0.2, 0.1}, {0.1, 0.3}, {0.3, 0.2}, {1.0, 1.0}, {1.2, 0.9}, {0.9, 1.1}, {1.1, 1.2}\n});\ndouble[] y = {0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0}; GridSearchCV search = GridSearchCV.builder( params -> KNearestNeighbors.builder() .k((Integer) params.get(\"k\")) .build()) .param(\"k\", 1, 3) .scoring(Estimators.Metric.ACCURACY) .cv(2) .stratified(true) .seed(42L) .build() .fit(x, y); Estimator best = search.bestEstimator();\nMap<String, Object> bestParams = search.bestParams();\ndouble bestScore = search.bestScore();\ndouble[] label = search.predict(x);",
+            "see": [
+              "basalt.ml.KFold",
+              "basalt.ml.DataSplit",
+              "basalt.ml.Estimators",
+              "basalt.ml.Estimator"
+            ]
+          }
         },
-        "returns": "新的 Builder 实例，scoring=ACCURACY、cvFolds=5、stratified=false、seed=42",
-        "throws": {
-         "NullPointerException": "estimatorFactory 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fit(Matrix, double[])",
-       "signature": "GridSearchCV fit(Matrix features, double[] targets)",
-       "params": [
         {
-         "type": "Matrix",
-         "name": "features"
+          "qualified": "basalt.ml.HistogramGradientBoosting",
+          "simple_qualified": "HistogramGradientBoosting",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Estimator",
+            "Persistable"
+          ],
+          "file": "jsl/ml/HistogramGradientBoosting.java",
+          "line": 32,
+          "javadoc": "Second-order histogram gradient boosting with two growth policies: depth-wise (XGBoost) and\nbest-leaf-first (LightGBM). <p>Split gain follows the regularized objective\n{@code 0.5 * (G_L^2/(H_L+lambda) + G_R^2/(H_R+lambda) - G^2/(H+lambda)) - gamma}.\nHistograms use the LightGBM subtraction trick: each split accumulates the histogram of the\n<em>smaller</em> child only, and the larger child is derived as {@code parent - small}. A\nbalanced tree therefore touches roughly half the sample-feature work of naive per-node\naccumulation. Large accumulations are dispatched to a Rust AVX2 kernel through JNI; any native\nfailure falls back to the parallel Java path.</p>",
+          "nested": [
+            "NodeHistogram",
+            "HistogramWorkspace",
+            "SplitDecision",
+            "LeafCandidate",
+            "Builder"
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "key": "builder()",
+              "signature": "Builder builder()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建构造器，参数全部取默认值",
+                "returns": "新的 Builder 实例"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit(Matrix, double[])",
+              "signature": "HistogramGradientBoosting fit(Matrix features, double[] targets)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                },
+                {
+                  "type": "double[]",
+                  "name": "targets"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "分箱、切分验证集并逐轮提升",
+                "body": [
+                  "先按 validationFraction 用 seed 打乱行号，前若干行作验证集，其余作训练集；baseScore 取训练集标签均值，LOGISTIC 下取该均值的对数几率。每轮计算梯度与 hessian、生长一棵树、以 learningRate 累加到原始得分，并记录训练与验证损失。"
+                ],
+                "params": {
+                  "features": "训练特征矩阵，行数为样本数",
+                  "targets": "目标数组，长度须等于行数；LOGISTIC 时取值须为 0 或 1"
+                },
+                "returns": "this，已完成拟合",
+                "throws": {
+                  "IllegalArgumentException": "目标数量与行数不一致、含非有限值，或 LOGISTIC 标签不是 0 或 1"
+                },
+                "notes": [
+                  "验证集大小取 round(rows*validationFraction)，下限 1，上限 rows-2",
+                  "featureFraction 小于 1 时，第 i 轮用 seed + i*7919 抽取 ceil(fraction*featureCount) 个特征"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "predictRaw(Matrix)",
+              "signature": "double[] predictRaw(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "输出原始得分，未过 sigmoid",
+                "body": [
+                  "结果以 baseScore 为初值，逐棵树以 learningRate 加权累加叶值。行数乘树数不小于 2000 万时转交原生集成预测内核，否则在 Java 侧逐树累加。"
+                ],
+                "params": {
+                  "features": "特征矩阵，列数须等于拟合时的特征数"
+                },
+                "returns": "长度为行数的原始得分数组",
+                "throws": {
+                  "IllegalStateException": "尚未拟合（树列表为空）",
+                  "IllegalArgumentException": "列数不匹配或含非有限值"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "predictProbability(Matrix)",
+              "signature": "double[] predictProbability(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "输出正类概率，等于 sigmoid(原始得分)",
+                "params": {
+                  "features": "特征矩阵，列数须等于拟合时的特征数"
+                },
+                "returns": "长度为行数的概率数组，取值 (0, 1)",
+                "throws": {
+                  "IllegalStateException": "目标不是 LOGISTIC（该校验先于拟合状态校验）"
+                },
+                "notes": [
+                  "sigmoid 按符号分支实现，负值不经过 exp 溢出"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "predict(Matrix)",
+              "signature": "double[] predict(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "输出预测值，LOGISTIC 下为 0/1 标签",
+                "body": [
+                  "回归直接返回原始得分；LOGISTIC 把 sigmoid(原始得分) 与 0.5 比较，大于等于 0.5 取 1.0，否则取 0.0。"
+                ],
+                "params": {
+                  "features": "特征矩阵，列数须等于拟合时的特征数"
+                },
+                "returns": "长度为行数的预测数组",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "列数不匹配或含非有限值"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "lossHistory()",
+              "signature": "double[] lossHistory()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "每轮训练集平均损失",
+                "body": [
+                  "平方误差目标记录 0.5*残差^2 的均值；LOGISTIC 记录 softplus(raw) - target*raw 的均值，数值上等价于二元交叉熵。"
+                ],
+                "returns": "长度为实际训练轮数的副本；未拟合为空数组",
+                "notes": [
+                  "早停后长度等于保留下来的树数"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "validationHistory()",
+              "signature": "double[] validationHistory()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "每轮验证集平均损失",
+                "returns": "长度为实际训练轮数的副本；未设置 validationFraction 或未拟合时为空数组"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "featureImportances()",
+              "signature": "double[] featureImportances()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "归一化的特征重要性，总和为 1",
+                "body": [
+                  "口径与 DecisionTree 一致：每次分裂的增益乘以该节点样本数，按特征累加后整体归一化到总和 1。分裂发生在特征子集上时，未参与该轮的特征不增加。"
+                ],
+                "returns": "长度为特征数的副本；未拟合为空数组",
+                "notes": [
+                  "读回的模型不携带重要性，返回全 0"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "treeCount()",
+              "signature": "int treeCount()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "已训练的树数",
+                "returns": "树数；未拟合为 0，早停后小于 iterations"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "bestIteration()",
+              "signature": "int bestIteration()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "验证损失最优的轮次下标",
+                "returns": "最优轮次；无验证集时为最后一轮，未拟合为 iterations-1"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "kind()",
+              "signature": "ModelKind kind()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "持久化类型标识",
+                "returns": "ModelKind.HISTOGRAM_BOOSTING"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "write(ModelWriter)",
+              "signature": "void write(ModelWriter writer)",
+              "params": [
+                {
+                  "type": "ModelWriter",
+                  "name": "writer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按 Persistable 契约写出提升模型",
+                "body": [
+                  "写入算法序号、目标序号、learningRate、baseScore、特征数、树数与各棵树的节点数组。maxDepth、maxLeaves、lambda 等超参数不参与序列化。"
+                ],
+                "params": {
+                  "writer": "目标二进制写入器"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "read(ModelReader)",
+              "signature": "HistogramGradientBoosting read(ModelReader reader)",
+              "params": [
+                {
+                  "type": "ModelReader",
+                  "name": "reader"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "从二进制流重建提升模型",
+                "params": {
+                  "reader": "已定位到本对象载荷起点的读取器"
+                },
+                "returns": "新的 HistogramGradientBoosting 实例，可直接预测",
+                "throws": {
+                  "ModelFormatException": "算法或目标序号越界，或特征数不大于 0、树数不在 [1, 100000]"
+                },
+                "notes": [
+                  "读回后 lossHistory 与 validationHistory 为空数组，featureImportances 全为 0",
+                  "bestIteration 置为树数减 1，训练相关字段不恢复"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "二阶直方图梯度提升，支持深度优先与叶优先生长",
+            "body": [
+              "分裂增益按正则化目标计算：0.5*(G_L^2/(H_L+lambda) + G_R^2/(H_R+lambda) - G^2/(H+lambda)) - gamma，叶权重为 -G/(H+lambda)。直方图用相减技巧：每次只累加较小子节点，较大子节点由 parent 减 small 得到，平衡树因此只做约一半遍历。",
+              "XGBOOST 策略按层递归，由 maxDepth 控制深度；LIGHTGBM 策略用优先队列每轮分裂全局增益最大的叶，由 maxLeaves 控制叶数。两种策略都受 minSamplesLeaf、minChildWeight 与 maxDepth 约束。",
+              "累计量较大时通过 JNI 交给 Rust AVX2 内核，原生调用失败则回退到分块并行的 Java 路径。featureFraction 按轮次抽取特征子集，validationFraction 切出验证集，配合 earlyStoppingRounds 把树列表回退到最优轮次。"
+            ],
+            "notes": [
+              "LOGISTIC 目标要求标签恰为 0 或 1，其余取值在 fit 入口被拒绝",
+              "早停触发后树列表截断到 bestIteration+1，lossHistory 同步截断",
+              "write 只保存算法、目标、学习率、baseScore 与树；读回时其余超参数取 Builder 默认值"
+            ],
+            "example": "Matrix x = Matrix.fromRows(new double[][]{ {0.0, 1.0}, {1.0, 1.0}, {1.0, 0.0}, {2.0, 0.0}, {2.0, 1.0}, {3.0, 0.0}, {3.0, 1.0}, {4.0, 0.0}});\ndouble[] y = {0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0}; HistogramGradientBoosting model = HistogramGradientBoosting.builder() .algorithm(BoostingAlgorithm.LIGHTGBM) .objective(BoostingObjective.LOGISTIC) .iterations(200) .learningRate(0.1) .maxLeaves(15) .featureFraction(0.8) .validationFraction(0.25) .earlyStoppingRounds(20) .build() .fit(x, y); double[] probability = model.predictProbability(x);\ndouble[] label = model.predict(x);\ndouble[] history = model.lossHistory();",
+            "see": [
+              "basalt.ml.BoostingAlgorithm",
+              "basalt.ml.BoostingObjective",
+              "basalt.ml.DecisionTree"
+            ]
+          }
         },
         {
-         "type": "double[]",
-         "name": "targets"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按折评分遍历网格并重训最优模型。",
-        "body": [
-         "先按 stratified 选择划分方式，以 cvFolds 与 seed 生成折；再对 param 网格取笛卡尔积，逐个组合在每折上新建估计器、拟合训练折、预测测试折并折算分数，得到均值与总体标准差。",
-         "比较用严格大于，并列时保留先出现的组合；结束后用最优参数在全部数据上重新拟合一次作为 bestEstimator。"
-        ],
-        "params": {
-         "features": "训练特征矩阵，行数为样本数",
-         "targets": "目标数组，长度须等于行数"
+          "qualified": "basalt.ml.ImpurityCriterion",
+          "simple_qualified": "ImpurityCriterion",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/ImpurityCriterion.java",
+          "line": 4,
+          "javadoc": "Node impurity used to maximize information gain in decision trees.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "task()",
+              "signature": "TreeTask task()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "该准则绑定的任务类型",
+                "returns": "构造时传入的 TreeTask",
+                "notes": [
+                  "Builder 用它校验准则与任务是否匹配"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "决策树用于最大化信息增益的节点不纯度",
+            "body": [
+              "GINI 计算 1 - Σp^2，ENTROPY 计算 -Σ p*log2(p)，两者绑定 TreeTask.CLASSIFICATION。MSE 绑定 TreeTask.REGRESSION，其 impurity 方法直接抛出 IllegalStateException，因为回归分裂改用和与平方和的代数等价形式，不经过类别计数。",
+              "每个常量在构造时绑定任务，task() 暴露该绑定。DecisionTree.Builder 在 build() 时校验 criterion.task() 与 task 一致，准则与任务不会在运行期错配。"
+            ],
+            "notes": [
+              "骨架中的 ENTROPY 与 MSE 条目是枚举常量，签名里出现的参数即构造时传入的任务标记",
+              "MSE 只作任务标识，逐节点计算不经过 impurity"
+            ],
+            "example": "ImpurityCriterion criterion = ImpurityCriterion.ENTROPY; DecisionTree tree = DecisionTree.builder() .criterion(criterion) .task(criterion.task()) .maxDepth(4) .build();",
+            "see": [
+              "basalt.ml.DecisionTree",
+              "basalt.ml.TreeTask"
+            ]
+          }
         },
-        "returns": "this，已完成拟合并持有最优估计器",
-        "throws": {
-         "NullPointerException": "features 或 targets 为 null",
-         "IllegalArgumentException": "目标数量与行数不一致、数据含非有限值，或分层划分时某类样本数少于折数"
-        },
-        "notes": [
-         "折数大于样本数时同样由 DataSplit 抛 IllegalArgumentException",
-         "同一组合的各折互不影响，分数按折序存入 foldScores"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "predict(Matrix)",
-       "signature": "double[] predict(Matrix features)",
-       "params": [
         {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "用最优估计器预测。",
-        "params": {
-         "features": "待预测特征矩阵，列数须与训练数据一致"
+          "qualified": "basalt.ml.IsolationForest",
+          "simple_qualified": "IsolationForest",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Estimator",
+            "Persistable"
+          ],
+          "file": "jsl/ml/IsolationForest.java",
+          "line": 22,
+          "javadoc": "Unsupervised Isolation Forest anomaly detector based on random axis-aligned partitioning\ntrees and path-length normalization {@code s(x, n) = 2^(-E(h(x))/c(n))}. <p>{@link #predict(Matrix)} returns {@code +1.0} for inliers and {@code -1.0} for outliers\naccording to the configured {@code contamination} quantile threshold.</p>",
+          "nested": [
+            "Builder"
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "key": "builder()",
+              "signature": "Builder builder()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建构造器，超参数取默认值。",
+                "returns": "新的 Builder 实例，trees=100、maxSamples=256、contamination=0.1、seed=42"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit(Matrix)",
+              "signature": "IsolationForest fit(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "仅凭特征拟合，等价于 fit(features, null)。",
+                "params": {
+                  "features": "训练特征矩阵，行数为样本数，列数为特征数"
+                },
+                "returns": "this，已完成拟合并可打分",
+                "throws": {
+                  "NullPointerException": "features 为 null",
+                  "IllegalArgumentException": "特征含非有限值"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit(Matrix, double[])",
+              "signature": "IsolationForest fit(Matrix features, double[] ignoredTargets)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                },
+                {
+                  "type": "double[]",
+                  "name": "ignoredTargets"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "建树并对训练集打分确定阈值。",
+                "body": [
+                  "effectiveMaxSamples 取行数与 maxSamples 的较小值，树高上限为 max(1, ceil(log2(effectiveMaxSamples)))。每棵树用主随机源派生的子种子做无放回抽样，再随机选一个取值不全相同的特征、在列最小与最大之间均匀取切点递归下分。",
+                  "全部树建成后对训练集计算 0.5 - s，升序排序并取 contamination 对应的分位值作为 threshold，供 decisionFunction 与 predict 使用。"
+                ],
+                "params": {
+                  "features": "训练特征矩阵，行数为样本数",
+                  "ignoredTargets": "占位参数，内容被完全忽略，可为 null"
+                },
+                "returns": "this，已完成拟合",
+                "throws": {
+                  "NullPointerException": "features 为 null",
+                  "IllegalArgumentException": "特征含非有限值"
+                },
+                "notes": [
+                  "effectiveMaxSamples 极小时树高上限至少为 1",
+                  "每棵树的抽样与切点都由各自的子种子决定，treeCount 棵树互相独立"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "anomalyScore(Matrix)",
+              "signature": "double[] anomalyScore(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "计算归一化异常分数 2^(-E(h)/c(n))。",
+                "params": {
+                  "features": "待打分特征矩阵，列数须等于拟合时的特征数"
+                },
+                "returns": "长度等于行数的分数数组，取值 (0, 1]，越接近 1 越异常",
+                "throws": {
+                  "IllegalStateException": "尚未拟合（树列表为空）",
+                  "IllegalArgumentException": "列数不符或特征含非有限值"
+                },
+                "notes": [
+                  "E(h) 为样本在各棵树上的平均路径长度，归一化分母 c(n) 用 effectiveMaxSamples 计算",
+                  "c(n) 下限截到 1e-12，避免退化数据导致除零"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "decisionFunction(Matrix)",
+              "signature": "double[] decisionFunction(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回以阈值为零点的偏移分数。",
+                "params": {
+                  "features": "待打分特征矩阵，列数须等于拟合时的特征数"
+                },
+                "returns": "0.5 - s - threshold，正值表示正常点，负值表示异常点",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "列数不符或特征含非有限值"
+                },
+                "notes": [
+                  "阈值由拟合时训练集的 contamination 分位确定，未拟合时无法得到有意义的零点"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "predict(Matrix)",
+              "signature": "double[] predict(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "输出 +1.0 正常、-1.0 异常。",
+                "params": {
+                  "features": "待预测特征矩阵，列数须等于拟合时的特征数"
+                },
+                "returns": "长度等于行数的标签数组，正常为 +1.0，异常为 -1.0",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "列数不符或特征含非有限值"
+                },
+                "notes": [
+                  "判定规则为 decisionFunction 结果不小于 0 时取 +1.0，否则取 -1.0"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "kind()",
+              "signature": "ModelKind kind()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回模型类型标识。",
+                "returns": "ModelKind.ISOLATION_FOREST"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "write(ModelWriter)",
+              "signature": "void write(ModelWriter writer)",
+              "params": [
+                {
+                  "type": "ModelWriter",
+                  "name": "writer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "写入超参数、阈值与全部树结构。",
+                "params": {
+                  "writer": "目标写入器，由调用方负责容器头与提交"
+                },
+                "throws": {
+                  "IllegalStateException": "尚未拟合（树列表为空）"
+                },
+                "notes": [
+                  "依次写入 trees、maxSamples、contamination、seed、featureCount、effectiveMaxSamples、threshold 与树数",
+                  "阈值随模型一并保存，读回后不再重新计算"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "read(ModelReader)",
+              "signature": "IsolationForest read(ModelReader reader)",
+              "params": [
+                {
+                  "type": "ModelReader",
+                  "name": "reader"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "重建孤立森林模型。",
+                "params": {
+                  "reader": "已完成容器头解析的读取器"
+                },
+                "returns": "含已训练树与阈值的模型实例，可直接用于 predict",
+                "throws": {
+                  "ModelFormatException": "树数、特征数或实际读到的树数不为正"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "随机轴对齐切分的无监督孤立森林异常检测器。",
+            "body": [
+              "每棵树在 min(行数, maxSamples) 个无放回抽样的样本上递归切分：随机挑一个取值不全相同的特征，在该列最小值与最大值之间均匀取切点，小于等于切点的样本进左子树；样本数不超过 1、深度达到 max(1, ceil(log2(effectiveMaxSamples)))、或所选特征无区分度时成为叶节点，叶节点保存 depth + c(n)。",
+              "路径长度归一化 s(x, n) = 2^(-E(h(x))/c(n))，E(h) 为样本在各棵树上路径长度的平均值，c(n) 为二叉搜索树平均路径修正项：n <= 1 取 0，n == 2 取 1，否则取 2*(ln(n-1) + EulerGamma) - 2*(n-1)/n。分数落在 (0, 1]，越接近 1 越异常，约 0.5 为平均路径长度。",
+              "contamination 只影响判决阈值：拟合末尾对训练集的 0.5 - s 升序排序，取下标 max(0, min(rows-1, floor(rows * contamination))) 处的值作为 threshold。decisionFunction 返回 0.5 - s - threshold，predict 对非负者给 +1.0、负者给 -1.0。"
+            ],
+            "notes": [
+              "默认 trees=100、maxSamples=256、contamination=0.1、seed=42；trees 须为正，maxSamples 须 >= 2，contamination 须在 (0, 0.5) 开区间内",
+              "随机性全部来自 seed：主随机源为每棵树派生一个子种子，同 seed 同数据得到相同的树与阈值",
+              "write 保存全部超参数、featureCount、effectiveMaxSamples、threshold 与树结构，read 直接沿用读入的阈值，不重新打分",
+              "样本数少于 maxSamples 时 effectiveMaxSamples 退化为行数，c(n) 与树高上限随之按行数计算"
+            ],
+            "example": "Matrix features = Matrix.fromRows(new double[][] { {0.0, 0.1}, {0.2, 0.0}, {0.1, 0.2}, {0.15, 0.1}, {9.0, 9.2}, {9.4, 8.8}, {10.0, 9.0}, {0.3, 0.25}\n}); IsolationForest forest = IsolationForest.builder() .trees(100) .maxSamples(256) .contamination(0.25) .seed(42L) .build() .fit(features); double[] score = forest.anomalyScore(features);\ndouble[] decision = forest.decisionFunction(features);\ndouble[] label = forest.predict(features);",
+            "see": [
+              "basalt.ml.Estimator",
+              "basalt.core.Persistable",
+              "basalt.ml.Estimators"
+            ]
+          }
         },
-        "returns": "最优估计器的预测数组，标签或回归值取决于被调优的估计器",
-        "throws": {
-         "IllegalStateException": "尚未拟合"
+        {
+          "qualified": "basalt.ml.Estimators",
+          "simple_qualified": "Basalt",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/Basalt.java",
+          "line": 9,
+          "javadoc": "One-call facade over the estimator catalogue.",
+          "nested": [
+            "Task",
+            "Algorithm",
+            "Metric"
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "key": "fit(Algorithm, Matrix, double[])",
+              "signature": "Estimator fit(Algorithm algorithm, Matrix features, double[] targets)",
+              "params": [
+                {
+                  "type": "Algorithm",
+                  "name": "algorithm"
+                },
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                },
+                {
+                  "type": "double[]",
+                  "name": "targets"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按算法枚举训练一个默认配置的估计器。",
+                "body": [
+                  "分支覆盖 16 个算法常量，其中 RANDOM_FOREST_REGRESSOR 复用 RandomForest 并切换 task，两个梯度提升常量分别绑定 LOGISTIC 与 SQUARED_ERROR 目标。"
+                ],
+                "params": {
+                  "algorithm": "算法枚举，同时决定实现类与默认超参数",
+                  "features": "训练特征矩阵",
+                  "targets": "训练目标；有监督算法不可为 null"
+                },
+                "returns": "已拟合的估计器实例，静态类型为 Estimator",
+                "throws": {
+                  "NullPointerException": "algorithm 为 null",
+                  "IllegalArgumentException": "有监督算法传入 null targets，或训练数据未通过估计器自身的校验"
+                },
+                "notes": [
+                  "KNN 与 KNN_REGRESSOR 固定 k=5、欧氏距离",
+                  "KMEANS、PCA 调用只接收特征的 fit 重载；DBSCAN 以 null targets 调用 fit"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "predict(Estimator, Matrix)",
+              "signature": "double[] predict(Estimator model, Matrix features)",
+              "params": [
+                {
+                  "type": "Estimator",
+                  "name": "model"
+                },
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "委托给估计器自身的 predict。",
+                "params": {
+                  "model": "已拟合的估计器",
+                  "features": "待预测特征矩阵"
+                },
+                "returns": "估计器返回的预测数组，不做转换",
+                "throws": {
+                  "NullPointerException": "model 为 null",
+                  "IllegalStateException": "model 尚未 fit"
+                },
+                "notes": [
+                  "门面不追加任何校验，全部检查由估计器完成"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "crossValidate(Algorithm, Matrix, double[], int, Metric)",
+              "signature": "double crossValidate(Algorithm algorithm, Matrix features, double[] targets, int folds, Metric metric)",
+              "params": [
+                {
+                  "type": "Algorithm",
+                  "name": "algorithm"
+                },
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                },
+                {
+                  "type": "double[]",
+                  "name": "targets"
+                },
+                {
+                  "type": "int",
+                  "name": "folds"
+                },
+                {
+                  "type": "Metric",
+                  "name": "metric"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "k 折交叉验证并返回各折指标均值。",
+                "body": [
+                  "每折独立调用 fit 重新训练，模型之间不共享状态；指标在折内测试集上计算后累加，最后除以折数。"
+                ],
+                "params": {
+                  "algorithm": "待评估算法，必须是有监督算法",
+                  "features": "全部样本特征",
+                  "targets": "全部样本目标，长度等于特征行数",
+                  "folds": "折数，2 <= folds <= 样本数",
+                  "metric": "评估指标枚举"
+                },
+                "returns": "各折指标的算术平均；RMSE 以负值参与平均，故越大越好",
+                "throws": {
+                  "IllegalArgumentException": "算法属于 UNSUPERVISED，或 folds 越界、数据校验失败"
+                },
+                "notes": [
+                  "划分种子固定为 42，重复调用结果一致",
+                  "ACCURACY 与 MACRO_F1 要求预测是类别码，R2 与 RMSE 要求连续值，错配不报错"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "按枚举选择算法的一行式门面。",
+            "body": [
+              "fit 按 Algorithm 分支构造对应估计器并立即训练，超参数一律取各 Builder 的默认值；需要调参时改用具体类的 builder()。有监督算法传入 null targets 会被拒绝，无监督算法则忽略 targets 并以 null 调用。",
+              "crossValidate 用 DataSplit.kFold 做种子固定为 42 的 k 折划分，逐折训练、预测、计分，返回各折算术平均。RMSE 在累加前取负号，使所有 Metric 都满足越大越好。"
+            ],
+            "notes": [
+              "门面不缓存模型也不管理生命周期，返回的 Estimator 由调用方持有",
+              "交叉验证的划分种子固定为 42，相同输入的结果可复现",
+              "folds 的合法范围沿用 DataSplit.kFold 的约束（2 到样本数）",
+              "门面本身无状态，全部方法为 static"
+            ],
+            "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}, {2, 2}, {2, 1}});\ndouble[] y = {0.5, 1.0, 1.5, 2.0, 2.5, 2.2};\nEstimator model = Basalt.fit(Basalt.Algorithm.RIDGE, x, y);\ndouble[] prediction = Basalt.predict(model, x);\ndouble score = Basalt.crossValidate(Basalt.Algorithm.RIDGE, x, y, 3, Estimators.Metric.R2);",
+            "see": [
+              "basalt.ml.Estimators.Algorithm",
+              "basalt.ml.Estimators.Metric",
+              "basalt.ml.Estimator",
+              "basalt.ml.DataSplit"
+            ]
+          }
         },
-        "notes": [
-         "列数校验由最优估计器自身的 predict 完成"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "bestEstimator()",
-       "signature": "Estimator bestEstimator()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回在全部数据上重训的估计器。",
-        "returns": "已完成拟合的 Estimator 实例",
-        "throws": {
-         "IllegalStateException": "尚未拟合"
+        {
+          "qualified": "basalt.ml.KBinsDiscretizer",
+          "simple_qualified": "KBinsDiscretizer",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Transformer",
+            "Estimator"
+          ],
+          "file": "jsl/ml/KBinsDiscretizer.java",
+          "line": 16,
+          "javadoc": "Bins continuous data into intervals using {@code QUANTILE}, {@code UNIFORM}, or {@code KMEANS}\nstrategies and outputs {@code ORDINAL} or {@code ONEHOT_DENSE} encodings.",
+          "nested": [
+            "Strategy",
+            "Encode",
+            "Builder"
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "key": "builder()",
+              "signature": "Builder builder()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建构造器，nBins=5、QUANTILE、ORDINAL。",
+                "returns": "新的 Builder 实例"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit(Matrix)",
+              "signature": "KBinsDiscretizer fit(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "仅凭特征拟合，等价于 fit(features, null)。",
+                "params": {
+                  "features": "训练特征矩阵，列数决定边界组数"
+                },
+                "returns": "this，已算出逐列边界",
+                "throws": {
+                  "NullPointerException": "features 为 null",
+                  "IllegalArgumentException": "特征含非有限值"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit(Matrix, double[])",
+              "signature": "KBinsDiscretizer fit(Matrix features, double[] ignoredTargets)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                },
+                {
+                  "type": "double[]",
+                  "name": "ignoredTargets"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "逐列计算 nBins+1 个箱边界。",
+                "body": [
+                  "每列取最小与最大值作为首尾边界，中间边界按策略生成；列内取值全相同时中间边界退化为该常量。"
+                ],
+                "params": {
+                  "features": "训练特征矩阵，列数决定边界组数",
+                  "ignoredTargets": "占位参数，内容被完全忽略，可为 null"
+                },
+                "returns": "this，已完成拟合",
+                "throws": {
+                  "NullPointerException": "features 为 null",
+                  "IllegalArgumentException": "特征含非有限值"
+                },
+                "notes": [
+                  "QUANTILE 的插值位置为 (rows-1)*b/nBins，等价于 numpy 默认的 linear 分位",
+                  "KMEANS 每列单独跑一次一维 KMeans，迭代上限 50、种子 42"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "transform(Matrix)",
+              "signature": "Matrix transform(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "把特征映射为箱序号或 One-Hot。",
+                "params": {
+                  "features": "待转换矩阵，列数须等于拟合时的特征数"
+                },
+                "returns": "ORDINAL 为 行数 × 特征数 的箱序号矩阵；ONEHOT_DENSE 为 行数 × (特征数 * nBins) 的 0/1 矩阵",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "列数不符或特征含非有限值"
+                },
+                "notes": [
+                  "判定为 value < edges[b]，等于边界值的样本进入右侧箱",
+                  "ONEHOT_DENSE 的列顺序为特征优先，每个特征的 nBins 列连续排列"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "inverseTransform(Matrix)",
+              "signature": "Matrix inverseTransform(Matrix transformed)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "transformed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "用箱中点还原近似原特征。",
+                "params": {
+                  "transformed": "形状与 transform 输出一致的矩阵"
+                },
+                "returns": "行数 × 特征数 的近似原特征矩阵，元素为对应箱的中点",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "列数不符（ORDINAL 需特征数列，ONEHOT_DENSE 需特征数 * nBins 列）或含非有限值"
+                },
+                "notes": [
+                  "ORDINAL 先把箱序号四舍五入再夹到 [0, nBins-1]，越界值被截断",
+                  "ONEHOT_DENSE 取每段最大值位置，并列时取靠前的箱；全零段落到第 0 箱",
+                  "还原值只保证落在对应箱内，不等于原始输入"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "predict(Matrix)",
+              "signature": "double[] predict(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回展平后的离散结果。",
+                "params": {
+                  "features": "待转换矩阵，列数须等于拟合时的特征数"
+                },
+                "returns": "transform 结果按行优先展平的一维数组，长度为 行数 × 输出列数",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "列数不符或特征含非有限值"
+                },
+                "notes": [
+                  "元素仍是箱序号或 0/1，便于把转换结果当作估计器输出消费"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "binEdges()",
+              "signature": "double[][] binEdges()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回逐列的箱边界副本。",
+                "returns": "二维数组 [特征数][nBins+1]，首尾为列最小值与最大值",
+                "throws": {
+                  "IllegalStateException": "尚未拟合"
+                },
+                "notes": [
+                  "返回深拷贝，修改不影响模型内部边界"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "kind()",
+              "signature": "ModelKind kind()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回模型类型标识。",
+                "returns": "ModelKind.KBINS_DISCRETIZER"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "write(ModelWriter)",
+              "signature": "void write(ModelWriter writer)",
+              "params": [
+                {
+                  "type": "ModelWriter",
+                  "name": "writer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "写入箱数、策略、编码与逐列边界。",
+                "params": {
+                  "writer": "目标写入器，由调用方负责容器头与提交"
+                },
+                "throws": {
+                  "IllegalStateException": "尚未拟合"
+                },
+                "notes": [
+                  "策略与编码以枚举 ordinal 落盘",
+                  "按特征顺序写入每组 nBins+1 个边界"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "read(ModelReader)",
+              "signature": "KBinsDiscretizer read(ModelReader reader)",
+              "params": [
+                {
+                  "type": "ModelReader",
+                  "name": "reader"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "读回箱数、策略、编码与逐列边界。",
+                "params": {
+                  "reader": "已完成容器头解析的读取器"
+                },
+                "returns": "已可直接 transform 的实例",
+                "throws": {
+                  "ModelFormatException": "箱数小于 2、特征数不为正，或策略、编码序号越界"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "按分位数、等宽或一维 K-Means 把连续特征离散为箱。",
+            "body": [
+              "拟合逐列计算 nBins+1 个边界：edges[0] 取该列最小值、edges[nBins] 取最大值，中间边界按策略生成。UNIFORM 取 min + b*(max-min)/nBins；QUANTILE 先排序该列，再在位置 (rows-1)*b/nBins 处对相邻样本做线性插值；KMEANS 在该列上运行一维 KMeans（clusters=nBins、maxIterations=50、seed=42），取排序后相邻质心的中点作为边界。列内取值全相同时，中间边界全部等于该常量。",
+              "变换用边界比较定位：从 b=1 起找第一个满足 value < edges[b] 的 b，返回 b-1；没有任何边界满足时落入最后一箱，因此区间是左闭右开，恰好等于边界值的样本归入右侧箱。ORDINAL 输出与输入同宽、元素为箱序号 0..nBins-1；ONEHOT_DENSE 输出宽度为 特征数 * nBins，每个原始特征占一段连续列，命中位置置 1。",
+              "逆变换用箱中点 0.5*(edges[b] + edges[b+1]) 还原：ORDINAL 先把箱序号四舍五入并夹到 [0, nBins-1]；ONEHOT_DENSE 对每段取最大值所在的列，并列时取靠前的箱。"
+            ],
+            "notes": [
+              "默认 nBins=5、strategy=QUANTILE、encode=ORDINAL；nBins 须 >= 2",
+              "变换前必须 fit，否则抛 IllegalStateException；输入列数须等于拟合时的特征数",
+              "列内取值全相同的特征恒落在最后一箱，因为没有任何边界能严格大于该值",
+              "KMEANS 策略的随机性固定为 seed=42，同一列多次拟合得到相同边界",
+              "write 保存 nBins、策略、编码与逐列边界，read 后无需重新拟合即可 transform"
+            ],
+            "example": "Matrix x = Matrix.fromRows(new double[][] { {0.0, 10.0}, {0.5, 12.0}, {1.0, 14.0}, {2.0, 16.0}, {4.0, 18.0}, {8.0, 20.0}\n}); KBinsDiscretizer discretizer = KBinsDiscretizer.builder() .nBins(3) .strategy(KBinsDiscretizer.Strategy.QUANTILE) .encode(KBinsDiscretizer.Encode.ORDINAL) .build() .fit(x); Matrix binned = discretizer.transform(x);\nMatrix restored = discretizer.inverseTransform(binned);\ndouble[][] edges = discretizer.binEdges();",
+            "see": [
+              "basalt.ml.Transformer",
+              "basalt.ml.KMeans",
+              "basalt.ml.OneHotEncoder"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.KFold",
+          "simple_qualified": "KFold",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/KFold.java",
+          "line": 9,
+          "javadoc": "K-Fold cross-validator.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "KFold(int)",
+              "signature": "KFold(int folds)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "folds"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按折数构造，默认打乱且种子为 42。",
+                "params": {
+                  "folds": "折数，须 >= 2"
+                },
+                "throws": {
+                  "IllegalArgumentException": "folds 小于 2"
+                },
+                "notes": [
+                  "等价于 KFold(folds, true, 42L)"
+                ]
+              }
+            },
+            {
+              "kind": "constructor",
+              "key": "KFold(int, boolean, long)",
+              "signature": "KFold(int folds, boolean shuffle, long seed)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "folds"
+                },
+                {
+                  "type": "boolean",
+                  "name": "shuffle"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "指定折数、是否打乱与随机种子。",
+                "params": {
+                  "folds": "折数，须 >= 2",
+                  "shuffle": "是否在划分前打乱行序；false 时按原始行号顺序切分",
+                  "seed": "打乱所用随机源种子，shuffle 为 false 时无效"
+                },
+                "throws": {
+                  "IllegalArgumentException": "folds 小于 2"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "folds()",
+              "signature": "int folds()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回折数。",
+                "returns": "构造时给定的折数"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "shuffle()",
+              "signature": "boolean shuffle()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回是否打乱。",
+                "returns": "true 表示划分前按 seed 打乱行序"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "split(Matrix, double[])",
+              "signature": "List<DataSplit.Fold> split(Matrix features, double[] targets)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                },
+                {
+                  "type": "double[]",
+                  "name": "targets"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "生成各折的训练与测试划分。",
+                "body": [
+                  "第 f 折测试区间取 [f*rows/folds, (f+1)*rows/folds)，训练集为其余区间的拼接，因此每折训练集大小等于 rows 减去该折测试集大小。"
+                ],
+                "params": {
+                  "features": "特征矩阵，行数为样本数",
+                  "targets": "目标数组，长度须等于行数，仅随行搬运"
+                },
+                "returns": "长度为 folds 的列表，每项为 DataSplit.Fold，含 trainFeatures、trainTargets、testFeatures、testTargets",
+                "throws": {
+                  "NullPointerException": "features 或 targets 为 null",
+                  "IllegalArgumentException": "折数大于样本数、目标数量与行数不一致，或数据含非有限值"
+                },
+                "notes": [
+                  "返回的矩阵与数组都是新分配的副本，与原数据不共享存储"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "K 折交叉验证划分器，默认打乱且种子为 42。",
+            "body": [
+              "划分是位置切分：先按 shuffle 与 seed 得到行序（不打乱时即 0..rows-1），第 f 折的测试区间为 [f*rows/folds, (f+1)*rows/folds)，其余行按行序首尾拼接成训练集。行数不能被折数整除时，多出的样本落在靠后的折上。",
+              "是否打乱由 shuffle 决定，构造器默认 true，与参考实现的默认 false 不同；seed 只在 shuffle 为 true 时起作用，相同 seed 与相同数据得到完全一致的划分。",
+              "每折以 DataSplit.Fold 返回四个字段：trainFeatures、trainTargets、testFeatures、testTargets，均为按索引复制出的新数组，可安全修改。"
+            ],
+            "notes": [
+              "构造器只校验 folds >= 2，folds 超过样本数的检查延到 split 阶段",
+              "类本身不持有数据，同一实例可对不同矩阵反复 split",
+              "目标数组只随行搬运，划分过程不看标签取值，不做分层"
+            ],
+            "example": "Matrix x = Matrix.fromRows(new double[][] { {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}, {2.0, 2.0}, {2.0, 3.0}, {3.0, 2.0}, {3.0, 3.0}, {4.0, 4.0}\n});\ndouble[] y = {0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0}; KFold kfold = new KFold(4);\nList<DataSplit.Fold> folds = kfold.split(x, y); DataSplit.Fold first = folds.get(0);\nMatrix trainX = first.trainFeatures();\nMatrix testX = first.testFeatures();\nint count = kfold.folds();\nboolean shuffled = kfold.shuffle();",
+            "see": [
+              "basalt.ml.DataSplit",
+              "basalt.ml.GridSearchCV",
+              "basalt.ml.StratifiedKFold"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.KMeans",
+          "simple_qualified": "KMeans",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Estimator",
+            "Persistable"
+          ],
+          "file": "jsl/ml/KMeans.java",
+          "line": 23,
+          "javadoc": "Lloyd iterations with genuine K-Means++ distance-weighted seeding and optional restarts. <p>The assignment step is the dominant cost ({@code O(n k p)}); it is distributed over row ranges\nwhile centroid updates stay sequential and allocation free. Empty clusters are repaired by\ndonating the farthest sample from the largest donor cluster, which preserves the partition.</p>",
+          "nested": [
+            "Run",
+            "Builder"
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "key": "builder()",
+              "signature": "Builder builder()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建 KMeans 构建器。",
+                "returns": "参数取默认值的新 Builder 实例"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit(Matrix)",
+              "signature": "KMeans fit(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "只用特征拟合，目标数组缺省为 null。",
+                "params": {
+                  "features": "训练样本矩阵，行是样本、列是特征"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit(Matrix, double[])",
+              "signature": "KMeans fit(Matrix features, double[] ignoredTargets)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                },
+                {
+                  "type": "double[]",
+                  "name": "ignoredTargets"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "执行 K-Means++ 初始化与 Lloyd 迭代。",
+                "body": [
+                  "首个质心从样本中均匀随机抽取，后续质心按到最近已有质心的平方距离加权抽取；若全部距离之和为 0，则改用簇序号对样本数取模。每次重启跑满收敛条件或 maxIterations，取惯性最小者。"
+                ],
+                "params": {
+                  "features": "训练样本矩阵，行是样本、列是特征；元素必须有限",
+                  "ignoredTargets": "占位参数；聚类忽略监督目标，可为 null"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "features 为 null 或含非有限值，或簇数大于样本数"
+                },
+                "notes": [
+                  "每次重启都新建 Random，因此同一 seed 与 restarts 组合可复现结果"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "predict(Matrix)",
+              "signature": "double[] predict(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "把每个样本分配给最近的质心。",
+                "params": {
+                  "features": "样本矩阵，列数须与拟合时一致"
+                },
+                "returns": "长度为样本数的簇索引，以 double 表示",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "特征列数与拟合时不一致"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "transform(Matrix)",
+              "signature": "double[] transform(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回各样本到其所属质心的平方距离。",
+                "body": [
+                  "先按最近质心确定归属，再取该质心与样本的平方欧氏距离。返回一维数组，每个样本一个标量，而不是距离矩阵；需要欧氏距离时自行开方。"
+                ],
+                "params": {
+                  "features": "样本矩阵，列数须与拟合时一致"
+                },
+                "returns": "长度为样本数的平方距离数组",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "特征列数与拟合时不一致"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "centroids()",
+              "signature": "Matrix centroids()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回最终质心矩阵。",
+                "returns": "簇数 × 特征数 的矩阵，每行一个质心",
+                "throws": {
+                  "IllegalStateException": "尚未拟合"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "inertia()",
+              "signature": "double inertia()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回最优重启的惯性值。",
+                "returns": "样本到最近质心平方距离之和；未拟合时为 0"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "iterations()",
+              "signature": "int iterations()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回最优重启实际执行的迭代轮数。",
+                "returns": "1 到 maxIterations 之间的轮数；未拟合时为 0"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "restarts()",
+              "signature": "int restarts()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回已完成的随机重启次数。",
+                "returns": "拟合后等于配置的 restarts；未拟合或由 read 重建的模型为 0"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "kind()",
+              "signature": "ModelKind kind()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回模型类型标识。",
+                "returns": "ModelKind.KMEANS"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "write(ModelWriter)",
+              "signature": "void write(ModelWriter writer)",
+              "params": [
+                {
+                  "type": "ModelWriter",
+                  "name": "writer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "写入簇数、特征数、惯性、迭代轮数与质心。",
+                "params": {
+                  "writer": "目标写入器，由调用方负责容器头与关闭"
+                },
+                "throws": {
+                  "IllegalStateException": "尚未拟合"
+                },
+                "notes": [
+                  "tolerance、seed、restarts 与 threads 不写入流，read 后回到 Builder 默认值"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "read(ModelReader)",
+              "signature": "KMeans read(ModelReader reader)",
+              "params": [
+                {
+                  "type": "ModelReader",
+                  "name": "reader"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "从序列化流重建 KMeans 模型。",
+                "params": {
+                  "reader": "已完成容器头解析的读取器"
+                },
+                "returns": "只恢复质心与统计量的模型实例，可直接用于 predict",
+                "throws": {
+                  "ModelFormatException": "簇数或特征数不为正"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "K-Means++ 播种的 Lloyd 迭代聚类，支持多次重启。",
+            "body": [
+              "分配步逐样本计算到 k 个质心的平方欧氏距离，按行区间并行执行；质心累加与求均值为串行循环，且复用预分配缓冲区。多次重启各自独立初始化，保留惯性最小的一次结果。",
+              "第 r 次重启使用 seed + 7919r 作为随机源种子。空簇修复从当前分配中挑选距离所属质心最远、且所属簇样本数大于 1 的样本，把它捐给空簇并以该样本位置作为新质心；找不到合格捐赠者时退化为全局最远样本。"
+            ],
+            "notes": [
+              "tolerance 作用于质心位移：全部质心各分量位移的平方和不超过 tolerance² 时停止迭代",
+              "inertia 在迭代结束后按最终质心重新计算，等于各样本到最近质心平方距离之和，可能与最后一轮分配时的值略有差异",
+              "样本数不少于 1024、特征数不少于 8 且原生内核可用时，整个拟合交给原生实现",
+              "特征数不少于 128 时，单轮分配步也可能切换到原生内核"
+            ],
+            "example": "Matrix features = Matrix.fromRows(new double[][] { {0.0, 0.0}, {0.4, 0.2}, {0.1, 0.5}, {9.6, 9.8}, {10.0, 10.2}, {9.4, 9.9}\n});\nKMeans kmeans = KMeans.builder() .clusters(2) .restarts(4) .maxIterations(200) .seed(7L) .build() .fit(features);\ndouble[] assignment = kmeans.predict(features);\ndouble[] distance = kmeans.transform(features);\nMatrix centers = kmeans.centroids();\ndouble inertia = kmeans.inertia();",
+            "see": [
+              "basalt.ml.Estimator",
+              "basalt.core.Persistable"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.KNearestNeighbors",
+          "simple_qualified": "KNearestNeighbors",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Estimator"
+          ],
+          "file": "jsl/ml/KNearestNeighbors.java",
+          "line": 10,
+          "javadoc": "Deterministic, uniform-weight KNN classification with SIMD distance calculations.",
+          "nested": [
+            "Neighbor",
+            "Builder"
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "key": "builder()",
+              "signature": "Builder builder()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建构建器，默认 k=5、欧氏距离。",
+                "returns": "新的 Builder，字段取默认值",
+                "notes": [
+                  "每次调用都返回独立实例，可安全地分别配置"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit(Matrix, double[])",
+              "signature": "KNearestNeighbors fit(Matrix features, double[] targets)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                },
+                {
+                  "type": "double[]",
+                  "name": "targets"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "保存训练集副本，不做任何预计算。",
+                "params": {
+                  "features": "训练特征矩阵，列数即特征维数",
+                  "targets": "训练标签数组，取值可以是任意 double"
+                },
+                "returns": "this",
+                "throws": {
+                  "NullPointerException": "features 或 targets 为 null",
+                  "IllegalArgumentException": "k 大于训练样本数，或行数与标签长度不符、数据含非有限值"
+                },
+                "notes": [
+                  "重复 fit 会用新数据覆盖旧训练集"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "predict(Matrix)",
+              "signature": "double[] predict(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "对每个样本取 k 近邻多数投票。",
+                "params": {
+                  "features": "待预测特征矩阵，列数须等于训练特征数"
+                },
+                "returns": "每行一个训练集中出现过的标签值",
+                "throws": {
+                  "IllegalStateException": "尚未 fit",
+                  "IllegalArgumentException": "列数不匹配或含非有限值"
+                },
+                "notes": [
+                  "平票时返回数值更小的标签，保证确定性"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "统一权重的 KNN 分类器。",
+            "body": [
+              "fit 只保存训练集的副本（特征 copy、标签 clone），不做归一化或索引结构；predict 对每个查询样本线性扫描全部训练行，用距离度量维护容量为 k 的最大堆，堆中即 k 个最近邻，再按标签多数投票。",
+              "投票是统一权重，距离不参与加权；票数相同时选择数值更小的标签，因此结果与 HashMap 迭代顺序无关，完全可复现。单次查询的时间为 O(n·d)，额外内存为 O(k) 加上训练集副本。"
+            ],
+            "notes": [
+              "k 在 build() 时校验为正，fit 时再校验不超过训练样本数",
+              "特征未标准化，量纲差异会主导欧氏距离",
+              "训练集在 fit 时复制，之后修改原 Matrix 不影响模型"
+            ],
+            "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}});\ndouble[] y = {0, 1, 1, 0};\nKNearestNeighbors knn = KNearestNeighbors.builder() .k(3) .metric(DistanceMetric.MANHATTAN) .build() .fit(x, y);\ndouble[] labels = knn.predict(x);",
+            "see": [
+              "basalt.ml.KNeighborsRegressor",
+              "basalt.ml.DistanceMetric",
+              "basalt.ml.KNearestNeighbors.Builder"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.KNeighborsRegressor",
+          "simple_qualified": "KNeighborsRegressor",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Estimator"
+          ],
+          "file": "jsl/ml/KNeighborsRegressor.java",
+          "line": 8,
+          "javadoc": "Uniform-weight KNN regression with SIMD distances.",
+          "nested": [
+            "Neighbor",
+            "Builder"
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "key": "builder()",
+              "signature": "Builder builder()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建构建器，默认 k=5、欧氏距离。",
+                "returns": "新的 Builder，字段取默认值"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit(Matrix, double[])",
+              "signature": "KNeighborsRegressor fit(Matrix features, double[] targets)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                },
+                {
+                  "type": "double[]",
+                  "name": "targets"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "保存训练集副本，不做预计算。",
+                "params": {
+                  "features": "训练特征矩阵",
+                  "targets": "训练目标数组，长度等于行数"
+                },
+                "returns": "this",
+                "throws": {
+                  "NullPointerException": "features 或 targets 为 null",
+                  "IllegalArgumentException": "k 大于训练样本数，或形状不符、数据含非有限值"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "predict(Matrix)",
+              "signature": "double[] predict(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "对 k 个最近邻的目标值取平均。",
+                "params": {
+                  "features": "待预测特征矩阵，列数须等于训练特征数"
+                },
+                "returns": "每行一个连续预测值，为 k 个邻居目标的算术平均",
+                "throws": {
+                  "IllegalStateException": "尚未 fit",
+                  "IllegalArgumentException": "列数不匹配或含非有限值"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "统一权重的 KNN 回归器。",
+            "body": [
+              "与分类版共享同一套流程：fit 只复制训练集，predict 逐样本线性扫描并用容量为 k 的最大堆保留最近邻。区别在聚合方式——对 k 个邻居的目标值取算术平均，不做距离加权。",
+              "单次查询的时间为 O(n·d)，额外内存为 O(k) 加上训练集副本。目标值未做任何变换，因此预测结果始终落在训练目标的最小值与最大值之间，不会外推。"
+            ],
+            "notes": [
+              "k 在 fit 时校验不超过训练样本数",
+              "距离加权、叶节点裁剪等加速结构均未实现"
+            ],
+            "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}});\ndouble[] y = {0.0, 1.0, 1.0, 2.0};\nKNeighborsRegressor regressor = KNeighborsRegressor.builder().k(2).build().fit(x, y);\ndouble[] predictions = regressor.predict(x);",
+            "see": [
+              "basalt.ml.KNearestNeighbors",
+              "basalt.ml.DistanceMetric"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.Kernel",
+          "simple_qualified": "Kernel",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/Kernel.java",
+          "line": 20,
+          "javadoc": "Positive semi-definite kernel functions shared by {@link SVC}, {@link KernelRidge}, and\n{@link KernelPCA}:\n<ul>\n<li>{@link Type#LINEAR}: {@code K(x, y) = x · y}</li>\n<li>{@link Type#RBF}: {@code K(x, y) = exp(-gamma * ||x - y||^2)}</li>\n<li>{@link Type#POLY}: {@code K(x, y) = (gamma * (x · y) + coef0)^degree}</li>\n<li>{@link Type#SIGMOID}: {@code K(x, y) = tanh(gamma * (x · y) + coef0)}</li>\n</ul>",
+          "nested": [
+            "Type"
+          ],
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "Kernel(Type, double, int, double)",
+              "signature": "Kernel(Type type, double gamma, int degree, double coef0)",
+              "params": [
+                {
+                  "type": "Type",
+                  "name": "type"
+                },
+                {
+                  "type": "double",
+                  "name": "gamma"
+                },
+                {
+                  "type": "int",
+                  "name": "degree"
+                },
+                {
+                  "type": "double",
+                  "name": "coef0"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按显式类型与参数构造核函数。",
+                "params": {
+                  "type": "核类型，取 Type 枚举值，不接受 null",
+                  "gamma": "缩放系数，须有限且非负；取 0 时评估按 1/max(1, length) 替代",
+                  "degree": "POLY 的多项式次数，须 >= 1",
+                  "coef0": "POLY 与 SIGMOID 的常数项，须有限"
+                },
+                "returns": "持有给定参数的核函数实例",
+                "throws": {
+                  "NullPointerException": "type 为 null",
+                  "IllegalArgumentException": "gamma 非有限或为负、degree 小于 1、coef0 非有限"
+                },
+                "notes": [
+                  "构造器不按类型裁剪参数，未参与计算的字段照原样保存"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "linear()",
+              "signature": "Kernel linear()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "构造线性核 K(x, y) = x · y。",
+                "returns": "gamma=1.0、degree=3、coef0=0.0 的 LINEAR 核",
+                "notes": [
+                  "三个参数都不参与 LINEAR 的计算，仅随实例保存并参与序列化"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "rbf(double)",
+              "signature": "Kernel rbf(double gamma)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "gamma"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "构造高斯核 exp(-gamma * ||x - y||²)。",
+                "params": {
+                  "gamma": "尺度系数，须为正且有限；越大核越窄、影响半径越小"
+                },
+                "returns": "degree=3、coef0=0.0 的 RBF 核",
+                "throws": {
+                  "IllegalArgumentException": "gamma 小于等于 0 或非有限"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "poly(int, double, double)",
+              "signature": "Kernel poly(int degree, double gamma, double coef0)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "degree"
+                },
+                {
+                  "type": "double",
+                  "name": "gamma"
+                },
+                {
+                  "type": "double",
+                  "name": "coef0"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "构造多项式核 (gamma * x·y + coef0)^degree。",
+                "params": {
+                  "degree": "多项式次数，须 >= 1",
+                  "gamma": "内积缩放系数，须为正且有限",
+                  "coef0": "加在内积上的常数项，须有限"
+                },
+                "returns": "POLY 核实例",
+                "throws": {
+                  "IllegalArgumentException": "gamma 非正或非有限，或 degree 小于 1、coef0 非有限"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "sigmoid(double, double)",
+              "signature": "Kernel sigmoid(double gamma, double coef0)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "gamma"
+                },
+                {
+                  "type": "double",
+                  "name": "coef0"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "构造 sigmoid 核 tanh(gamma * x·y + coef0)。",
+                "params": {
+                  "gamma": "内积缩放系数，须为正且有限",
+                  "coef0": "双曲正切内的偏移量，须有限"
+                },
+                "returns": "degree=3 的 SIGMOID 核实例",
+                "throws": {
+                  "IllegalArgumentException": "gamma 非正或非有限，或 coef0 非有限"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "type()",
+              "signature": "Type type()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回核类型。",
+                "returns": "Type 枚举值 LINEAR、RBF、POLY 或 SIGMOID"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "gamma()",
+              "signature": "double gamma()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回 gamma 系数。",
+                "returns": "RBF、POLY、SIGMOID 的尺度系数；LINEAR 固定为 1.0"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "degree()",
+              "signature": "int degree()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回多项式次数。",
+                "returns": "POLY 的次数；其余类型固定为 3"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "coef0()",
+              "signature": "double coef0()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回常数项 coef0。",
+                "returns": "POLY 与 SIGMOID 的常数项；LINEAR 与 RBF 为 0.0"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "evaluate(double[], int, double[], int, int)",
+              "signature": "double evaluate(double[] x, int xOffset, double[] y, int yOffset, int length)",
+              "params": [
+                {
+                  "type": "double[]",
+                  "name": "x"
+                },
+                {
+                  "type": "int",
+                  "name": "xOffset"
+                },
+                {
+                  "type": "double[]",
+                  "name": "y"
+                },
+                {
+                  "type": "int",
+                  "name": "yOffset"
+                },
+                {
+                  "type": "int",
+                  "name": "length"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按偏移与长度计算两点核值。",
+                "params": {
+                  "x": "左向量所在的数组",
+                  "xOffset": "左向量在 x 中的起始下标",
+                  "y": "右向量所在的数组",
+                  "yOffset": "右向量在 y 中的起始下标",
+                  "length": "参与计算的维数"
+                },
+                "returns": "核函数值：LINEAR 为内积，RBF 落在 (0, 1]，POLY 与 SIGMOID 可为任意实数",
+                "notes": [
+                  "gamma 为 0 时内部改用 1/max(1, length)，即按维数缩放",
+                  "不检查偏移与长度的越界，由调用方保证区间合法"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "gram(Matrix, Matrix)",
+              "signature": "Matrix gram(Matrix a, Matrix b)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "a"
+                },
+                {
+                  "type": "Matrix",
+                  "name": "b"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "计算两批样本之间的 Gram 矩阵。",
+                "params": {
+                  "a": "左样本矩阵，行数为样本数，列数为特征数",
+                  "b": "右样本矩阵，列数须与 a 相同"
+                },
+                "returns": "rows(a) × rows(b) 的矩阵，第 i 行第 j 列为 K(a 的第 i 行, b 的第 j 行)",
+                "throws": {
+                  "IllegalArgumentException": "两个矩阵的列数不同"
+                },
+                "notes": [
+                  "逐元素调用 evaluate，串行双重循环，无分块或原生加速"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "write(ModelWriter)",
+              "signature": "void write(ModelWriter writer)",
+              "params": [
+                {
+                  "type": "ModelWriter",
+                  "name": "writer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "写入类型序号、gamma、degree 与 coef0。",
+                "params": {
+                  "writer": "目标写入器，由调用方负责容器头与提交"
+                },
+                "notes": [
+                  "依次写入一个 int 序号、一个 double、一个 int 与一个 double，共四个字段",
+                  "类型以 Type.ordinal() 落盘，read 依赖同一枚举顺序"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "read(ModelReader)",
+              "signature": "Kernel read(ModelReader reader)",
+              "params": [
+                {
+                  "type": "ModelReader",
+                  "name": "reader"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "从序列化流重建核函数。",
+                "params": {
+                  "reader": "已完成容器头解析的读取器"
+                },
+                "returns": "参数与写入时一致的 Kernel 实例",
+                "throws": {
+                  "ModelFormatException": "类型序号不在 Type 枚举范围内"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "四种半正定核函数：LINEAR、RBF、POLY 与 SIGMOID。",
+            "body": [
+              "四种核的定义为 LINEAR K(x, y) = x · y；RBF K(x, y) = exp(-gamma * ||x - y||^2)；POLY K(x, y) = (gamma * (x · y) + coef0)^degree；SIGMOID K(x, y) = tanh(gamma * (x · y) + coef0)。SIGMOID 不保证半正定，仅在参数合适时可用作核。",
+              "gamma 控制内积或距离的缩放：RBF 中越大核越窄、单个样本影响半径越小；POLY 与 SIGMOID 中缩放内积后再叠加 coef0。degree 只对 POLY 生效，coef0 对 POLY 与 SIGMOID 生效，LINEAR 不使用这三个参数。",
+              "评估有两条路径：evaluate 直接在原数组上按偏移与长度计算单点核值，避免为每个样本对分配临时向量；gram 逐行逐列调用 evaluate 组装批量的 Gram 矩阵。"
+            ],
+            "notes": [
+              "构造器允许 gamma 取 0，此时 evaluate 内部改用 1/max(1, length) 作为缩放，等价于按维数缩放；rbf/poly/sigmoid 工厂则要求 gamma 严格为正",
+              "linear() 固定 gamma=1.0、degree=3、coef0=0.0；sigmoid 工厂固定 degree=3，只有 poly 工厂会改写 degree",
+              "gram 不做分块与原生加速，时间复杂度为 rows(a) * rows(b) * 特征数",
+              "write 按类型序号、gamma、degree、coef0 的顺序落盘，read 依赖 Type 枚举的声明顺序"
+            ],
+            "example": "Matrix a = Matrix.fromRows(new double[][] {{1.0, 2.0}, {2.0, 1.0}});\nMatrix b = Matrix.fromRows(new double[][] {{0.0, 1.0}, {3.0, 3.0}}); Kernel kernel = Kernel.rbf(0.5);\ndouble value = kernel.evaluate(a.data(), 0, b.data(), 0, 2);\nMatrix gram = kernel.gram(a, b); Kernel poly = Kernel.poly(3, 0.25, 1.0);\ndouble degree = poly.degree();\ndouble coef0 = poly.coef0();",
+            "see": [
+              "basalt.ml.SVC",
+              "basalt.ml.KernelRidge",
+              "basalt.ml.KernelPCA"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.KernelDensity",
+          "simple_qualified": "KernelDensity",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Estimator",
+            "Persistable"
+          ],
+          "file": "jsl/ml/KernelDensity.java",
+          "line": 17,
+          "javadoc": "Kernel Density Estimation (KDE) supporting {@code GAUSSIAN} and {@code TOPHAT} kernels.",
+          "nested": [
+            "KernelType",
+            "Builder"
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "key": "builder()",
+              "signature": "Builder builder()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建构造器，bandwidth=1.0、核为 GAUSSIAN。",
+                "returns": "新的 Builder 实例"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit(Matrix)",
+              "signature": "KernelDensity fit(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "仅凭样本拟合，等价于 fit(features, null)。",
+                "params": {
+                  "features": "训练样本矩阵，行数为样本数，列数为特征数"
+                },
+                "returns": "this，已保存训练样本",
+                "throws": {
+                  "NullPointerException": "features 为 null",
+                  "IllegalArgumentException": "特征含非有限值"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit(Matrix, double[])",
+              "signature": "KernelDensity fit(Matrix features, double[] ignoredTargets)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                },
+                {
+                  "type": "double[]",
+                  "name": "ignoredTargets"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "保存训练样本副本与特征数。",
+                "body": [
+                  "KDE 无需估计参数，拟合只把特征矩阵复制一份作为核中心集合，所有距离在打分时按需计算。"
+                ],
+                "params": {
+                  "features": "训练样本矩阵，行数为样本数",
+                  "ignoredTargets": "占位参数，内容被完全忽略，可为 null"
+                },
+                "returns": "this，已完成拟合",
+                "throws": {
+                  "NullPointerException": "features 为 null",
+                  "IllegalArgumentException": "特征含非有限值"
+                },
+                "notes": [
+                  "保存的是副本，拟合后再修改原矩阵不影响模型"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "scoreSamples(Matrix)",
+              "signature": "double[] scoreSamples(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "输出每个查询点的对数密度 log p(x)。",
+                "body": [
+                  "GAUSSIAN 下对每个查询点累加 -||x - x_i||²/(2*bandwidth²)，再以 log-sum-exp 汇总并加上归一化常数；TOPHAT 下统计平方距离不超过 bandwidth² 的训练样本数，按球体积归一化。"
+                ],
+                "params": {
+                  "features": "查询点矩阵，列数须等于拟合时的特征数"
+                },
+                "returns": "长度等于行数的对数密度数组；TOPHAT 下无命中时为负无穷",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "列数不符或特征含非有限值"
+                },
+                "notes": [
+                  "复杂度为查询行数 × 训练行数 × 特征数，无树结构或原生加速",
+                  "GAUSSIAN 的归一化常数包含 -log(n) 与 -d*log(bandwidth)"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "sample(int, long)",
+              "signature": "Matrix sample(int nSamples, long seed)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "nSamples"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "从拟合的密度中抽取随机样本。",
+                "params": {
+                  "nSamples": "抽样个数，须为正",
+                  "seed": "随机源种子，仅影响本次抽样的结果"
+                },
+                "returns": "nSamples × 特征数 的矩阵",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "nSamples 小于等于 0"
+                },
+                "notes": [
+                  "每个样本先均匀抽取一个训练行作为中心，再叠加噪声",
+                  "GAUSSIAN 的噪声为标准差等于 bandwidth 的各向同性正态噪声；TOPHAT 为每维 [-bandwidth, bandwidth] 上的均匀噪声"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "predict(Matrix)",
+              "signature": "double[] predict(Matrix features)",
+              "params": [
+                {
+                  "type": "Matrix",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "与 scoreSamples 等价，返回对数密度。",
+                "params": {
+                  "features": "查询点矩阵，列数须等于拟合时的特征数"
+                },
+                "returns": "长度等于行数的对数密度数组",
+                "throws": {
+                  "IllegalStateException": "尚未拟合",
+                  "IllegalArgumentException": "列数不符或特征含非有限值"
+                },
+                "notes": [
+                  "沿用 scoreSamples 的实现，输出是打分而非分类标签"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "bandwidth()",
+              "signature": "double bandwidth()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回带宽。",
+                "returns": "构造时给定的 bandwidth，正有限值"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "kind()",
+              "signature": "ModelKind kind()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回模型类型标识。",
+                "returns": "ModelKind.KERNEL_DENSITY"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "write(ModelWriter)",
+              "signature": "void write(ModelWriter writer)",
+              "params": [
+                {
+                  "type": "ModelWriter",
+                  "name": "writer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "写入带宽、核类型与训练样本。",
+                "params": {
+                  "writer": "目标写入器，由调用方负责容器头与提交"
+                },
+                "throws": {
+                  "IllegalStateException": "尚未拟合"
+                },
+                "notes": [
+                  "核类型以 KernelType.ordinal() 落盘",
+                  "训练样本按行优先展平后整体写入，读回时按特征数还原形状"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "read(ModelReader)",
+              "signature": "KernelDensity read(ModelReader reader)",
+              "params": [
+                {
+                  "type": "ModelReader",
+                  "name": "reader"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "读回带宽、核类型与训练样本。",
+                "params": {
+                  "reader": "已完成容器头解析的读取器"
+                },
+                "returns": "已可打分的模型实例",
+                "throws": {
+                  "ModelFormatException": "核类型序号越界、特征数或样本数不为正"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "高斯与 TOPHAT 核的核密度估计，输出对数密度。",
+            "body": [
+              "拟合不做任何参数估计，只把训练样本复制一份作为核中心集合，因此打分代价为查询点数、训练样本数与特征数三者之积。",
+              "GAUSSIAN 核下 log p(x) = -log(n) - d*log(bandwidth) - 0.5*d*log(2π) + log Σ exp(-||x - x_i||² / (2 * bandwidth²))，求和用减去最大项的方式做 log-sum-exp 以避免下溢；TOPHAT 核下以带宽为半径的球内命中数 hits 决定密度，log p(x) = log(hits / n) - [0.5*d*log(π) - logΓ(d/2 + 1) + d*log(bandwidth)]，无命中时返回负无穷。",
+              "bandwidth 是唯一平滑参数：越大分布越平滑、峰值越低，方差约等于 bandwidth² 加上训练样本自身方差。sample 从训练行中均匀抽取一个中心再叠加噪声，GAUSSIAN 加各向同性正态噪声，TOPHAT 加逐维均匀噪声。"
+            ],
+            "notes": [
+              "默认 bandwidth=1.0、kernel=GAUSSIAN；bandwidth 须为正且有限",
+              "scoreSamples 与 predict 返回对数密度而非概率密度，需要密度时自行取 exp",
+              "write 只保存 bandwidth、核类型、特征数与训练样本，模型无其他可训练状态",
+              "TOPHAT 在稀疏数据上常出现查询点邻域内无训练样本的情况，此时整行为负无穷"
+            ],
+            "example": "Matrix train = Matrix.fromRows(new double[][] { {0.0}, {0.4}, {1.0}, {1.2}, {2.0}, {3.5}\n});\nMatrix query = Matrix.fromRows(new double[][] {{0.5}, {1.5}, {3.0}}); KernelDensity kde = KernelDensity.builder() .bandwidth(0.5) .kernel(KernelDensity.KernelType.GAUSSIAN) .build() .fit(train); double[] logDensity = kde.scoreSamples(query);\nMatrix drawn = kde.sample(100, 7L);\ndouble bandwidth = kde.bandwidth();",
+            "see": [
+              "basalt.ml.Estimator",
+              "basalt.core.Persistable",
+              "basalt.ml.Kernel"
+            ]
+          }
         }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "bestParams()",
-       "signature": "Map<String, Object> bestParams()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回最优参数组合。",
-        "returns": "不可变的参数映射，键与 param 声明一致",
-        "throws": {
-         "IllegalStateException": "尚未拟合"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "bestScore()",
-       "signature": "double bestScore()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回最优组合的交叉验证均分。",
-        "returns": "各折分数的算术平均；scoring 为 RMSE 时为负值",
-        "throws": {
-         "IllegalStateException": "尚未拟合"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "cvResults()",
-       "signature": "List<CandidateResult> cvResults()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回每个候选组合的逐折成绩。",
-        "returns": "不可变列表，元素为 CandidateResult（params、meanScore、stdScore、foldScores），顺序与网格遍历顺序一致",
-        "notes": [
-         "未拟合时返回空列表，不抛异常",
-         "stdScore 为总体标准差，分母取折数而非折数减一",
-         "fit 会清空并重建该列表"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "网格穷举加交叉验证的调参器，选优后全量重训。",
-      "body": [
-       "交叉验证来源是 DataSplit：stratified 为 false 时调用 DataSplit.kFold，为 true 时调用 DataSplit.stratifiedKFold，两者都以 shuffle=true 与构造时的 seed 打乱，折数为 cvFolds。",
-       "param 声明的每个键对应一组候选值，所有键做笛卡尔积并按声明顺序遍历。每个组合在每折上调用一次 estimatorFactory 新建估计器，在训练折拟合、测试折预测，再用 scoring 折算为标量：ACCURACY、MACRO_F1、R2 取原值，RMSE 取负值，因此分数一律越大越好。",
-       "组合之间用各折均值比较，严格大于才替换当前最优，并列时保留先出现的组合；均值标准差按总体公式 sqrt(Σ(s-mean)²/k) 计算。选优后以同一工厂再构造一个估计器并在全部数据上拟合，作为 bestEstimator。"
-      ],
-      "notes": [
-       "默认 scoring=ACCURACY、cvFolds=5、stratified=false、seed=42；构建时 paramGrid 为空会抛 IllegalArgumentException",
-       "RMSE 评分下 bestScore 与 cvResults 中的分数均为负值，比较时仍取最大者",
-       "分层划分要求每个类别的样本数不少于折数，否则 DataSplit 抛 IllegalArgumentException",
-       "工厂每折调用一次，估计器实例不跨折复用，工厂内部应无共享可变状态",
-       "每次 fit 会清空 cvResults 并重置最优结果"
-      ],
-      "example": "Matrix x = Matrix.fromRows(new double[][] {\n        {0.0, 0.0}, {0.2, 0.1}, {0.1, 0.3}, {0.3, 0.2},\n        {1.0, 1.0}, {1.2, 0.9}, {0.9, 1.1}, {1.1, 1.2}\n});\ndouble[] y = {0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0};\n\nGridSearchCV search = GridSearchCV.builder(\n                params -> KNearestNeighbors.builder()\n                        .k((Integer) params.get(\"k\"))\n                        .build())\n        .param(\"k\", 1, 3)\n        .scoring(Estimators.Metric.ACCURACY)\n        .cv(2)\n        .stratified(true)\n        .seed(42L)\n        .build()\n        .fit(x, y);\n\nEstimator best = search.bestEstimator();\nMap<String, Object> bestParams = search.bestParams();\ndouble bestScore = search.bestScore();\ndouble[] label = search.predict(x);",
-      "see": [
-       "basalt.ml.KFold",
-       "basalt.ml.DataSplit",
-       "basalt.ml.Estimators",
-       "basalt.ml.Estimator"
       ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.HistogramGradientBoosting",
-     "simple_qualified": "HistogramGradientBoosting",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "Estimator",
-      "Persistable"
-     ],
-     "file": "jsl/ml/HistogramGradientBoosting.java",
-     "line": 32,
-     "javadoc": "Second-order histogram gradient boosting with two growth policies: depth-wise (XGBoost) and\nbest-leaf-first (LightGBM).\n\n<p>Split gain follows the regularized objective\n{@code 0.5 * (G_L^2/(H_L+lambda) + G_R^2/(H_R+lambda) - G^2/(H+lambda)) - gamma}.\nHistograms use the LightGBM subtraction trick: each split accumulates the histogram of the\n<em>smaller</em> child only, and the larger child is derived as {@code parent - small}. A\nbalanced tree therefore touches roughly half the sample-feature work of naive per-node\naccumulation. Large accumulations are dispatched to a Rust AVX2 kernel through JNI; any native\nfailure falls back to the parallel Java path.</p>",
-     "nested": [
-      "NodeHistogram",
-      "HistogramWorkspace",
-      "SplitDecision",
-      "LeafCandidate",
-      "Builder"
-     ],
-     "members": [
-      {
-       "kind": "method",
-       "key": "builder()",
-       "signature": "Builder builder()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建构造器，参数全部取默认值",
-        "returns": "新的 Builder 实例"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fit(Matrix, double[])",
-       "signature": "HistogramGradientBoosting fit(Matrix features, double[] targets)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        },
-        {
-         "type": "double[]",
-         "name": "targets"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "分箱、切分验证集并逐轮提升",
-        "body": [
-         "先按 validationFraction 用 seed 打乱行号，前若干行作验证集，其余作训练集；baseScore 取训练集标签均值，LOGISTIC 下取该均值的对数几率。每轮计算梯度与 hessian、生长一棵树、以 learningRate 累加到原始得分，并记录训练与验证损失。"
-        ],
-        "params": {
-         "features": "训练特征矩阵，行数为样本数",
-         "targets": "目标数组，长度须等于行数；LOGISTIC 时取值须为 0 或 1"
-        },
-        "returns": "this，已完成拟合",
-        "throws": {
-         "IllegalArgumentException": "目标数量与行数不一致、含非有限值，或 LOGISTIC 标签不是 0 或 1"
-        },
-        "notes": [
-         "验证集大小取 round(rows*validationFraction)，下限 1，上限 rows-2",
-         "featureFraction 小于 1 时，第 i 轮用 seed + i*7919 抽取 ceil(fraction*featureCount) 个特征"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "predictRaw(Matrix)",
-       "signature": "double[] predictRaw(Matrix features)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "输出原始得分，未过 sigmoid",
-        "body": [
-         "结果以 baseScore 为初值，逐棵树以 learningRate 加权累加叶值。行数乘树数不小于 2000 万时转交原生集成预测内核，否则在 Java 侧逐树累加。"
-        ],
-        "params": {
-         "features": "特征矩阵，列数须等于拟合时的特征数"
-        },
-        "returns": "长度为行数的原始得分数组",
-        "throws": {
-         "IllegalStateException": "尚未拟合（树列表为空）",
-         "IllegalArgumentException": "列数不匹配或含非有限值"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "predictProbability(Matrix)",
-       "signature": "double[] predictProbability(Matrix features)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "输出正类概率，等于 sigmoid(原始得分)",
-        "params": {
-         "features": "特征矩阵，列数须等于拟合时的特征数"
-        },
-        "returns": "长度为行数的概率数组，取值 (0, 1)",
-        "throws": {
-         "IllegalStateException": "目标不是 LOGISTIC（该校验先于拟合状态校验）"
-        },
-        "notes": [
-         "sigmoid 按符号分支实现，负值不经过 exp 溢出"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "predict(Matrix)",
-       "signature": "double[] predict(Matrix features)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "输出预测值，LOGISTIC 下为 0/1 标签",
-        "body": [
-         "回归直接返回原始得分；LOGISTIC 把 sigmoid(原始得分) 与 0.5 比较，大于等于 0.5 取 1.0，否则取 0.0。"
-        ],
-        "params": {
-         "features": "特征矩阵，列数须等于拟合时的特征数"
-        },
-        "returns": "长度为行数的预测数组",
-        "throws": {
-         "IllegalStateException": "尚未拟合",
-         "IllegalArgumentException": "列数不匹配或含非有限值"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "lossHistory()",
-       "signature": "double[] lossHistory()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "每轮训练集平均损失",
-        "body": [
-         "平方误差目标记录 0.5*残差^2 的均值；LOGISTIC 记录 softplus(raw) - target*raw 的均值，数值上等价于二元交叉熵。"
-        ],
-        "returns": "长度为实际训练轮数的副本；未拟合为空数组",
-        "notes": [
-         "早停后长度等于保留下来的树数"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "validationHistory()",
-       "signature": "double[] validationHistory()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "每轮验证集平均损失",
-        "returns": "长度为实际训练轮数的副本；未设置 validationFraction 或未拟合时为空数组"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "featureImportances()",
-       "signature": "double[] featureImportances()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "归一化的特征重要性，总和为 1",
-        "body": [
-         "口径与 DecisionTree 一致：每次分裂的增益乘以该节点样本数，按特征累加后整体归一化到总和 1。分裂发生在特征子集上时，未参与该轮的特征不增加。"
-        ],
-        "returns": "长度为特征数的副本；未拟合为空数组",
-        "notes": [
-         "读回的模型不携带重要性，返回全 0"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "treeCount()",
-       "signature": "int treeCount()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "已训练的树数",
-        "returns": "树数；未拟合为 0，早停后小于 iterations"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "bestIteration()",
-       "signature": "int bestIteration()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "验证损失最优的轮次下标",
-        "returns": "最优轮次；无验证集时为最后一轮，未拟合为 iterations-1"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "kind()",
-       "signature": "ModelKind kind()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "持久化类型标识",
-        "returns": "ModelKind.HISTOGRAM_BOOSTING"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "write(ModelWriter)",
-       "signature": "void write(ModelWriter writer)",
-       "params": [
-        {
-         "type": "ModelWriter",
-         "name": "writer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按 Persistable 契约写出提升模型",
-        "body": [
-         "写入算法序号、目标序号、learningRate、baseScore、特征数、树数与各棵树的节点数组。maxDepth、maxLeaves、lambda 等超参数不参与序列化。"
-        ],
-        "params": {
-         "writer": "目标二进制写入器"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "read(ModelReader)",
-       "signature": "HistogramGradientBoosting read(ModelReader reader)",
-       "params": [
-        {
-         "type": "ModelReader",
-         "name": "reader"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "从二进制流重建提升模型",
-        "params": {
-         "reader": "已定位到本对象载荷起点的读取器"
-        },
-        "returns": "新的 HistogramGradientBoosting 实例，可直接预测",
-        "throws": {
-         "ModelFormatException": "算法或目标序号越界，或特征数不大于 0、树数不在 [1, 100000]"
-        },
-        "notes": [
-         "读回后 lossHistory 与 validationHistory 为空数组，featureImportances 全为 0",
-         "bestIteration 置为树数减 1，训练相关字段不恢复"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "二阶直方图梯度提升，支持深度优先与叶优先生长",
-      "body": [
-       "分裂增益按正则化目标计算：0.5*(G_L^2/(H_L+lambda) + G_R^2/(H_R+lambda) - G^2/(H+lambda)) - gamma，叶权重为 -G/(H+lambda)。直方图用相减技巧：每次只累加较小子节点，较大子节点由 parent 减 small 得到，平衡树因此只做约一半遍历。",
-       "XGBOOST 策略按层递归，由 maxDepth 控制深度；LIGHTGBM 策略用优先队列每轮分裂全局增益最大的叶，由 maxLeaves 控制叶数。两种策略都受 minSamplesLeaf、minChildWeight 与 maxDepth 约束。",
-       "累计量较大时通过 JNI 交给 Rust AVX2 内核，原生调用失败则回退到分块并行的 Java 路径。featureFraction 按轮次抽取特征子集，validationFraction 切出验证集，配合 earlyStoppingRounds 把树列表回退到最优轮次。"
-      ],
-      "notes": [
-       "LOGISTIC 目标要求标签恰为 0 或 1，其余取值在 fit 入口被拒绝",
-       "早停触发后树列表截断到 bestIteration+1，lossHistory 同步截断",
-       "write 只保存算法、目标、学习率、baseScore 与树；读回时其余超参数取 Builder 默认值"
-      ],
-      "example": "Matrix x = Matrix.fromRows(new double[][]{\n        {0.0, 1.0}, {1.0, 1.0}, {1.0, 0.0}, {2.0, 0.0},\n        {2.0, 1.0}, {3.0, 0.0}, {3.0, 1.0}, {4.0, 0.0}});\ndouble[] y = {0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0};\n\nHistogramGradientBoosting model = HistogramGradientBoosting.builder()\n        .algorithm(BoostingAlgorithm.LIGHTGBM)\n        .objective(BoostingObjective.LOGISTIC)\n        .iterations(200)\n        .learningRate(0.1)\n        .maxLeaves(15)\n        .featureFraction(0.8)\n        .validationFraction(0.25)\n        .earlyStoppingRounds(20)\n        .build()\n        .fit(x, y);\n\ndouble[] probability = model.predictProbability(x);\ndouble[] label = model.predict(x);\ndouble[] history = model.lossHistory();",
-      "see": [
-       "basalt.ml.BoostingAlgorithm",
-       "basalt.ml.BoostingObjective",
-       "basalt.ml.DecisionTree"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.ImpurityCriterion",
-     "simple_qualified": "ImpurityCriterion",
-     "kind": "enum",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/ImpurityCriterion.java",
-     "line": 4,
-     "javadoc": "Node impurity used to maximize information gain in decision trees.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "task()",
-       "signature": "TreeTask task()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "该准则绑定的任务类型",
-        "returns": "构造时传入的 TreeTask",
-        "notes": [
-         "Builder 用它校验准则与任务是否匹配"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "决策树用于最大化信息增益的节点不纯度",
-      "body": [
-       "GINI 计算 1 - Σp^2，ENTROPY 计算 -Σ p*log2(p)，两者绑定 TreeTask.CLASSIFICATION。MSE 绑定 TreeTask.REGRESSION，其 impurity 方法直接抛出 IllegalStateException，因为回归分裂改用和与平方和的代数等价形式，不经过类别计数。",
-       "每个常量在构造时绑定任务，task() 暴露该绑定。DecisionTree.Builder 在 build() 时校验 criterion.task() 与 task 一致，准则与任务不会在运行期错配。"
-      ],
-      "notes": [
-       "骨架中的 ENTROPY 与 MSE 条目是枚举常量，签名里出现的参数即构造时传入的任务标记",
-       "MSE 只作任务标识，逐节点计算不经过 impurity"
-      ],
-      "example": "ImpurityCriterion criterion = ImpurityCriterion.ENTROPY;\n\nDecisionTree tree = DecisionTree.builder()\n        .criterion(criterion)\n        .task(criterion.task())\n        .maxDepth(4)\n        .build();",
-      "see": [
-       "basalt.ml.DecisionTree",
-       "basalt.ml.TreeTask"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.IsolationForest",
-     "simple_qualified": "IsolationForest",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "Estimator",
-      "Persistable"
-     ],
-     "file": "jsl/ml/IsolationForest.java",
-     "line": 22,
-     "javadoc": "Unsupervised Isolation Forest anomaly detector based on random axis-aligned partitioning\ntrees and path-length normalization {@code s(x, n) = 2^(-E(h(x))/c(n))}, matching\n{@code sklearn.ensemble.IsolationForest}.\n\n<p>{@link #predict(Matrix)} returns {@code +1.0} for inliers and {@code -1.0} for outliers\naccording to the configured {@code contamination} quantile threshold.</p>",
-     "nested": [
-      "Builder"
-     ],
-     "members": [
-      {
-       "kind": "method",
-       "key": "builder()",
-       "signature": "Builder builder()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建构造器，超参数取默认值。",
-        "returns": "新的 Builder 实例，trees=100、maxSamples=256、contamination=0.1、seed=42"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fit(Matrix)",
-       "signature": "IsolationForest fit(Matrix features)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "仅凭特征拟合，等价于 fit(features, null)。",
-        "params": {
-         "features": "训练特征矩阵，行数为样本数，列数为特征数"
-        },
-        "returns": "this，已完成拟合并可打分",
-        "throws": {
-         "NullPointerException": "features 为 null",
-         "IllegalArgumentException": "特征含非有限值"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fit(Matrix, double[])",
-       "signature": "IsolationForest fit(Matrix features, double[] ignoredTargets)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        },
-        {
-         "type": "double[]",
-         "name": "ignoredTargets"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "建树并对训练集打分确定阈值。",
-        "body": [
-         "effectiveMaxSamples 取行数与 maxSamples 的较小值，树高上限为 max(1, ceil(log2(effectiveMaxSamples)))。每棵树用主随机源派生的子种子做无放回抽样，再随机选一个取值不全相同的特征、在列最小与最大之间均匀取切点递归下分。",
-         "全部树建成后对训练集计算 0.5 - s，升序排序并取 contamination 对应的分位值作为 threshold，供 decisionFunction 与 predict 使用。"
-        ],
-        "params": {
-         "features": "训练特征矩阵，行数为样本数",
-         "ignoredTargets": "占位参数，内容被完全忽略，可为 null"
-        },
-        "returns": "this，已完成拟合",
-        "throws": {
-         "NullPointerException": "features 为 null",
-         "IllegalArgumentException": "特征含非有限值"
-        },
-        "notes": [
-         "effectiveMaxSamples 极小时树高上限至少为 1",
-         "每棵树的抽样与切点都由各自的子种子决定，treeCount 棵树互相独立"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "anomalyScore(Matrix)",
-       "signature": "double[] anomalyScore(Matrix features)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "计算归一化异常分数 2^(-E(h)/c(n))。",
-        "params": {
-         "features": "待打分特征矩阵，列数须等于拟合时的特征数"
-        },
-        "returns": "长度等于行数的分数数组，取值 (0, 1]，越接近 1 越异常",
-        "throws": {
-         "IllegalStateException": "尚未拟合（树列表为空）",
-         "IllegalArgumentException": "列数不符或特征含非有限值"
-        },
-        "notes": [
-         "E(h) 为样本在各棵树上的平均路径长度，归一化分母 c(n) 用 effectiveMaxSamples 计算",
-         "c(n) 下限截到 1e-12，避免退化数据导致除零"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "decisionFunction(Matrix)",
-       "signature": "double[] decisionFunction(Matrix features)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回以阈值为零点的偏移分数。",
-        "params": {
-         "features": "待打分特征矩阵，列数须等于拟合时的特征数"
-        },
-        "returns": "0.5 - s - threshold，正值表示正常点，负值表示异常点",
-        "throws": {
-         "IllegalStateException": "尚未拟合",
-         "IllegalArgumentException": "列数不符或特征含非有限值"
-        },
-        "notes": [
-         "阈值由拟合时训练集的 contamination 分位确定，未拟合时无法得到有意义的零点"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "predict(Matrix)",
-       "signature": "double[] predict(Matrix features)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "输出 +1.0 正常、-1.0 异常。",
-        "params": {
-         "features": "待预测特征矩阵，列数须等于拟合时的特征数"
-        },
-        "returns": "长度等于行数的标签数组，正常为 +1.0，异常为 -1.0",
-        "throws": {
-         "IllegalStateException": "尚未拟合",
-         "IllegalArgumentException": "列数不符或特征含非有限值"
-        },
-        "notes": [
-         "判定规则为 decisionFunction 结果不小于 0 时取 +1.0，否则取 -1.0"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "kind()",
-       "signature": "ModelKind kind()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回模型类型标识。",
-        "returns": "ModelKind.ISOLATION_FOREST"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "write(ModelWriter)",
-       "signature": "void write(ModelWriter writer)",
-       "params": [
-        {
-         "type": "ModelWriter",
-         "name": "writer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "写入超参数、阈值与全部树结构。",
-        "params": {
-         "writer": "目标写入器，由调用方负责容器头与提交"
-        },
-        "throws": {
-         "IllegalStateException": "尚未拟合（树列表为空）"
-        },
-        "notes": [
-         "依次写入 trees、maxSamples、contamination、seed、featureCount、effectiveMaxSamples、threshold 与树数",
-         "阈值随模型一并保存，读回后不再重新计算"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "read(ModelReader)",
-       "signature": "IsolationForest read(ModelReader reader)",
-       "params": [
-        {
-         "type": "ModelReader",
-         "name": "reader"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "重建孤立森林模型。",
-        "params": {
-         "reader": "已完成容器头解析的读取器"
-        },
-        "returns": "含已训练树与阈值的模型实例，可直接用于 predict",
-        "throws": {
-         "ModelFormatException": "树数、特征数或实际读到的树数不为正"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "随机轴对齐切分的无监督孤立森林异常检测器。",
-      "body": [
-       "每棵树在 min(行数, maxSamples) 个无放回抽样的样本上递归切分：随机挑一个取值不全相同的特征，在该列最小值与最大值之间均匀取切点，小于等于切点的样本进左子树；样本数不超过 1、深度达到 max(1, ceil(log2(effectiveMaxSamples)))、或所选特征无区分度时成为叶节点，叶节点保存 depth + c(n)。",
-       "路径长度归一化 s(x, n) = 2^(-E(h(x))/c(n))，E(h) 为样本在各棵树上路径长度的平均值，c(n) 为二叉搜索树平均路径修正项：n <= 1 取 0，n == 2 取 1，否则取 2*(ln(n-1) + EulerGamma) - 2*(n-1)/n。分数落在 (0, 1]，越接近 1 越异常，约 0.5 为平均路径长度。",
-       "contamination 只影响判决阈值：拟合末尾对训练集的 0.5 - s 升序排序，取下标 max(0, min(rows-1, floor(rows * contamination))) 处的值作为 threshold。decisionFunction 返回 0.5 - s - threshold，predict 对非负者给 +1.0、负者给 -1.0。"
-      ],
-      "notes": [
-       "默认 trees=100、maxSamples=256、contamination=0.1、seed=42；trees 须为正，maxSamples 须 >= 2，contamination 须在 (0, 0.5) 开区间内",
-       "随机性全部来自 seed：主随机源为每棵树派生一个子种子，同 seed 同数据得到相同的树与阈值",
-       "write 保存全部超参数、featureCount、effectiveMaxSamples、threshold 与树结构，read 直接沿用读入的阈值，不重新打分",
-       "样本数少于 maxSamples 时 effectiveMaxSamples 退化为行数，c(n) 与树高上限随之按行数计算"
-      ],
-      "example": "Matrix features = Matrix.fromRows(new double[][] {\n        {0.0, 0.1}, {0.2, 0.0}, {0.1, 0.2}, {0.15, 0.1},\n        {9.0, 9.2}, {9.4, 8.8}, {10.0, 9.0}, {0.3, 0.25}\n});\n\nIsolationForest forest = IsolationForest.builder()\n        .trees(100)\n        .maxSamples(256)\n        .contamination(0.25)\n        .seed(42L)\n        .build()\n        .fit(features);\n\ndouble[] score = forest.anomalyScore(features);\ndouble[] decision = forest.decisionFunction(features);\ndouble[] label = forest.predict(features);",
-      "see": [
-       "basalt.ml.Estimator",
-       "basalt.core.Persistable",
-       "basalt.ml.Estimators"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.Estimators",
-     "simple_qualified": "Basalt",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/Basalt.java",
-     "line": 9,
-     "javadoc": "One-call facade over the estimator catalogue.",
-     "nested": [
-      "Task",
-      "Algorithm",
-      "Metric"
-     ],
-     "members": [
-      {
-       "kind": "method",
-       "key": "fit(Algorithm, Matrix, double[])",
-       "signature": "Estimator fit(Algorithm algorithm, Matrix features, double[] targets)",
-       "params": [
-        {
-         "type": "Algorithm",
-         "name": "algorithm"
-        },
-        {
-         "type": "Matrix",
-         "name": "features"
-        },
-        {
-         "type": "double[]",
-         "name": "targets"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按算法枚举训练一个默认配置的估计器。",
-        "body": [
-         "分支覆盖 16 个算法常量，其中 RANDOM_FOREST_REGRESSOR 复用 RandomForest 并切换 task，两个梯度提升常量分别绑定 LOGISTIC 与 SQUARED_ERROR 目标。"
-        ],
-        "params": {
-         "algorithm": "算法枚举，同时决定实现类与默认超参数",
-         "features": "训练特征矩阵",
-         "targets": "训练目标；有监督算法不可为 null"
-        },
-        "returns": "已拟合的估计器实例，静态类型为 Estimator",
-        "throws": {
-         "NullPointerException": "algorithm 为 null",
-         "IllegalArgumentException": "有监督算法传入 null targets，或训练数据未通过估计器自身的校验"
-        },
-        "notes": [
-         "KNN 与 KNN_REGRESSOR 固定 k=5、欧氏距离",
-         "KMEANS、PCA 调用只接收特征的 fit 重载；DBSCAN 以 null targets 调用 fit"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "predict(Estimator, Matrix)",
-       "signature": "double[] predict(Estimator model, Matrix features)",
-       "params": [
-        {
-         "type": "Estimator",
-         "name": "model"
-        },
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "委托给估计器自身的 predict。",
-        "params": {
-         "model": "已拟合的估计器",
-         "features": "待预测特征矩阵"
-        },
-        "returns": "估计器返回的预测数组，不做转换",
-        "throws": {
-         "NullPointerException": "model 为 null",
-         "IllegalStateException": "model 尚未 fit"
-        },
-        "notes": [
-         "门面不追加任何校验，全部检查由估计器完成"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "crossValidate(Algorithm, Matrix, double[], int, Metric)",
-       "signature": "double crossValidate(Algorithm algorithm, Matrix features, double[] targets, int folds, Metric metric)",
-       "params": [
-        {
-         "type": "Algorithm",
-         "name": "algorithm"
-        },
-        {
-         "type": "Matrix",
-         "name": "features"
-        },
-        {
-         "type": "double[]",
-         "name": "targets"
-        },
-        {
-         "type": "int",
-         "name": "folds"
-        },
-        {
-         "type": "Metric",
-         "name": "metric"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "k 折交叉验证并返回各折指标均值。",
-        "body": [
-         "每折独立调用 fit 重新训练，模型之间不共享状态；指标在折内测试集上计算后累加，最后除以折数。"
-        ],
-        "params": {
-         "algorithm": "待评估算法，必须是有监督算法",
-         "features": "全部样本特征",
-         "targets": "全部样本目标，长度等于特征行数",
-         "folds": "折数，2 <= folds <= 样本数",
-         "metric": "评估指标枚举"
-        },
-        "returns": "各折指标的算术平均；RMSE 以负值参与平均，故越大越好",
-        "throws": {
-         "IllegalArgumentException": "算法属于 UNSUPERVISED，或 folds 越界、数据校验失败"
-        },
-        "notes": [
-         "划分种子固定为 42，重复调用结果一致",
-         "ACCURACY 与 MACRO_F1 要求预测是类别码，R2 与 RMSE 要求连续值，错配不报错"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "按枚举选择算法的一行式门面。",
-      "body": [
-       "fit 按 Algorithm 分支构造对应估计器并立即训练，超参数一律取各 Builder 的默认值；需要调参时改用具体类的 builder()。有监督算法传入 null targets 会被拒绝，无监督算法则忽略 targets 并以 null 调用。",
-       "crossValidate 用 DataSplit.kFold 做种子固定为 42 的 k 折划分，逐折训练、预测、计分，返回各折算术平均。RMSE 在累加前取负号，使所有 Metric 都满足越大越好。"
-      ],
-      "notes": [
-       "门面不缓存模型也不管理生命周期，返回的 Estimator 由调用方持有",
-       "交叉验证的划分种子固定为 42，相同输入的结果可复现",
-       "folds 的合法范围沿用 DataSplit.kFold 的约束（2 到样本数）",
-       "门面本身无状态，全部方法为 static"
-      ],
-      "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}, {2, 2}, {2, 1}});\ndouble[] y = {0.5, 1.0, 1.5, 2.0, 2.5, 2.2};\nEstimator model = Basalt.fit(Basalt.Algorithm.RIDGE, x, y);\ndouble[] prediction = Basalt.predict(model, x);\ndouble score = Basalt.crossValidate(Basalt.Algorithm.RIDGE, x, y, 3, Estimators.Metric.R2);",
-      "see": [
-       "basalt.ml.Estimators.Algorithm",
-       "basalt.ml.Estimators.Metric",
-       "basalt.ml.Estimator",
-       "basalt.ml.DataSplit"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.KBinsDiscretizer",
-     "simple_qualified": "KBinsDiscretizer",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "Transformer",
-      "Estimator"
-     ],
-     "file": "jsl/ml/KBinsDiscretizer.java",
-     "line": 16,
-     "javadoc": "Bins continuous data into intervals using {@code QUANTILE}, {@code UNIFORM}, or {@code KMEANS}\nstrategies and outputs {@code ORDINAL} or {@code ONEHOT_DENSE} encodings, matching\n{@code sklearn.preprocessing.KBinsDiscretizer}.",
-     "nested": [
-      "Strategy",
-      "Encode",
-      "Builder"
-     ],
-     "members": [
-      {
-       "kind": "method",
-       "key": "builder()",
-       "signature": "Builder builder()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建构造器，nBins=5、QUANTILE、ORDINAL。",
-        "returns": "新的 Builder 实例"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fit(Matrix)",
-       "signature": "KBinsDiscretizer fit(Matrix features)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "仅凭特征拟合，等价于 fit(features, null)。",
-        "params": {
-         "features": "训练特征矩阵，列数决定边界组数"
-        },
-        "returns": "this，已算出逐列边界",
-        "throws": {
-         "NullPointerException": "features 为 null",
-         "IllegalArgumentException": "特征含非有限值"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fit(Matrix, double[])",
-       "signature": "KBinsDiscretizer fit(Matrix features, double[] ignoredTargets)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        },
-        {
-         "type": "double[]",
-         "name": "ignoredTargets"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "逐列计算 nBins+1 个箱边界。",
-        "body": [
-         "每列取最小与最大值作为首尾边界，中间边界按策略生成；列内取值全相同时中间边界退化为该常量。"
-        ],
-        "params": {
-         "features": "训练特征矩阵，列数决定边界组数",
-         "ignoredTargets": "占位参数，内容被完全忽略，可为 null"
-        },
-        "returns": "this，已完成拟合",
-        "throws": {
-         "NullPointerException": "features 为 null",
-         "IllegalArgumentException": "特征含非有限值"
-        },
-        "notes": [
-         "QUANTILE 的插值位置为 (rows-1)*b/nBins，等价于 numpy 默认的 linear 分位",
-         "KMEANS 每列单独跑一次一维 KMeans，迭代上限 50、种子 42"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "transform(Matrix)",
-       "signature": "Matrix transform(Matrix features)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把特征映射为箱序号或 One-Hot。",
-        "params": {
-         "features": "待转换矩阵，列数须等于拟合时的特征数"
-        },
-        "returns": "ORDINAL 为 行数 × 特征数 的箱序号矩阵；ONEHOT_DENSE 为 行数 × (特征数 * nBins) 的 0/1 矩阵",
-        "throws": {
-         "IllegalStateException": "尚未拟合",
-         "IllegalArgumentException": "列数不符或特征含非有限值"
-        },
-        "notes": [
-         "判定为 value < edges[b]，等于边界值的样本进入右侧箱",
-         "ONEHOT_DENSE 的列顺序为特征优先，每个特征的 nBins 列连续排列"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "inverseTransform(Matrix)",
-       "signature": "Matrix inverseTransform(Matrix transformed)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "transformed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "用箱中点还原近似原特征。",
-        "params": {
-         "transformed": "形状与 transform 输出一致的矩阵"
-        },
-        "returns": "行数 × 特征数 的近似原特征矩阵，元素为对应箱的中点",
-        "throws": {
-         "IllegalStateException": "尚未拟合",
-         "IllegalArgumentException": "列数不符（ORDINAL 需特征数列，ONEHOT_DENSE 需特征数 * nBins 列）或含非有限值"
-        },
-        "notes": [
-         "ORDINAL 先把箱序号四舍五入再夹到 [0, nBins-1]，越界值被截断",
-         "ONEHOT_DENSE 取每段最大值位置，并列时取靠前的箱；全零段落到第 0 箱",
-         "还原值只保证落在对应箱内，不等于原始输入"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "predict(Matrix)",
-       "signature": "double[] predict(Matrix features)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回展平后的离散结果。",
-        "params": {
-         "features": "待转换矩阵，列数须等于拟合时的特征数"
-        },
-        "returns": "transform 结果按行优先展平的一维数组，长度为 行数 × 输出列数",
-        "throws": {
-         "IllegalStateException": "尚未拟合",
-         "IllegalArgumentException": "列数不符或特征含非有限值"
-        },
-        "notes": [
-         "元素仍是箱序号或 0/1，便于把转换结果当作估计器输出消费"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "binEdges()",
-       "signature": "double[][] binEdges()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回逐列的箱边界副本。",
-        "returns": "二维数组 [特征数][nBins+1]，首尾为列最小值与最大值",
-        "throws": {
-         "IllegalStateException": "尚未拟合"
-        },
-        "notes": [
-         "返回深拷贝，修改不影响模型内部边界"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "kind()",
-       "signature": "ModelKind kind()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回模型类型标识。",
-        "returns": "ModelKind.KBINS_DISCRETIZER"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "write(ModelWriter)",
-       "signature": "void write(ModelWriter writer)",
-       "params": [
-        {
-         "type": "ModelWriter",
-         "name": "writer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "写入箱数、策略、编码与逐列边界。",
-        "params": {
-         "writer": "目标写入器，由调用方负责容器头与提交"
-        },
-        "throws": {
-         "IllegalStateException": "尚未拟合"
-        },
-        "notes": [
-         "策略与编码以枚举 ordinal 落盘",
-         "按特征顺序写入每组 nBins+1 个边界"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "read(ModelReader)",
-       "signature": "KBinsDiscretizer read(ModelReader reader)",
-       "params": [
-        {
-         "type": "ModelReader",
-         "name": "reader"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "读回箱数、策略、编码与逐列边界。",
-        "params": {
-         "reader": "已完成容器头解析的读取器"
-        },
-        "returns": "已可直接 transform 的实例",
-        "throws": {
-         "ModelFormatException": "箱数小于 2、特征数不为正，或策略、编码序号越界"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "按分位数、等宽或一维 K-Means 把连续特征离散为箱。",
-      "body": [
-       "拟合逐列计算 nBins+1 个边界：edges[0] 取该列最小值、edges[nBins] 取最大值，中间边界按策略生成。UNIFORM 取 min + b*(max-min)/nBins；QUANTILE 先排序该列，再在位置 (rows-1)*b/nBins 处对相邻样本做线性插值；KMEANS 在该列上运行一维 KMeans（clusters=nBins、maxIterations=50、seed=42），取排序后相邻质心的中点作为边界。列内取值全相同时，中间边界全部等于该常量。",
-       "变换用边界比较定位：从 b=1 起找第一个满足 value < edges[b] 的 b，返回 b-1；没有任何边界满足时落入最后一箱，因此区间是左闭右开，恰好等于边界值的样本归入右侧箱。ORDINAL 输出与输入同宽、元素为箱序号 0..nBins-1；ONEHOT_DENSE 输出宽度为 特征数 * nBins，每个原始特征占一段连续列，命中位置置 1。",
-       "逆变换用箱中点 0.5*(edges[b] + edges[b+1]) 还原：ORDINAL 先把箱序号四舍五入并夹到 [0, nBins-1]；ONEHOT_DENSE 对每段取最大值所在的列，并列时取靠前的箱。"
-      ],
-      "notes": [
-       "默认 nBins=5、strategy=QUANTILE、encode=ORDINAL；nBins 须 >= 2",
-       "变换前必须 fit，否则抛 IllegalStateException；输入列数须等于拟合时的特征数",
-       "列内取值全相同的特征恒落在最后一箱，因为没有任何边界能严格大于该值",
-       "KMEANS 策略的随机性固定为 seed=42，同一列多次拟合得到相同边界",
-       "write 保存 nBins、策略、编码与逐列边界，read 后无需重新拟合即可 transform"
-      ],
-      "example": "Matrix x = Matrix.fromRows(new double[][] {\n        {0.0, 10.0}, {0.5, 12.0}, {1.0, 14.0},\n        {2.0, 16.0}, {4.0, 18.0}, {8.0, 20.0}\n});\n\nKBinsDiscretizer discretizer = KBinsDiscretizer.builder()\n        .nBins(3)\n        .strategy(KBinsDiscretizer.Strategy.QUANTILE)\n        .encode(KBinsDiscretizer.Encode.ORDINAL)\n        .build()\n        .fit(x);\n\nMatrix binned = discretizer.transform(x);\nMatrix restored = discretizer.inverseTransform(binned);\ndouble[][] edges = discretizer.binEdges();",
-      "see": [
-       "basalt.ml.Transformer",
-       "basalt.ml.KMeans",
-       "basalt.ml.OneHotEncoder"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.KFold",
-     "simple_qualified": "KFold",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/KFold.java",
-     "line": 9,
-     "javadoc": "K-Fold cross-validator, matching {@code sklearn.model_selection.KFold}.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "constructor",
-       "key": "KFold(int)",
-       "signature": "KFold(int folds)",
-       "params": [
-        {
-         "type": "int",
-         "name": "folds"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按折数构造，默认打乱且种子为 42。",
-        "params": {
-         "folds": "折数，须 >= 2"
-        },
-        "throws": {
-         "IllegalArgumentException": "folds 小于 2"
-        },
-        "notes": [
-         "等价于 KFold(folds, true, 42L)"
-        ]
-       }
-      },
-      {
-       "kind": "constructor",
-       "key": "KFold(int, boolean, long)",
-       "signature": "KFold(int folds, boolean shuffle, long seed)",
-       "params": [
-        {
-         "type": "int",
-         "name": "folds"
-        },
-        {
-         "type": "boolean",
-         "name": "shuffle"
-        },
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "指定折数、是否打乱与随机种子。",
-        "params": {
-         "folds": "折数，须 >= 2",
-         "shuffle": "是否在划分前打乱行序；false 时按原始行号顺序切分",
-         "seed": "打乱所用随机源种子，shuffle 为 false 时无效"
-        },
-        "throws": {
-         "IllegalArgumentException": "folds 小于 2"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "folds()",
-       "signature": "int folds()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回折数。",
-        "returns": "构造时给定的折数"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "shuffle()",
-       "signature": "boolean shuffle()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回是否打乱。",
-        "returns": "true 表示划分前按 seed 打乱行序"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "split(Matrix, double[])",
-       "signature": "List<DataSplit.Fold> split(Matrix features, double[] targets)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        },
-        {
-         "type": "double[]",
-         "name": "targets"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "生成各折的训练与测试划分。",
-        "body": [
-         "第 f 折测试区间取 [f*rows/folds, (f+1)*rows/folds)，训练集为其余区间的拼接，因此每折训练集大小等于 rows 减去该折测试集大小。"
-        ],
-        "params": {
-         "features": "特征矩阵，行数为样本数",
-         "targets": "目标数组，长度须等于行数，仅随行搬运"
-        },
-        "returns": "长度为 folds 的列表，每项为 DataSplit.Fold，含 trainFeatures、trainTargets、testFeatures、testTargets",
-        "throws": {
-         "NullPointerException": "features 或 targets 为 null",
-         "IllegalArgumentException": "折数大于样本数、目标数量与行数不一致，或数据含非有限值"
-        },
-        "notes": [
-         "返回的矩阵与数组都是新分配的副本，与原数据不共享存储"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "K 折交叉验证划分器，默认打乱且种子为 42。",
-      "body": [
-       "划分是位置切分：先按 shuffle 与 seed 得到行序（不打乱时即 0..rows-1），第 f 折的测试区间为 [f*rows/folds, (f+1)*rows/folds)，其余行按行序首尾拼接成训练集。行数不能被折数整除时，多出的样本落在靠后的折上。",
-       "是否打乱由 shuffle 决定，构造器默认 true，与 sklearn 的默认 false 不同；seed 只在 shuffle 为 true 时起作用，相同 seed 与相同数据得到完全一致的划分。",
-       "每折以 DataSplit.Fold 返回四个字段：trainFeatures、trainTargets、testFeatures、testTargets，均为按索引复制出的新数组，可安全修改。"
-      ],
-      "notes": [
-       "构造器只校验 folds >= 2，folds 超过样本数的检查延到 split 阶段",
-       "类本身不持有数据，同一实例可对不同矩阵反复 split",
-       "目标数组只随行搬运，划分过程不看标签取值，不做分层"
-      ],
-      "example": "Matrix x = Matrix.fromRows(new double[][] {\n        {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}, {2.0, 2.0},\n        {2.0, 3.0}, {3.0, 2.0}, {3.0, 3.0}, {4.0, 4.0}\n});\ndouble[] y = {0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0};\n\nKFold kfold = new KFold(4);\nList<DataSplit.Fold> folds = kfold.split(x, y);\n\nDataSplit.Fold first = folds.get(0);\nMatrix trainX = first.trainFeatures();\nMatrix testX = first.testFeatures();\nint count = kfold.folds();\nboolean shuffled = kfold.shuffle();",
-      "see": [
-       "basalt.ml.DataSplit",
-       "basalt.ml.GridSearchCV",
-       "basalt.ml.StratifiedKFold"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.KMeans",
-     "simple_qualified": "KMeans",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "Estimator",
-      "Persistable"
-     ],
-     "file": "jsl/ml/KMeans.java",
-     "line": 23,
-     "javadoc": "Lloyd iterations with genuine K-Means++ distance-weighted seeding and optional restarts.\n\n<p>The assignment step is the dominant cost ({@code O(n k p)}); it is distributed over row ranges\nwhile centroid updates stay sequential and allocation free. Empty clusters are repaired by\ndonating the farthest sample from the largest donor cluster, which preserves the partition.</p>",
-     "nested": [
-      "Run",
-      "Builder"
-     ],
-     "members": [
-      {
-       "kind": "method",
-       "key": "builder()",
-       "signature": "Builder builder()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建 KMeans 构建器。",
-        "returns": "参数取默认值的新 Builder 实例"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fit(Matrix)",
-       "signature": "KMeans fit(Matrix features)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "只用特征拟合，目标数组缺省为 null。",
-        "params": {
-         "features": "训练样本矩阵，行是样本、列是特征"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fit(Matrix, double[])",
-       "signature": "KMeans fit(Matrix features, double[] ignoredTargets)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        },
-        {
-         "type": "double[]",
-         "name": "ignoredTargets"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "执行 K-Means++ 初始化与 Lloyd 迭代。",
-        "body": [
-         "首个质心从样本中均匀随机抽取，后续质心按到最近已有质心的平方距离加权抽取；若全部距离之和为 0，则改用簇序号对样本数取模。每次重启跑满收敛条件或 maxIterations，取惯性最小者。"
-        ],
-        "params": {
-         "features": "训练样本矩阵，行是样本、列是特征；元素必须有限",
-         "ignoredTargets": "占位参数；聚类忽略监督目标，可为 null"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "features 为 null 或含非有限值，或簇数大于样本数"
-        },
-        "notes": [
-         "每次重启都新建 Random，因此同一 seed 与 restarts 组合可复现结果"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "predict(Matrix)",
-       "signature": "double[] predict(Matrix features)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把每个样本分配给最近的质心。",
-        "params": {
-         "features": "样本矩阵，列数须与拟合时一致"
-        },
-        "returns": "长度为样本数的簇索引，以 double 表示",
-        "throws": {
-         "IllegalStateException": "尚未拟合",
-         "IllegalArgumentException": "特征列数与拟合时不一致"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "transform(Matrix)",
-       "signature": "double[] transform(Matrix features)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回各样本到其所属质心的平方距离。",
-        "body": [
-         "先按最近质心确定归属，再取该质心与样本的平方欧氏距离。返回一维数组，每个样本一个标量，而不是距离矩阵；需要欧氏距离时自行开方。"
-        ],
-        "params": {
-         "features": "样本矩阵，列数须与拟合时一致"
-        },
-        "returns": "长度为样本数的平方距离数组",
-        "throws": {
-         "IllegalStateException": "尚未拟合",
-         "IllegalArgumentException": "特征列数与拟合时不一致"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "centroids()",
-       "signature": "Matrix centroids()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回最终质心矩阵。",
-        "returns": "簇数 × 特征数 的矩阵，每行一个质心",
-        "throws": {
-         "IllegalStateException": "尚未拟合"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "inertia()",
-       "signature": "double inertia()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回最优重启的惯性值。",
-        "returns": "样本到最近质心平方距离之和；未拟合时为 0"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "iterations()",
-       "signature": "int iterations()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回最优重启实际执行的迭代轮数。",
-        "returns": "1 到 maxIterations 之间的轮数；未拟合时为 0"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "restarts()",
-       "signature": "int restarts()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回已完成的随机重启次数。",
-        "returns": "拟合后等于配置的 restarts；未拟合或由 read 重建的模型为 0"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "kind()",
-       "signature": "ModelKind kind()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回模型类型标识。",
-        "returns": "ModelKind.KMEANS"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "write(ModelWriter)",
-       "signature": "void write(ModelWriter writer)",
-       "params": [
-        {
-         "type": "ModelWriter",
-         "name": "writer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "写入簇数、特征数、惯性、迭代轮数与质心。",
-        "params": {
-         "writer": "目标写入器，由调用方负责容器头与关闭"
-        },
-        "throws": {
-         "IllegalStateException": "尚未拟合"
-        },
-        "notes": [
-         "tolerance、seed、restarts 与 threads 不写入流，read 后回到 Builder 默认值"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "read(ModelReader)",
-       "signature": "KMeans read(ModelReader reader)",
-       "params": [
-        {
-         "type": "ModelReader",
-         "name": "reader"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "从序列化流重建 KMeans 模型。",
-        "params": {
-         "reader": "已完成容器头解析的读取器"
-        },
-        "returns": "只恢复质心与统计量的模型实例，可直接用于 predict",
-        "throws": {
-         "ModelFormatException": "簇数或特征数不为正"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "K-Means++ 播种的 Lloyd 迭代聚类，支持多次重启。",
-      "body": [
-       "分配步逐样本计算到 k 个质心的平方欧氏距离，按行区间并行执行；质心累加与求均值为串行循环，且复用预分配缓冲区。多次重启各自独立初始化，保留惯性最小的一次结果。",
-       "第 r 次重启使用 seed + 7919r 作为随机源种子。空簇修复从当前分配中挑选距离所属质心最远、且所属簇样本数大于 1 的样本，把它捐给空簇并以该样本位置作为新质心；找不到合格捐赠者时退化为全局最远样本。"
-      ],
-      "notes": [
-       "tolerance 作用于质心位移：全部质心各分量位移的平方和不超过 tolerance² 时停止迭代",
-       "inertia 在迭代结束后按最终质心重新计算，等于各样本到最近质心平方距离之和，可能与最后一轮分配时的值略有差异",
-       "样本数不少于 1024、特征数不少于 8 且原生内核可用时，整个拟合交给原生实现",
-       "特征数不少于 128 时，单轮分配步也可能切换到原生内核"
-      ],
-      "example": "Matrix features = Matrix.fromRows(new double[][] {\n    {0.0, 0.0}, {0.4, 0.2}, {0.1, 0.5},\n    {9.6, 9.8}, {10.0, 10.2}, {9.4, 9.9}\n});\nKMeans kmeans = KMeans.builder()\n        .clusters(2)\n        .restarts(4)\n        .maxIterations(200)\n        .seed(7L)\n        .build()\n        .fit(features);\ndouble[] assignment = kmeans.predict(features);\ndouble[] distance = kmeans.transform(features);\nMatrix centers = kmeans.centroids();\ndouble inertia = kmeans.inertia();",
-      "see": [
-       "basalt.ml.Estimator",
-       "basalt.core.Persistable"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.KNearestNeighbors",
-     "simple_qualified": "KNearestNeighbors",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "Estimator"
-     ],
-     "file": "jsl/ml/KNearestNeighbors.java",
-     "line": 10,
-     "javadoc": "Deterministic, uniform-weight KNN classification with SIMD distance calculations.",
-     "nested": [
-      "Neighbor",
-      "Builder"
-     ],
-     "members": [
-      {
-       "kind": "method",
-       "key": "builder()",
-       "signature": "Builder builder()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建构建器，默认 k=5、欧氏距离。",
-        "returns": "新的 Builder，字段取默认值",
-        "notes": [
-         "每次调用都返回独立实例，可安全地分别配置"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fit(Matrix, double[])",
-       "signature": "KNearestNeighbors fit(Matrix features, double[] targets)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        },
-        {
-         "type": "double[]",
-         "name": "targets"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "保存训练集副本，不做任何预计算。",
-        "params": {
-         "features": "训练特征矩阵，列数即特征维数",
-         "targets": "训练标签数组，取值可以是任意 double"
-        },
-        "returns": "this",
-        "throws": {
-         "NullPointerException": "features 或 targets 为 null",
-         "IllegalArgumentException": "k 大于训练样本数，或行数与标签长度不符、数据含非有限值"
-        },
-        "notes": [
-         "重复 fit 会用新数据覆盖旧训练集"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "predict(Matrix)",
-       "signature": "double[] predict(Matrix features)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "对每个样本取 k 近邻多数投票。",
-        "params": {
-         "features": "待预测特征矩阵，列数须等于训练特征数"
-        },
-        "returns": "每行一个训练集中出现过的标签值",
-        "throws": {
-         "IllegalStateException": "尚未 fit",
-         "IllegalArgumentException": "列数不匹配或含非有限值"
-        },
-        "notes": [
-         "平票时返回数值更小的标签，保证确定性"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "统一权重的 KNN 分类器。",
-      "body": [
-       "fit 只保存训练集的副本（特征 copy、标签 clone），不做归一化或索引结构；predict 对每个查询样本线性扫描全部训练行，用距离度量维护容量为 k 的最大堆，堆中即 k 个最近邻，再按标签多数投票。",
-       "投票是统一权重，距离不参与加权；票数相同时选择数值更小的标签，因此结果与 HashMap 迭代顺序无关，完全可复现。单次查询的时间为 O(n·d)，额外内存为 O(k) 加上训练集副本。"
-      ],
-      "notes": [
-       "k 在 build() 时校验为正，fit 时再校验不超过训练样本数",
-       "特征未标准化，量纲差异会主导欧氏距离",
-       "训练集在 fit 时复制，之后修改原 Matrix 不影响模型"
-      ],
-      "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}});\ndouble[] y = {0, 1, 1, 0};\nKNearestNeighbors knn = KNearestNeighbors.builder()\n        .k(3)\n        .metric(DistanceMetric.MANHATTAN)\n        .build()\n        .fit(x, y);\ndouble[] labels = knn.predict(x);",
-      "see": [
-       "basalt.ml.KNeighborsRegressor",
-       "basalt.ml.DistanceMetric",
-       "basalt.ml.KNearestNeighbors.Builder"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.KNeighborsRegressor",
-     "simple_qualified": "KNeighborsRegressor",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "Estimator"
-     ],
-     "file": "jsl/ml/KNeighborsRegressor.java",
-     "line": 8,
-     "javadoc": "Uniform-weight KNN regression with SIMD distances.",
-     "nested": [
-      "Neighbor",
-      "Builder"
-     ],
-     "members": [
-      {
-       "kind": "method",
-       "key": "builder()",
-       "signature": "Builder builder()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建构建器，默认 k=5、欧氏距离。",
-        "returns": "新的 Builder，字段取默认值"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fit(Matrix, double[])",
-       "signature": "KNeighborsRegressor fit(Matrix features, double[] targets)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        },
-        {
-         "type": "double[]",
-         "name": "targets"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "保存训练集副本，不做预计算。",
-        "params": {
-         "features": "训练特征矩阵",
-         "targets": "训练目标数组，长度等于行数"
-        },
-        "returns": "this",
-        "throws": {
-         "NullPointerException": "features 或 targets 为 null",
-         "IllegalArgumentException": "k 大于训练样本数，或形状不符、数据含非有限值"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "predict(Matrix)",
-       "signature": "double[] predict(Matrix features)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "对 k 个最近邻的目标值取平均。",
-        "params": {
-         "features": "待预测特征矩阵，列数须等于训练特征数"
-        },
-        "returns": "每行一个连续预测值，为 k 个邻居目标的算术平均",
-        "throws": {
-         "IllegalStateException": "尚未 fit",
-         "IllegalArgumentException": "列数不匹配或含非有限值"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "统一权重的 KNN 回归器。",
-      "body": [
-       "与分类版共享同一套流程：fit 只复制训练集，predict 逐样本线性扫描并用容量为 k 的最大堆保留最近邻。区别在聚合方式——对 k 个邻居的目标值取算术平均，不做距离加权。",
-       "单次查询的时间为 O(n·d)，额外内存为 O(k) 加上训练集副本。目标值未做任何变换，因此预测结果始终落在训练目标的最小值与最大值之间，不会外推。"
-      ],
-      "notes": [
-       "k 在 fit 时校验不超过训练样本数",
-       "距离加权、叶节点裁剪等加速结构均未实现"
-      ],
-      "example": "Matrix x = Matrix.fromRows(new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}});\ndouble[] y = {0.0, 1.0, 1.0, 2.0};\nKNeighborsRegressor regressor = KNeighborsRegressor.builder().k(2).build().fit(x, y);\ndouble[] predictions = regressor.predict(x);",
-      "see": [
-       "basalt.ml.KNearestNeighbors",
-       "basalt.ml.DistanceMetric"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.Kernel",
-     "simple_qualified": "Kernel",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/Kernel.java",
-     "line": 20,
-     "javadoc": "Positive semi-definite kernel functions shared by {@link SVC}, {@link KernelRidge}, and\n{@link KernelPCA}:\n<ul>\n<li>{@link Type#LINEAR}: {@code K(x, y) = x · y}</li>\n<li>{@link Type#RBF}: {@code K(x, y) = exp(-gamma * ||x - y||^2)}</li>\n<li>{@link Type#POLY}: {@code K(x, y) = (gamma * (x · y) + coef0)^degree}</li>\n<li>{@link Type#SIGMOID}: {@code K(x, y) = tanh(gamma * (x · y) + coef0)}</li>\n</ul>",
-     "nested": [
-      "Type"
-     ],
-     "members": [
-      {
-       "kind": "constructor",
-       "key": "Kernel(Type, double, int, double)",
-       "signature": "Kernel(Type type, double gamma, int degree, double coef0)",
-       "params": [
-        {
-         "type": "Type",
-         "name": "type"
-        },
-        {
-         "type": "double",
-         "name": "gamma"
-        },
-        {
-         "type": "int",
-         "name": "degree"
-        },
-        {
-         "type": "double",
-         "name": "coef0"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按显式类型与参数构造核函数。",
-        "params": {
-         "type": "核类型，取 Type 枚举值，不接受 null",
-         "gamma": "缩放系数，须有限且非负；取 0 时评估按 1/max(1, length) 替代",
-         "degree": "POLY 的多项式次数，须 >= 1",
-         "coef0": "POLY 与 SIGMOID 的常数项，须有限"
-        },
-        "returns": "持有给定参数的核函数实例",
-        "throws": {
-         "NullPointerException": "type 为 null",
-         "IllegalArgumentException": "gamma 非有限或为负、degree 小于 1、coef0 非有限"
-        },
-        "notes": [
-         "构造器不按类型裁剪参数，未参与计算的字段照原样保存"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "linear()",
-       "signature": "Kernel linear()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "构造线性核 K(x, y) = x · y。",
-        "returns": "gamma=1.0、degree=3、coef0=0.0 的 LINEAR 核",
-        "notes": [
-         "三个参数都不参与 LINEAR 的计算，仅随实例保存并参与序列化"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "rbf(double)",
-       "signature": "Kernel rbf(double gamma)",
-       "params": [
-        {
-         "type": "double",
-         "name": "gamma"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "构造高斯核 exp(-gamma * ||x - y||²)。",
-        "params": {
-         "gamma": "尺度系数，须为正且有限；越大核越窄、影响半径越小"
-        },
-        "returns": "degree=3、coef0=0.0 的 RBF 核",
-        "throws": {
-         "IllegalArgumentException": "gamma 小于等于 0 或非有限"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "poly(int, double, double)",
-       "signature": "Kernel poly(int degree, double gamma, double coef0)",
-       "params": [
-        {
-         "type": "int",
-         "name": "degree"
-        },
-        {
-         "type": "double",
-         "name": "gamma"
-        },
-        {
-         "type": "double",
-         "name": "coef0"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "构造多项式核 (gamma * x·y + coef0)^degree。",
-        "params": {
-         "degree": "多项式次数，须 >= 1",
-         "gamma": "内积缩放系数，须为正且有限",
-         "coef0": "加在内积上的常数项，须有限"
-        },
-        "returns": "POLY 核实例",
-        "throws": {
-         "IllegalArgumentException": "gamma 非正或非有限，或 degree 小于 1、coef0 非有限"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "sigmoid(double, double)",
-       "signature": "Kernel sigmoid(double gamma, double coef0)",
-       "params": [
-        {
-         "type": "double",
-         "name": "gamma"
-        },
-        {
-         "type": "double",
-         "name": "coef0"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "构造 sigmoid 核 tanh(gamma * x·y + coef0)。",
-        "params": {
-         "gamma": "内积缩放系数，须为正且有限",
-         "coef0": "双曲正切内的偏移量，须有限"
-        },
-        "returns": "degree=3 的 SIGMOID 核实例",
-        "throws": {
-         "IllegalArgumentException": "gamma 非正或非有限，或 coef0 非有限"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "type()",
-       "signature": "Type type()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回核类型。",
-        "returns": "Type 枚举值 LINEAR、RBF、POLY 或 SIGMOID"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "gamma()",
-       "signature": "double gamma()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回 gamma 系数。",
-        "returns": "RBF、POLY、SIGMOID 的尺度系数；LINEAR 固定为 1.0"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "degree()",
-       "signature": "int degree()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回多项式次数。",
-        "returns": "POLY 的次数；其余类型固定为 3"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "coef0()",
-       "signature": "double coef0()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回常数项 coef0。",
-        "returns": "POLY 与 SIGMOID 的常数项；LINEAR 与 RBF 为 0.0"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "evaluate(double[], int, double[], int, int)",
-       "signature": "double evaluate(double[] x, int xOffset, double[] y, int yOffset, int length)",
-       "params": [
-        {
-         "type": "double[]",
-         "name": "x"
-        },
-        {
-         "type": "int",
-         "name": "xOffset"
-        },
-        {
-         "type": "double[]",
-         "name": "y"
-        },
-        {
-         "type": "int",
-         "name": "yOffset"
-        },
-        {
-         "type": "int",
-         "name": "length"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按偏移与长度计算两点核值。",
-        "params": {
-         "x": "左向量所在的数组",
-         "xOffset": "左向量在 x 中的起始下标",
-         "y": "右向量所在的数组",
-         "yOffset": "右向量在 y 中的起始下标",
-         "length": "参与计算的维数"
-        },
-        "returns": "核函数值：LINEAR 为内积，RBF 落在 (0, 1]，POLY 与 SIGMOID 可为任意实数",
-        "notes": [
-         "gamma 为 0 时内部改用 1/max(1, length)，即按维数缩放",
-         "不检查偏移与长度的越界，由调用方保证区间合法"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "gram(Matrix, Matrix)",
-       "signature": "Matrix gram(Matrix a, Matrix b)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "a"
-        },
-        {
-         "type": "Matrix",
-         "name": "b"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "计算两批样本之间的 Gram 矩阵。",
-        "params": {
-         "a": "左样本矩阵，行数为样本数，列数为特征数",
-         "b": "右样本矩阵，列数须与 a 相同"
-        },
-        "returns": "rows(a) × rows(b) 的矩阵，第 i 行第 j 列为 K(a 的第 i 行, b 的第 j 行)",
-        "throws": {
-         "IllegalArgumentException": "两个矩阵的列数不同"
-        },
-        "notes": [
-         "逐元素调用 evaluate，串行双重循环，无分块或原生加速"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "write(ModelWriter)",
-       "signature": "void write(ModelWriter writer)",
-       "params": [
-        {
-         "type": "ModelWriter",
-         "name": "writer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "写入类型序号、gamma、degree 与 coef0。",
-        "params": {
-         "writer": "目标写入器，由调用方负责容器头与提交"
-        },
-        "notes": [
-         "依次写入一个 int 序号、一个 double、一个 int 与一个 double，共四个字段",
-         "类型以 Type.ordinal() 落盘，read 依赖同一枚举顺序"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "read(ModelReader)",
-       "signature": "Kernel read(ModelReader reader)",
-       "params": [
-        {
-         "type": "ModelReader",
-         "name": "reader"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "从序列化流重建核函数。",
-        "params": {
-         "reader": "已完成容器头解析的读取器"
-        },
-        "returns": "参数与写入时一致的 Kernel 实例",
-        "throws": {
-         "ModelFormatException": "类型序号不在 Type 枚举范围内"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "四种半正定核函数：LINEAR、RBF、POLY 与 SIGMOID。",
-      "body": [
-       "四种核的定义为 LINEAR K(x, y) = x · y；RBF K(x, y) = exp(-gamma * ||x - y||^2)；POLY K(x, y) = (gamma * (x · y) + coef0)^degree；SIGMOID K(x, y) = tanh(gamma * (x · y) + coef0)。SIGMOID 不保证半正定，仅在参数合适时可用作核。",
-       "gamma 控制内积或距离的缩放：RBF 中越大核越窄、单个样本影响半径越小；POLY 与 SIGMOID 中缩放内积后再叠加 coef0。degree 只对 POLY 生效，coef0 对 POLY 与 SIGMOID 生效，LINEAR 不使用这三个参数。",
-       "评估有两条路径：evaluate 直接在原数组上按偏移与长度计算单点核值，避免为每个样本对分配临时向量；gram 逐行逐列调用 evaluate 组装批量的 Gram 矩阵。"
-      ],
-      "notes": [
-       "构造器允许 gamma 取 0，此时 evaluate 内部改用 1/max(1, length) 作为缩放，等价于按维数缩放；rbf/poly/sigmoid 工厂则要求 gamma 严格为正",
-       "linear() 固定 gamma=1.0、degree=3、coef0=0.0；sigmoid 工厂固定 degree=3，只有 poly 工厂会改写 degree",
-       "gram 不做分块与原生加速，时间复杂度为 rows(a) * rows(b) * 特征数",
-       "write 按类型序号、gamma、degree、coef0 的顺序落盘，read 依赖 Type 枚举的声明顺序"
-      ],
-      "example": "Matrix a = Matrix.fromRows(new double[][] {{1.0, 2.0}, {2.0, 1.0}});\nMatrix b = Matrix.fromRows(new double[][] {{0.0, 1.0}, {3.0, 3.0}});\n\nKernel kernel = Kernel.rbf(0.5);\ndouble value = kernel.evaluate(a.data(), 0, b.data(), 0, 2);\nMatrix gram = kernel.gram(a, b);\n\nKernel poly = Kernel.poly(3, 0.25, 1.0);\ndouble degree = poly.degree();\ndouble coef0 = poly.coef0();",
-      "see": [
-       "basalt.ml.SVC",
-       "basalt.ml.KernelRidge",
-       "basalt.ml.KernelPCA"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.KernelDensity",
-     "simple_qualified": "KernelDensity",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "Estimator",
-      "Persistable"
-     ],
-     "file": "jsl/ml/KernelDensity.java",
-     "line": 17,
-     "javadoc": "Kernel Density Estimation (KDE) supporting {@code GAUSSIAN} and {@code TOPHAT} kernels,\nmatching {@code sklearn.neighbors.KernelDensity}.",
-     "nested": [
-      "KernelType",
-      "Builder"
-     ],
-     "members": [
-      {
-       "kind": "method",
-       "key": "builder()",
-       "signature": "Builder builder()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建构造器，bandwidth=1.0、核为 GAUSSIAN。",
-        "returns": "新的 Builder 实例"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fit(Matrix)",
-       "signature": "KernelDensity fit(Matrix features)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "仅凭样本拟合，等价于 fit(features, null)。",
-        "params": {
-         "features": "训练样本矩阵，行数为样本数，列数为特征数"
-        },
-        "returns": "this，已保存训练样本",
-        "throws": {
-         "NullPointerException": "features 为 null",
-         "IllegalArgumentException": "特征含非有限值"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fit(Matrix, double[])",
-       "signature": "KernelDensity fit(Matrix features, double[] ignoredTargets)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        },
-        {
-         "type": "double[]",
-         "name": "ignoredTargets"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "保存训练样本副本与特征数。",
-        "body": [
-         "KDE 无需估计参数，拟合只把特征矩阵复制一份作为核中心集合，所有距离在打分时按需计算。"
-        ],
-        "params": {
-         "features": "训练样本矩阵，行数为样本数",
-         "ignoredTargets": "占位参数，内容被完全忽略，可为 null"
-        },
-        "returns": "this，已完成拟合",
-        "throws": {
-         "NullPointerException": "features 为 null",
-         "IllegalArgumentException": "特征含非有限值"
-        },
-        "notes": [
-         "保存的是副本，拟合后再修改原矩阵不影响模型"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "scoreSamples(Matrix)",
-       "signature": "double[] scoreSamples(Matrix features)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "输出每个查询点的对数密度 log p(x)。",
-        "body": [
-         "GAUSSIAN 下对每个查询点累加 -||x - x_i||²/(2*bandwidth²)，再以 log-sum-exp 汇总并加上归一化常数；TOPHAT 下统计平方距离不超过 bandwidth² 的训练样本数，按球体积归一化。"
-        ],
-        "params": {
-         "features": "查询点矩阵，列数须等于拟合时的特征数"
-        },
-        "returns": "长度等于行数的对数密度数组；TOPHAT 下无命中时为负无穷",
-        "throws": {
-         "IllegalStateException": "尚未拟合",
-         "IllegalArgumentException": "列数不符或特征含非有限值"
-        },
-        "notes": [
-         "复杂度为查询行数 × 训练行数 × 特征数，无树结构或原生加速",
-         "GAUSSIAN 的归一化常数包含 -log(n) 与 -d*log(bandwidth)"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "sample(int, long)",
-       "signature": "Matrix sample(int nSamples, long seed)",
-       "params": [
-        {
-         "type": "int",
-         "name": "nSamples"
-        },
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "从拟合的密度中抽取随机样本。",
-        "params": {
-         "nSamples": "抽样个数，须为正",
-         "seed": "随机源种子，仅影响本次抽样的结果"
-        },
-        "returns": "nSamples × 特征数 的矩阵",
-        "throws": {
-         "IllegalStateException": "尚未拟合",
-         "IllegalArgumentException": "nSamples 小于等于 0"
-        },
-        "notes": [
-         "每个样本先均匀抽取一个训练行作为中心，再叠加噪声",
-         "GAUSSIAN 的噪声为标准差等于 bandwidth 的各向同性正态噪声；TOPHAT 为每维 [-bandwidth, bandwidth] 上的均匀噪声"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "predict(Matrix)",
-       "signature": "double[] predict(Matrix features)",
-       "params": [
-        {
-         "type": "Matrix",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "与 scoreSamples 等价，返回对数密度。",
-        "params": {
-         "features": "查询点矩阵，列数须等于拟合时的特征数"
-        },
-        "returns": "长度等于行数的对数密度数组",
-        "throws": {
-         "IllegalStateException": "尚未拟合",
-         "IllegalArgumentException": "列数不符或特征含非有限值"
-        },
-        "notes": [
-         "沿用 scoreSamples 的实现，输出是打分而非分类标签"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "bandwidth()",
-       "signature": "double bandwidth()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回带宽。",
-        "returns": "构造时给定的 bandwidth，正有限值"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "kind()",
-       "signature": "ModelKind kind()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回模型类型标识。",
-        "returns": "ModelKind.KERNEL_DENSITY"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "write(ModelWriter)",
-       "signature": "void write(ModelWriter writer)",
-       "params": [
-        {
-         "type": "ModelWriter",
-         "name": "writer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "写入带宽、核类型与训练样本。",
-        "params": {
-         "writer": "目标写入器，由调用方负责容器头与提交"
-        },
-        "throws": {
-         "IllegalStateException": "尚未拟合"
-        },
-        "notes": [
-         "核类型以 KernelType.ordinal() 落盘",
-         "训练样本按行优先展平后整体写入，读回时按特征数还原形状"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "read(ModelReader)",
-       "signature": "KernelDensity read(ModelReader reader)",
-       "params": [
-        {
-         "type": "ModelReader",
-         "name": "reader"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "读回带宽、核类型与训练样本。",
-        "params": {
-         "reader": "已完成容器头解析的读取器"
-        },
-        "returns": "已可打分的模型实例",
-        "throws": {
-         "ModelFormatException": "核类型序号越界、特征数或样本数不为正"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "高斯与 TOPHAT 核的核密度估计，输出对数密度。",
-      "body": [
-       "拟合不做任何参数估计，只把训练样本复制一份作为核中心集合，因此打分代价为查询点数、训练样本数与特征数三者之积。",
-       "GAUSSIAN 核下 log p(x) = -log(n) - d*log(bandwidth) - 0.5*d*log(2π) + log Σ exp(-||x - x_i||² / (2 * bandwidth²))，求和用减去最大项的方式做 log-sum-exp 以避免下溢；TOPHAT 核下以带宽为半径的球内命中数 hits 决定密度，log p(x) = log(hits / n) - [0.5*d*log(π) - logΓ(d/2 + 1) + d*log(bandwidth)]，无命中时返回负无穷。",
-       "bandwidth 是唯一平滑参数：越大分布越平滑、峰值越低，方差约等于 bandwidth² 加上训练样本自身方差。sample 从训练行中均匀抽取一个中心再叠加噪声，GAUSSIAN 加各向同性正态噪声，TOPHAT 加逐维均匀噪声。"
-      ],
-      "notes": [
-       "默认 bandwidth=1.0、kernel=GAUSSIAN；bandwidth 须为正且有限",
-       "scoreSamples 与 predict 返回对数密度而非概率密度，需要密度时自行取 exp",
-       "write 只保存 bandwidth、核类型、特征数与训练样本，模型无其他可训练状态",
-       "TOPHAT 在稀疏数据上常出现查询点邻域内无训练样本的情况，此时整行为负无穷"
-      ],
-      "example": "Matrix train = Matrix.fromRows(new double[][] {\n        {0.0}, {0.4}, {1.0}, {1.2}, {2.0}, {3.5}\n});\nMatrix query = Matrix.fromRows(new double[][] {{0.5}, {1.5}, {3.0}});\n\nKernelDensity kde = KernelDensity.builder()\n        .bandwidth(0.5)\n        .kernel(KernelDensity.KernelType.GAUSSIAN)\n        .build()\n        .fit(train);\n\ndouble[] logDensity = kde.scoreSamples(query);\nMatrix drawn = kde.sample(100, 7L);\ndouble bandwidth = kde.bandwidth();",
-      "see": [
-       "basalt.ml.Estimator",
-       "basalt.core.Persistable",
-       "basalt.ml.Kernel"
-      ]
-     }
     }
-   ]
-  }
- ]
+  ]
 }

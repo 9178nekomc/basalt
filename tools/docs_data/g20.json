@@ -1,1621 +1,1621 @@
 {
- "group": "g20",
- "title": "eager 张量与模块（2/4）",
- "modules": [
-  {
-   "name": "basalt.torch",
-   "types": [
+  "group": "g20",
+  "title": "eager 张量与模块（2/4）",
+  "modules": [
     {
-     "qualified": "basalt.torch.Flatten",
-     "simple_qualified": "Flatten",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "Module<BCHW, BC>",
-     "implements": [],
-     "file": "jsl/torch/Flatten.java",
-     "line": 8,
-     "javadoc": "Flattens NCHW to [batch, channels * height * width].",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "forward(Tensor)",
-       "signature": "Tensor forward(Tensor input)",
-       "params": [
+      "name": "basalt.torch",
+      "types": [
         {
-         "type": "Tensor",
-         "name": "input"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把四维输入展平为二维",
-        "params": {
-         "input": "形状 [N, C, H, W] 的张量"
+          "qualified": "basalt.torch.Flatten",
+          "simple_qualified": "Flatten",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "Module<BCHW, BC>",
+          "implements": [],
+          "file": "jsl/torch/Flatten.java",
+          "line": 8,
+          "javadoc": "Flattens NCHW to [batch, channels * height * width].",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "把四维输入展平为二维",
+                "params": {
+                  "input": "形状 [N, C, H, W] 的张量"
+                },
+                "returns": "[N, C·H·W] 的新张量",
+                "throws": {
+                  "IllegalArgumentException": "输入秩不为 4"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回空参数列表",
+                "returns": "恒为空的不可变列表"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "把 NCHW 展平为 [batch, C·H·W]",
+            "body": [
+              "forward 读取输入形状，要求秩为 4，然后返回 reshape(shape[0], shape[1] * shape[2] * shape[3]) 的结果；通道、高度、宽度按行主序依次拼接，不做转置。",
+              "模块没有参数，类型上把 BCHW 布局转换为 BC 布局，因此在 Sequential 中只有展平之后才允许接 Linear 这类二维模块。"
+            ],
+            "notes": [
+              "输入秩不为 4 时抛 IllegalArgumentException，不接受已经展平的二维输入。",
+              "reshape 会新分配张量并登记一个计算图节点，反向时按逆映射回传梯度，输出与输入不共享存储。"
+            ],
+            "see": [
+              "basalt.torch.Sequential",
+              "basalt.torch.Linear",
+              "basalt.torch.Tensor#reshape"
+            ]
+          }
         },
-        "returns": "[N, C·H·W] 的新张量",
-        "throws": {
-         "IllegalArgumentException": "输入秩不为 4"
+        {
+          "qualified": "basalt.torch.Graph",
+          "simple_qualified": "Graph",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "AutoCloseable"
+          ],
+          "file": "jsl/torch/Graph.java",
+          "line": 12,
+          "javadoc": "Minimal Java-side handle for the native autograd graph. <p>{@link Tensor#backward()} is the common entry; this wrapper exists for explicit graph\ncontrol (inspection, clearing between independent passes, and grouping a training step).</p>",
+          "nested": [],
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "Graph(NativeContext)",
+              "signature": "Graph(NativeContext context)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "在给定上下文上创建图句柄",
+                "params": {
+                  "context": "原生上下文，图句柄只是它的一个视图，不持有额外原生资源"
+                },
+                "throws": {
+                  "BasaltRuntimeException": "context 为 null"
+                },
+                "notes": [
+                  "创建动作本身不改动图内容；多个 Graph 实例操作的是同一张图。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "of(NativeContext)",
+              "signature": "Graph of(NativeContext context)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "构造器的静态工厂形式",
+                "params": {
+                  "context": "原生上下文"
+                },
+                "returns": "绑定该上下文的新图句柄",
+                "throws": {
+                  "BasaltRuntimeException": "context 为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "backward(Tensor)",
+              "signature": "void backward(Tensor root)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "root"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "从根张量反向传播并累积梯度",
+                "body": [
+                  "初始余切为全 1 向量，沿拓扑序逆序访问可达节点，把梯度累加到 requiresGrad 为 true 的张量上。"
+                ],
+                "params": {
+                  "root": "反向起点，必须是当前计算图的产物；通常是形状 [1] 的损失"
+                },
+                "throws": {
+                  "BasaltRuntimeException": "root 为 null",
+                  "IllegalArgumentException": "root 属于另一个上下文"
+                },
+                "notes": [
+                  "根张量未被当前图产生时，原生层抛 IllegalStateException。",
+                  "梯度以累加方式写入，多次调用会叠加而非覆盖。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "clear()",
+              "signature": "void clear()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "丢弃全部已记录的节点",
+                "body": [
+                  "清空节点表与产出、消费索引，之后新建的张量可以重新作为图节点输出。"
+                ],
+                "notes": [
+                  "只清图，不释放张量，也不清梯度；正在被引用的中间张量仍然有效。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "size()",
+              "signature": "int size()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回当前图中的节点数",
+                "returns": "自上次 clear() 以来登记的节点个数",
+                "notes": [
+                  "节点数与算子调用次数一致，可用于确认清图是否生效。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "stats()",
+              "signature": "long[] stats()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回上下文级的存活统计",
+                "returns": "长度为 3 的数组，依次为存活张量数、存活字节数、图节点数",
+                "notes": [
+                  "字节数是原生侧实际占用，可用于定位张量泄漏。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "close()",
+              "signature": "void close()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "清空计算图，等价于 clear()",
+                "notes": [
+                  "不关闭上下文；配合 try-with-resources 可让一步训练结束即清图。"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "原生自动求导图的 Java 侧句柄：反向、清图与统计",
+            "body": [
+              "Tensor.backward() 是最常用的反向入口；Graph 面向需要显式控制图生命周期的场景：在独立前向之间清图、查看已记录的节点数、读取上下文级存活统计。构造器与 of 等价，只校验 context 非空。",
+              "close() 仅等价于 clear()，不关闭底层 NativeContext；调用后上下文仍可继续创建张量、执行算子并重新累积节点。"
+            ],
+            "notes": [
+              "图是追加式的：每次指令队列执行都会登记一个节点，与输入是否 requiresGrad 无关；训练循环必须每步 clear()，否则节点与中间张量持续累积。",
+              "backward 不清图也不清零梯度；清图之后原根张量不再是当前图的产物，再调用 backward 会抛 IllegalStateException。",
+              "关闭图中任一被引用的张量会隐式清空整张图，这是原生 release_tensor 的既定语义。",
+              "size() 与 stats() 都是即时查询，各触发一次 JNI 调用，不宜在热循环中频繁调用。"
+            ],
+            "see": [
+              "basalt.torch.Tensor#backward()",
+              "basalt.torch.Optimizer",
+              "basalt.nativebridge.NativeContext"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.torch.GroupNorm",
+          "simple_qualified": "GroupNorm",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "<L extends Layout>",
+          "extends": "Module<L, L>",
+          "implements": [],
+          "file": "jsl/torch/GroupNorm.java",
+          "line": 13,
+          "javadoc": "Group Normalization over {@code [N, C, ...]} tensors where {@code C} channels are partitioned\ninto {@code numGroups} groups, independent of batch size, matching {@code torch.nn.GroupNorm}.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "GroupNorm(NativeContext, int, int)",
+              "signature": "GroupNorm(NativeContext context, int numGroups, int numChannels)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "numGroups"
+                },
+                {
+                  "type": "int",
+                  "name": "numChannels"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "以 epsilon=1e-5 构造分组归一化",
+                "params": {
+                  "context": "持有原生上下文，gamma 与 beta 在其中分配",
+                  "numGroups": "分组数，必须为正且能整除 numChannels",
+                  "numChannels": "通道数，同时是 gamma、beta 的长度"
+                },
+                "throws": {
+                  "IllegalArgumentException": "numGroups 或 numChannels 非正，或 numChannels 不能被 numGroups 整除"
+                },
+                "notes": [
+                  "等价于四参构造器传入 1e-5f。",
+                  "gamma、beta 由 Tensor.parameter 创建，requiresGrad 为 true，随后分别填充 1 与 0。"
+                ]
+              }
+            },
+            {
+              "kind": "constructor",
+              "key": "GroupNorm(NativeContext, int, int, float)",
+              "signature": "GroupNorm(NativeContext context, int numGroups, int numChannels, float epsilon)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "numGroups"
+                },
+                {
+                  "type": "int",
+                  "name": "numChannels"
+                },
+                {
+                  "type": "float",
+                  "name": "epsilon"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "显式指定数值稳定项 epsilon",
+                "params": {
+                  "context": "持有原生上下文，gamma 与 beta 在其中分配",
+                  "numGroups": "分组数，必须为正且能整除 numChannels",
+                  "numChannels": "通道数，同时是 gamma、beta 的长度",
+                  "epsilon": "加在方差上的稳定项，避免除零；构造阶段不校验正负"
+                },
+                "throws": {
+                  "IllegalArgumentException": "numGroups 或 numChannels 非正，或 numChannels 不能被 numGroups 整除"
+                },
+                "notes": [
+                  "epsilon 为负且组内方差接近 0 时结果可能非有限，构造阶段不会拦截。",
+                  "gamma 与 beta 的形状是 [numChannels] 的一维张量，不是 [1, C, 1, 1]。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "对输入按通道分组归一化",
+                "params": {
+                  "input": "秩至少为 2 的张量，第二维必须等于 numChannels，其余维度视为空间维"
+                },
+                "returns": "与输入同形状的新张量，已登记计算图节点",
+                "throws": {
+                  "IllegalArgumentException": "输入秩小于 2 或第二维不能被 numGroups 整除；gamma、beta 的元素数与第二维不一致"
+                },
+                "notes": [
+                  "统计范围是每个样本、每个分组内的全部通道与空间位置，不跨样本。",
+                  "原生层还要求 gamma、beta 的形状恰为 [C]，否则报形状不匹配。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回 gamma 与 beta",
+                "returns": "长度为 2 的列表，顺序为 gamma、beta"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "namedParameters()",
+              "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回 gamma、beta 两个命名状态",
+                "returns": "顺序固定为 gamma、beta"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "numGroups()",
+              "signature": "int numGroups()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回分组数",
+                "returns": "构造时传入的 numGroups"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "numChannels()",
+              "signature": "int numChannels()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回通道数",
+                "returns": "构造时传入的 numChannels，即 gamma、beta 的长度"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "gamma()",
+              "signature": "Tensor gamma()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回缩放参数",
+                "returns": "[numChannels] 的可训练张量，初值为全 1"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "beta()",
+              "signature": "Tensor beta()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回平移参数",
+                "returns": "[numChannels] 的可训练张量，初值为全 0"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "按通道分组归一化，结果与批量大小无关",
+            "body": [
+              "构造时按 numChannels 分配两个一维可训练张量 gamma 与 beta，形状均为 [numChannels]，分别填充 1 与 0；默认 epsilon 为 1e-5f。类本身只保存配置，不持有滑动统计量。",
+              "forward 转调 Tensor.groupNorm：把第二维的 C 个通道均分为 numGroups 组，每组包含 numChannels / numGroups 个通道及其全部空间位置；在该组内计算均值与方差，除以组内元素数，归一化后按通道应用 gamma、beta。",
+              "其余维度按行主序合并为空间维，统计既不跨样本也不跨分组；输出与输入同形状，因此可以直接接在 Conv2d 之后。与 BatchNorm2d 不同，训练与推理行为完全一致。"
+            ],
+            "notes": [
+              "numGroups 与 numChannels 都必须为正，且 numChannels 必须能被 numGroups 整除，否则构造器抛 IllegalArgumentException。",
+              "gamma 与 beta 的形状是 [numChannels]，广播按通道进行；二者元素数与输入第二维不一致时，forward 抛 IllegalArgumentException。",
+              "numGroups 等于 1 时退化为按样本的层归一化，等于 numChannels 时退化为逐通道归一化。",
+              "输入秩为 2 时空间维按 1 处理，只对通道向量分组统计。",
+              "epsilon 直接参与 sqrt(var + epsilon)，构造阶段不校验取值。"
+            ],
+            "see": [
+              "basalt.torch.LayerNorm",
+              "basalt.torch.BatchNorm2d",
+              "basalt.torch.Tensor#groupNorm"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.torch.L1Loss",
+          "simple_qualified": "L1Loss",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Loss"
+          ],
+          "file": "jsl/torch/L1Loss.java",
+          "line": 4,
+          "javadoc": "Mean Absolute Error (L1) loss.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "loss(Tensor, Tensor)",
+              "signature": "Tensor loss(Tensor prediction, Tensor target)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "prediction"
+                },
+                {
+                  "type": "Tensor",
+                  "name": "target"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "计算逐元素绝对误差的均值",
+                "params": {
+                  "prediction": "预测张量，任意秩",
+                  "target": "目标张量，形状必须与 prediction 完全相同"
+                },
+                "returns": "形状 [1] 的标量损失张量",
+                "throws": {
+                  "IllegalArgumentException": "两个张量形状不完全相同"
+                },
+                "notes": [
+                  "不做广播：即使形状可广播也会被拒绝。",
+                  "归约除以全部元素个数，而非 batch 大小。"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "平均绝对误差损失（L1）",
+            "body": [
+              "loss(prediction, target) 转调 Tensor.l1Loss：先计算 prediction − target，逐元素取绝对值后求算术平均，返回 [1] 标量，可直接调用 backward()。",
+              "归约方式是全部元素的算术平均，除以元素总数而非 batch 大小；实现上把绝对差 reshape 成 [1, n]，与长度为 n、元素为 1/n 的列向量做矩阵乘完成求和。"
+            ],
+            "notes": [
+              "形状不一致抛 IllegalArgumentException，消息为 L1Loss expects equal shapes。",
+              "除差值恰为 0 的位置外，反向梯度为 sign(prediction − target)/n，对 prediction 与 target 两侧同时累积。",
+              "与 MSELoss 一样不做广播；需要按样本平均时先自行 reshape。"
+            ],
+            "see": [
+              "basalt.torch.Loss",
+              "basalt.torch.MSELoss",
+              "basalt.torch.Tensor#l1Loss"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.torch.LRScheduler",
+          "simple_qualified": "LRScheduler",
+          "kind": "interface",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/torch/LRScheduler.java",
+          "line": 7,
+          "javadoc": "Contract for learning rate schedulers that adjust {@link Optimizer#setLearningRate(float)}\nacross training epochs or steps.",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "学习率调度器的统一契约",
+            "body": [
+              "实现类在内部维护步数计数：step() 推进一步并算出新学习率，通过 Optimizer.setLearningRate 写回优化器，同时返回该值；currentLearningRate() 与 currentStep() 提供只读查询。三个方法都不带参数。",
+              "调用时机由使用方决定，每完成一个 epoch 或每个优化步后调用一次 step()，实现类不区分钟与步。StepLR 按 currentStep / stepSize 计算衰减次数，CosineAnnealingLR 按 min(t, tMax) 计算余弦相位，两者都把一次 step() 计为一格。",
+              "构造时实现类通常读取 optimizer.learningRate() 作为基准学习率，此后只按自己的公式写回；换基准需要新建调度器。"
+            ],
+            "notes": [
+              "step() 直接改写优化器学习率，与是否调用过 optimizer.step() 无关。",
+              "写回的学习率必须有限且非负，否则 Optimizer.setLearningRate 抛 IllegalArgumentException。",
+              "实现类在构造时绑定单个 Optimizer，同一实例不应跨优化器复用。",
+              "接口不声明异常，也不规定步数上限；计数只增不减，没有重置入口。"
+            ],
+            "see": [
+              "basalt.torch.StepLR",
+              "basalt.torch.CosineAnnealingLR",
+              "basalt.torch.Optimizer#setLearningRate(float)"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.torch.LayerNorm",
+          "simple_qualified": "LayerNorm",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "<L extends Layout>",
+          "extends": "Module<L, L>",
+          "implements": [],
+          "file": "jsl/torch/LayerNorm.java",
+          "line": 10,
+          "javadoc": "Layer normalization over the last dimension.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "LayerNorm(NativeContext, int...)",
+              "signature": "LayerNorm(NativeContext context, int... normalizedShape)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int...",
+                  "name": "normalizedShape"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "以 epsilon=1e-5 构造层归一化",
+                "params": {
+                  "context": "持有原生上下文，gamma 与 beta 在其中分配",
+                  "normalizedShape": "被归一化的维度尺寸，通常只传最后一维长度；不得为空"
+                },
+                "throws": {
+                  "IllegalArgumentException": "normalizedShape 为空"
+                },
+                "notes": [
+                  "等价于传入 1e-5f 的三参构造器。"
+                ]
+              }
+            },
+            {
+              "kind": "constructor",
+              "key": "LayerNorm(NativeContext, float, int...)",
+              "signature": "LayerNorm(NativeContext context, float epsilon, int... normalizedShape)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "float",
+                  "name": "epsilon"
+                },
+                {
+                  "type": "int...",
+                  "name": "normalizedShape"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "显式指定数值稳定项",
+                "params": {
+                  "context": "持有原生上下文，gamma 与 beta 在其中分配",
+                  "epsilon": "加在方差上的稳定项，避免除零；不校验正负",
+                  "normalizedShape": "gamma 与 beta 的形状，元素个数需等于输入的最后一维"
+                },
+                "throws": {
+                  "IllegalArgumentException": "normalizedShape 为空"
+                },
+                "notes": [
+                  "epsilon 为负且方差接近 0 时可能得到非有限值，构造阶段不会拦截。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "沿最后一维归一化并仿射",
+                "params": {
+                  "input": "任意秩张量，最后一维长度需等于 gamma 的元素个数"
+                },
+                "returns": "与输入同形状的新张量",
+                "throws": {
+                  "IllegalArgumentException": "gamma 或 beta 的元素个数与输入最后一维不一致"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回 gamma 与 beta",
+                "returns": "长度为 2 的列表，顺序为 gamma、beta"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "epsilon()",
+              "signature": "float epsilon()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回数值稳定项",
+                "returns": "构造时传入的 epsilon；双参构造器为 1e-5f"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "gamma()",
+              "signature": "Tensor gamma()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回缩放参数",
+                "returns": "形状为 normalizedShape 的可训练张量，初值为全 1"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "beta()",
+              "signature": "Tensor beta()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回平移参数",
+                "returns": "形状为 normalizedShape 的可训练张量，初值为全 0"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "namedParameters()",
+              "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回名为 gamma、beta 的状态项",
+                "returns": "顺序固定为 gamma、beta"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "沿最后一维做层归一化",
+            "body": [
+              "forward 在最后一维上计算均值与方差，加 epsilon 后开方做归一化，再逐元素乘以 gamma、加上 beta；其余维度各自视为独立样本，不参与统计。",
+              "gamma 与 beta 的形状取自 normalizedShape，分别初始化为 1 与 0。Tensor.layerNorm 只要求两者的元素个数等于输入最后一维，因此通常传单个维度值即可。"
+            ],
+            "notes": [
+              "构造器校验 normalizedShape 非空；维度必须为正，否则张量分配阶段抛 IllegalArgumentException。",
+              "层归一化与批量无关，没有滑动统计量，训练与推理行为完全相同。",
+              "gamma 与 beta 的元素个数和输入最后一维不一致时，forward 抛 IllegalArgumentException。"
+            ],
+            "see": [
+              "basalt.torch.BatchNorm2d",
+              "basalt.torch.Tensor#layerNorm"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.torch.Linear",
+          "simple_qualified": "Linear",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "Module<BC, BC>",
+          "implements": [],
+          "file": "jsl/torch/Linear.java",
+          "line": 10,
+          "javadoc": "Dense layer: {@code y = x W + b}.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "Linear(NativeContext, int, int)",
+              "signature": "Linear(NativeContext context, int inputSize, int outputSize)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "inputSize"
+                },
+                {
+                  "type": "int",
+                  "name": "outputSize"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "默认带偏置、seed=0 构造",
+                "params": {
+                  "context": "持有原生上下文，权重与偏置在其中分配",
+                  "inputSize": "输入特征数，即输入最后一维的长度，必须为正",
+                  "outputSize": "输出特征数，必须为正"
+                },
+                "notes": [
+                  "等价于五参构造器传入 useBias=true、seed=0。"
+                ]
+              }
+            },
+            {
+              "kind": "constructor",
+              "key": "Linear(NativeContext, int, int, boolean, long)",
+              "signature": "Linear(NativeContext context, int inputSize, int outputSize, boolean useBias, long seed)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "inputSize"
+                },
+                {
+                  "type": "int",
+                  "name": "outputSize"
+                },
+                {
+                  "type": "boolean",
+                  "name": "useBias"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "指定偏置开关与初始化种子",
+                "params": {
+                  "context": "持有原生上下文，权重与偏置在其中分配",
+                  "inputSize": "输入特征数，必须为正",
+                  "outputSize": "输出特征数，必须为正",
+                  "useBias": "是否创建 [1, outputSize] 的偏置张量",
+                  "seed": "初始化种子基数，实际种子混入 inputSize 与 outputSize"
+                },
+                "notes": [
+                  "权重由 Tensor.random 以均匀分布生成，requiresGrad 为 true；偏置初值为 0。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "沿最后一维做仿射变换",
+                "params": {
+                  "input": "最后一维需等于 inputSize 的张量，秩不限"
+                },
+                "returns": "形状与输入相同，仅最后一维替换为 outputSize",
+                "throws": {
+                  "IllegalArgumentException": "输入的最后一维不等于 inputSize"
+                },
+                "notes": [
+                  "秩大于 2 时前置维度被合并成行，输出仍保留这些维度。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回权重与可选的偏置",
+                "returns": "weight 在前；存在偏置时 bias 在后，否则长度为 1"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "namedParameters()",
+              "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回 weight 与 bias 命名状态",
+                "returns": "名称依次为 weight、bias；无偏置时只含 weight"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "weight()",
+              "signature": "Tensor weight()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回权重张量",
+                "returns": "[inputSize, outputSize] 的可训练张量"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "bias()",
+              "signature": "Tensor bias()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回偏置张量",
+                "returns": "[1, outputSize] 的可训练张量；构造时 useBias 为 false 则返回 null"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "全连接层 y = xW + b，只投影最后一维",
+            "body": [
+              "权重形状为 [inputSize, outputSize]，按 ±sqrt(6 / (inputSize + outputSize)) 的均匀分布初始化，实际种子为 seed + 17·inputSize + outputSize；偏置形状为 [1, outputSize]，初始化为 0。",
+              "forward 只要求输入的最后一维等于 inputSize：秩为 2 时直接做二维矩阵乘；秩大于 2 或秩为 1 时先把前置维度合并成行，乘完再恢复原形状，仅把最后一维替换为 outputSize。",
+              "因此 [batch, time, channels] 这类输入会被逐位置投影，前置维度保持不变，与 eager 执行 的 Linear 语义一致。"
+            ],
+            "notes": [
+              "构造器不校验 inputSize、outputSize 的取值，非正尺寸在张量分配阶段抛 IllegalArgumentException。",
+              "useBias 为 false 时 bias() 返回 null，parameters() 与 namedParameters() 只含 weight。",
+              "形状检查发生在前向，最后一维不匹配时异常信息包含期望值与实际值。"
+            ],
+            "see": [
+              "basalt.torch.LayerNorm",
+              "basalt.torch.Sequential",
+              "basalt.torch.Tensor#matMul"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.torch.Loss",
+          "simple_qualified": "Loss",
+          "kind": "interface",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/torch/Loss.java",
+          "line": 4,
+          "javadoc": "A differentiable scalar loss.",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "可微标量损失的统一接口",
+            "body": [
+              "实现类接收预测张量与目标张量，返回形状 [1] 的标量张量，可直接调用 backward()。接口本身不约束形状、归约方式与目标编码，这些由具体实现或底层 Tensor 算子决定。"
+            ],
+            "notes": [
+              "实现通常无状态、无可训练参数，可作为单例复用。",
+              "接口不声明异常，形状错误以 IllegalArgumentException 或 IllegalStateException 的形式在运行期暴露。"
+            ],
+            "see": [
+              "basalt.torch.MSELoss",
+              "basalt.torch.CrossEntropyLoss",
+              "basalt.torch.Tensor#backward()"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.torch.MSELoss",
+          "simple_qualified": "MSELoss",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Loss"
+          ],
+          "file": "jsl/torch/MSELoss.java",
+          "line": 4,
+          "javadoc": "Mean squared error.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "loss(Tensor, Tensor)",
+              "signature": "Tensor loss(Tensor prediction, Tensor target)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "prediction"
+                },
+                {
+                  "type": "Tensor",
+                  "name": "target"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "计算逐元素平方误差的均值",
+                "params": {
+                  "prediction": "预测张量，任意秩",
+                  "target": "目标张量，形状必须与 prediction 完全相同"
+                },
+                "returns": "形状 [1] 的标量损失张量",
+                "throws": {
+                  "IllegalArgumentException": "两个张量形状不完全相同"
+                },
+                "notes": [
+                  "不做广播：即使形状可广播也会被拒绝。"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "均方误差损失",
+            "body": [
+              "loss(prediction, target) 转调 Tensor.mse：要求两个张量形状完全相同，返回 [1] 标量。归约方式是全部元素的算术平均，除以元素总数而非 batch 大小。"
+            ],
+            "notes": [
+              "形状不一致抛 IllegalArgumentException，消息为 MSE expects equal shapes。",
+              "反向梯度为 2*(prediction-target)/n，对 prediction 与 target 两侧同时累积。"
+            ],
+            "see": [
+              "basalt.torch.Loss",
+              "basalt.torch.CrossEntropyLoss",
+              "basalt.torch.Tensor#mse(Tensor)"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.torch.MaxPool2d",
+          "simple_qualified": "MaxPool2d",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "Module<BCHW, BCHW>",
+          "implements": [],
+          "file": "jsl/torch/MaxPool2d.java",
+          "line": 7,
+          "javadoc": "Max pooling over NCHW tensors.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "MaxPool2d(int)",
+              "signature": "MaxPool2d(int kernelSize)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "kernelSize"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "方形核且步长等于核尺寸",
+                "params": {
+                  "kernelSize": "窗口边长，同时用作垂直与水平步长"
+                },
+                "notes": [
+                  "等价于四参构造器传入四个相同的值。"
+                ]
+              }
+            },
+            {
+              "kind": "constructor",
+              "key": "MaxPool2d(int, int, int, int)",
+              "signature": "MaxPool2d(int kernelHeight, int kernelWidth, int strideHeight, int strideWidth)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "kernelHeight"
+                },
+                {
+                  "type": "int",
+                  "name": "kernelWidth"
+                },
+                {
+                  "type": "int",
+                  "name": "strideHeight"
+                },
+                {
+                  "type": "int",
+                  "name": "strideWidth"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "分别指定核尺寸与步长",
+                "params": {
+                  "kernelHeight": "窗口高度，必须为正才会得到有效输出",
+                  "kernelWidth": "窗口宽度，必须为正才会得到有效输出",
+                  "strideHeight": "垂直步长，不校验取值",
+                  "strideWidth": "水平步长，不校验取值"
+                },
+                "notes": [
+                  "stride 小于 kernel 时窗口重叠，大于 kernel 时跳过部分位置。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "对 NCHW 输入做最大池化",
+                "params": {
+                  "input": "形状 [N, C, H, W] 的张量"
+                },
+                "returns": "[N, C, Hout, Wout] 的新张量",
+                "throws": {
+                  "IllegalArgumentException": "输入非四维，或任一输出维非正"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回空参数列表",
+                "returns": "恒为空的不可变列表"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "kernelHeight()",
+              "signature": "int kernelHeight()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回窗口高度",
+                "returns": "构造时传入的 kernelHeight"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "kernelWidth()",
+              "signature": "int kernelWidth()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回窗口宽度",
+                "returns": "构造时传入的 kernelWidth"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "strideHeight()",
+              "signature": "int strideHeight()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回垂直步长",
+                "returns": "构造时传入的 strideHeight"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "strideWidth()",
+              "signature": "int strideWidth()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回水平步长",
+                "returns": "构造时传入的 strideWidth"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "NCHW 上的最大池化，不支持填充",
+            "body": [
+              "forward 调用 Tensor.maxPool2d，输出尺寸为 (H − kernelHeight) / strideHeight + 1，除法向下取整，宽度同理；窗口内取最大值，反向时梯度只回传到每个窗口最大值所在的位置。",
+              "模块没有 padding 参数，实现也不做隐式填充，边缘不足一个完整窗口的位置会被丢弃；单参构造器令 stride 等于 kernel，得到互不重叠的窗口。"
+            ],
+            "notes": [
+              "构造器不校验 kernel 与 stride 的取值；stride 传 0 会在原生内核中除零。",
+              "输入秩不为 4，或任一输出维非正时抛 IllegalArgumentException。",
+              "模块无参数，parameters() 恒为空列表。"
+            ],
+            "see": [
+              "basalt.torch.Conv2d",
+              "basalt.torch.Tensor#maxPool2d"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.torch.Module",
+          "simple_qualified": "Module",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "abstract"
+          ],
+          "generic": "<I extends Layout, O extends Layout>",
+          "extends": "",
+          "implements": [
+            "AutoCloseable"
+          ],
+          "file": "jsl/torch/Module.java",
+          "line": 19,
+          "javadoc": "Base class for a typed neural-network module. <p>The two type parameters are phantom layout tags. They make the <em>pipeline</em> checkable at\ncompile time: {@code Conv2d} is {@code Module<BCHW, BCHW>}, {@code Flatten} is\n{@code Module<BCHW, BC>}, and {@code Linear} is {@code Module<BC, BC>}. Chaining them through\n{@link Sequential#add} therefore rejects a {@code Conv2d -> Linear} connection at compile time,\nsomething a dynamically typed framework can only detect at runtime.</p>",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "子类实现的前向计算",
+                "params": {
+                  "input": "输入张量，形状约定由具体模块决定"
+                },
+                "returns": "输出张量，通常是新分配的张量并已登记计算图节点",
+                "notes": [
+                  "抽象方法，不做空值检查；需要防御性检查时用 apply。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回模块持有的可训练参数",
+                "returns": "参数列表，顺序稳定，供 Optimizer 与 zeroGrad 使用",
+                "notes": [
+                  "无参数模块返回空列表；返回的列表不应被调用方修改。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "namedParameters()",
+              "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回带名字的参数条目",
+                "returns": "名字到张量的条目列表，默认命名为 param0、param1…",
+                "notes": [
+                  "默认实现只按位置命名；需要稳定语义名时子类应覆盖，如 Linear 使用 weight 与 bias。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "apply(Tensor)",
+              "signature": "Tensor apply(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验输入非空后调用 forward",
+                "params": {
+                  "input": "输入张量"
+                },
+                "returns": "forward 的返回值",
+                "throws": {
+                  "BasaltRuntimeException": "input 为 null"
+                },
+                "notes": [
+                  "模块组合时统一走 apply 可把空值错误定位在边界上。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "train()",
+              "signature": "void train()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "把模块切到训练态",
+                "notes": [
+                  "只设置基类标志，不递归；容器模块会覆盖此方法以传播到子模块。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "eval()",
+              "signature": "void eval()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "把模块切到推理态",
+                "notes": [
+                  "只设置基类标志，不递归；Dropout、BatchNorm2d 等模块在 forward 中读取该标志。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "isTraining()",
+              "signature": "boolean isTraining()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回当前是否为训练态",
+                "returns": "训练态为 true，推理态为 false；新模块默认为 true"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "zeroGrad()",
+              "signature": "void zeroGrad()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "清零全部参数的梯度",
+                "notes": [
+                  "遍历 parameters() 逐个调用 Tensor.zeroGrad，不清计算图。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "stateDict()",
+              "signature": "Map<String, float[]> stateDict()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "把参数导出为名字到数据的映射",
+                "returns": "保持插入顺序的映射，值是参数的完整数据副本",
+                "notes": [
+                  "副本可安全序列化或修改；键来自 namedParameters。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "loadStateDict(Map<String, float[]>)",
+              "signature": "void loadStateDict(Map<String, float[]> state)",
+              "params": [
+                {
+                  "type": "Map<String, float[]>",
+                  "name": "state"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按名字把数据写回参数",
+                "params": {
+                  "state": "名字到数据的映射，必须覆盖当前模块的全部参数名"
+                },
+                "throws": {
+                  "IllegalArgumentException": "某个数组长度与对应参数元素数不一致"
+                },
+                "notes": [
+                  "多余条目被静默忽略；写入是原地覆盖，不影响计算图结构。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "close()",
+              "signature": "void close()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "关闭模块持有的全部参数张量",
+                "notes": [
+                  "逐个调用 Tensor.close；参数被当前计算图引用时会连带清空整张图。"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "带布局类型参数的模块基类，统一参数与训练态",
+            "body": [
+              "两个类型参数 I、O 是幽灵布局标记，只在编译期参与 Sequential 的连线检查，运行期不做形状校验；forward 内部仍需按实际形状处理输入，形状不符时由具体模块抛出异常。",
+              "子类实现 forward 与 parameters；namedParameters 默认给每个参数起 param0…paramN 的位置名，stateDict 以此为键。train()/eval() 只翻转基类中的布尔标志，是否据此切换行为由子类 forward 自行读取。"
+            ],
+            "notes": [
+              "构造后默认处于训练态，即 training=true。",
+              "apply 只做空值检查后转调 forward，本身不改变语义。",
+              "stateDict 返回的是数据副本，修改返回值不影响模块；loadStateDict 缺少条目抛 IllegalArgumentException，多余条目被忽略。",
+              "close() 关闭 parameters() 中的每个张量；容器模块应保证同一张量不被重复关闭，句柄关闭本身是幂等的。",
+              "基类不持有张量，也不做参数注册：参数必须由子类保存在字段中并通过 parameters() 暴露。"
+            ],
+            "see": [
+              "basalt.torch.Sequential",
+              "basalt.torch.Linear",
+              "basalt.torch.Optimizer"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.torch.MultiheadAttention",
+          "simple_qualified": "MultiheadAttention",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "Module<BSF, BSF>",
+          "implements": [],
+          "file": "jsl/torch/MultiheadAttention.java",
+          "line": 14,
+          "javadoc": "Multi-head self-attention over [batch, time, channels], composed from reshape, permute,\nbatched matmul and softmax. This is the transformer primitive modern eager 执行 users expect,\nbuilt entirely on the same public tensor API.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "MultiheadAttention(NativeContext, int, int, boolean, float, long)",
+              "signature": "MultiheadAttention(NativeContext context, int dimension, int heads, boolean causal, float dropoutProbability, long seed)",
+              "params": [
+                {
+                  "type": "NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "int",
+                  "name": "dimension"
+                },
+                {
+                  "type": "int",
+                  "name": "heads"
+                },
+                {
+                  "type": "boolean",
+                  "name": "causal"
+                },
+                {
+                  "type": "float",
+                  "name": "dropoutProbability"
+                },
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "构造多头注意力与四个投影",
+                "params": {
+                  "context": "持有原生上下文，四个投影、缩放张量与 dropout 都在其中",
+                  "dimension": "模型维度，同时是输入最后一维与各投影的输入输出尺寸",
+                  "heads": "注意力头数，dimension 必须能被其整除",
+                  "causal": "是否加因果掩码，为 true 时位置 t 只能看到不晚于 t 的位置",
+                  "dropoutProbability": "注意力权重上的置零概率，取值 [0, 1)",
+                  "seed": "种子基数，四个投影分别偏移 101、211、307、401，dropout 偏移 503"
+                },
+                "throws": {
+                  "IllegalArgumentException": "dimension 不能被 heads 整除"
+                },
+                "notes": [
+                  "每个投影都是带偏置的方阵 Linear，因此参数总量为 4·(dimension² + dimension)。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor)",
+              "signature": "Tensor forward(Tensor input)",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "计算多头自注意力输出",
+                "params": {
+                  "input": "形状 [batch, time, channels]，channels 需能被 heads 整除"
+                },
+                "returns": "[batch, time, channels]，最后一维与输入相同",
+                "throws": {
+                  "IllegalArgumentException": "输入不是三维，或通道数不能被 heads 整除"
+                },
+                "notes": [
+                  "Q、K、V 都来自同一输入，属于自注意力，不提供分离的 key/value 输入。",
+                  "注意力权重在 softmax 之后、与 V 相乘之前经过 dropout。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<Tensor> parameters()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回四个投影的参数",
+                "returns": "query、key、value、output 的权重与偏置依次拼接"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "namedParameters()",
+              "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回带模块前缀的命名参数",
+                "returns": "名称形如 query.weight、query.bias、key.weight 等"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "train()",
+              "signature": "void train()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "切换到训练模式并同步 dropout",
+                "notes": [
+                  "置位自身标志后调用内部 dropout 的 train()，其余投影没有模式相关行为。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "eval()",
+              "signature": "void eval()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "切换到推理模式并同步 dropout",
+                "notes": [
+                  "推理时 dropout 为恒等映射，注意力权重不再被置零。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "close()",
+              "signature": "void close()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "释放子模块与缩放张量",
+                "notes": [
+                  "四个投影、dropout 与缩放张量都由本模块持有并一并释放。"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "多头自注意力，输入 [batch, time, channels]",
+            "body": [
+              "构造时创建 query、key、value、output 四个 dimension 到 dimension 的 Linear，均带偏置，并创建作用于注意力权重的 Dropout；缩放系数是值为 1/sqrt(dimension / heads) 的标量张量。",
+              "forward 先把每个投影结果 reshape 成 [B, T, H, dh]：Q 与 V 经 permute(0, 2, 1, 3) 变为 [B·H, T, dh]，K 经 permute(0, 2, 3, 1) 变为 [B·H, dh, T]，再做批量矩阵乘得到 [B·H, T, T] 的分数。",
+              "分数乘缩放系数，causal 为真时把 column > row 的位置加上 -1e9，随后沿最后一维 softmax、过 dropout，再与 V 相乘得 [B·H, T, dh]，reshape 成 [B, H, T, dh] 并 permute(0, 2, 1, 3) 还原为 [B, T, C]，最后经输出投影。"
+            ],
+            "notes": [
+              "dimension 必须能被 heads 整除，否则构造与前向都抛 IllegalArgumentException；heads 本身不做正值校验。",
+              "因果掩码只屏蔽未来位置（严格上三角），每次前向都按 time×time 新建一个掩码张量。",
+              "train()/eval() 会同步切换内部 dropout；parameters() 只含四个投影的权重与偏置，不含缩放常量。",
+              "namedParameters 的名称前缀为 query.、key.、value.、output.。"
+            ],
+            "example": "try (Basalt jsl = Basalt.create()) { MultiheadAttention attention = new MultiheadAttention(basalt.context(), 64, 8, true, 0.1f, 7L); Tensor input = basalt.randn(2, 16, 64); attention.train(); Tensor output = attention.forward(input); // output 形状为 [2, 16, 64] attention.eval(); attention.close();\n}",
+            "see": [
+              "basalt.torch.SelfAttention",
+              "basalt.torch.TransformerBlock",
+              "basalt.torch.Linear"
+            ]
+          }
         }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "parameters()",
-       "signature": "List<Tensor> parameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回空参数列表",
-        "returns": "恒为空的不可变列表"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "把 NCHW 展平为 [batch, C·H·W]",
-      "body": [
-       "forward 读取输入形状，要求秩为 4，然后返回 reshape(shape[0], shape[1] * shape[2] * shape[3]) 的结果；通道、高度、宽度按行主序依次拼接，不做转置。",
-       "模块没有参数，类型上把 BCHW 布局转换为 BC 布局，因此在 Sequential 中只有展平之后才允许接 Linear 这类二维模块。"
-      ],
-      "notes": [
-       "输入秩不为 4 时抛 IllegalArgumentException，不接受已经展平的二维输入。",
-       "reshape 会新分配张量并登记一个计算图节点，反向时按逆映射回传梯度，输出与输入不共享存储。"
-      ],
-      "see": [
-       "basalt.torch.Sequential",
-       "basalt.torch.Linear",
-       "basalt.torch.Tensor#reshape"
       ]
-     }
-    },
-    {
-     "qualified": "basalt.torch.Graph",
-     "simple_qualified": "Graph",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "AutoCloseable"
-     ],
-     "file": "jsl/torch/Graph.java",
-     "line": 12,
-     "javadoc": "Minimal Java-side handle for the native autograd graph.\n\n<p>{@link Tensor#backward()} is the common entry; this wrapper exists for explicit graph\ncontrol (inspection, clearing between independent passes, and grouping a training step).</p>",
-     "nested": [],
-     "members": [
-      {
-       "kind": "constructor",
-       "key": "Graph(NativeContext)",
-       "signature": "Graph(NativeContext context)",
-       "params": [
-        {
-         "type": "NativeContext",
-         "name": "context"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "在给定上下文上创建图句柄",
-        "params": {
-         "context": "原生上下文，图句柄只是它的一个视图，不持有额外原生资源"
-        },
-        "throws": {
-         "BasaltRuntimeException": "context 为 null"
-        },
-        "notes": [
-         "创建动作本身不改动图内容；多个 Graph 实例操作的是同一张图。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "of(NativeContext)",
-       "signature": "Graph of(NativeContext context)",
-       "params": [
-        {
-         "type": "NativeContext",
-         "name": "context"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "构造器的静态工厂形式",
-        "params": {
-         "context": "原生上下文"
-        },
-        "returns": "绑定该上下文的新图句柄",
-        "throws": {
-         "BasaltRuntimeException": "context 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "backward(Tensor)",
-       "signature": "void backward(Tensor root)",
-       "params": [
-        {
-         "type": "Tensor",
-         "name": "root"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "从根张量反向传播并累积梯度",
-        "body": [
-         "初始余切为全 1 向量，沿拓扑序逆序访问可达节点，把梯度累加到 requiresGrad 为 true 的张量上。"
-        ],
-        "params": {
-         "root": "反向起点，必须是当前计算图的产物；通常是形状 [1] 的损失"
-        },
-        "throws": {
-         "BasaltRuntimeException": "root 为 null",
-         "IllegalArgumentException": "root 属于另一个上下文"
-        },
-        "notes": [
-         "根张量未被当前图产生时，原生层抛 IllegalStateException。",
-         "梯度以累加方式写入，多次调用会叠加而非覆盖。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "clear()",
-       "signature": "void clear()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "丢弃全部已记录的节点",
-        "body": [
-         "清空节点表与产出、消费索引，之后新建的张量可以重新作为图节点输出。"
-        ],
-        "notes": [
-         "只清图，不释放张量，也不清梯度；正在被引用的中间张量仍然有效。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "size()",
-       "signature": "int size()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回当前图中的节点数",
-        "returns": "自上次 clear() 以来登记的节点个数",
-        "notes": [
-         "节点数与算子调用次数一致，可用于确认清图是否生效。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "stats()",
-       "signature": "long[] stats()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回上下文级的存活统计",
-        "returns": "长度为 3 的数组，依次为存活张量数、存活字节数、图节点数",
-        "notes": [
-         "字节数是原生侧实际占用，可用于定位张量泄漏。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "close()",
-       "signature": "void close()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "清空计算图，等价于 clear()",
-        "notes": [
-         "不关闭上下文；配合 try-with-resources 可让一步训练结束即清图。"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "原生自动求导图的 Java 侧句柄：反向、清图与统计",
-      "body": [
-       "Tensor.backward() 是最常用的反向入口；Graph 面向需要显式控制图生命周期的场景：在独立前向之间清图、查看已记录的节点数、读取上下文级存活统计。构造器与 of 等价，只校验 context 非空。",
-       "close() 仅等价于 clear()，不关闭底层 NativeContext；调用后上下文仍可继续创建张量、执行算子并重新累积节点。"
-      ],
-      "notes": [
-       "图是追加式的：每次指令队列执行都会登记一个节点，与输入是否 requiresGrad 无关；训练循环必须每步 clear()，否则节点与中间张量持续累积。",
-       "backward 不清图也不清零梯度；清图之后原根张量不再是当前图的产物，再调用 backward 会抛 IllegalStateException。",
-       "关闭图中任一被引用的张量会隐式清空整张图，这是原生 release_tensor 的既定语义。",
-       "size() 与 stats() 都是即时查询，各触发一次 JNI 调用，不宜在热循环中频繁调用。"
-      ],
-      "see": [
-       "basalt.torch.Tensor#backward()",
-       "basalt.torch.Optimizer",
-       "basalt.nativebridge.NativeContext"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.torch.GroupNorm",
-     "simple_qualified": "GroupNorm",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "<L extends Layout>",
-     "extends": "Module<L, L>",
-     "implements": [],
-     "file": "jsl/torch/GroupNorm.java",
-     "line": 13,
-     "javadoc": "Group Normalization over {@code [N, C, ...]} tensors where {@code C} channels are partitioned\ninto {@code numGroups} groups, independent of batch size, matching {@code torch.nn.GroupNorm}.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "constructor",
-       "key": "GroupNorm(NativeContext, int, int)",
-       "signature": "GroupNorm(NativeContext context, int numGroups, int numChannels)",
-       "params": [
-        {
-         "type": "NativeContext",
-         "name": "context"
-        },
-        {
-         "type": "int",
-         "name": "numGroups"
-        },
-        {
-         "type": "int",
-         "name": "numChannels"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "以 epsilon=1e-5 构造分组归一化",
-        "params": {
-         "context": "持有原生上下文，gamma 与 beta 在其中分配",
-         "numGroups": "分组数，必须为正且能整除 numChannels",
-         "numChannels": "通道数，同时是 gamma、beta 的长度"
-        },
-        "throws": {
-         "IllegalArgumentException": "numGroups 或 numChannels 非正，或 numChannels 不能被 numGroups 整除"
-        },
-        "notes": [
-         "等价于四参构造器传入 1e-5f。",
-         "gamma、beta 由 Tensor.parameter 创建，requiresGrad 为 true，随后分别填充 1 与 0。"
-        ]
-       }
-      },
-      {
-       "kind": "constructor",
-       "key": "GroupNorm(NativeContext, int, int, float)",
-       "signature": "GroupNorm(NativeContext context, int numGroups, int numChannels, float epsilon)",
-       "params": [
-        {
-         "type": "NativeContext",
-         "name": "context"
-        },
-        {
-         "type": "int",
-         "name": "numGroups"
-        },
-        {
-         "type": "int",
-         "name": "numChannels"
-        },
-        {
-         "type": "float",
-         "name": "epsilon"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "显式指定数值稳定项 epsilon",
-        "params": {
-         "context": "持有原生上下文，gamma 与 beta 在其中分配",
-         "numGroups": "分组数，必须为正且能整除 numChannels",
-         "numChannels": "通道数，同时是 gamma、beta 的长度",
-         "epsilon": "加在方差上的稳定项，避免除零；构造阶段不校验正负"
-        },
-        "throws": {
-         "IllegalArgumentException": "numGroups 或 numChannels 非正，或 numChannels 不能被 numGroups 整除"
-        },
-        "notes": [
-         "epsilon 为负且组内方差接近 0 时结果可能非有限，构造阶段不会拦截。",
-         "gamma 与 beta 的形状是 [numChannels] 的一维张量，不是 [1, C, 1, 1]。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "forward(Tensor)",
-       "signature": "Tensor forward(Tensor input)",
-       "params": [
-        {
-         "type": "Tensor",
-         "name": "input"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "对输入按通道分组归一化",
-        "params": {
-         "input": "秩至少为 2 的张量，第二维必须等于 numChannels，其余维度视为空间维"
-        },
-        "returns": "与输入同形状的新张量，已登记计算图节点",
-        "throws": {
-         "IllegalArgumentException": "输入秩小于 2 或第二维不能被 numGroups 整除；gamma、beta 的元素数与第二维不一致"
-        },
-        "notes": [
-         "统计范围是每个样本、每个分组内的全部通道与空间位置，不跨样本。",
-         "原生层还要求 gamma、beta 的形状恰为 [C]，否则报形状不匹配。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "parameters()",
-       "signature": "List<Tensor> parameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回 gamma 与 beta",
-        "returns": "长度为 2 的列表，顺序为 gamma、beta"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "namedParameters()",
-       "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回 gamma、beta 两个命名状态",
-        "returns": "顺序固定为 gamma、beta"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "numGroups()",
-       "signature": "int numGroups()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回分组数",
-        "returns": "构造时传入的 numGroups"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "numChannels()",
-       "signature": "int numChannels()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回通道数",
-        "returns": "构造时传入的 numChannels，即 gamma、beta 的长度"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "gamma()",
-       "signature": "Tensor gamma()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回缩放参数",
-        "returns": "[numChannels] 的可训练张量，初值为全 1"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "beta()",
-       "signature": "Tensor beta()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回平移参数",
-        "returns": "[numChannels] 的可训练张量，初值为全 0"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "按通道分组归一化，结果与批量大小无关",
-      "body": [
-       "构造时按 numChannels 分配两个一维可训练张量 gamma 与 beta，形状均为 [numChannels]，分别填充 1 与 0；默认 epsilon 为 1e-5f。类本身只保存配置，不持有滑动统计量。",
-       "forward 转调 Tensor.groupNorm：把第二维的 C 个通道均分为 numGroups 组，每组包含 numChannels / numGroups 个通道及其全部空间位置；在该组内计算均值与方差，除以组内元素数，归一化后按通道应用 gamma、beta。",
-       "其余维度按行主序合并为空间维，统计既不跨样本也不跨分组；输出与输入同形状，因此可以直接接在 Conv2d 之后。与 BatchNorm2d 不同，训练与推理行为完全一致。"
-      ],
-      "notes": [
-       "numGroups 与 numChannels 都必须为正，且 numChannels 必须能被 numGroups 整除，否则构造器抛 IllegalArgumentException。",
-       "gamma 与 beta 的形状是 [numChannels]，广播按通道进行；二者元素数与输入第二维不一致时，forward 抛 IllegalArgumentException。",
-       "numGroups 等于 1 时退化为按样本的层归一化，等于 numChannels 时退化为逐通道归一化。",
-       "输入秩为 2 时空间维按 1 处理，只对通道向量分组统计。",
-       "epsilon 直接参与 sqrt(var + epsilon)，构造阶段不校验取值。"
-      ],
-      "see": [
-       "basalt.torch.LayerNorm",
-       "basalt.torch.BatchNorm2d",
-       "basalt.torch.Tensor#groupNorm"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.torch.L1Loss",
-     "simple_qualified": "L1Loss",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "Loss"
-     ],
-     "file": "jsl/torch/L1Loss.java",
-     "line": 4,
-     "javadoc": "Mean Absolute Error (L1) loss.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "loss(Tensor, Tensor)",
-       "signature": "Tensor loss(Tensor prediction, Tensor target)",
-       "params": [
-        {
-         "type": "Tensor",
-         "name": "prediction"
-        },
-        {
-         "type": "Tensor",
-         "name": "target"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "计算逐元素绝对误差的均值",
-        "params": {
-         "prediction": "预测张量，任意秩",
-         "target": "目标张量，形状必须与 prediction 完全相同"
-        },
-        "returns": "形状 [1] 的标量损失张量",
-        "throws": {
-         "IllegalArgumentException": "两个张量形状不完全相同"
-        },
-        "notes": [
-         "不做广播：即使形状可广播也会被拒绝。",
-         "归约除以全部元素个数，而非 batch 大小。"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "平均绝对误差损失（L1）",
-      "body": [
-       "loss(prediction, target) 转调 Tensor.l1Loss：先计算 prediction − target，逐元素取绝对值后求算术平均，返回 [1] 标量，可直接调用 backward()。",
-       "归约方式是全部元素的算术平均，除以元素总数而非 batch 大小；实现上把绝对差 reshape 成 [1, n]，与长度为 n、元素为 1/n 的列向量做矩阵乘完成求和。"
-      ],
-      "notes": [
-       "形状不一致抛 IllegalArgumentException，消息为 L1Loss expects equal shapes。",
-       "除差值恰为 0 的位置外，反向梯度为 sign(prediction − target)/n，对 prediction 与 target 两侧同时累积。",
-       "与 MSELoss 一样不做广播；需要按样本平均时先自行 reshape。"
-      ],
-      "see": [
-       "basalt.torch.Loss",
-       "basalt.torch.MSELoss",
-       "basalt.torch.Tensor#l1Loss"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.torch.LRScheduler",
-     "simple_qualified": "LRScheduler",
-     "kind": "interface",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/torch/LRScheduler.java",
-     "line": 7,
-     "javadoc": "Contract for learning rate schedulers that adjust {@link Optimizer#setLearningRate(float)}\nacross training epochs or steps.",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "学习率调度器的统一契约",
-      "body": [
-       "实现类在内部维护步数计数：step() 推进一步并算出新学习率，通过 Optimizer.setLearningRate 写回优化器，同时返回该值；currentLearningRate() 与 currentStep() 提供只读查询。三个方法都不带参数。",
-       "调用时机由使用方决定，每完成一个 epoch 或每个优化步后调用一次 step()，实现类不区分钟与步。StepLR 按 currentStep / stepSize 计算衰减次数，CosineAnnealingLR 按 min(t, tMax) 计算余弦相位，两者都把一次 step() 计为一格。",
-       "构造时实现类通常读取 optimizer.learningRate() 作为基准学习率，此后只按自己的公式写回；换基准需要新建调度器。"
-      ],
-      "notes": [
-       "step() 直接改写优化器学习率，与是否调用过 optimizer.step() 无关。",
-       "写回的学习率必须有限且非负，否则 Optimizer.setLearningRate 抛 IllegalArgumentException。",
-       "实现类在构造时绑定单个 Optimizer，同一实例不应跨优化器复用。",
-       "接口不声明异常，也不规定步数上限；计数只增不减，没有重置入口。"
-      ],
-      "see": [
-       "basalt.torch.StepLR",
-       "basalt.torch.CosineAnnealingLR",
-       "basalt.torch.Optimizer#setLearningRate(float)"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.torch.LayerNorm",
-     "simple_qualified": "LayerNorm",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "<L extends Layout>",
-     "extends": "Module<L, L>",
-     "implements": [],
-     "file": "jsl/torch/LayerNorm.java",
-     "line": 10,
-     "javadoc": "Layer normalization over the last dimension.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "constructor",
-       "key": "LayerNorm(NativeContext, int...)",
-       "signature": "LayerNorm(NativeContext context, int... normalizedShape)",
-       "params": [
-        {
-         "type": "NativeContext",
-         "name": "context"
-        },
-        {
-         "type": "int...",
-         "name": "normalizedShape"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "以 epsilon=1e-5 构造层归一化",
-        "params": {
-         "context": "持有原生上下文，gamma 与 beta 在其中分配",
-         "normalizedShape": "被归一化的维度尺寸，通常只传最后一维长度；不得为空"
-        },
-        "throws": {
-         "IllegalArgumentException": "normalizedShape 为空"
-        },
-        "notes": [
-         "等价于传入 1e-5f 的三参构造器。"
-        ]
-       }
-      },
-      {
-       "kind": "constructor",
-       "key": "LayerNorm(NativeContext, float, int...)",
-       "signature": "LayerNorm(NativeContext context, float epsilon, int... normalizedShape)",
-       "params": [
-        {
-         "type": "NativeContext",
-         "name": "context"
-        },
-        {
-         "type": "float",
-         "name": "epsilon"
-        },
-        {
-         "type": "int...",
-         "name": "normalizedShape"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "显式指定数值稳定项",
-        "params": {
-         "context": "持有原生上下文，gamma 与 beta 在其中分配",
-         "epsilon": "加在方差上的稳定项，避免除零；不校验正负",
-         "normalizedShape": "gamma 与 beta 的形状，元素个数需等于输入的最后一维"
-        },
-        "throws": {
-         "IllegalArgumentException": "normalizedShape 为空"
-        },
-        "notes": [
-         "epsilon 为负且方差接近 0 时可能得到非有限值，构造阶段不会拦截。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "forward(Tensor)",
-       "signature": "Tensor forward(Tensor input)",
-       "params": [
-        {
-         "type": "Tensor",
-         "name": "input"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "沿最后一维归一化并仿射",
-        "params": {
-         "input": "任意秩张量，最后一维长度需等于 gamma 的元素个数"
-        },
-        "returns": "与输入同形状的新张量",
-        "throws": {
-         "IllegalArgumentException": "gamma 或 beta 的元素个数与输入最后一维不一致"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "parameters()",
-       "signature": "List<Tensor> parameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回 gamma 与 beta",
-        "returns": "长度为 2 的列表，顺序为 gamma、beta"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "epsilon()",
-       "signature": "float epsilon()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回数值稳定项",
-        "returns": "构造时传入的 epsilon；双参构造器为 1e-5f"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "gamma()",
-       "signature": "Tensor gamma()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回缩放参数",
-        "returns": "形状为 normalizedShape 的可训练张量，初值为全 1"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "beta()",
-       "signature": "Tensor beta()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回平移参数",
-        "returns": "形状为 normalizedShape 的可训练张量，初值为全 0"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "namedParameters()",
-       "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回名为 gamma、beta 的状态项",
-        "returns": "顺序固定为 gamma、beta"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "沿最后一维做层归一化",
-      "body": [
-       "forward 在最后一维上计算均值与方差，加 epsilon 后开方做归一化，再逐元素乘以 gamma、加上 beta；其余维度各自视为独立样本，不参与统计。",
-       "gamma 与 beta 的形状取自 normalizedShape，分别初始化为 1 与 0。Tensor.layerNorm 只要求两者的元素个数等于输入最后一维，因此通常传单个维度值即可。"
-      ],
-      "notes": [
-       "构造器校验 normalizedShape 非空；维度必须为正，否则张量分配阶段抛 IllegalArgumentException。",
-       "层归一化与批量无关，没有滑动统计量，训练与推理行为完全相同。",
-       "gamma 与 beta 的元素个数和输入最后一维不一致时，forward 抛 IllegalArgumentException。"
-      ],
-      "see": [
-       "basalt.torch.BatchNorm2d",
-       "basalt.torch.Tensor#layerNorm"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.torch.Linear",
-     "simple_qualified": "Linear",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "Module<BC, BC>",
-     "implements": [],
-     "file": "jsl/torch/Linear.java",
-     "line": 10,
-     "javadoc": "Dense layer: {@code y = x W + b}.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "constructor",
-       "key": "Linear(NativeContext, int, int)",
-       "signature": "Linear(NativeContext context, int inputSize, int outputSize)",
-       "params": [
-        {
-         "type": "NativeContext",
-         "name": "context"
-        },
-        {
-         "type": "int",
-         "name": "inputSize"
-        },
-        {
-         "type": "int",
-         "name": "outputSize"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "默认带偏置、seed=0 构造",
-        "params": {
-         "context": "持有原生上下文，权重与偏置在其中分配",
-         "inputSize": "输入特征数，即输入最后一维的长度，必须为正",
-         "outputSize": "输出特征数，必须为正"
-        },
-        "notes": [
-         "等价于五参构造器传入 useBias=true、seed=0。"
-        ]
-       }
-      },
-      {
-       "kind": "constructor",
-       "key": "Linear(NativeContext, int, int, boolean, long)",
-       "signature": "Linear(NativeContext context, int inputSize, int outputSize, boolean useBias, long seed)",
-       "params": [
-        {
-         "type": "NativeContext",
-         "name": "context"
-        },
-        {
-         "type": "int",
-         "name": "inputSize"
-        },
-        {
-         "type": "int",
-         "name": "outputSize"
-        },
-        {
-         "type": "boolean",
-         "name": "useBias"
-        },
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "指定偏置开关与初始化种子",
-        "params": {
-         "context": "持有原生上下文，权重与偏置在其中分配",
-         "inputSize": "输入特征数，必须为正",
-         "outputSize": "输出特征数，必须为正",
-         "useBias": "是否创建 [1, outputSize] 的偏置张量",
-         "seed": "初始化种子基数，实际种子混入 inputSize 与 outputSize"
-        },
-        "notes": [
-         "权重由 Tensor.random 以均匀分布生成，requiresGrad 为 true；偏置初值为 0。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "forward(Tensor)",
-       "signature": "Tensor forward(Tensor input)",
-       "params": [
-        {
-         "type": "Tensor",
-         "name": "input"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "沿最后一维做仿射变换",
-        "params": {
-         "input": "最后一维需等于 inputSize 的张量，秩不限"
-        },
-        "returns": "形状与输入相同，仅最后一维替换为 outputSize",
-        "throws": {
-         "IllegalArgumentException": "输入的最后一维不等于 inputSize"
-        },
-        "notes": [
-         "秩大于 2 时前置维度被合并成行，输出仍保留这些维度。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "parameters()",
-       "signature": "List<Tensor> parameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回权重与可选的偏置",
-        "returns": "weight 在前；存在偏置时 bias 在后，否则长度为 1"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "namedParameters()",
-       "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回 weight 与 bias 命名状态",
-        "returns": "名称依次为 weight、bias；无偏置时只含 weight"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "weight()",
-       "signature": "Tensor weight()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回权重张量",
-        "returns": "[inputSize, outputSize] 的可训练张量"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "bias()",
-       "signature": "Tensor bias()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回偏置张量",
-        "returns": "[1, outputSize] 的可训练张量；构造时 useBias 为 false 则返回 null"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "全连接层 y = xW + b，只投影最后一维",
-      "body": [
-       "权重形状为 [inputSize, outputSize]，按 ±sqrt(6 / (inputSize + outputSize)) 的均匀分布初始化，实际种子为 seed + 17·inputSize + outputSize；偏置形状为 [1, outputSize]，初始化为 0。",
-       "forward 只要求输入的最后一维等于 inputSize：秩为 2 时直接做二维矩阵乘；秩大于 2 或秩为 1 时先把前置维度合并成行，乘完再恢复原形状，仅把最后一维替换为 outputSize。",
-       "因此 [batch, time, channels] 这类输入会被逐位置投影，前置维度保持不变，与 PyTorch 的 Linear 语义一致。"
-      ],
-      "notes": [
-       "构造器不校验 inputSize、outputSize 的取值，非正尺寸在张量分配阶段抛 IllegalArgumentException。",
-       "useBias 为 false 时 bias() 返回 null，parameters() 与 namedParameters() 只含 weight。",
-       "形状检查发生在前向，最后一维不匹配时异常信息包含期望值与实际值。"
-      ],
-      "see": [
-       "basalt.torch.LayerNorm",
-       "basalt.torch.Sequential",
-       "basalt.torch.Tensor#matMul"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.torch.Loss",
-     "simple_qualified": "Loss",
-     "kind": "interface",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/torch/Loss.java",
-     "line": 4,
-     "javadoc": "A differentiable scalar loss.",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "可微标量损失的统一接口",
-      "body": [
-       "实现类接收预测张量与目标张量，返回形状 [1] 的标量张量，可直接调用 backward()。接口本身不约束形状、归约方式与目标编码，这些由具体实现或底层 Tensor 算子决定。"
-      ],
-      "notes": [
-       "实现通常无状态、无可训练参数，可作为单例复用。",
-       "接口不声明异常，形状错误以 IllegalArgumentException 或 IllegalStateException 的形式在运行期暴露。"
-      ],
-      "see": [
-       "basalt.torch.MSELoss",
-       "basalt.torch.CrossEntropyLoss",
-       "basalt.torch.Tensor#backward()"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.torch.MSELoss",
-     "simple_qualified": "MSELoss",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "Loss"
-     ],
-     "file": "jsl/torch/MSELoss.java",
-     "line": 4,
-     "javadoc": "Mean squared error.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "loss(Tensor, Tensor)",
-       "signature": "Tensor loss(Tensor prediction, Tensor target)",
-       "params": [
-        {
-         "type": "Tensor",
-         "name": "prediction"
-        },
-        {
-         "type": "Tensor",
-         "name": "target"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "计算逐元素平方误差的均值",
-        "params": {
-         "prediction": "预测张量，任意秩",
-         "target": "目标张量，形状必须与 prediction 完全相同"
-        },
-        "returns": "形状 [1] 的标量损失张量",
-        "throws": {
-         "IllegalArgumentException": "两个张量形状不完全相同"
-        },
-        "notes": [
-         "不做广播：即使形状可广播也会被拒绝。"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "均方误差损失",
-      "body": [
-       "loss(prediction, target) 转调 Tensor.mse：要求两个张量形状完全相同，返回 [1] 标量。归约方式是全部元素的算术平均，除以元素总数而非 batch 大小。"
-      ],
-      "notes": [
-       "形状不一致抛 IllegalArgumentException，消息为 MSE expects equal shapes。",
-       "反向梯度为 2*(prediction-target)/n，对 prediction 与 target 两侧同时累积。"
-      ],
-      "see": [
-       "basalt.torch.Loss",
-       "basalt.torch.CrossEntropyLoss",
-       "basalt.torch.Tensor#mse(Tensor)"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.torch.MaxPool2d",
-     "simple_qualified": "MaxPool2d",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "Module<BCHW, BCHW>",
-     "implements": [],
-     "file": "jsl/torch/MaxPool2d.java",
-     "line": 7,
-     "javadoc": "Max pooling over NCHW tensors.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "constructor",
-       "key": "MaxPool2d(int)",
-       "signature": "MaxPool2d(int kernelSize)",
-       "params": [
-        {
-         "type": "int",
-         "name": "kernelSize"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "方形核且步长等于核尺寸",
-        "params": {
-         "kernelSize": "窗口边长，同时用作垂直与水平步长"
-        },
-        "notes": [
-         "等价于四参构造器传入四个相同的值。"
-        ]
-       }
-      },
-      {
-       "kind": "constructor",
-       "key": "MaxPool2d(int, int, int, int)",
-       "signature": "MaxPool2d(int kernelHeight, int kernelWidth, int strideHeight, int strideWidth)",
-       "params": [
-        {
-         "type": "int",
-         "name": "kernelHeight"
-        },
-        {
-         "type": "int",
-         "name": "kernelWidth"
-        },
-        {
-         "type": "int",
-         "name": "strideHeight"
-        },
-        {
-         "type": "int",
-         "name": "strideWidth"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "分别指定核尺寸与步长",
-        "params": {
-         "kernelHeight": "窗口高度，必须为正才会得到有效输出",
-         "kernelWidth": "窗口宽度，必须为正才会得到有效输出",
-         "strideHeight": "垂直步长，不校验取值",
-         "strideWidth": "水平步长，不校验取值"
-        },
-        "notes": [
-         "stride 小于 kernel 时窗口重叠，大于 kernel 时跳过部分位置。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "forward(Tensor)",
-       "signature": "Tensor forward(Tensor input)",
-       "params": [
-        {
-         "type": "Tensor",
-         "name": "input"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "对 NCHW 输入做最大池化",
-        "params": {
-         "input": "形状 [N, C, H, W] 的张量"
-        },
-        "returns": "[N, C, Hout, Wout] 的新张量",
-        "throws": {
-         "IllegalArgumentException": "输入非四维，或任一输出维非正"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "parameters()",
-       "signature": "List<Tensor> parameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回空参数列表",
-        "returns": "恒为空的不可变列表"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "kernelHeight()",
-       "signature": "int kernelHeight()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回窗口高度",
-        "returns": "构造时传入的 kernelHeight"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "kernelWidth()",
-       "signature": "int kernelWidth()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回窗口宽度",
-        "returns": "构造时传入的 kernelWidth"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "strideHeight()",
-       "signature": "int strideHeight()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回垂直步长",
-        "returns": "构造时传入的 strideHeight"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "strideWidth()",
-       "signature": "int strideWidth()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回水平步长",
-        "returns": "构造时传入的 strideWidth"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "NCHW 上的最大池化，不支持填充",
-      "body": [
-       "forward 调用 Tensor.maxPool2d，输出尺寸为 (H − kernelHeight) / strideHeight + 1，除法向下取整，宽度同理；窗口内取最大值，反向时梯度只回传到每个窗口最大值所在的位置。",
-       "模块没有 padding 参数，实现也不做隐式填充，边缘不足一个完整窗口的位置会被丢弃；单参构造器令 stride 等于 kernel，得到互不重叠的窗口。"
-      ],
-      "notes": [
-       "构造器不校验 kernel 与 stride 的取值；stride 传 0 会在原生内核中除零。",
-       "输入秩不为 4，或任一输出维非正时抛 IllegalArgumentException。",
-       "模块无参数，parameters() 恒为空列表。"
-      ],
-      "see": [
-       "basalt.torch.Conv2d",
-       "basalt.torch.Tensor#maxPool2d"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.torch.Module",
-     "simple_qualified": "Module",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "abstract"
-     ],
-     "generic": "<I extends Layout, O extends Layout>",
-     "extends": "",
-     "implements": [
-      "AutoCloseable"
-     ],
-     "file": "jsl/torch/Module.java",
-     "line": 19,
-     "javadoc": "Base class for a typed neural-network module.\n\n<p>The two type parameters are phantom layout tags. They make the <em>pipeline</em> checkable at\ncompile time: {@code Conv2d} is {@code Module<BCHW, BCHW>}, {@code Flatten} is\n{@code Module<BCHW, BC>}, and {@code Linear} is {@code Module<BC, BC>}. Chaining them through\n{@link Sequential#add} therefore rejects a {@code Conv2d -> Linear} connection at compile time,\nsomething a dynamically typed framework can only detect at runtime.</p>",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "forward(Tensor)",
-       "signature": "Tensor forward(Tensor input)",
-       "params": [
-        {
-         "type": "Tensor",
-         "name": "input"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "子类实现的前向计算",
-        "params": {
-         "input": "输入张量，形状约定由具体模块决定"
-        },
-        "returns": "输出张量，通常是新分配的张量并已登记计算图节点",
-        "notes": [
-         "抽象方法，不做空值检查；需要防御性检查时用 apply。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "parameters()",
-       "signature": "List<Tensor> parameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回模块持有的可训练参数",
-        "returns": "参数列表，顺序稳定，供 Optimizer 与 zeroGrad 使用",
-        "notes": [
-         "无参数模块返回空列表；返回的列表不应被调用方修改。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "namedParameters()",
-       "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回带名字的参数条目",
-        "returns": "名字到张量的条目列表，默认命名为 param0、param1…",
-        "notes": [
-         "默认实现只按位置命名；需要稳定语义名时子类应覆盖，如 Linear 使用 weight 与 bias。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "apply(Tensor)",
-       "signature": "Tensor apply(Tensor input)",
-       "params": [
-        {
-         "type": "Tensor",
-         "name": "input"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验输入非空后调用 forward",
-        "params": {
-         "input": "输入张量"
-        },
-        "returns": "forward 的返回值",
-        "throws": {
-         "BasaltRuntimeException": "input 为 null"
-        },
-        "notes": [
-         "模块组合时统一走 apply 可把空值错误定位在边界上。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "train()",
-       "signature": "void train()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把模块切到训练态",
-        "notes": [
-         "只设置基类标志，不递归；容器模块会覆盖此方法以传播到子模块。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "eval()",
-       "signature": "void eval()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把模块切到推理态",
-        "notes": [
-         "只设置基类标志，不递归；Dropout、BatchNorm2d 等模块在 forward 中读取该标志。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "isTraining()",
-       "signature": "boolean isTraining()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回当前是否为训练态",
-        "returns": "训练态为 true，推理态为 false；新模块默认为 true"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "zeroGrad()",
-       "signature": "void zeroGrad()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "清零全部参数的梯度",
-        "notes": [
-         "遍历 parameters() 逐个调用 Tensor.zeroGrad，不清计算图。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "stateDict()",
-       "signature": "Map<String, float[]> stateDict()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把参数导出为名字到数据的映射",
-        "returns": "保持插入顺序的映射，值是参数的完整数据副本",
-        "notes": [
-         "副本可安全序列化或修改；键来自 namedParameters。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "loadStateDict(Map<String, float[]>)",
-       "signature": "void loadStateDict(Map<String, float[]> state)",
-       "params": [
-        {
-         "type": "Map<String, float[]>",
-         "name": "state"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按名字把数据写回参数",
-        "params": {
-         "state": "名字到数据的映射，必须覆盖当前模块的全部参数名"
-        },
-        "throws": {
-         "IllegalArgumentException": "某个数组长度与对应参数元素数不一致"
-        },
-        "notes": [
-         "多余条目被静默忽略；写入是原地覆盖，不影响计算图结构。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "close()",
-       "signature": "void close()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "关闭模块持有的全部参数张量",
-        "notes": [
-         "逐个调用 Tensor.close；参数被当前计算图引用时会连带清空整张图。"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "带布局类型参数的模块基类，统一参数与训练态",
-      "body": [
-       "两个类型参数 I、O 是幽灵布局标记，只在编译期参与 Sequential 的连线检查，运行期不做形状校验；forward 内部仍需按实际形状处理输入，形状不符时由具体模块抛出异常。",
-       "子类实现 forward 与 parameters；namedParameters 默认给每个参数起 param0…paramN 的位置名，stateDict 以此为键。train()/eval() 只翻转基类中的布尔标志，是否据此切换行为由子类 forward 自行读取。"
-      ],
-      "notes": [
-       "构造后默认处于训练态，即 training=true。",
-       "apply 只做空值检查后转调 forward，本身不改变语义。",
-       "stateDict 返回的是数据副本，修改返回值不影响模块；loadStateDict 缺少条目抛 IllegalArgumentException，多余条目被忽略。",
-       "close() 关闭 parameters() 中的每个张量；容器模块应保证同一张量不被重复关闭，句柄关闭本身是幂等的。",
-       "基类不持有张量，也不做参数注册：参数必须由子类保存在字段中并通过 parameters() 暴露。"
-      ],
-      "see": [
-       "basalt.torch.Sequential",
-       "basalt.torch.Linear",
-       "basalt.torch.Optimizer"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.torch.MultiheadAttention",
-     "simple_qualified": "MultiheadAttention",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "Module<BSF, BSF>",
-     "implements": [],
-     "file": "jsl/torch/MultiheadAttention.java",
-     "line": 14,
-     "javadoc": "Multi-head self-attention over [batch, time, channels], composed from reshape, permute,\nbatched matmul and softmax. This is the transformer primitive modern PyTorch users expect,\nbuilt entirely on the same public tensor API.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "constructor",
-       "key": "MultiheadAttention(NativeContext, int, int, boolean, float, long)",
-       "signature": "MultiheadAttention(NativeContext context, int dimension, int heads, boolean causal, float dropoutProbability, long seed)",
-       "params": [
-        {
-         "type": "NativeContext",
-         "name": "context"
-        },
-        {
-         "type": "int",
-         "name": "dimension"
-        },
-        {
-         "type": "int",
-         "name": "heads"
-        },
-        {
-         "type": "boolean",
-         "name": "causal"
-        },
-        {
-         "type": "float",
-         "name": "dropoutProbability"
-        },
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "构造多头注意力与四个投影",
-        "params": {
-         "context": "持有原生上下文，四个投影、缩放张量与 dropout 都在其中",
-         "dimension": "模型维度，同时是输入最后一维与各投影的输入输出尺寸",
-         "heads": "注意力头数，dimension 必须能被其整除",
-         "causal": "是否加因果掩码，为 true 时位置 t 只能看到不晚于 t 的位置",
-         "dropoutProbability": "注意力权重上的置零概率，取值 [0, 1)",
-         "seed": "种子基数，四个投影分别偏移 101、211、307、401，dropout 偏移 503"
-        },
-        "throws": {
-         "IllegalArgumentException": "dimension 不能被 heads 整除"
-        },
-        "notes": [
-         "每个投影都是带偏置的方阵 Linear，因此参数总量为 4·(dimension² + dimension)。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "forward(Tensor)",
-       "signature": "Tensor forward(Tensor input)",
-       "params": [
-        {
-         "type": "Tensor",
-         "name": "input"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "计算多头自注意力输出",
-        "params": {
-         "input": "形状 [batch, time, channels]，channels 需能被 heads 整除"
-        },
-        "returns": "[batch, time, channels]，最后一维与输入相同",
-        "throws": {
-         "IllegalArgumentException": "输入不是三维，或通道数不能被 heads 整除"
-        },
-        "notes": [
-         "Q、K、V 都来自同一输入，属于自注意力，不提供分离的 key/value 输入。",
-         "注意力权重在 softmax 之后、与 V 相乘之前经过 dropout。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "parameters()",
-       "signature": "List<Tensor> parameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回四个投影的参数",
-        "returns": "query、key、value、output 的权重与偏置依次拼接"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "namedParameters()",
-       "signature": "List<Map.Entry<String, Tensor>> namedParameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回带模块前缀的命名参数",
-        "returns": "名称形如 query.weight、query.bias、key.weight 等"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "train()",
-       "signature": "void train()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "切换到训练模式并同步 dropout",
-        "notes": [
-         "置位自身标志后调用内部 dropout 的 train()，其余投影没有模式相关行为。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "eval()",
-       "signature": "void eval()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "切换到推理模式并同步 dropout",
-        "notes": [
-         "推理时 dropout 为恒等映射，注意力权重不再被置零。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "close()",
-       "signature": "void close()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "释放子模块与缩放张量",
-        "notes": [
-         "四个投影、dropout 与缩放张量都由本模块持有并一并释放。"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "多头自注意力，输入 [batch, time, channels]",
-      "body": [
-       "构造时创建 query、key、value、output 四个 dimension 到 dimension 的 Linear，均带偏置，并创建作用于注意力权重的 Dropout；缩放系数是值为 1/sqrt(dimension / heads) 的标量张量。",
-       "forward 先把每个投影结果 reshape 成 [B, T, H, dh]：Q 与 V 经 permute(0, 2, 1, 3) 变为 [B·H, T, dh]，K 经 permute(0, 2, 3, 1) 变为 [B·H, dh, T]，再做批量矩阵乘得到 [B·H, T, T] 的分数。",
-       "分数乘缩放系数，causal 为真时把 column > row 的位置加上 -1e9，随后沿最后一维 softmax、过 dropout，再与 V 相乘得 [B·H, T, dh]，reshape 成 [B, H, T, dh] 并 permute(0, 2, 1, 3) 还原为 [B, T, C]，最后经输出投影。"
-      ],
-      "notes": [
-       "dimension 必须能被 heads 整除，否则构造与前向都抛 IllegalArgumentException；heads 本身不做正值校验。",
-       "因果掩码只屏蔽未来位置（严格上三角），每次前向都按 time×time 新建一个掩码张量。",
-       "train()/eval() 会同步切换内部 dropout；parameters() 只含四个投影的权重与偏置，不含缩放常量。",
-       "namedParameters 的名称前缀为 query.、key.、value.、output.。"
-      ],
-      "example": "try (Basalt jsl = Basalt.create()) {\n    MultiheadAttention attention =\n            new MultiheadAttention(basalt.context(), 64, 8, true, 0.1f, 7L);\n    Tensor input = basalt.randn(2, 16, 64);\n    attention.train();\n    Tensor output = attention.forward(input);\n    // output 形状为 [2, 16, 64]\n    attention.eval();\n    attention.close();\n}",
-      "see": [
-       "basalt.torch.SelfAttention",
-       "basalt.torch.TransformerBlock",
-       "basalt.torch.Linear"
-      ]
-     }
     }
-   ]
-  }
- ]
+  ]
 }

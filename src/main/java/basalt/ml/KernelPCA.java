@@ -10,7 +10,7 @@ import java.util.Objects;
 
 /**
  * Non-linear dimensionality reduction through centered Kernel Principal Component Analysis
- * (Kernel PCA), matching {@code sklearn.decomposition.KernelPCA}.
+ * (Kernel PCA).
  */
 public final class KernelPCA implements Estimator, Transformer, Persistable {
     private final int componentCount;

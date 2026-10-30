@@ -238,7 +238,7 @@ h = max(ε, p(1-p))
 
 ### 4.4 工业特性
 
-- `featureFraction`：每棵树随机选一部分特征参与分裂搜索（LightGBM 风格）。
+- `featureFraction`：每棵树随机选一部分特征参与分裂搜索。
 - `validationFraction` + `earlyStoppingRounds`：按行洗牌切分验证集，逐轮累计验证预测，
   连续若干轮无改善则截断集成。
 - `minSamplesLeaf`、`minChildWeight`、`lambda`、`gamma`：完整正则化路径。

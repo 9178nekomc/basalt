@@ -1,1186 +1,1186 @@
 {
- "group": "g17",
- "title": "神经网络层与序列（3/3）",
- "modules": [
-  {
-   "name": "basalt.nn",
-   "types": [
+  "group": "g17",
+  "title": "神经网络层与序列（3/3）",
+  "modules": [
     {
-     "qualified": "basalt.nn.Dense.Builder",
-     "simple_qualified": "Dense.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/Dense.java",
-     "line": 229,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "units(int)",
-       "signature": "Builder units(int units)",
-       "params": [
+      "name": "basalt.nn",
+      "types": [
         {
-         "type": "int",
-         "name": "units"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置输出单元数。",
-        "params": {
-         "units": "输出维度，须为正"
+          "qualified": "basalt.nn.Dense.Builder",
+          "simple_qualified": "Dense.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/Dense.java",
+          "line": 229,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "units(int)",
+              "signature": "Builder units(int units)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "units"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置输出单元数。",
+                "params": {
+                  "units": "输出维度，须为正"
+                },
+                "returns": "当前构建器，便于链式调用",
+                "notes": [
+                  "默认 1；同时决定偏置长度与 Glorot 初始化的 fanOut",
+                  "取值在 build 时校验，setter 本身不做检查"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "activation(Activation)",
+              "signature": "Builder activation(Activation activation)",
+              "params": [
+                {
+                  "type": "Activation",
+                  "name": "activation"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置该层的激活函数。",
+                "params": {
+                  "activation": "任意 Activation 常量"
+                },
+                "returns": "当前构建器，便于链式调用",
+                "throws": {
+                  "NullPointerException": "activation 为 null，立即抛出"
+                },
+                "notes": [
+                  "默认 NONE；RELU 会改用 √(6/features) 的初始化幅度"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "seed(long)",
+              "signature": "Builder seed(long seed)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置权重初始化的随机种子。",
+                "params": {
+                  "seed": "传给 java.util.Random 的种子"
+                },
+                "returns": "当前构建器，便于链式调用",
+                "notes": [
+                  "默认 42；相同种子与相同形状会得到相同初值"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "Dense build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验配置并创建 Dense。",
+                "returns": "新的 Dense 实例，参数尚未分配",
+                "throws": {
+                  "IllegalArgumentException": "units 非正"
+                },
+                "notes": [
+                  "特征数由首次 forward 决定，构建期无法校验"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "Dense 的构建器，默认 1 个单元且无激活。",
+            "body": [
+              "字段默认值为 units = 1、activation = NONE、seed = 42。输入特征数不在构建期指定，由首次 forward 从输入第 1 维推断并锁定。",
+              "build 只校验 units 为正，特征数一致性留到前向阶段检查；构建期不分配任何数组，因此先建层、后决定输入宽度的写法是安全的。"
+            ],
+            "notes": [
+              "默认 NONE 激活意味着构建后即为纯线性层，需要非线性时显式指定",
+              "每次 build 生成独立实例，参数在首次前向时才分配"
+            ],
+            "example": "Dense dense = Dense.builder() .units(64) .activation(Activation.TANH) .seed(11L) .build(); Dense head = Dense.builder() .units(3) .activation(Activation.SOFTMAX) .build();",
+            "see": [
+              "basalt.nn.Dense",
+              "basalt.nn.Activation"
+            ]
+          }
         },
-        "returns": "当前构建器，便于链式调用",
-        "notes": [
-         "默认 1；同时决定偏置长度与 Glorot 初始化的 fanOut",
-         "取值在 build 时校验，setter 本身不做检查"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "activation(Activation)",
-       "signature": "Builder activation(Activation activation)",
-       "params": [
         {
-         "type": "Activation",
-         "name": "activation"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置该层的激活函数。",
-        "params": {
-         "activation": "任意 Activation 常量"
+          "qualified": "basalt.nn.Flatten.Builder",
+          "simple_qualified": "Flatten.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/Flatten.java",
+          "line": 41,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "Flatten build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建 Flatten 实例。",
+                "returns": "新的 Flatten，无状态且可重复使用",
+                "notes": [
+                  "形状缓存由 forward 填充，与构建过程无关"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "Flatten 的构建器，无任何可配置项。",
+            "body": [
+              "Flatten 没有参数与超参数，Builder 只为与其它层保持一致的构造入口而存在，build 不接受任何前置调用。"
+            ],
+            "notes": [
+              "每次 build 返回新的无状态 Flatten 实例，形状在首次 forward 时记录"
+            ],
+            "example": "Flatten flatten = Flatten.builder().build();",
+            "see": [
+              "basalt.nn.Flatten"
+            ]
+          }
         },
-        "returns": "当前构建器，便于链式调用",
-        "throws": {
-         "NullPointerException": "activation 为 null，立即抛出"
-        },
-        "notes": [
-         "默认 NONE；RELU 会改用 √(6/features) 的初始化幅度"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [
         {
-         "type": "long",
-         "name": "seed"
+          "qualified": "basalt.nn.GRU.Builder",
+          "simple_qualified": "GRU.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/GRU.java",
+          "line": 342,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "hiddenSize(int)",
+              "signature": "Builder hiddenSize(int hiddenSize)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "hiddenSize"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置隐藏单元数，默认 16。",
+                "params": {
+                  "hiddenSize": "隐藏状态维度；必须为正，在 build 时校验"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "seed(long)",
+              "signature": "Builder seed(long seed)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置权重初始化随机种子，默认 42。",
+                "params": {
+                  "seed": "传给 java.util.Random 的种子；相同种子与相同特征数可复现初始权重"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "GRU build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验配置并构造 GRU。",
+                "returns": "新的 GRU 实例，参数尚未分配",
+                "throws": {
+                  "IllegalArgumentException": "hiddenSize 小于等于 0"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "GRU 构建器，隐藏单元数默认 16，随机种子默认 42。",
+            "body": [
+              "仅暴露隐藏单元数与随机种子两项配置，其余结构由层自身固定。构建出的 GRU 在首次 forward 前不持有参数，因此构建器不校验输入特征数。"
+            ],
+            "notes": [
+              "校验发生在 build：hiddenSize 非正时抛出 IllegalArgumentException，而非在 setter 中。"
+            ],
+            "see": [
+              "basalt.nn.GRU"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.GradientCheck.Report",
+          "simple_qualified": "GradientCheck.Report",
+          "kind": "record",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/GradientCheck.java",
+          "line": 21,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "passed(double)",
+              "signature": "boolean passed(double tolerance)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "tolerance"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "判断两个最大相对误差是否都不超过容差。",
+                "params": {
+                  "tolerance": "相对误差上界，按 max(1, |analytic| + |numeric|) 归一化后的量"
+                },
+                "returns": "maxInputError 与 maxParameterError 均不大于 tolerance 时为 true",
+                "notes": [
+                  "容差取 0 时只有误差恰为 0 才通过",
+                  "容差由调用方决定，类内没有推荐值"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "toString()",
+              "signature": "String toString()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回检查次数与最大误差的单行摘要。",
+                "returns": "形如 inputs=12 maxErr=1.234e-08, parameters=16 maxErr=5.678e-09 的字符串",
+                "notes": [
+                  "使用 Locale.ROOT 格式化，避免区域设置影响小数点"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "梯度检验的最大相对误差与检查次数。",
+            "body": [
+              "记录组件为 maxInputError、maxParameterError、inputChecks 与 parameterChecks，分别是输入维度、参数维度的最大相对误差，以及两个维度的实际检查次数。"
+            ],
+            "notes": [
+              "只做数据承载，不校验容差；判定交给 passed",
+              "checkNetwork 产生的报告 inputChecks 恒为 0、maxInputError 恒为 0.0"
+            ],
+            "see": [
+              "basalt.nn.GradientCheck"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.LSTM.Builder",
+          "simple_qualified": "LSTM.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/LSTM.java",
+          "line": 300,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "hiddenSize(int)",
+              "signature": "Builder hiddenSize(int hiddenSize)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "hiddenSize"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置隐藏单元数，默认 16。",
+                "params": {
+                  "hiddenSize": "隐藏状态与单元状态的维度；必须为正，在 build 时校验"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "seed(long)",
+              "signature": "Builder seed(long seed)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置权重初始化随机种子，默认 42。",
+                "params": {
+                  "seed": "传给 java.util.Random 的种子；相同种子与相同特征数可复现初始权重"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "LSTM build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验配置并构造 LSTM。",
+                "returns": "新的 LSTM 实例，参数尚未分配",
+                "throws": {
+                  "IllegalArgumentException": "hiddenSize 小于等于 0"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "LSTM 构建器，隐藏单元数默认 16，随机种子默认 42。",
+            "body": [
+              "仅暴露隐藏单元数与随机种子两项配置。构建出的 LSTM 在首次 forward 前不持有参数，输入特征数与三组权重的形状都推迟到首次前向时确定。"
+            ],
+            "notes": [
+              "校验发生在 build：hiddenSize 非正时抛出 IllegalArgumentException，而非在 setter 中。"
+            ],
+            "see": [
+              "basalt.nn.LSTM"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.MaxPooling2D.Builder",
+          "simple_qualified": "MaxPooling2D.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/MaxPooling2D.java",
+          "line": 120,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "poolSize(int, int)",
+              "signature": "Builder poolSize(int height, int width)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "height"
+                },
+                {
+                  "type": "int",
+                  "name": "width"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置池化窗口尺寸。",
+                "params": {
+                  "height": "窗口高度，须为正",
+                  "width": "窗口宽度，须为正"
+                },
+                "returns": "当前构建器，便于链式调用",
+                "notes": [
+                  "默认 (2, 2)；未指定步长时步长取该尺寸",
+                  "取值在 build 时校验，setter 本身不做检查"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "strides(int, int)",
+              "signature": "Builder strides(int height, int width)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "height"
+                },
+                {
+                  "type": "int",
+                  "name": "width"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置两个方向的池化步长。",
+                "params": {
+                  "height": "垂直步长；0 表示取 poolHeight",
+                  "width": "水平步长；0 表示取 poolWidth"
+                },
+                "returns": "当前构建器，便于链式调用",
+                "notes": [
+                  "默认两个方向都为 0，即不重叠池化",
+                  "取值在 build 时校验，setter 本身不做检查"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "MaxPooling2D build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验配置并创建 MaxPooling2D。",
+                "returns": "新的 MaxPooling2D 实例，步长已按窗口尺寸补齐",
+                "throws": {
+                  "IllegalArgumentException": "窗口非正、步长为负，或两个步长只指定了一个"
+                },
+                "notes": [
+                  "构建期不校验输入尺寸，窗口是否放得下在 forward 时检查"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "MaxPooling2D 的构建器，默认 2×2 且不重叠。",
+            "body": [
+              "字段默认值为 poolSize = (2, 2)，strideHeight 与 strideWidth 为 0，表示“未指定”。构造层时若步长为 0，则替换为对应的窗口尺寸，从而得到不重叠池化。",
+              "build 校验窗口尺寸为正、步长非负，且两个步长必须同时缺省或同时为正；只给一个方向指定步长会被拒绝，负步长同样拒绝。"
+            ],
+            "notes": [
+              "步长小于窗口尺寸即得到重叠池化，反向时同一输入位置会累加多个窗口的梯度"
+            ],
+            "example": "MaxPooling2D pool = MaxPooling2D.builder() .poolSize(3, 3) .strides(1, 1) .build();",
+            "see": [
+              "basalt.nn.MaxPooling2D"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.NeuralNetwork.ImageBuilder",
+          "simple_qualified": "NeuralNetwork.ImageBuilder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/NeuralNetwork.java",
+          "line": 19,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "add(Conv2D)",
+              "signature": "ImageBuilder add(Conv2D layer)",
+              "params": [
+                {
+                  "type": "Conv2D",
+                  "name": "layer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加一个卷积层。",
+                "params": {
+                  "layer": "卷积层，不可为 null"
+                },
+                "returns": "this，便于继续链式调用",
+                "throws": {
+                  "NullPointerException": "layer 为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "add(MaxPooling2D)",
+              "signature": "ImageBuilder add(MaxPooling2D layer)",
+              "params": [
+                {
+                  "type": "MaxPooling2D",
+                  "name": "layer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加一个最大池化层。",
+                "params": {
+                  "layer": "池化层，不可为 null"
+                },
+                "returns": "this，便于继续链式调用",
+                "throws": {
+                  "NullPointerException": "layer 为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "add(Flatten)",
+              "signature": "VectorBuilder add(Flatten layer)",
+              "params": [
+                {
+                  "type": "Flatten",
+                  "name": "layer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加 Flatten 并切换到向量阶段。",
+                "params": {
+                  "layer": "展平层，不可为 null"
+                },
+                "returns": "持有已累积层列表副本的 VectorBuilder",
+                "throws": {
+                  "NullPointerException": "layer 为 null"
+                },
+                "notes": [
+                  "这是图像阶段唯一的出口，之后的构建器不再接受卷积或池化层"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "图像阶段构建器，累积 Conv2D 与 MaxPooling2D。",
+            "body": [
+              "内部维护一个层列表。两个 add 重载追加层后返回自身以支持链式调用；add(Flatten) 追加后把列表复制给新的 VectorBuilder。该阶段不提供 build，因此缺少 Flatten 的模型无法产出。"
+            ],
+            "notes": [
+              "没有接受 Dense 的重载，全连接层在类型上无法出现在 Flatten 之前",
+              "进入 VectorBuilder 时复制列表，两个构建器不再共享可变状态"
+            ],
+            "see": [
+              "basalt.nn.NeuralNetwork.VectorBuilder",
+              "basalt.nn.Conv2D",
+              "basalt.nn.MaxPooling2D"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.NeuralNetwork.VectorBuilder",
+          "simple_qualified": "NeuralNetwork.VectorBuilder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/NeuralNetwork.java",
+          "line": 41,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "add(Dense)",
+              "signature": "VectorBuilder add(Dense layer)",
+              "params": [
+                {
+                  "type": "Dense",
+                  "name": "layer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "追加一个全连接层。",
+                "params": {
+                  "layer": "全连接层，不可为 null；单位数在构建该层时已校验"
+                },
+                "returns": "this，便于继续链式调用",
+                "throws": {
+                  "NullPointerException": "layer 为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "loss(Loss)",
+              "signature": "VectorBuilder loss(Loss loss)",
+              "params": [
+                {
+                  "type": "Loss",
+                  "name": "loss"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置训练损失，默认 CATEGORICAL_CROSSENTROPY。",
+                "params": {
+                  "loss": "损失函数，不可为 null"
+                },
+                "returns": "this",
+                "throws": {
+                  "NullPointerException": "loss 为 null"
+                },
+                "notes": [
+                  "与末端激活的匹配关系不在构建期检查"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "optimizer(OptimizerConfig)",
+              "signature": "VectorBuilder optimizer(OptimizerConfig optimizer)",
+              "params": [
+                {
+                  "type": "OptimizerConfig",
+                  "name": "optimizer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置优化器超参，默认 ADAM 学习率 0.001。",
+                "params": {
+                  "optimizer": "超参配置，不可为 null；其字段在构造时已校验"
+                },
+                "returns": "this",
+                "throws": {
+                  "NullPointerException": "optimizer 为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "CNN build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "用当前层列表、损失与优化器创建 CNN。",
+                "returns": "层列表已复制为不可变列表的 CNN 实例",
+                "notes": [
+                  "不做损失与激活的匹配校验，也不校验 Flatten 之后是否至少有一个 Dense"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "向量阶段构建器，累积 Dense 并配置损失与优化器。",
+            "body": [
+              "构造时复制图像阶段累积的层列表，之后只接受 Dense。loss 与 optimizer 各自持有默认值，build 时原样传给 CNN 构造器，因此模型创建后这两项不可再改。"
+            ],
+            "notes": [
+              "默认损失 CATEGORICAL_CROSSENTROPY，默认优化器 Optimizer.ADAM.withLearningRate(0.001)",
+              "build 不校验损失与末端激活是否匹配，也不检查层数是否为空"
+            ],
+            "see": [
+              "basalt.nn.NeuralNetwork.ImageBuilder",
+              "basalt.nn.CNN"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.SelfAttention.Builder",
+          "simple_qualified": "SelfAttention.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/SelfAttention.java",
+          "line": 316,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "dimension(int)",
+              "signature": "Builder dimension(int dimension)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "dimension"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置投影维度，默认 16。",
+                "params": {
+                  "dimension": "每个位置的 Q/K/V 维度，也是输入输出特征数；必须为正，在 build 时校验"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "seed(long)",
+              "signature": "Builder seed(long seed)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置权重初始化随机种子，默认 42。",
+                "params": {
+                  "seed": "传给 java.util.Random 的种子；Q、K、V 三组权重依次从同一随机源采样"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "causal(boolean)",
+              "signature": "Builder causal(boolean causal)",
+              "params": [
+                {
+                  "type": "boolean",
+                  "name": "causal"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置是否启用因果掩码，默认关闭。",
+                "params": {
+                  "causal": "true 时位置 t 只对键 0..t 归一化，屏蔽未来时间步；false 时对全部键归一化"
+                },
+                "returns": "this，便于链式调用",
+                "notes": [
+                  "掩码方向为“看过去”：行索引小于列索引的位置被置零。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "SelfAttention build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验配置并构造自注意力层。",
+                "returns": "新的 SelfAttention 实例，权重在首次 forward 时分配",
+                "throws": {
+                  "IllegalArgumentException": "dimension 小于等于 0"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "自注意力构建器，dimension 默认 16、seed 默认 42、非因果。",
+            "body": [
+              "投影维度同时决定输入特征数、输出特征数与权重矩阵尺寸，三者被强制一致，因此该层不改变特征轴长度。因果标志只影响注意力掩码，不改变参数量。"
+            ],
+            "notes": [
+              "缩放因子 1 / sqrt(dimension) 在构造时计算，之后不可更改。"
+            ],
+            "see": [
+              "basalt.nn.SelfAttention"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.SequenceNetwork.Builder",
+          "simple_qualified": "SequenceNetwork.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/SequenceNetwork.java",
+          "line": 244,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "add(L)",
+              "signature": "<L extends Layer<BSF, BSF>> Builder add(L layer)",
+              "params": [
+                {
+                  "type": "L",
+                  "name": "layer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "向主体追加一个序列层，按调用顺序串联。",
+                "params": {
+                  "layer": "类型为 Layer<BSF, BSF> 的层，如 LSTM、GRU、VanillaRNN、SelfAttention；不能为 null"
+                },
+                "returns": "this，便于链式调用",
+                "notes": [
+                  "泛型约束使 Dense 等 BC 布局的层无法加入主体，编译期即被拒绝。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "pooling(SequencePool.Pooling)",
+              "signature": "Builder pooling(SequencePool.Pooling pooling)",
+              "params": [
+                {
+                  "type": "SequencePool.Pooling",
+                  "name": "pooling"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置时间轴池化策略，默认 LAST。",
+                "params": {
+                  "pooling": "LAST 取末步，MEAN 取时间均值；不能为 null"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "head(Dense)",
+              "signature": "Builder head(Dense head)",
+              "params": [
+                {
+                  "type": "Dense",
+                  "name": "head"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置输出头，必填项。",
+                "params": {
+                  "head": "Dense 层；其输入维度须等于池化后的特征数，不能为 null"
+                },
+                "returns": "this，便于链式调用",
+                "notes": [
+                  "头部的 units 决定输出类别数，激活函数需与损失匹配。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "loss(Loss)",
+              "signature": "Builder loss(Loss loss)",
+              "params": [
+                {
+                  "type": "Loss",
+                  "name": "loss"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置损失函数，默认分类交叉熵。",
+                "params": {
+                  "loss": "Loss 枚举值，不能为 null"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "optimizer(OptimizerConfig)",
+              "signature": "Builder optimizer(OptimizerConfig optimizer)",
+              "params": [
+                {
+                  "type": "OptimizerConfig",
+                  "name": "optimizer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置优化器超参数，默认 Adam、学习率 0.001。",
+                "params": {
+                  "optimizer": "优化器配置；可用 Optimizer.ADAM.withLearningRate(...) 等工厂方法构造，不能为 null"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "gradientClip(double)",
+              "signature": "Builder gradientClip(double gradientClip)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "gradientClip"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置全局梯度范数裁剪阈值，默认 5.0。",
+                "params": {
+                  "gradientClip": "范数上限；须为有限正数，在 build 时校验"
+                },
+                "returns": "this，便于链式调用",
+                "notes": [
+                  "裁剪作用于整网所有参数的拼接梯度范数，而不是逐参数单独裁剪。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "SequenceNetwork build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验配置并构造整网。",
+                "returns": "新的 SequenceNetwork 实例；主体层列表被复制，后续修改构建器不影响已建网络",
+                "throws": {
+                  "IllegalStateException": "未设置 head",
+                  "IllegalArgumentException": "gradientClip 非正、损失与头部激活不匹配，或分类头 units 小于 2"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "整网构建器；LAST 池化、分类交叉熵、Adam 0.001、裁剪 5.0。",
+            "body": [
+              "主体层按 add 调用顺序串联，池化与头部各自只有一个实例。所有 setter 以 requireNonNull 拒绝 null 引用，校验集中在 build，因此配置错误在构建阶段一次性暴露。"
+            ],
+            "notes": [
+              "build 会交叉校验损失与头部激活：分类交叉熵配 SOFTMAX，二元交叉熵配 SIGMOID。",
+              "默认池化 LAST 适合分类；需要利用全部时间步时可改为 MEAN。"
+            ],
+            "see": [
+              "basalt.nn.SequenceNetwork",
+              "basalt.nn.SequencePool",
+              "basalt.nn.Dense"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.SequencePool.Pooling",
+          "simple_qualified": "SequencePool.Pooling",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/SequencePool.java",
+          "line": 110,
+          "javadoc": "Reduction applied along the time axis.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "enum_constant",
+              "key": "LAST",
+              "signature": "LAST",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "取时间步序列的最后一步"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "MEAN",
+              "signature": "MEAN",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "对时间步维取平均"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "时间轴归约策略。",
+            "body": [
+              "LAST 取最后一个时间步的向量，是分类任务默认的 many-to-one 头；MEAN 对全部时间步求平均，每个时间步都影响结果。两者都保持特征轴不变。",
+              "枚举声明顺序为 LAST、MEAN，持久化时按序号写入，序号 0 对应 LAST、1 对应 MEAN。反向传播只使用策略本身，不需要额外状态。"
+            ],
+            "notes": [
+              "调整枚举常量顺序会改变序列化序号，导致旧模型文件被解析为另一种策略。",
+              "没有 MAX 归约；需要最大值池化时应在层外自行实现。"
+            ],
+            "see": [
+              "basalt.nn.SequencePool",
+              "basalt.nn.SequenceNetwork"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.VanillaRNN.Builder",
+          "simple_qualified": "VanillaRNN.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/VanillaRNN.java",
+          "line": 234,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "hiddenSize(int)",
+              "signature": "Builder hiddenSize(int hiddenSize)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "hiddenSize"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置隐藏单元数，默认 16。",
+                "params": {
+                  "hiddenSize": "隐藏状态维度；必须为正，在 build 时校验"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "seed(long)",
+              "signature": "Builder seed(long seed)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置权重初始化随机种子，默认 42。",
+                "params": {
+                  "seed": "传给 java.util.Random 的种子；相同种子与相同特征数可复现初始权重"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "VanillaRNN build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验配置并构造 VanillaRNN。",
+                "returns": "新的 VanillaRNN 实例，参数尚未分配",
+                "throws": {
+                  "IllegalArgumentException": "hiddenSize 小于等于 0"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "VanillaRNN 构建器，隐藏单元数默认 16，随机种子默认 42。",
+            "body": [
+              "仅暴露隐藏单元数与随机种子。参数在首次 forward 时按输入特征数分配，构建阶段不校验特征数，因此同一构建器产出的层可以适配不同输入宽度。"
+            ],
+            "notes": [
+              "校验发生在 build：hiddenSize 非正时抛出 IllegalArgumentException。"
+            ],
+            "see": [
+              "basalt.nn.VanillaRNN"
+            ]
+          }
         }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置权重初始化的随机种子。",
-        "params": {
-         "seed": "传给 java.util.Random 的种子"
-        },
-        "returns": "当前构建器，便于链式调用",
-        "notes": [
-         "默认 42；相同种子与相同形状会得到相同初值"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "Dense build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验配置并创建 Dense。",
-        "returns": "新的 Dense 实例，参数尚未分配",
-        "throws": {
-         "IllegalArgumentException": "units 非正"
-        },
-        "notes": [
-         "特征数由首次 forward 决定，构建期无法校验"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "Dense 的构建器，默认 1 个单元且无激活。",
-      "body": [
-       "字段默认值为 units = 1、activation = NONE、seed = 42。输入特征数不在构建期指定，由首次 forward 从输入第 1 维推断并锁定。",
-       "build 只校验 units 为正，特征数一致性留到前向阶段检查；构建期不分配任何数组，因此先建层、后决定输入宽度的写法是安全的。"
-      ],
-      "notes": [
-       "默认 NONE 激活意味着构建后即为纯线性层，需要非线性时显式指定",
-       "每次 build 生成独立实例，参数在首次前向时才分配"
-      ],
-      "example": "Dense dense = Dense.builder()\n        .units(64)\n        .activation(Activation.TANH)\n        .seed(11L)\n        .build();\n\nDense head = Dense.builder()\n        .units(3)\n        .activation(Activation.SOFTMAX)\n        .build();",
-      "see": [
-       "basalt.nn.Dense",
-       "basalt.nn.Activation"
       ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.Flatten.Builder",
-     "simple_qualified": "Flatten.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/Flatten.java",
-     "line": 41,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "Flatten build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建 Flatten 实例。",
-        "returns": "新的 Flatten，无状态且可重复使用",
-        "notes": [
-         "形状缓存由 forward 填充，与构建过程无关"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "Flatten 的构建器，无任何可配置项。",
-      "body": [
-       "Flatten 没有参数与超参数，Builder 只为与其它层保持一致的构造入口而存在，build 不接受任何前置调用。"
-      ],
-      "notes": [
-       "每次 build 返回新的无状态 Flatten 实例，形状在首次 forward 时记录"
-      ],
-      "example": "Flatten flatten = Flatten.builder().build();",
-      "see": [
-       "basalt.nn.Flatten"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.GRU.Builder",
-     "simple_qualified": "GRU.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/GRU.java",
-     "line": 342,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "hiddenSize(int)",
-       "signature": "Builder hiddenSize(int hiddenSize)",
-       "params": [
-        {
-         "type": "int",
-         "name": "hiddenSize"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置隐藏单元数，默认 16。",
-        "params": {
-         "hiddenSize": "隐藏状态维度；必须为正，在 build 时校验"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置权重初始化随机种子，默认 42。",
-        "params": {
-         "seed": "传给 java.util.Random 的种子；相同种子与相同特征数可复现初始权重"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "GRU build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验配置并构造 GRU。",
-        "returns": "新的 GRU 实例，参数尚未分配",
-        "throws": {
-         "IllegalArgumentException": "hiddenSize 小于等于 0"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "GRU 构建器，隐藏单元数默认 16，随机种子默认 42。",
-      "body": [
-       "仅暴露隐藏单元数与随机种子两项配置，其余结构由层自身固定。构建出的 GRU 在首次 forward 前不持有参数，因此构建器不校验输入特征数。"
-      ],
-      "notes": [
-       "校验发生在 build：hiddenSize 非正时抛出 IllegalArgumentException，而非在 setter 中。"
-      ],
-      "see": [
-       "basalt.nn.GRU"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.GradientCheck.Report",
-     "simple_qualified": "GradientCheck.Report",
-     "kind": "record",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/GradientCheck.java",
-     "line": 21,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "passed(double)",
-       "signature": "boolean passed(double tolerance)",
-       "params": [
-        {
-         "type": "double",
-         "name": "tolerance"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "判断两个最大相对误差是否都不超过容差。",
-        "params": {
-         "tolerance": "相对误差上界，按 max(1, |analytic| + |numeric|) 归一化后的量"
-        },
-        "returns": "maxInputError 与 maxParameterError 均不大于 tolerance 时为 true",
-        "notes": [
-         "容差取 0 时只有误差恰为 0 才通过",
-         "容差由调用方决定，类内没有推荐值"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "toString()",
-       "signature": "String toString()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回检查次数与最大误差的单行摘要。",
-        "returns": "形如 inputs=12 maxErr=1.234e-08, parameters=16 maxErr=5.678e-09 的字符串",
-        "notes": [
-         "使用 Locale.ROOT 格式化，避免区域设置影响小数点"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "梯度检验的最大相对误差与检查次数。",
-      "body": [
-       "记录组件为 maxInputError、maxParameterError、inputChecks 与 parameterChecks，分别是输入维度、参数维度的最大相对误差，以及两个维度的实际检查次数。"
-      ],
-      "notes": [
-       "只做数据承载，不校验容差；判定交给 passed",
-       "checkNetwork 产生的报告 inputChecks 恒为 0、maxInputError 恒为 0.0"
-      ],
-      "see": [
-       "basalt.nn.GradientCheck"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.LSTM.Builder",
-     "simple_qualified": "LSTM.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/LSTM.java",
-     "line": 300,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "hiddenSize(int)",
-       "signature": "Builder hiddenSize(int hiddenSize)",
-       "params": [
-        {
-         "type": "int",
-         "name": "hiddenSize"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置隐藏单元数，默认 16。",
-        "params": {
-         "hiddenSize": "隐藏状态与单元状态的维度；必须为正，在 build 时校验"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置权重初始化随机种子，默认 42。",
-        "params": {
-         "seed": "传给 java.util.Random 的种子；相同种子与相同特征数可复现初始权重"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "LSTM build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验配置并构造 LSTM。",
-        "returns": "新的 LSTM 实例，参数尚未分配",
-        "throws": {
-         "IllegalArgumentException": "hiddenSize 小于等于 0"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "LSTM 构建器，隐藏单元数默认 16，随机种子默认 42。",
-      "body": [
-       "仅暴露隐藏单元数与随机种子两项配置。构建出的 LSTM 在首次 forward 前不持有参数，输入特征数与三组权重的形状都推迟到首次前向时确定。"
-      ],
-      "notes": [
-       "校验发生在 build：hiddenSize 非正时抛出 IllegalArgumentException，而非在 setter 中。"
-      ],
-      "see": [
-       "basalt.nn.LSTM"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.MaxPooling2D.Builder",
-     "simple_qualified": "MaxPooling2D.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/MaxPooling2D.java",
-     "line": 120,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "poolSize(int, int)",
-       "signature": "Builder poolSize(int height, int width)",
-       "params": [
-        {
-         "type": "int",
-         "name": "height"
-        },
-        {
-         "type": "int",
-         "name": "width"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置池化窗口尺寸。",
-        "params": {
-         "height": "窗口高度，须为正",
-         "width": "窗口宽度，须为正"
-        },
-        "returns": "当前构建器，便于链式调用",
-        "notes": [
-         "默认 (2, 2)；未指定步长时步长取该尺寸",
-         "取值在 build 时校验，setter 本身不做检查"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "strides(int, int)",
-       "signature": "Builder strides(int height, int width)",
-       "params": [
-        {
-         "type": "int",
-         "name": "height"
-        },
-        {
-         "type": "int",
-         "name": "width"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置两个方向的池化步长。",
-        "params": {
-         "height": "垂直步长；0 表示取 poolHeight",
-         "width": "水平步长；0 表示取 poolWidth"
-        },
-        "returns": "当前构建器，便于链式调用",
-        "notes": [
-         "默认两个方向都为 0，即不重叠池化",
-         "取值在 build 时校验，setter 本身不做检查"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "MaxPooling2D build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验配置并创建 MaxPooling2D。",
-        "returns": "新的 MaxPooling2D 实例，步长已按窗口尺寸补齐",
-        "throws": {
-         "IllegalArgumentException": "窗口非正、步长为负，或两个步长只指定了一个"
-        },
-        "notes": [
-         "构建期不校验输入尺寸，窗口是否放得下在 forward 时检查"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "MaxPooling2D 的构建器，默认 2×2 且不重叠。",
-      "body": [
-       "字段默认值为 poolSize = (2, 2)，strideHeight 与 strideWidth 为 0，表示“未指定”。构造层时若步长为 0，则替换为对应的窗口尺寸，从而得到不重叠池化。",
-       "build 校验窗口尺寸为正、步长非负，且两个步长必须同时缺省或同时为正；只给一个方向指定步长会被拒绝，负步长同样拒绝。"
-      ],
-      "notes": [
-       "步长小于窗口尺寸即得到重叠池化，反向时同一输入位置会累加多个窗口的梯度"
-      ],
-      "example": "MaxPooling2D pool = MaxPooling2D.builder()\n        .poolSize(3, 3)\n        .strides(1, 1)\n        .build();",
-      "see": [
-       "basalt.nn.MaxPooling2D"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.NeuralNetwork.ImageBuilder",
-     "simple_qualified": "NeuralNetwork.ImageBuilder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/NeuralNetwork.java",
-     "line": 19,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "add(Conv2D)",
-       "signature": "ImageBuilder add(Conv2D layer)",
-       "params": [
-        {
-         "type": "Conv2D",
-         "name": "layer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加一个卷积层。",
-        "params": {
-         "layer": "卷积层，不可为 null"
-        },
-        "returns": "this，便于继续链式调用",
-        "throws": {
-         "NullPointerException": "layer 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "add(MaxPooling2D)",
-       "signature": "ImageBuilder add(MaxPooling2D layer)",
-       "params": [
-        {
-         "type": "MaxPooling2D",
-         "name": "layer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加一个最大池化层。",
-        "params": {
-         "layer": "池化层，不可为 null"
-        },
-        "returns": "this，便于继续链式调用",
-        "throws": {
-         "NullPointerException": "layer 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "add(Flatten)",
-       "signature": "VectorBuilder add(Flatten layer)",
-       "params": [
-        {
-         "type": "Flatten",
-         "name": "layer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加 Flatten 并切换到向量阶段。",
-        "params": {
-         "layer": "展平层，不可为 null"
-        },
-        "returns": "持有已累积层列表副本的 VectorBuilder",
-        "throws": {
-         "NullPointerException": "layer 为 null"
-        },
-        "notes": [
-         "这是图像阶段唯一的出口，之后的构建器不再接受卷积或池化层"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "图像阶段构建器，累积 Conv2D 与 MaxPooling2D。",
-      "body": [
-       "内部维护一个层列表。两个 add 重载追加层后返回自身以支持链式调用；add(Flatten) 追加后把列表复制给新的 VectorBuilder。该阶段不提供 build，因此缺少 Flatten 的模型无法产出。"
-      ],
-      "notes": [
-       "没有接受 Dense 的重载，全连接层在类型上无法出现在 Flatten 之前",
-       "进入 VectorBuilder 时复制列表，两个构建器不再共享可变状态"
-      ],
-      "see": [
-       "basalt.nn.NeuralNetwork.VectorBuilder",
-       "basalt.nn.Conv2D",
-       "basalt.nn.MaxPooling2D"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.NeuralNetwork.VectorBuilder",
-     "simple_qualified": "NeuralNetwork.VectorBuilder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/NeuralNetwork.java",
-     "line": 41,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "add(Dense)",
-       "signature": "VectorBuilder add(Dense layer)",
-       "params": [
-        {
-         "type": "Dense",
-         "name": "layer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "追加一个全连接层。",
-        "params": {
-         "layer": "全连接层，不可为 null；单位数在构建该层时已校验"
-        },
-        "returns": "this，便于继续链式调用",
-        "throws": {
-         "NullPointerException": "layer 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "loss(Loss)",
-       "signature": "VectorBuilder loss(Loss loss)",
-       "params": [
-        {
-         "type": "Loss",
-         "name": "loss"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置训练损失，默认 CATEGORICAL_CROSSENTROPY。",
-        "params": {
-         "loss": "损失函数，不可为 null"
-        },
-        "returns": "this",
-        "throws": {
-         "NullPointerException": "loss 为 null"
-        },
-        "notes": [
-         "与末端激活的匹配关系不在构建期检查"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "optimizer(OptimizerConfig)",
-       "signature": "VectorBuilder optimizer(OptimizerConfig optimizer)",
-       "params": [
-        {
-         "type": "OptimizerConfig",
-         "name": "optimizer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置优化器超参，默认 ADAM 学习率 0.001。",
-        "params": {
-         "optimizer": "超参配置，不可为 null；其字段在构造时已校验"
-        },
-        "returns": "this",
-        "throws": {
-         "NullPointerException": "optimizer 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "CNN build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "用当前层列表、损失与优化器创建 CNN。",
-        "returns": "层列表已复制为不可变列表的 CNN 实例",
-        "notes": [
-         "不做损失与激活的匹配校验，也不校验 Flatten 之后是否至少有一个 Dense"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "向量阶段构建器，累积 Dense 并配置损失与优化器。",
-      "body": [
-       "构造时复制图像阶段累积的层列表，之后只接受 Dense。loss 与 optimizer 各自持有默认值，build 时原样传给 CNN 构造器，因此模型创建后这两项不可再改。"
-      ],
-      "notes": [
-       "默认损失 CATEGORICAL_CROSSENTROPY，默认优化器 Optimizer.ADAM.withLearningRate(0.001)",
-       "build 不校验损失与末端激活是否匹配，也不检查层数是否为空"
-      ],
-      "see": [
-       "basalt.nn.NeuralNetwork.ImageBuilder",
-       "basalt.nn.CNN"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.SelfAttention.Builder",
-     "simple_qualified": "SelfAttention.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/SelfAttention.java",
-     "line": 316,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "dimension(int)",
-       "signature": "Builder dimension(int dimension)",
-       "params": [
-        {
-         "type": "int",
-         "name": "dimension"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置投影维度，默认 16。",
-        "params": {
-         "dimension": "每个位置的 Q/K/V 维度，也是输入输出特征数；必须为正，在 build 时校验"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置权重初始化随机种子，默认 42。",
-        "params": {
-         "seed": "传给 java.util.Random 的种子；Q、K、V 三组权重依次从同一随机源采样"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "causal(boolean)",
-       "signature": "Builder causal(boolean causal)",
-       "params": [
-        {
-         "type": "boolean",
-         "name": "causal"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置是否启用因果掩码，默认关闭。",
-        "params": {
-         "causal": "true 时位置 t 只对键 0..t 归一化，屏蔽未来时间步；false 时对全部键归一化"
-        },
-        "returns": "this，便于链式调用",
-        "notes": [
-         "掩码方向为“看过去”：行索引小于列索引的位置被置零。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "SelfAttention build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验配置并构造自注意力层。",
-        "returns": "新的 SelfAttention 实例，权重在首次 forward 时分配",
-        "throws": {
-         "IllegalArgumentException": "dimension 小于等于 0"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "自注意力构建器，dimension 默认 16、seed 默认 42、非因果。",
-      "body": [
-       "投影维度同时决定输入特征数、输出特征数与权重矩阵尺寸，三者被强制一致，因此该层不改变特征轴长度。因果标志只影响注意力掩码，不改变参数量。"
-      ],
-      "notes": [
-       "缩放因子 1 / sqrt(dimension) 在构造时计算，之后不可更改。"
-      ],
-      "see": [
-       "basalt.nn.SelfAttention"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.SequenceNetwork.Builder",
-     "simple_qualified": "SequenceNetwork.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/SequenceNetwork.java",
-     "line": 244,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "add(L)",
-       "signature": "<L extends Layer<BSF, BSF>> Builder add(L layer)",
-       "params": [
-        {
-         "type": "L",
-         "name": "layer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "向主体追加一个序列层，按调用顺序串联。",
-        "params": {
-         "layer": "类型为 Layer<BSF, BSF> 的层，如 LSTM、GRU、VanillaRNN、SelfAttention；不能为 null"
-        },
-        "returns": "this，便于链式调用",
-        "notes": [
-         "泛型约束使 Dense 等 BC 布局的层无法加入主体，编译期即被拒绝。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "pooling(SequencePool.Pooling)",
-       "signature": "Builder pooling(SequencePool.Pooling pooling)",
-       "params": [
-        {
-         "type": "SequencePool.Pooling",
-         "name": "pooling"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置时间轴池化策略，默认 LAST。",
-        "params": {
-         "pooling": "LAST 取末步，MEAN 取时间均值；不能为 null"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "head(Dense)",
-       "signature": "Builder head(Dense head)",
-       "params": [
-        {
-         "type": "Dense",
-         "name": "head"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置输出头，必填项。",
-        "params": {
-         "head": "Dense 层；其输入维度须等于池化后的特征数，不能为 null"
-        },
-        "returns": "this，便于链式调用",
-        "notes": [
-         "头部的 units 决定输出类别数，激活函数需与损失匹配。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "loss(Loss)",
-       "signature": "Builder loss(Loss loss)",
-       "params": [
-        {
-         "type": "Loss",
-         "name": "loss"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置损失函数，默认分类交叉熵。",
-        "params": {
-         "loss": "Loss 枚举值，不能为 null"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "optimizer(OptimizerConfig)",
-       "signature": "Builder optimizer(OptimizerConfig optimizer)",
-       "params": [
-        {
-         "type": "OptimizerConfig",
-         "name": "optimizer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置优化器超参数，默认 Adam、学习率 0.001。",
-        "params": {
-         "optimizer": "优化器配置；可用 Optimizer.ADAM.withLearningRate(...) 等工厂方法构造，不能为 null"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "gradientClip(double)",
-       "signature": "Builder gradientClip(double gradientClip)",
-       "params": [
-        {
-         "type": "double",
-         "name": "gradientClip"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置全局梯度范数裁剪阈值，默认 5.0。",
-        "params": {
-         "gradientClip": "范数上限；须为有限正数，在 build 时校验"
-        },
-        "returns": "this，便于链式调用",
-        "notes": [
-         "裁剪作用于整网所有参数的拼接梯度范数，而不是逐参数单独裁剪。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "SequenceNetwork build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验配置并构造整网。",
-        "returns": "新的 SequenceNetwork 实例；主体层列表被复制，后续修改构建器不影响已建网络",
-        "throws": {
-         "IllegalStateException": "未设置 head",
-         "IllegalArgumentException": "gradientClip 非正、损失与头部激活不匹配，或分类头 units 小于 2"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "整网构建器；LAST 池化、分类交叉熵、Adam 0.001、裁剪 5.0。",
-      "body": [
-       "主体层按 add 调用顺序串联，池化与头部各自只有一个实例。所有 setter 以 requireNonNull 拒绝 null 引用，校验集中在 build，因此配置错误在构建阶段一次性暴露。"
-      ],
-      "notes": [
-       "build 会交叉校验损失与头部激活：分类交叉熵配 SOFTMAX，二元交叉熵配 SIGMOID。",
-       "默认池化 LAST 适合分类；需要利用全部时间步时可改为 MEAN。"
-      ],
-      "see": [
-       "basalt.nn.SequenceNetwork",
-       "basalt.nn.SequencePool",
-       "basalt.nn.Dense"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.SequencePool.Pooling",
-     "simple_qualified": "SequencePool.Pooling",
-     "kind": "enum",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/SequencePool.java",
-     "line": 110,
-     "javadoc": "Reduction applied along the time axis.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "enum_constant",
-       "key": "LAST",
-       "signature": "LAST",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "取时间步序列的最后一步"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "MEAN",
-       "signature": "MEAN",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "对时间步维取平均"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "时间轴归约策略。",
-      "body": [
-       "LAST 取最后一个时间步的向量，是分类任务默认的 many-to-one 头；MEAN 对全部时间步求平均，每个时间步都影响结果。两者都保持特征轴不变。",
-       "枚举声明顺序为 LAST、MEAN，持久化时按序号写入，序号 0 对应 LAST、1 对应 MEAN。反向传播只使用策略本身，不需要额外状态。"
-      ],
-      "notes": [
-       "调整枚举常量顺序会改变序列化序号，导致旧模型文件被解析为另一种策略。",
-       "没有 MAX 归约；需要最大值池化时应在层外自行实现。"
-      ],
-      "see": [
-       "basalt.nn.SequencePool",
-       "basalt.nn.SequenceNetwork"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.VanillaRNN.Builder",
-     "simple_qualified": "VanillaRNN.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/VanillaRNN.java",
-     "line": 234,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "hiddenSize(int)",
-       "signature": "Builder hiddenSize(int hiddenSize)",
-       "params": [
-        {
-         "type": "int",
-         "name": "hiddenSize"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置隐藏单元数，默认 16。",
-        "params": {
-         "hiddenSize": "隐藏状态维度；必须为正，在 build 时校验"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置权重初始化随机种子，默认 42。",
-        "params": {
-         "seed": "传给 java.util.Random 的种子；相同种子与相同特征数可复现初始权重"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "VanillaRNN build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验配置并构造 VanillaRNN。",
-        "returns": "新的 VanillaRNN 实例，参数尚未分配",
-        "throws": {
-         "IllegalArgumentException": "hiddenSize 小于等于 0"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "VanillaRNN 构建器，隐藏单元数默认 16，随机种子默认 42。",
-      "body": [
-       "仅暴露隐藏单元数与随机种子。参数在首次 forward 时按输入特征数分配，构建阶段不校验特征数，因此同一构建器产出的层可以适配不同输入宽度。"
-      ],
-      "notes": [
-       "校验发生在 build：hiddenSize 非正时抛出 IllegalArgumentException。"
-      ],
-      "see": [
-       "basalt.nn.VanillaRNN"
-      ]
-     }
     }
-   ]
-  }
- ]
+  ]
 }

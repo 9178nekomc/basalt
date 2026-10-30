@@ -11,8 +11,7 @@ import java.util.Objects;
 import java.util.Random;
 
 /**
- * Kernel Density Estimation (KDE) supporting {@code GAUSSIAN} and {@code TOPHAT} kernels,
- * matching {@code sklearn.neighbors.KernelDensity}.
+ * Kernel Density Estimation (KDE) supporting {@code GAUSSIAN} and {@code TOPHAT} kernels.
  */
 public final class KernelDensity implements Estimator, Persistable {
     public enum KernelType {

@@ -17,7 +17,7 @@ import java.util.Objects;
 
 /**
  * Sequential pipeline of {@link Transformer} preprocessing / feature-engineering steps followed
- * by an optional final {@link Estimator}, matching {@code sklearn.pipeline.Pipeline}.
+ * by an optional final {@link Estimator}.
  *
  * <p>Implements both {@link Estimator} (when an estimator head is attached or the last step is an
  * estimator) and {@link Transformer} (when composed purely of transformers), plus full {@code .bsl}

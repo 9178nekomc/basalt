@@ -1,1700 +1,1700 @@
 {
- "group": "g16",
- "title": "神经网络层与序列（2/3）",
- "modules": [
-  {
-   "name": "basalt.nn",
-   "types": [
+  "group": "g16",
+  "title": "神经网络层与序列（2/3）",
+  "modules": [
     {
-     "qualified": "basalt.nn.ModelSerializer",
-     "simple_qualified": "ModelSerializer",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/ModelSerializer.java",
-     "line": 16,
-     "javadoc": "CNN persistence facade. The on-disk container (magic, version, CRC32C) lives in\n{@link ModelCodec}; this class owns the CNN layer payload.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "save(Path, CNN)",
-       "signature": "void save(Path target, CNN model)",
-       "params": [
+      "name": "basalt.nn",
+      "types": [
         {
-         "type": "Path",
-         "name": "target"
+          "qualified": "basalt.nn.ModelSerializer",
+          "simple_qualified": "ModelSerializer",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/ModelSerializer.java",
+          "line": 16,
+          "javadoc": "CNN persistence facade. The on-disk container (magic, version, CRC32C) lives in\n{@link ModelCodec}; this class owns the CNN layer payload.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "save(Path, CNN)",
+              "signature": "void save(Path target, CNN model)",
+              "params": [
+                {
+                  "type": "Path",
+                  "name": "target"
+                },
+                {
+                  "type": "CNN",
+                  "name": "model"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "把 CNN 写入 .bsl 文件。",
+                "body": [
+                  "先让模型把载荷写进内存缓冲，再由 ModelCodec 补齐 24 字节头部并一次性写入文件；目标文件已存在时被截断覆盖。"
+                ],
+                "params": {
+                  "target": "目标路径，父目录须已存在",
+                  "model": "待保存的网络，不可为 null"
+                },
+                "throws": {
+                  "UncheckedIOException": "文件打开或写入失败",
+                  "ModelFormatException": "载荷长度超出 .bsl 容器上限",
+                  "NullPointerException": "model 为 null"
+                },
+                "notes": [
+                  "未初始化的层只写结构，加载后需重新前向才会生成权重"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "loadCNN(Path)",
+              "signature": "CNN loadCNN(Path source)",
+              "params": [
+                {
+                  "type": "Path",
+                  "name": "source"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "从 .bsl 文件读出 CNN。",
+                "params": {
+                  "source": "源文件路径"
+                },
+                "returns": "重建的 CNN，参数值已恢复",
+                "throws": {
+                  "ModelFormatException": "magic 或版本不符、CRC32C 校验失败、载荷长度不符、文件内模型不是 CNN，或层与拓扑非法",
+                  "UncheckedIOException": "文件打开或映射失败"
+                },
+                "notes": [
+                  "读取后要求载荷被完整消费，多余字节视为格式错误"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "writeCNN(ModelWriter, CNN)",
+              "signature": "void writeCNN(ModelWriter output, CNN model)",
+              "params": [
+                {
+                  "type": "ModelWriter",
+                  "name": "output"
+                },
+                {
+                  "type": "CNN",
+                  "name": "model"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "把 CNN 载荷写入已有 ModelWriter。",
+                "body": [
+                  "写出损失序号、优化器序号、learningRate、beta1、beta2、epsilon、层数，再逐层写出类型标记与配置。"
+                ],
+                "params": {
+                  "output": "目标写入器，调用方负责容器头",
+                  "model": "待写入的网络"
+                },
+                "notes": [
+                  "遇到 Conv2D、MaxPooling2D、Flatten、Dense 之外的层会抛 IllegalStateException"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "readCNN(ModelReader)",
+              "signature": "CNN readCNN(ModelReader input)",
+              "params": [
+                {
+                  "type": "ModelReader",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "从 ModelReader 读取 CNN 载荷并校验拓扑。",
+                "body": [
+                  "依次读取损失与优化器序号并做范围检查，重建优化器配置与各层，最后校验 Flatten 的位置约束。"
+                ],
+                "params": {
+                  "input": "载荷读取器，位置须在 CNN 载荷起点"
+                },
+                "returns": "重建的 CNN",
+                "throws": {
+                  "ModelFormatException": "枚举序号越界、层数不在 1 到 100000 之间、未知层类型、缺少 Flatten、Flatten 重复，或 Flatten 前后出现非法层"
+                },
+                "notes": [
+                  "拓扑校验与 Builder 的编译期约束一致，因此手写或损坏的文件无法绕过布局检查"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "CNN 的 .bsl 持久化门面，负责层载荷的读写。",
+            "body": [
+              "容器格式由 basalt.io.ModelCodec 负责，包含 magic、版本号与 CRC32C 校验和；本类只处理 CNN 载荷：损失序号、优化器类型与四个超参、层数，然后逐层写类型标记、配置，以及已初始化层的参数值。",
+              "readCNN 重建各层后校验拓扑：必须恰好出现一个 Flatten，Flatten 之前只允许 Conv2D 与 MaxPooling2D，之后只允许 Dense，层数须落在 1 到 100000 之间。层类型标记为 1 到 4，分别对应卷积、最大池化、展平与全连接。"
+            ],
+            "notes": [
+              "save 与 loadCNN 走 ModelCodec，加载时内存映射文件并在不复制载荷的情况下校验 CRC32C",
+              "UncheckedIOException 表示文件系统失败，ModelFormatException 表示容器或载荷格式错误",
+              "参数只在层已见过输入（inputChannels 或 inputFeatures 大于 0）时写出，未初始化的层以 -1 标记，加载后需重新前向才会生成权重",
+              "损失与优化器以枚举序号写入，调整枚举常量顺序会使旧文件解析错误"
+            ],
+            "example": "CNN model = NeuralNetwork.builder() .add(Conv2D.builder().filters(4).kernelSize(3, 3).padding(Padding.SAME).build()) .add(MaxPooling2D.builder().poolSize(2, 2).build()) .add(Flatten.builder().build()) .add(Dense.builder().units(3).activation(Activation.SOFTMAX).build()) .build();\nmodel.predict(Tensor.ofBCHW(2, 1, 4, 4, new double[2 * 16])); Path path = Path.of(\"model.bsl\");\nModelSerializer.save(path, model);\nCNN restored = ModelSerializer.loadCNN(path);",
+            "see": [
+              "basalt.nn.CNN",
+              "basalt.io.ModelCodec"
+            ]
+          }
         },
         {
-         "type": "CNN",
-         "name": "model"
+          "qualified": "basalt.nn.NeuralNetwork",
+          "simple_qualified": "NeuralNetwork",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/NeuralNetwork.java",
+          "line": 11,
+          "javadoc": "Staged CNN builder. Image layers are legal before Flatten and vector layers after it;\ninvalid dimension transitions therefore fail during compilation rather than training.",
+          "nested": [
+            "ImageBuilder",
+            "VectorBuilder"
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "key": "builder()",
+              "signature": "ImageBuilder builder()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建图像阶段的构建器。",
+                "returns": "层列表为空的 ImageBuilder"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "分阶段构建 CNN：图像层在 Flatten 之前，向量层在其后。",
+            "body": [
+              "两个阶段各是一个 final 嵌套类。ImageBuilder 只接受 Conv2D 与 MaxPooling2D，唯一出口是 add(Flatten)，它返回 VectorBuilder；VectorBuilder 只接受 Dense，并提供 loss、optimizer 与 build。",
+              "Dense 没有进入 ImageBuilder 的重载，ImageBuilder 也没有 build 方法，因此“图像层后直接接全连接层”或“忘记 Flatten”都无法通过编译，而不是等到训练时才因维度不符失败。"
+            ],
+            "notes": [
+              "build 不做额外校验，直接包装层列表、损失与优化器",
+              "默认损失为 CATEGORICAL_CROSSENTROPY，默认优化器为 ADAM 且学习率 0.001",
+              "阶段之间没有回退路径：进入 VectorBuilder 后不能再添加卷积或池化层"
+            ],
+            "example": "CNN model = NeuralNetwork.builder() .add(Conv2D.builder().filters(8).kernelSize(3, 3).activation(Activation.RELU).build()) .add(MaxPooling2D.builder().poolSize(2, 2).build()) .add(Flatten.builder().build()) .add(Dense.builder().units(10).activation(Activation.SOFTMAX).build()) .loss(Loss.CATEGORICAL_CROSSENTROPY) .optimizer(Optimizer.SGD.withLearningRate(0.05)) .build();\nint layers = model.layerCount();",
+            "see": [
+              "basalt.nn.CNN",
+              "basalt.nn.Conv2D",
+              "basalt.nn.Dense",
+              "basalt.nn.Flatten"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.Optimizer",
+          "simple_qualified": "Optimizer",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/Optimizer.java",
+          "line": 4,
+          "javadoc": "Supported first-order optimization algorithms.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "enum_constant",
+              "key": "SGD",
+              "signature": "SGD",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "随机梯度下降，直接按学习率缩放梯度。",
+                "notes": [
+                  "不维护动量，也不递增 Parameter 的步计数"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "ADAM",
+              "signature": "ADAM",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "Adam，一阶与二阶矩估计加偏差修正。",
+                "notes": [
+                  "每个参数各自保存 firstMoment 与 secondMoment，与参数数组等长"
+                ]
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "ADAMW",
+              "signature": "ADAMW",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "AdamW 常量，当前内核与 ADAM 共用更新路径。",
+                "body": [
+                  "该常量可正常构造配置并参与序列化，但 Parameter.update 只区分 SGD 与“非 SGD”，因此不含解耦权重衰减项，数值结果与 ADAM 相同。"
+                ],
+                "notes": [
+                  "需要权重衰减时须在更新前自行把衰减项并入梯度"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "withLearningRate(double)",
+              "signature": "OptimizerConfig withLearningRate(double learningRate)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "learningRate"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "以指定学习率创建其余取默认值的配置。",
+                "params": {
+                  "learningRate": "学习率，须为正且有限；非正值在构造 OptimizerConfig 时被拒绝"
+                },
+                "returns": "beta1 = 0.9、beta2 = 0.999、epsilon = 1e-8 的新配置",
+                "throws": {
+                  "IllegalArgumentException": "learningRate 不是正有限值"
+                },
+                "notes": [
+                  "每次调用都新建记录，不复用或缓存"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "一阶优化算法枚举：SGD、ADAM 与 ADAMW。",
+            "body": [
+              "withLearningRate 是唯一的便捷入口：固定 beta1 = 0.9、beta2 = 0.999、epsilon = 1e-8，只替换学习率，返回新的 OptimizerConfig。",
+              "SGD 直接执行 values -= learningRate × gradient，且不递增步计数；ADAM 与 ADAMW 走同一条偏差修正路径，即维护一阶与二阶矩的指数滑动平均，再除以 1 - beta^step。当前内核没有实现解耦权重衰减，两个常量在 Parameter.update 中的分支相同。"
+            ],
+            "notes": [
+              "枚举序号会写进 .bsl 载荷，调整常量顺序会破坏旧文件的兼容性",
+              "步计数只在非 SGD 更新时递增，混用 SGD 与 Adam 时偏差修正会沿用此前计数",
+              "beta 与 epsilon 对 SGD 分支没有作用，但仍须通过 OptimizerConfig 的校验"
+            ],
+            "example": "OptimizerConfig adam = Optimizer.ADAM.withLearningRate(0.001);\nOptimizerConfig sgd = Optimizer.SGD.withLearningRate(0.05);\nOptimizerConfig custom = new OptimizerConfig(Optimizer.ADAMW, 0.002, 0.85, 0.995, 1e-7);",
+            "see": [
+              "basalt.nn.OptimizerConfig",
+              "basalt.nn.Parameter"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.OptimizerConfig",
+          "simple_qualified": "OptimizerConfig",
+          "kind": "record",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/OptimizerConfig.java",
+          "line": 6,
+          "javadoc": "Immutable optimizer hyperparameters shared by every trainable layer.",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "训练共用的不可变优化器超参。",
+            "body": [
+              "记录组件依次为 optimizer、learningRate、beta1、beta2、epsilon。紧凑构造器强制 optimizer 非 null、learningRate 为正有限值、两个 beta 落在 [0, 1)、epsilon 为正有限值。",
+              "CNN 与 SequenceNetwork 各持有一个实例，并在每次更新时把它传给全部可训练层的 update；beta 与 epsilon 对 SGD 无意义，但仍需满足同一套校验。"
+            ],
+            "notes": [
+              "记录本身没有默认值，默认组合来自 Optimizer.withLearningRate：beta1 0.9、beta2 0.999、epsilon 1e-8",
+              "beta 取 1.0 会被拒绝，因为 1 - beta^step 会退化为 0",
+              "全部校验集中在构造器，训练期间不重复检查，因此超参无法在训练中变更",
+              "序列化时按 optimizer 序号与四个 double 写入，加载时同样经过构造器校验"
+            ],
+            "see": [
+              "basalt.nn.Optimizer",
+              "basalt.nn.Parameter"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.Padding",
+          "simple_qualified": "Padding",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/Padding.java",
+          "line": 4,
+          "javadoc": "Convolution padding mode.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "enum_constant",
+              "key": "VALID",
+              "signature": "VALID",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "不补零，输出 (in − k) / stride + 1"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "SAME",
+              "signature": "SAME",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "补零使输出为 ceil(in / stride)"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "卷积补零模式：VALID 不补，SAME 补到按步长整除。",
+            "body": [
+              "VALID 不做补零，输出尺寸为 (in - k) / s + 1，要求 in ≥ k，否则 Conv2D 抛 IllegalArgumentException。",
+              "SAME 让输出尺寸只由步长决定：out = ceil(in / s)，即 (in + s - 1) / s。所需补零总量为 max(0, (out - 1)·s + k - in)，前侧与左侧各取 total / 2（向下取整），余下的一个像素落在后侧与下侧，因此 total 为奇数时上下、左右不对称。",
+              "补零是隐式的：Conv2D 不为填充分配缓冲区，只在采样时跳过越界索引。卷积核不大于步长时 total 常为 0，但 SAME 与 VALID 的输出尺寸仍可能不同，例如 in = 7、k = 2、s = 2 时分别为 4 与 3。"
+            ],
+            "notes": [
+              "由 Conv2D.Builder.padding 选择，默认 VALID",
+              "SAME 下输出空间尺寸与卷积核大小无关，只取决于输入与步长",
+              "补零值恒为 0，不参与权重更新",
+              "该枚举没有方法，仅作为模式标记"
+            ],
+            "example": "Conv2D same = Conv2D.builder() .filters(4) .kernelSize(3, 3) .padding(Padding.SAME) .build(); Conv2D valid = Conv2D.builder() .filters(4) .kernelSize(3, 3) .padding(Padding.VALID) .build(); Tensor<BCHW> input = Tensor.zerosBCHW(1, 2, 7, 7);\nint sameWidth = same.forward(input).dimension(3);\nint validWidth = valid.forward(input).dimension(3);",
+            "see": [
+              "basalt.nn.Conv2D",
+              "basalt.nn.Conv2D.Builder"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.ParameterRef",
+          "simple_qualified": "ParameterRef",
+          "kind": "record",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/ParameterRef.java",
+          "line": 9,
+          "javadoc": "Live view over one trainable tensor: parameter values and the gradient buffer produced by the\nmost recent backward pass. Both arrays are owned by the layer and must not be resized.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "size()",
+              "signature": "int size()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回参数元素个数。",
+                "returns": "values 的长度，与 gradient 长度相同"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "empty(String)",
+              "signature": "ParameterRef empty(String name)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建零长度的占位视图。",
+                "params": {
+                  "name": "参数名，不可为 null 或空白"
+                },
+                "returns": "values 与 gradient 均为空数组的实例",
+                "throws": {
+                  "IllegalArgumentException": "name 为 null 或空白"
+                },
+                "notes": [
+                  "适合表示尚未初始化的参数，size() 返回 0"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "none()",
+              "signature": "List<ParameterRef> none()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回不可变的空列表。",
+                "returns": "List.of() 产生的空列表，供无参数层直接返回",
+                "notes": [
+                  "每次调用返回同一个共享的空列表实例"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "单个可训练张量的实时视图：参数值与最近一次回传的梯度。",
+            "body": [
+              "记录组件为 name、values、gradient，三者都不复制，数组由层持有，本记录只是别名。层通过 Layer.parameters() 暴露这些视图：GradientCheck 借它做中心差分扰动，SequenceNetwork.update 借它做全局范数裁剪，序列化时也经它读写权重。",
+              "紧凑构造器要求 name 非空白、values 与 gradient 等长。长度在创建后不可变，使用方只能改写元素，不能扩容。"
+            ],
+            "notes": [
+              "梯度缓冲在每次 backward 中被层清零后重写，读到的始终是最近一次回传的结果",
+              "改动 values 会立即影响模型，GradientCheck 依赖这一点并在检查后恢复原值",
+              "empty(name) 用于尚未初始化的层，size() 返回 0",
+              "无参数层应返回 none() 而不是 null，Layer.parameters() 的默认实现即如此"
+            ],
+            "example": "Layer<BSF, BSF> layer = VanillaRNN.builder().hiddenSize(4).build();\nList<ParameterRef> parameters = layer.parameters();\nfor (ParameterRef parameter : parameters) { double[] values = parameter.values(); double[] gradient = parameter.gradient(); double scale = Math.sqrt(parameter.size()); for (int i = 0; i < values.length; i++) { values[i] -= 0.01 * gradient[i] / scale; }\n}",
+            "see": [
+              "basalt.nn.Layer",
+              "basalt.nn.GradientCheck",
+              "basalt.nn.SequenceNetwork",
+              "basalt.nn.Parameter"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.SelfAttention",
+          "simple_qualified": "SelfAttention",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Layer<BSF, BSF>",
+            "Persistable"
+          ],
+          "file": "jsl/nn/SelfAttention.java",
+          "line": 23,
+          "javadoc": "Single-head scaled dot-product self-attention with full Q/K/V and Softmax derivatives. <p>{@code A = softmax(Q K^T / sqrt(d))}, {@code O = A V}. The backward pass applies the exact\nSoftmax Jacobian {@code dS = A * (dA - rowsum(dA * A))} before the scaling factor, then\naccumulates {@code dQ = dS K}, {@code dK = dS^T Q} and {@code dV = A^T dO}. An optional causal\nmask restricts row {@code t} to keys {@code 0..t}.</p>",
+          "nested": [
+            "Builder"
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "key": "builder()",
+              "signature": "Builder builder()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建构建器，dimension 默认 16、seed 默认 42、非因果。",
+                "returns": "新的 Builder 实例"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor<BSF>)",
+              "signature": "Tensor<BSF> forward(Tensor<BSF> input)",
+              "params": [
+                {
+                  "type": "Tensor<BSF>",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "计算自注意力输出，形状与输入一致。",
+                "params": {
+                  "input": "形状 (batch, sequence, dimension) 的 BSF 张量，特征轴必须等于 dimension"
+                },
+                "returns": "形状 (batch, sequence, dimension) 的注意力输出",
+                "throws": {
+                  "IllegalArgumentException": "输入特征数不等于 dimension"
+                },
+                "notes": [
+                  "首次调用时初始化三组 dimension × dimension 权重矩阵。",
+                  "Softmax 按行减去该行最大值后再归一化，避免指数溢出。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "backward(Tensor<BSF>)",
+              "signature": "Tensor<BSF> backward(Tensor<BSF> gradient)",
+              "params": [
+                {
+                  "type": "Tensor<BSF>",
+                  "name": "gradient"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "反传注意力，累积 Q/K/V 权重梯度并返回输入梯度。",
+                "params": {
+                  "gradient": "上游梯度，形状必须为 (batch, sequence, dimension)"
+                },
+                "returns": "对输入的梯度，形状 (batch, sequence, dimension)",
+                "throws": {
+                  "IllegalStateException": "尚未调用 forward",
+                  "IllegalArgumentException": "gradient 的形状与最近一次 forward 不匹配"
+                },
+                "notes": [
+                  "Softmax 使用精确雅可比 A * (dA - rowsum(dA * A))，再乘缩放因子，而不是近似导数。",
+                  "causal 模式下被掩码的键不参与求和，其梯度恒为零。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "update(OptimizerConfig)",
+              "signature": "void update(OptimizerConfig optimizer)",
+              "params": [
+                {
+                  "type": "OptimizerConfig",
+                  "name": "optimizer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "用累积梯度更新 Q/K/V 三组权重。",
+                "params": {
+                  "optimizer": "优化器超参数，分别作用于 query、key、value 权重"
+                },
+                "throws": {
+                  "IllegalStateException": "未完成 forward 与 backward，或梯度已被上一次 update 消费"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<ParameterRef> parameters()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回 Q/K/V 权重的实时视图。",
+                "returns": "参数视图列表，名称依次为 attention.query、attention.key、attention.value；首次 forward 之前为空列表"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "dimension()",
+              "signature": "int dimension()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回每个位置的投影维度。",
+                "returns": "构建时指定的 dimension，同时是输入输出的特征数"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "causal()",
+              "signature": "boolean causal()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回是否启用因果掩码。",
+                "returns": "启用时为 true，此时位置 t 只关注键 0..t"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "kind()",
+              "signature": "ModelKind kind()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回模型族标识。",
+                "returns": "固定为 ModelKind.SELF_ATTENTION"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "write(ModelWriter)",
+              "signature": "void write(ModelWriter writer)",
+              "params": [
+                {
+                  "type": "ModelWriter",
+                  "name": "writer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "把配置与权重写入模型流。",
+                "params": {
+                  "writer": "目标写入器；依次写入 dimension、seed、因果标志、是否已初始化，已初始化时再写三组权重"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "read(ModelReader)",
+              "signature": "SelfAttention read(ModelReader reader)",
+              "params": [
+                {
+                  "type": "ModelReader",
+                  "name": "reader"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "从模型流恢复自注意力层。",
+                "params": {
+                  "reader": "源读取器，读取顺序须与 write 一致"
+                },
+                "returns": "恢复后的实例，未初始化时保留惰性初始化状态",
+                "throws": {
+                  "ModelFormatException": "dimension 非正，或因果标志、初始化标志不是 0 或 1"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "单头缩放点积自注意力，支持因果掩码与完整 Softmax 反向传播。",
+            "body": [
+              "对每个时间步做三次线性投影得到 Q、K、V，按 A = softmax(Q K^T / sqrt(d)) 归一化后加权求和 V，输出与输入同为 (batch, sequence, dimension)，每个时间步输出仍对应同一位置。",
+              "causal 为 true 时第 t 行只在键 0..t 上归一化，t 之后的注意力权重被置零，既不参与输出也不接收梯度；因此位置 t 的输出与未来时间步的输入无关。"
+            ],
+            "notes": [
+              "输入特征数必须严格等于 dimension，不做隐式投影；需要改变维度时应在之前串联 LSTM、GRU 或 Dense。",
+              "注意力缓冲为 batch * sequence * sequence 个 double，序列长度增加时内存按平方增长。",
+              "缩放因子 1 / sqrt(dimension) 在构造时算好，不随输入变化。",
+              "三组权重按 query、key、value 顺序用同一随机源连续采样，均匀分布于 ±sqrt(3 / dimension)；无偏置项。"
+            ],
+            "example": "SelfAttention attention = SelfAttention.builder() .dimension(4) .causal(true) .seed(7) .build();\nTensor<BSF> input = Tensor.zerosBSF(2, 6, 4);\nTensor<BSF> output = attention.forward(input);\nTensor<BSF> inputGradient = attention.backward(Tensor.zerosBSF(2, 6, 4));\nattention.update(Optimizer.ADAM.withLearningRate(0.001));",
+            "see": [
+              "basalt.nn.LSTM",
+              "basalt.nn.SequenceNetwork",
+              "basalt.nn.SequencePool"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.SequenceNetwork",
+          "simple_qualified": "SequenceNetwork",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Persistable"
+          ],
+          "file": "jsl/nn/SequenceNetwork.java",
+          "line": 25,
+          "javadoc": "End-to-end trainable sequence classifier: {@code BSF -> [recurrent/attention layers] -> pool ->\nDense head -> BC}. <p>Training performs a full forward pass, the loss gradient, backpropagation through the head,\nthe pooling layer and every body layer in reverse order, global-norm gradient clipping, and one\noptimizer step per parameter. Mini-batching slices the batch axis without touching the time or\nfeature axes.</p>",
+          "nested": [
+            "Builder"
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "key": "builder()",
+              "signature": "Builder builder()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建构建器，使用 LAST 池化与分类交叉熵等默认值。",
+                "returns": "新的 Builder 实例"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "predict(Tensor<BSF>)",
+              "signature": "Tensor<BC> predict(Tensor<BSF> features)",
+              "params": [
+                {
+                  "type": "Tensor<BSF>",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "对整批序列推理，输出各类别得分。",
+                "params": {
+                  "features": "形状 (batch, sequence, features) 的 BSF 张量"
+                },
+                "returns": "形状 (batch, classes) 的输出，等价于 forward",
+                "notes": [
+                  "会写入各层的前向缓存，但不改动参数。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor<BSF>)",
+              "signature": "Tensor<BC> forward(Tensor<BSF> features)",
+              "params": [
+                {
+                  "type": "Tensor<BSF>",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "执行完整前向：主体层、池化与头部。",
+                "params": {
+                  "features": "形状 (batch, sequence, features) 的 BSF 张量，不能为 null"
+                },
+                "returns": "形状 (batch, classes) 的头部输出",
+                "notes": [
+                  "各主体层与池化层缓存本次前向的中间量，供紧随其后的 backward 使用。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "evaluate(Tensor<BSF>, Tensor<BC>)",
+              "signature": "LossEvaluation evaluate(Tensor<BSF> features, Tensor<BC> targets)",
+              "params": [
+                {
+                  "type": "Tensor<BSF>",
+                  "name": "features"
+                },
+                {
+                  "type": "Tensor<BC>",
+                  "name": "targets"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "前向并计算损失，缓存结果供 backward 使用。",
+                "params": {
+                  "features": "形状 (batch, sequence, features) 的 BSF 张量",
+                  "targets": "形状 (batch, classes) 的目标；分类交叉熵要求每行之和为 1"
+                },
+                "returns": "损失标量与输出梯度；SOFTMAX 头配分类交叉熵时另带简化的 logit 梯度",
+                "notes": [
+                  "每次调用覆盖上一次缓存的评估结果，旧实例随后不能再传给 backward。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "backward(LossEvaluation)",
+              "signature": "Tensor<BSF> backward(LossEvaluation evaluation)",
+              "params": [
+                {
+                  "type": "LossEvaluation",
+                  "name": "evaluation"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "反传缓存的损失梯度，返回对输入的梯度。",
+                "params": {
+                  "evaluation": "最近一次 evaluate 返回的实例，按引用比较"
+                },
+                "returns": "形状与 forward 输入相同的 BSF 梯度",
+                "throws": {
+                  "IllegalArgumentException": "evaluation 不是最近一次 evaluate 的实例"
+                },
+                "notes": [
+                  "头部为 SOFTMAX 且评估携带 logit 梯度时，走 p - t 形式的简化路径，数值更稳定。",
+                  "反传顺序为头部、池化层，再由主体层逆序逐层回传。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "update()",
+              "signature": "double update()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "全局范数裁剪后对全部参数执行一次更新。",
+                "returns": "裁剪前的全局梯度范数",
+                "notes": [
+                  "范数超过 gradientClip 时，所有参数梯度按 clip / norm 等比缩放，方向不变。",
+                  "逐主体层调用 update，最后更新头部；随后各层清除梯度就绪标记。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit(Tensor<BSF>, Tensor<BC>, int)",
+              "signature": "TrainingHistory fit(Tensor<BSF> features, Tensor<BC> targets, int epochs)",
+              "params": [
+                {
+                  "type": "Tensor<BSF>",
+                  "name": "features"
+                },
+                {
+                  "type": "Tensor<BC>",
+                  "name": "targets"
+                },
+                {
+                  "type": "int",
+                  "name": "epochs"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "全批量训练指定轮数。",
+                "params": {
+                  "features": "形状 (batch, sequence, features) 的训练序列",
+                  "targets": "形状 (batch, classes) 的目标",
+                  "epochs": "训练轮数，须为正"
+                },
+                "returns": "长度为 epochs 的历史，每项为该轮的加权平均损失",
+                "throws": {
+                  "IllegalArgumentException": "epochs 非正，或特征与目标的批量不一致",
+                  "IllegalStateException": "某一轮损失出现非有限值"
+                },
+                "notes": [
+                  "等价于 batchSize 取 batch 的重载，即每轮只做一次参数更新。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fit(Tensor<BSF>, Tensor<BC>, int, int)",
+              "signature": "TrainingHistory fit(Tensor<BSF> features, Tensor<BC> targets, int epochs, int batchSize)",
+              "params": [
+                {
+                  "type": "Tensor<BSF>",
+                  "name": "features"
+                },
+                {
+                  "type": "Tensor<BC>",
+                  "name": "targets"
+                },
+                {
+                  "type": "int",
+                  "name": "epochs"
+                },
+                {
+                  "type": "int",
+                  "name": "batchSize"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按小批量训练指定轮数。",
+                "params": {
+                  "features": "形状 (batch, sequence, features) 的训练序列",
+                  "targets": "形状 (batch, classes) 的目标",
+                  "epochs": "训练轮数，须为正",
+                  "batchSize": "每批样本数，须为正；沿批量轴顺序连续切片，最后一批可能不足"
+                },
+                "returns": "长度为 epochs 的历史，每项为按样本数加权的平均损失",
+                "throws": {
+                  "IllegalArgumentException": "epochs 或 batchSize 非正，或特征与目标的批量不一致",
+                  "IllegalStateException": "某一轮损失出现非有限值"
+                },
+                "notes": [
+                  "每个批次执行一次 evaluate、backward 与 update，因此每轮的更新次数为 ceil(batch / batchSize)。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<ParameterRef> parameters()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "汇总主体层与头部的全部参数视图。",
+                "returns": "主体层参数在前、头部参数在后；尚未初始化的层不贡献条目"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "loss()",
+              "signature": "Loss loss()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回配置的损失函数。",
+                "returns": "构建时指定的 Loss 枚举值"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "optimizer()",
+              "signature": "OptimizerConfig optimizer()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回配置的优化器超参数。",
+                "returns": "构建时指定的 OptimizerConfig"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "pooling()",
+              "signature": "SequencePool.Pooling pooling()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回时间轴池化策略。",
+                "returns": "构建时指定的 SequencePool.Pooling"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "bodySize()",
+              "signature": "int bodySize()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回主体层数量。",
+                "returns": "add 调用所加入的层数"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "kind()",
+              "signature": "ModelKind kind()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回模型族标识。",
+                "returns": "固定为 ModelKind.SEQUENCE_NETWORK"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "write(ModelWriter)",
+              "signature": "void write(ModelWriter writer)",
+              "params": [
+                {
+                  "type": "ModelWriter",
+                  "name": "writer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "把整网结构与参数写入模型流。",
+                "params": {
+                  "writer": "目标写入器；依次写入主体层数与各层（带类型标记）、池化策略、头部、损失、优化器与裁剪阈值"
+                },
+                "throws": {
+                  "IllegalStateException": "主体包含 LSTM、GRU、VanillaRNN、SelfAttention 之外的层类型"
+                },
+                "notes": [
+                  "层类型以字节标记区分：1 为 LSTM、2 为 GRU、3 为 VanillaRNN、4 为 SelfAttention。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "read(ModelReader)",
+              "signature": "SequenceNetwork read(ModelReader reader)",
+              "params": [
+                {
+                  "type": "ModelReader",
+                  "name": "reader"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "从模型流重建整网。",
+                "params": {
+                  "reader": "源读取器，读取顺序须与 write 一致"
+                },
+                "returns": "重建后的网络，主体层按流中顺序恢复",
+                "throws": {
+                  "ModelFormatException": "主体层数超出 0..1000、层类型未知，或池化、损失、优化器序号越界"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "端到端序列分类器：BSF → 若干序列层 → 池化 → Dense 头 → BC。",
+            "body": [
+              "前向按 add 顺序串联主体层，再经池化把时间轴压缩为一个向量，最后过 Dense 头得到 (batch, classes) 输出。训练时一次完整前向、计算损失梯度、逆序反传头部与各主体层，再做全局范数裁剪与逐参数更新。",
+              "fit 在批量轴上连续切片做小批量训练，时间轴与特征轴保持不动；每轮记录按样本数加权的平均损失。主体层只接受 Layer<BSF, BSF>，因此 Dense 不能放入主体，只能作为头部。"
+            ],
+            "notes": [
+              "head 必填；CATEGORICAL_CROSSENTROPY 要求 SOFTMAX 头且 units 不少于 2，BINARY_CROSSENTROPY 要求 SIGMOID 头。",
+              "默认配置为 LAST 池化、分类交叉熵、Adam（学习率 0.001）、梯度裁剪阈值 5.0。",
+              "update 返回裁剪前的全局梯度范数，可用于监控训练稳定性。",
+              "backward 只接受最近一次 evaluate 返回的同一个 LossEvaluation 实例，其余会抛出异常。",
+              "fit 不打乱样本顺序，批次按批量轴顺序连续切分。"
+            ],
+            "example": "SequenceNetwork network = SequenceNetwork.builder() .add(LSTM.builder().hiddenSize(8).seed(1).build()) .add(SelfAttention.builder().dimension(8).causal(true).seed(2).build()) .pooling(SequencePool.Pooling.LAST) .head(Dense.builder().units(2).activation(Activation.SOFTMAX).seed(3).build()) .loss(Loss.CATEGORICAL_CROSSENTROPY) .optimizer(Optimizer.ADAM.withLearningRate(0.01)) .gradientClip(5.0) .build();\nTensor<BSF> features = Tensor.zerosBSF(16, 10, 4);\nTensor<BC> scores = network.predict(features);",
+            "see": [
+              "basalt.nn.SequencePool",
+              "basalt.nn.LSTM",
+              "basalt.nn.Dense",
+              "basalt.nn.Loss"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.SequencePool",
+          "simple_qualified": "SequencePool",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Layer<BSF, BC>"
+          ],
+          "file": "jsl/nn/SequencePool.java",
+          "line": 16,
+          "javadoc": "Collapses a sequence into one vector per batch element. <p>{@link Pooling#LAST} is the standard many-to-one head for classification;\n{@link Pooling#MEAN} averages over time and therefore touches every timestep. Backward mirrors\nthe operation exactly: LAST routes the gradient to the final timestep, MEAN divides it evenly.</p>",
+          "nested": [
+            "Pooling"
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "key": "of(Pooling)",
+              "signature": "SequencePool of(Pooling pooling)",
+              "params": [
+                {
+                  "type": "Pooling",
+                  "name": "pooling"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按指定策略创建池化层。",
+                "params": {
+                  "pooling": "时间轴归约策略，不能为 null"
+                },
+                "returns": "新的 SequencePool 实例",
+                "throws": {
+                  "IllegalArgumentException": "pooling 为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor<BSF>)",
+              "signature": "Tensor<BC> forward(Tensor<BSF> input)",
+              "params": [
+                {
+                  "type": "Tensor<BSF>",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按策略把序列归约为单个向量。",
+                "params": {
+                  "input": "形状 (batch, sequence, features) 的 BSF 张量，sequence 须至少为 1"
+                },
+                "returns": "形状 (batch, features) 的 BC 张量；LAST 取末步，MEAN 取时间均值",
+                "notes": [
+                  "记录 batch、sequence、features 三个维度，供 backward 校验与还原。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "backward(Tensor<BC>)",
+              "signature": "Tensor<BSF> backward(Tensor<BC> gradient)",
+              "params": [
+                {
+                  "type": "Tensor<BC>",
+                  "name": "gradient"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "把池化梯度还原到时间轴。",
+                "params": {
+                  "gradient": "形状 (batch, features) 的上游梯度"
+                },
+                "returns": "形状 (batch, sequence, features) 的梯度，未参与归约的时间步为零",
+                "throws": {
+                  "IllegalArgumentException": "gradient 形状与最近一次 forward 不匹配，包括尚未调用 forward 的情况"
+                },
+                "notes": [
+                  "LAST 只写末步，MEAN 对每个时间步写入 gradient / sequence。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "pooling()",
+              "signature": "Pooling pooling()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回池化策略。",
+                "returns": "创建时指定的 Pooling 枚举值"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "沿时间轴把 BSF 序列压缩为每个样本一个 BC 向量。",
+            "body": [
+              "Pooling.LAST 取最后一个时间步，是分类任务常用的 many-to-one 头，代价是只使用末步信息；Pooling.MEAN 对全部时间步求平均，每个时间步都参与结果。",
+              "反向传播与正向严格对应：LAST 把梯度原样写回最后一个时间步，其余时间步为零；MEAN 把梯度除以序列长度后平均分配到每个时间步。"
+            ],
+            "notes": [
+              "只提供 LAST 与 MEAN 两种策略，没有 MAX 归约。",
+              "MEAN 对全部时间步取平均，不区分填充位置；变长序列需自行保证有效长度一致。",
+              "backward 依赖最近一次 forward 记录的形状，未前向即调用会因形状不匹配而失败。",
+              "本层无可训练参数，parameters 继承默认实现返回空列表。"
+            ],
+            "example": "SequencePool pool = SequencePool.of(SequencePool.Pooling.MEAN);\nTensor<BSF> sequence = Tensor.zerosBSF(4, 6, 3);\nTensor<BC> pooled = pool.forward(sequence);\nTensor<BSF> gradient = pool.backward(Tensor.zerosBC(4, 3));",
+            "see": [
+              "basalt.nn.SequenceNetwork",
+              "basalt.nn.LSTM"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.TrainingHistory",
+          "simple_qualified": "TrainingHistory",
+          "kind": "record",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/TrainingHistory.java",
+          "line": 4,
+          "javadoc": "Immutable snapshot of epoch-level training losses.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "losses()",
+              "signature": "double[] losses()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回逐轮损失的副本。",
+                "returns": "按轮次排列的损失副本，修改不影响记录本身"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "epochs()",
+              "signature": "int epochs()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回记录的轮数。",
+                "returns": "losses 数组长度"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "lastLoss()",
+              "signature": "double lastLoss()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回最后一轮的损失。",
+                "returns": "数组最后一个元素",
+                "throws": {
+                  "IllegalStateException": "没有任何轮次记录"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "逐轮训练损失的不可变快照。",
+            "body": [
+              "记录组件是一个 double[]，紧凑构造器与访问器都做 clone，因此构造后外部持有的数组无法影响快照，取出后修改也不影响内部状态。epochs() 等于数组长度，lastLoss() 取最后一个元素。"
+            ],
+            "notes": [
+              "每次调用 losses() 都复制数组，循环中反复取值会产生额外分配",
+              "长度为 0 时 lastLoss 抛 IllegalStateException",
+              "由 CNN.fit 与 SequenceNetwork.fit 返回，长度分别等于 epochs 与轮数"
+            ],
+            "see": [
+              "basalt.nn.CNN"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.VanillaRNN",
+          "simple_qualified": "VanillaRNN",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "Layer<BSF, BSF>",
+            "Persistable"
+          ],
+          "file": "jsl/nn/VanillaRNN.java",
+          "line": 21,
+          "javadoc": "Elman RNN: {@code h_t = tanh(W x_t + U h_{t-1} + b)}. <p>This layer exists as the control group for the gradient-vanishing experiment. Its BPTT\nJacobian is a product of {@code U^T diag(1 - h^2)} factors, whose spectral norm is typically\nbelow one, so the gradient of an early timestep decays geometrically with sequence length.</p>",
+          "nested": [
+            "Builder"
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "key": "builder()",
+              "signature": "Builder builder()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建构建器，hiddenSize 默认 16、seed 默认 42。",
+                "returns": "新的 Builder 实例"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "forward(Tensor<BSF>)",
+              "signature": "Tensor<BSF> forward(Tensor<BSF> input)",
+              "params": [
+                {
+                  "type": "Tensor<BSF>",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "沿时间轴前向传播，返回全序列隐藏状态。",
+                "params": {
+                  "input": "形状 (batch, sequence, features) 的 BSF 张量；features 在首次调用时确定并据此分配参数"
+                },
+                "returns": "形状 (batch, sequence, hiddenSize) 的张量，每步为 tanh(W x_t + U h_{t-1} + b)",
+                "throws": {
+                  "IllegalArgumentException": "features 与首次 forward 时确定的值不一致"
+                },
+                "notes": [
+                  "隐藏缓冲每次前向先清零，t=0 不使用循环项。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "backward(Tensor<BSF>)",
+              "signature": "Tensor<BSF> backward(Tensor<BSF> gradient)",
+              "params": [
+                {
+                  "type": "Tensor<BSF>",
+                  "name": "gradient"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "沿时间轴反向传播，累积参数梯度并返回输入梯度。",
+                "params": {
+                  "gradient": "上游梯度，形状必须为 (batch, sequence, hiddenSize)"
+                },
+                "returns": "对输入的梯度，形状 (batch, sequence, features)",
+                "throws": {
+                  "IllegalStateException": "尚未调用 forward",
+                  "IllegalArgumentException": "gradient 的形状与最近一次 forward 不匹配"
+                },
+                "notes": [
+                  "每步梯度乘以 1 - h^2，长序列上乘积累积会使早期时间步的梯度迅速趋近零。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "update(OptimizerConfig)",
+              "signature": "void update(OptimizerConfig optimizer)",
+              "params": [
+                {
+                  "type": "OptimizerConfig",
+                  "name": "optimizer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "用累积梯度对三组参数执行一次优化器更新。",
+                "params": {
+                  "optimizer": "优化器超参数，同时作用于输入权重、循环权重与偏置"
+                },
+                "throws": {
+                  "IllegalStateException": "未完成 forward 与 backward，或梯度已被上一次 update 消费"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "parameters()",
+              "signature": "List<ParameterRef> parameters()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回三组参数的实时视图。",
+                "returns": "参数视图列表，名称依次为 rnn.inputWeights、rnn.recurrentWeights、rnn.bias；首次 forward 之前为空列表"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "kind()",
+              "signature": "ModelKind kind()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回模型族标识。",
+                "returns": "固定为 ModelKind.VANILLA_RNN"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "write(ModelWriter)",
+              "signature": "void write(ModelWriter writer)",
+              "params": [
+                {
+                  "type": "ModelWriter",
+                  "name": "writer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "把配置与权重写入模型流。",
+                "params": {
+                  "writer": "目标写入器；依次写入 hiddenSize、seed、inputFeatures，已初始化时再写三组权重"
+                },
+                "notes": [
+                  "未初始化时 inputFeatures 写为 -1，且不写权重数组。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "read(ModelReader)",
+              "signature": "VanillaRNN read(ModelReader reader)",
+              "params": [
+                {
+                  "type": "ModelReader",
+                  "name": "reader"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "从模型流恢复 VanillaRNN 实例。",
+                "params": {
+                  "reader": "源读取器，读取顺序须与 write 一致"
+                },
+                "returns": "恢复后的实例；若流中记录了特征数，则同时重建并覆盖权重",
+                "throws": {
+                  "ModelFormatException": "hiddenSize 非正，或特征标记既非 -1 也非正数"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "最简 Elman 循环层：h_t = tanh(W x_t + U h_{t-1} + b)。",
+            "body": [
+              "只有一组输入权重、一组循环权重与一个偏置，没有门控。h_0 为零向量，forward 返回整段序列的全部隐藏状态，形状为 (batch, sequence, hiddenSize)。",
+              "该层保留作对照基线：BPTT 的雅可比是 U^T diag(1 - h^2) 的连乘，谱范数通常小于 1，早期时间步的梯度随序列长度按几何级数衰减。"
+            ],
+            "notes": [
+              "参数规模为 hiddenSize * (features + hiddenSize + 1)，约为同规模 LSTM 的四分之一。",
+              "bias 以全零初始化；输入权重与循环权重分别按 ±sqrt(6 / (features + hiddenSize)) 与 ±sqrt(6 / (2 * hiddenSize)) 的均匀分布采样。",
+              "不提供 hiddenSize() 访问器，隐藏单元数只在构建时可见。",
+              "必须按 forward → backward → update 的顺序调用。"
+            ],
+            "example": "VanillaRNN rnn = VanillaRNN.builder().hiddenSize(8).seed(42).build();\nTensor<BSF> input = Tensor.zerosBSF(2, 5, 3);\nTensor<BSF> output = rnn.forward(input);\nTensor<BSF> inputGradient = rnn.backward(Tensor.zerosBSF(2, 5, 8));\nrnn.update(Optimizer.SGD.withLearningRate(0.05));",
+            "see": [
+              "basalt.nn.LSTM",
+              "basalt.nn.GRU",
+              "basalt.nn.SequenceNetwork"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.nn.Conv2D.Builder",
+          "simple_qualified": "Conv2D.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/nn/Conv2D.java",
+          "line": 261,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "filters(int)",
+              "signature": "Builder filters(int filters)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "filters"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置输出通道数。",
+                "params": {
+                  "filters": "卷积核数量，即输出通道数，须为正"
+                },
+                "returns": "当前构建器，便于链式调用",
+                "notes": [
+                  "默认 1；同时决定偏置长度与 fanOut",
+                  "取值在 build 时校验，setter 本身不做检查"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "kernelSize(int, int)",
+              "signature": "Builder kernelSize(int height, int width)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "height"
+                },
+                {
+                  "type": "int",
+                  "name": "width"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置卷积核的空间尺寸。",
+                "params": {
+                  "height": "卷积核高度，须为正",
+                  "width": "卷积核宽度，须为正"
+                },
+                "returns": "当前构建器，便于链式调用",
+                "notes": [
+                  "默认 (3, 3)；非方形核会同时影响两个方向的输出尺寸与 fanIn、fanOut",
+                  "取值在 build 时校验，setter 本身不做检查"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "strides(int, int)",
+              "signature": "Builder strides(int height, int width)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "height"
+                },
+                {
+                  "type": "int",
+                  "name": "width"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置两个方向的滑动步长。",
+                "params": {
+                  "height": "垂直步长，须为正",
+                  "width": "水平步长，须为正"
+                },
+                "returns": "当前构建器，便于链式调用",
+                "notes": [
+                  "默认 (1, 1)；SAME 下输出尺寸为 ceil(in / stride)，与步长直接相关",
+                  "取值在 build 时校验，setter 本身不做检查"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "padding(Padding)",
+              "signature": "Builder padding(Padding padding)",
+              "params": [
+                {
+                  "type": "Padding",
+                  "name": "padding"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置补零模式。",
+                "params": {
+                  "padding": "Padding.VALID 或 Padding.SAME"
+                },
+                "returns": "当前构建器，便于链式调用",
+                "throws": {
+                  "NullPointerException": "padding 为 null，由 Objects.requireNonNull 立即抛出"
+                },
+                "notes": [
+                  "默认 VALID"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "activation(Activation)",
+              "signature": "Builder activation(Activation activation)",
+              "params": [
+                {
+                  "type": "Activation",
+                  "name": "activation"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置卷积后逐元素应用的激活函数。",
+                "params": {
+                  "activation": "任意 Activation 常量，SOFTMAX 除外"
+                },
+                "returns": "当前构建器，便于链式调用",
+                "throws": {
+                  "NullPointerException": "activation 为 null，立即抛出",
+                  "IllegalArgumentException": "在 build 时为 SOFTMAX"
+                },
+                "notes": [
+                  "默认 RELU；该选择同时影响权重初始化幅度"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "seed(long)",
+              "signature": "Builder seed(long seed)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置权重初始化的随机种子。",
+                "params": {
+                  "seed": "传给 java.util.Random 的种子"
+                },
+                "returns": "当前构建器，便于链式调用",
+                "notes": [
+                  "默认 42；相同种子与相同形状会得到相同初值"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "Conv2D build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验配置并创建 Conv2D。",
+                "returns": "新的 Conv2D 实例，参数尚未分配",
+                "throws": {
+                  "IllegalArgumentException": "filters、卷积核或步长非正，或激活为 SOFTMAX"
+                },
+                "notes": [
+                  "不校验输入通道数，通道数在首次 forward 时确定"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "Conv2D 的分阶段构建器，默认 1 个 3×3 卷积核。",
+            "body": [
+              "所有 setter 返回构建器自身，可链式调用；字段默认值为 filters = 1、kernelSize = (3, 3)、strides = (1, 1)、padding = VALID、activation = RELU、seed = 42。",
+              "build 时校验 filters、卷积核与步长均为正，并拒绝 SOFTMAX：卷积层按输出位置逐元素激活，无法对单点做整行归一化。"
+            ],
+            "notes": [
+              "输入通道数不在构建期指定，由首次 forward 从输入推断",
+              "每次 build 生成独立的 Conv2D 实例，参数在首次前向时才分配"
+            ],
+            "example": "Conv2D conv = Conv2D.builder() .filters(16) .kernelSize(5, 5) .strides(2, 2) .padding(Padding.SAME) .activation(Activation.GELU) .seed(2024L) .build();",
+            "see": [
+              "basalt.nn.Conv2D",
+              "basalt.nn.Padding",
+              "basalt.nn.Activation"
+            ]
+          }
         }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把 CNN 写入 .bsl 文件。",
-        "body": [
-         "先让模型把载荷写进内存缓冲，再由 ModelCodec 补齐 24 字节头部并一次性写入文件；目标文件已存在时被截断覆盖。"
-        ],
-        "params": {
-         "target": "目标路径，父目录须已存在",
-         "model": "待保存的网络，不可为 null"
-        },
-        "throws": {
-         "UncheckedIOException": "文件打开或写入失败",
-         "ModelFormatException": "载荷长度超出 .bsl 容器上限",
-         "NullPointerException": "model 为 null"
-        },
-        "notes": [
-         "未初始化的层只写结构，加载后需重新前向才会生成权重"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "loadCNN(Path)",
-       "signature": "CNN loadCNN(Path source)",
-       "params": [
-        {
-         "type": "Path",
-         "name": "source"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "从 .bsl 文件读出 CNN。",
-        "params": {
-         "source": "源文件路径"
-        },
-        "returns": "重建的 CNN，参数值已恢复",
-        "throws": {
-         "ModelFormatException": "magic 或版本不符、CRC32C 校验失败、载荷长度不符、文件内模型不是 CNN，或层与拓扑非法",
-         "UncheckedIOException": "文件打开或映射失败"
-        },
-        "notes": [
-         "读取后要求载荷被完整消费，多余字节视为格式错误"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "writeCNN(ModelWriter, CNN)",
-       "signature": "void writeCNN(ModelWriter output, CNN model)",
-       "params": [
-        {
-         "type": "ModelWriter",
-         "name": "output"
-        },
-        {
-         "type": "CNN",
-         "name": "model"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把 CNN 载荷写入已有 ModelWriter。",
-        "body": [
-         "写出损失序号、优化器序号、learningRate、beta1、beta2、epsilon、层数，再逐层写出类型标记与配置。"
-        ],
-        "params": {
-         "output": "目标写入器，调用方负责容器头",
-         "model": "待写入的网络"
-        },
-        "notes": [
-         "遇到 Conv2D、MaxPooling2D、Flatten、Dense 之外的层会抛 IllegalStateException"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "readCNN(ModelReader)",
-       "signature": "CNN readCNN(ModelReader input)",
-       "params": [
-        {
-         "type": "ModelReader",
-         "name": "input"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "从 ModelReader 读取 CNN 载荷并校验拓扑。",
-        "body": [
-         "依次读取损失与优化器序号并做范围检查，重建优化器配置与各层，最后校验 Flatten 的位置约束。"
-        ],
-        "params": {
-         "input": "载荷读取器，位置须在 CNN 载荷起点"
-        },
-        "returns": "重建的 CNN",
-        "throws": {
-         "ModelFormatException": "枚举序号越界、层数不在 1 到 100000 之间、未知层类型、缺少 Flatten、Flatten 重复，或 Flatten 前后出现非法层"
-        },
-        "notes": [
-         "拓扑校验与 Builder 的编译期约束一致，因此手写或损坏的文件无法绕过布局检查"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "CNN 的 .bsl 持久化门面，负责层载荷的读写。",
-      "body": [
-       "容器格式由 basalt.io.ModelCodec 负责，包含 magic、版本号与 CRC32C 校验和；本类只处理 CNN 载荷：损失序号、优化器类型与四个超参、层数，然后逐层写类型标记、配置，以及已初始化层的参数值。",
-       "readCNN 重建各层后校验拓扑：必须恰好出现一个 Flatten，Flatten 之前只允许 Conv2D 与 MaxPooling2D，之后只允许 Dense，层数须落在 1 到 100000 之间。层类型标记为 1 到 4，分别对应卷积、最大池化、展平与全连接。"
-      ],
-      "notes": [
-       "save 与 loadCNN 走 ModelCodec，加载时内存映射文件并在不复制载荷的情况下校验 CRC32C",
-       "UncheckedIOException 表示文件系统失败，ModelFormatException 表示容器或载荷格式错误",
-       "参数只在层已见过输入（inputChannels 或 inputFeatures 大于 0）时写出，未初始化的层以 -1 标记，加载后需重新前向才会生成权重",
-       "损失与优化器以枚举序号写入，调整枚举常量顺序会使旧文件解析错误"
-      ],
-      "example": "CNN model = NeuralNetwork.builder()\n        .add(Conv2D.builder().filters(4).kernelSize(3, 3).padding(Padding.SAME).build())\n        .add(MaxPooling2D.builder().poolSize(2, 2).build())\n        .add(Flatten.builder().build())\n        .add(Dense.builder().units(3).activation(Activation.SOFTMAX).build())\n        .build();\nmodel.predict(Tensor.ofBCHW(2, 1, 4, 4, new double[2 * 16]));\n\nPath path = Path.of(\"model.bsl\");\nModelSerializer.save(path, model);\nCNN restored = ModelSerializer.loadCNN(path);",
-      "see": [
-       "basalt.nn.CNN",
-       "basalt.io.ModelCodec"
       ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.NeuralNetwork",
-     "simple_qualified": "NeuralNetwork",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/NeuralNetwork.java",
-     "line": 11,
-     "javadoc": "Staged CNN builder. Image layers are legal before Flatten and vector layers after it;\ninvalid dimension transitions therefore fail during compilation rather than training.",
-     "nested": [
-      "ImageBuilder",
-      "VectorBuilder"
-     ],
-     "members": [
-      {
-       "kind": "method",
-       "key": "builder()",
-       "signature": "ImageBuilder builder()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建图像阶段的构建器。",
-        "returns": "层列表为空的 ImageBuilder"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "分阶段构建 CNN：图像层在 Flatten 之前，向量层在其后。",
-      "body": [
-       "两个阶段各是一个 final 嵌套类。ImageBuilder 只接受 Conv2D 与 MaxPooling2D，唯一出口是 add(Flatten)，它返回 VectorBuilder；VectorBuilder 只接受 Dense，并提供 loss、optimizer 与 build。",
-       "Dense 没有进入 ImageBuilder 的重载，ImageBuilder 也没有 build 方法，因此“图像层后直接接全连接层”或“忘记 Flatten”都无法通过编译，而不是等到训练时才因维度不符失败。"
-      ],
-      "notes": [
-       "build 不做额外校验，直接包装层列表、损失与优化器",
-       "默认损失为 CATEGORICAL_CROSSENTROPY，默认优化器为 ADAM 且学习率 0.001",
-       "阶段之间没有回退路径：进入 VectorBuilder 后不能再添加卷积或池化层"
-      ],
-      "example": "CNN model = NeuralNetwork.builder()\n        .add(Conv2D.builder().filters(8).kernelSize(3, 3).activation(Activation.RELU).build())\n        .add(MaxPooling2D.builder().poolSize(2, 2).build())\n        .add(Flatten.builder().build())\n        .add(Dense.builder().units(10).activation(Activation.SOFTMAX).build())\n        .loss(Loss.CATEGORICAL_CROSSENTROPY)\n        .optimizer(Optimizer.SGD.withLearningRate(0.05))\n        .build();\nint layers = model.layerCount();",
-      "see": [
-       "basalt.nn.CNN",
-       "basalt.nn.Conv2D",
-       "basalt.nn.Dense",
-       "basalt.nn.Flatten"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.Optimizer",
-     "simple_qualified": "Optimizer",
-     "kind": "enum",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/Optimizer.java",
-     "line": 4,
-     "javadoc": "Supported first-order optimization algorithms.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "enum_constant",
-       "key": "SGD",
-       "signature": "SGD",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "随机梯度下降，直接按学习率缩放梯度。",
-        "notes": [
-         "不维护动量，也不递增 Parameter 的步计数"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "ADAM",
-       "signature": "ADAM",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "Adam，一阶与二阶矩估计加偏差修正。",
-        "notes": [
-         "每个参数各自保存 firstMoment 与 secondMoment，与参数数组等长"
-        ]
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "ADAMW",
-       "signature": "ADAMW",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "AdamW 常量，当前内核与 ADAM 共用更新路径。",
-        "body": [
-         "该常量可正常构造配置并参与序列化，但 Parameter.update 只区分 SGD 与“非 SGD”，因此不含解耦权重衰减项，数值结果与 ADAM 相同。"
-        ],
-        "notes": [
-         "需要权重衰减时须在更新前自行把衰减项并入梯度"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "withLearningRate(double)",
-       "signature": "OptimizerConfig withLearningRate(double learningRate)",
-       "params": [
-        {
-         "type": "double",
-         "name": "learningRate"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "以指定学习率创建其余取默认值的配置。",
-        "params": {
-         "learningRate": "学习率，须为正且有限；非正值在构造 OptimizerConfig 时被拒绝"
-        },
-        "returns": "beta1 = 0.9、beta2 = 0.999、epsilon = 1e-8 的新配置",
-        "throws": {
-         "IllegalArgumentException": "learningRate 不是正有限值"
-        },
-        "notes": [
-         "每次调用都新建记录，不复用或缓存"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "一阶优化算法枚举：SGD、ADAM 与 ADAMW。",
-      "body": [
-       "withLearningRate 是唯一的便捷入口：固定 beta1 = 0.9、beta2 = 0.999、epsilon = 1e-8，只替换学习率，返回新的 OptimizerConfig。",
-       "SGD 直接执行 values -= learningRate × gradient，且不递增步计数；ADAM 与 ADAMW 走同一条偏差修正路径，即维护一阶与二阶矩的指数滑动平均，再除以 1 - beta^step。当前内核没有实现解耦权重衰减，两个常量在 Parameter.update 中的分支相同。"
-      ],
-      "notes": [
-       "枚举序号会写进 .bsl 载荷，调整常量顺序会破坏旧文件的兼容性",
-       "步计数只在非 SGD 更新时递增，混用 SGD 与 Adam 时偏差修正会沿用此前计数",
-       "beta 与 epsilon 对 SGD 分支没有作用，但仍须通过 OptimizerConfig 的校验"
-      ],
-      "example": "OptimizerConfig adam = Optimizer.ADAM.withLearningRate(0.001);\nOptimizerConfig sgd = Optimizer.SGD.withLearningRate(0.05);\nOptimizerConfig custom = new OptimizerConfig(Optimizer.ADAMW, 0.002, 0.85, 0.995, 1e-7);",
-      "see": [
-       "basalt.nn.OptimizerConfig",
-       "basalt.nn.Parameter"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.OptimizerConfig",
-     "simple_qualified": "OptimizerConfig",
-     "kind": "record",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/OptimizerConfig.java",
-     "line": 6,
-     "javadoc": "Immutable optimizer hyperparameters shared by every trainable layer.",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "训练共用的不可变优化器超参。",
-      "body": [
-       "记录组件依次为 optimizer、learningRate、beta1、beta2、epsilon。紧凑构造器强制 optimizer 非 null、learningRate 为正有限值、两个 beta 落在 [0, 1)、epsilon 为正有限值。",
-       "CNN 与 SequenceNetwork 各持有一个实例，并在每次更新时把它传给全部可训练层的 update；beta 与 epsilon 对 SGD 无意义，但仍需满足同一套校验。"
-      ],
-      "notes": [
-       "记录本身没有默认值，默认组合来自 Optimizer.withLearningRate：beta1 0.9、beta2 0.999、epsilon 1e-8",
-       "beta 取 1.0 会被拒绝，因为 1 - beta^step 会退化为 0",
-       "全部校验集中在构造器，训练期间不重复检查，因此超参无法在训练中变更",
-       "序列化时按 optimizer 序号与四个 double 写入，加载时同样经过构造器校验"
-      ],
-      "see": [
-       "basalt.nn.Optimizer",
-       "basalt.nn.Parameter"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.Padding",
-     "simple_qualified": "Padding",
-     "kind": "enum",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/Padding.java",
-     "line": 4,
-     "javadoc": "Convolution padding mode.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "enum_constant",
-       "key": "VALID",
-       "signature": "VALID",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "不补零，输出 (in − k) / stride + 1"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "SAME",
-       "signature": "SAME",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "补零使输出为 ceil(in / stride)"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "卷积补零模式：VALID 不补，SAME 补到按步长整除。",
-      "body": [
-       "VALID 不做补零，输出尺寸为 (in - k) / s + 1，要求 in ≥ k，否则 Conv2D 抛 IllegalArgumentException。",
-       "SAME 让输出尺寸只由步长决定：out = ceil(in / s)，即 (in + s - 1) / s。所需补零总量为 max(0, (out - 1)·s + k - in)，前侧与左侧各取 total / 2（向下取整），余下的一个像素落在后侧与下侧，因此 total 为奇数时上下、左右不对称。",
-       "补零是隐式的：Conv2D 不为填充分配缓冲区，只在采样时跳过越界索引。卷积核不大于步长时 total 常为 0，但 SAME 与 VALID 的输出尺寸仍可能不同，例如 in = 7、k = 2、s = 2 时分别为 4 与 3。"
-      ],
-      "notes": [
-       "由 Conv2D.Builder.padding 选择，默认 VALID",
-       "SAME 下输出空间尺寸与卷积核大小无关，只取决于输入与步长",
-       "补零值恒为 0，不参与权重更新",
-       "该枚举没有方法，仅作为模式标记"
-      ],
-      "example": "Conv2D same = Conv2D.builder()\n        .filters(4)\n        .kernelSize(3, 3)\n        .padding(Padding.SAME)\n        .build();\n\nConv2D valid = Conv2D.builder()\n        .filters(4)\n        .kernelSize(3, 3)\n        .padding(Padding.VALID)\n        .build();\n\nTensor<BCHW> input = Tensor.zerosBCHW(1, 2, 7, 7);\nint sameWidth = same.forward(input).dimension(3);\nint validWidth = valid.forward(input).dimension(3);",
-      "see": [
-       "basalt.nn.Conv2D",
-       "basalt.nn.Conv2D.Builder"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.ParameterRef",
-     "simple_qualified": "ParameterRef",
-     "kind": "record",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/ParameterRef.java",
-     "line": 9,
-     "javadoc": "Live view over one trainable tensor: parameter values and the gradient buffer produced by the\nmost recent backward pass. Both arrays are owned by the layer and must not be resized.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "size()",
-       "signature": "int size()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回参数元素个数。",
-        "returns": "values 的长度，与 gradient 长度相同"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "empty(String)",
-       "signature": "ParameterRef empty(String name)",
-       "params": [
-        {
-         "type": "String",
-         "name": "name"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建零长度的占位视图。",
-        "params": {
-         "name": "参数名，不可为 null 或空白"
-        },
-        "returns": "values 与 gradient 均为空数组的实例",
-        "throws": {
-         "IllegalArgumentException": "name 为 null 或空白"
-        },
-        "notes": [
-         "适合表示尚未初始化的参数，size() 返回 0"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "none()",
-       "signature": "List<ParameterRef> none()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回不可变的空列表。",
-        "returns": "List.of() 产生的空列表，供无参数层直接返回",
-        "notes": [
-         "每次调用返回同一个共享的空列表实例"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "单个可训练张量的实时视图：参数值与最近一次回传的梯度。",
-      "body": [
-       "记录组件为 name、values、gradient，三者都不复制，数组由层持有，本记录只是别名。层通过 Layer.parameters() 暴露这些视图：GradientCheck 借它做中心差分扰动，SequenceNetwork.update 借它做全局范数裁剪，序列化时也经它读写权重。",
-       "紧凑构造器要求 name 非空白、values 与 gradient 等长。长度在创建后不可变，使用方只能改写元素，不能扩容。"
-      ],
-      "notes": [
-       "梯度缓冲在每次 backward 中被层清零后重写，读到的始终是最近一次回传的结果",
-       "改动 values 会立即影响模型，GradientCheck 依赖这一点并在检查后恢复原值",
-       "empty(name) 用于尚未初始化的层，size() 返回 0",
-       "无参数层应返回 none() 而不是 null，Layer.parameters() 的默认实现即如此"
-      ],
-      "example": "Layer<BSF, BSF> layer = VanillaRNN.builder().hiddenSize(4).build();\nList<ParameterRef> parameters = layer.parameters();\nfor (ParameterRef parameter : parameters) {\n    double[] values = parameter.values();\n    double[] gradient = parameter.gradient();\n    double scale = Math.sqrt(parameter.size());\n    for (int i = 0; i < values.length; i++) {\n        values[i] -= 0.01 * gradient[i] / scale;\n    }\n}",
-      "see": [
-       "basalt.nn.Layer",
-       "basalt.nn.GradientCheck",
-       "basalt.nn.SequenceNetwork",
-       "basalt.nn.Parameter"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.SelfAttention",
-     "simple_qualified": "SelfAttention",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "Layer<BSF, BSF>",
-      "Persistable"
-     ],
-     "file": "jsl/nn/SelfAttention.java",
-     "line": 23,
-     "javadoc": "Single-head scaled dot-product self-attention with full Q/K/V and Softmax derivatives.\n\n<p>{@code A = softmax(Q K^T / sqrt(d))}, {@code O = A V}. The backward pass applies the exact\nSoftmax Jacobian {@code dS = A * (dA - rowsum(dA * A))} before the scaling factor, then\naccumulates {@code dQ = dS K}, {@code dK = dS^T Q} and {@code dV = A^T dO}. An optional causal\nmask restricts row {@code t} to keys {@code 0..t}.</p>",
-     "nested": [
-      "Builder"
-     ],
-     "members": [
-      {
-       "kind": "method",
-       "key": "builder()",
-       "signature": "Builder builder()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建构建器，dimension 默认 16、seed 默认 42、非因果。",
-        "returns": "新的 Builder 实例"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "forward(Tensor<BSF>)",
-       "signature": "Tensor<BSF> forward(Tensor<BSF> input)",
-       "params": [
-        {
-         "type": "Tensor<BSF>",
-         "name": "input"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "计算自注意力输出，形状与输入一致。",
-        "params": {
-         "input": "形状 (batch, sequence, dimension) 的 BSF 张量，特征轴必须等于 dimension"
-        },
-        "returns": "形状 (batch, sequence, dimension) 的注意力输出",
-        "throws": {
-         "IllegalArgumentException": "输入特征数不等于 dimension"
-        },
-        "notes": [
-         "首次调用时初始化三组 dimension × dimension 权重矩阵。",
-         "Softmax 按行减去该行最大值后再归一化，避免指数溢出。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "backward(Tensor<BSF>)",
-       "signature": "Tensor<BSF> backward(Tensor<BSF> gradient)",
-       "params": [
-        {
-         "type": "Tensor<BSF>",
-         "name": "gradient"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "反传注意力，累积 Q/K/V 权重梯度并返回输入梯度。",
-        "params": {
-         "gradient": "上游梯度，形状必须为 (batch, sequence, dimension)"
-        },
-        "returns": "对输入的梯度，形状 (batch, sequence, dimension)",
-        "throws": {
-         "IllegalStateException": "尚未调用 forward",
-         "IllegalArgumentException": "gradient 的形状与最近一次 forward 不匹配"
-        },
-        "notes": [
-         "Softmax 使用精确雅可比 A * (dA - rowsum(dA * A))，再乘缩放因子，而不是近似导数。",
-         "causal 模式下被掩码的键不参与求和，其梯度恒为零。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "update(OptimizerConfig)",
-       "signature": "void update(OptimizerConfig optimizer)",
-       "params": [
-        {
-         "type": "OptimizerConfig",
-         "name": "optimizer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "用累积梯度更新 Q/K/V 三组权重。",
-        "params": {
-         "optimizer": "优化器超参数，分别作用于 query、key、value 权重"
-        },
-        "throws": {
-         "IllegalStateException": "未完成 forward 与 backward，或梯度已被上一次 update 消费"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "parameters()",
-       "signature": "List<ParameterRef> parameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回 Q/K/V 权重的实时视图。",
-        "returns": "参数视图列表，名称依次为 attention.query、attention.key、attention.value；首次 forward 之前为空列表"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "dimension()",
-       "signature": "int dimension()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回每个位置的投影维度。",
-        "returns": "构建时指定的 dimension，同时是输入输出的特征数"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "causal()",
-       "signature": "boolean causal()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回是否启用因果掩码。",
-        "returns": "启用时为 true，此时位置 t 只关注键 0..t"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "kind()",
-       "signature": "ModelKind kind()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回模型族标识。",
-        "returns": "固定为 ModelKind.SELF_ATTENTION"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "write(ModelWriter)",
-       "signature": "void write(ModelWriter writer)",
-       "params": [
-        {
-         "type": "ModelWriter",
-         "name": "writer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把配置与权重写入模型流。",
-        "params": {
-         "writer": "目标写入器；依次写入 dimension、seed、因果标志、是否已初始化，已初始化时再写三组权重"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "read(ModelReader)",
-       "signature": "SelfAttention read(ModelReader reader)",
-       "params": [
-        {
-         "type": "ModelReader",
-         "name": "reader"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "从模型流恢复自注意力层。",
-        "params": {
-         "reader": "源读取器，读取顺序须与 write 一致"
-        },
-        "returns": "恢复后的实例，未初始化时保留惰性初始化状态",
-        "throws": {
-         "ModelFormatException": "dimension 非正，或因果标志、初始化标志不是 0 或 1"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "单头缩放点积自注意力，支持因果掩码与完整 Softmax 反向传播。",
-      "body": [
-       "对每个时间步做三次线性投影得到 Q、K、V，按 A = softmax(Q K^T / sqrt(d)) 归一化后加权求和 V，输出与输入同为 (batch, sequence, dimension)，每个时间步输出仍对应同一位置。",
-       "causal 为 true 时第 t 行只在键 0..t 上归一化，t 之后的注意力权重被置零，既不参与输出也不接收梯度；因此位置 t 的输出与未来时间步的输入无关。"
-      ],
-      "notes": [
-       "输入特征数必须严格等于 dimension，不做隐式投影；需要改变维度时应在之前串联 LSTM、GRU 或 Dense。",
-       "注意力缓冲为 batch * sequence * sequence 个 double，序列长度增加时内存按平方增长。",
-       "缩放因子 1 / sqrt(dimension) 在构造时算好，不随输入变化。",
-       "三组权重按 query、key、value 顺序用同一随机源连续采样，均匀分布于 ±sqrt(3 / dimension)；无偏置项。"
-      ],
-      "example": "SelfAttention attention = SelfAttention.builder()\n        .dimension(4)\n        .causal(true)\n        .seed(7)\n        .build();\nTensor<BSF> input = Tensor.zerosBSF(2, 6, 4);\nTensor<BSF> output = attention.forward(input);\nTensor<BSF> inputGradient = attention.backward(Tensor.zerosBSF(2, 6, 4));\nattention.update(Optimizer.ADAM.withLearningRate(0.001));",
-      "see": [
-       "basalt.nn.LSTM",
-       "basalt.nn.SequenceNetwork",
-       "basalt.nn.SequencePool"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.SequenceNetwork",
-     "simple_qualified": "SequenceNetwork",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "Persistable"
-     ],
-     "file": "jsl/nn/SequenceNetwork.java",
-     "line": 25,
-     "javadoc": "End-to-end trainable sequence classifier: {@code BSF -> [recurrent/attention layers] -> pool ->\nDense head -> BC}.\n\n<p>Training performs a full forward pass, the loss gradient, backpropagation through the head,\nthe pooling layer and every body layer in reverse order, global-norm gradient clipping, and one\noptimizer step per parameter. Mini-batching slices the batch axis without touching the time or\nfeature axes.</p>",
-     "nested": [
-      "Builder"
-     ],
-     "members": [
-      {
-       "kind": "method",
-       "key": "builder()",
-       "signature": "Builder builder()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建构建器，使用 LAST 池化与分类交叉熵等默认值。",
-        "returns": "新的 Builder 实例"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "predict(Tensor<BSF>)",
-       "signature": "Tensor<BC> predict(Tensor<BSF> features)",
-       "params": [
-        {
-         "type": "Tensor<BSF>",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "对整批序列推理，输出各类别得分。",
-        "params": {
-         "features": "形状 (batch, sequence, features) 的 BSF 张量"
-        },
-        "returns": "形状 (batch, classes) 的输出，等价于 forward",
-        "notes": [
-         "会写入各层的前向缓存，但不改动参数。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "forward(Tensor<BSF>)",
-       "signature": "Tensor<BC> forward(Tensor<BSF> features)",
-       "params": [
-        {
-         "type": "Tensor<BSF>",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "执行完整前向：主体层、池化与头部。",
-        "params": {
-         "features": "形状 (batch, sequence, features) 的 BSF 张量，不能为 null"
-        },
-        "returns": "形状 (batch, classes) 的头部输出",
-        "notes": [
-         "各主体层与池化层缓存本次前向的中间量，供紧随其后的 backward 使用。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "evaluate(Tensor<BSF>, Tensor<BC>)",
-       "signature": "LossEvaluation evaluate(Tensor<BSF> features, Tensor<BC> targets)",
-       "params": [
-        {
-         "type": "Tensor<BSF>",
-         "name": "features"
-        },
-        {
-         "type": "Tensor<BC>",
-         "name": "targets"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "前向并计算损失，缓存结果供 backward 使用。",
-        "params": {
-         "features": "形状 (batch, sequence, features) 的 BSF 张量",
-         "targets": "形状 (batch, classes) 的目标；分类交叉熵要求每行之和为 1"
-        },
-        "returns": "损失标量与输出梯度；SOFTMAX 头配分类交叉熵时另带简化的 logit 梯度",
-        "notes": [
-         "每次调用覆盖上一次缓存的评估结果，旧实例随后不能再传给 backward。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "backward(LossEvaluation)",
-       "signature": "Tensor<BSF> backward(LossEvaluation evaluation)",
-       "params": [
-        {
-         "type": "LossEvaluation",
-         "name": "evaluation"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "反传缓存的损失梯度，返回对输入的梯度。",
-        "params": {
-         "evaluation": "最近一次 evaluate 返回的实例，按引用比较"
-        },
-        "returns": "形状与 forward 输入相同的 BSF 梯度",
-        "throws": {
-         "IllegalArgumentException": "evaluation 不是最近一次 evaluate 的实例"
-        },
-        "notes": [
-         "头部为 SOFTMAX 且评估携带 logit 梯度时，走 p - t 形式的简化路径，数值更稳定。",
-         "反传顺序为头部、池化层，再由主体层逆序逐层回传。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "update()",
-       "signature": "double update()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "全局范数裁剪后对全部参数执行一次更新。",
-        "returns": "裁剪前的全局梯度范数",
-        "notes": [
-         "范数超过 gradientClip 时，所有参数梯度按 clip / norm 等比缩放，方向不变。",
-         "逐主体层调用 update，最后更新头部；随后各层清除梯度就绪标记。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fit(Tensor<BSF>, Tensor<BC>, int)",
-       "signature": "TrainingHistory fit(Tensor<BSF> features, Tensor<BC> targets, int epochs)",
-       "params": [
-        {
-         "type": "Tensor<BSF>",
-         "name": "features"
-        },
-        {
-         "type": "Tensor<BC>",
-         "name": "targets"
-        },
-        {
-         "type": "int",
-         "name": "epochs"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "全批量训练指定轮数。",
-        "params": {
-         "features": "形状 (batch, sequence, features) 的训练序列",
-         "targets": "形状 (batch, classes) 的目标",
-         "epochs": "训练轮数，须为正"
-        },
-        "returns": "长度为 epochs 的历史，每项为该轮的加权平均损失",
-        "throws": {
-         "IllegalArgumentException": "epochs 非正，或特征与目标的批量不一致",
-         "IllegalStateException": "某一轮损失出现非有限值"
-        },
-        "notes": [
-         "等价于 batchSize 取 batch 的重载，即每轮只做一次参数更新。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fit(Tensor<BSF>, Tensor<BC>, int, int)",
-       "signature": "TrainingHistory fit(Tensor<BSF> features, Tensor<BC> targets, int epochs, int batchSize)",
-       "params": [
-        {
-         "type": "Tensor<BSF>",
-         "name": "features"
-        },
-        {
-         "type": "Tensor<BC>",
-         "name": "targets"
-        },
-        {
-         "type": "int",
-         "name": "epochs"
-        },
-        {
-         "type": "int",
-         "name": "batchSize"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按小批量训练指定轮数。",
-        "params": {
-         "features": "形状 (batch, sequence, features) 的训练序列",
-         "targets": "形状 (batch, classes) 的目标",
-         "epochs": "训练轮数，须为正",
-         "batchSize": "每批样本数，须为正；沿批量轴顺序连续切片，最后一批可能不足"
-        },
-        "returns": "长度为 epochs 的历史，每项为按样本数加权的平均损失",
-        "throws": {
-         "IllegalArgumentException": "epochs 或 batchSize 非正，或特征与目标的批量不一致",
-         "IllegalStateException": "某一轮损失出现非有限值"
-        },
-        "notes": [
-         "每个批次执行一次 evaluate、backward 与 update，因此每轮的更新次数为 ceil(batch / batchSize)。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "parameters()",
-       "signature": "List<ParameterRef> parameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "汇总主体层与头部的全部参数视图。",
-        "returns": "主体层参数在前、头部参数在后；尚未初始化的层不贡献条目"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "loss()",
-       "signature": "Loss loss()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回配置的损失函数。",
-        "returns": "构建时指定的 Loss 枚举值"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "optimizer()",
-       "signature": "OptimizerConfig optimizer()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回配置的优化器超参数。",
-        "returns": "构建时指定的 OptimizerConfig"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "pooling()",
-       "signature": "SequencePool.Pooling pooling()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回时间轴池化策略。",
-        "returns": "构建时指定的 SequencePool.Pooling"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "bodySize()",
-       "signature": "int bodySize()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回主体层数量。",
-        "returns": "add 调用所加入的层数"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "kind()",
-       "signature": "ModelKind kind()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回模型族标识。",
-        "returns": "固定为 ModelKind.SEQUENCE_NETWORK"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "write(ModelWriter)",
-       "signature": "void write(ModelWriter writer)",
-       "params": [
-        {
-         "type": "ModelWriter",
-         "name": "writer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把整网结构与参数写入模型流。",
-        "params": {
-         "writer": "目标写入器；依次写入主体层数与各层（带类型标记）、池化策略、头部、损失、优化器与裁剪阈值"
-        },
-        "throws": {
-         "IllegalStateException": "主体包含 LSTM、GRU、VanillaRNN、SelfAttention 之外的层类型"
-        },
-        "notes": [
-         "层类型以字节标记区分：1 为 LSTM、2 为 GRU、3 为 VanillaRNN、4 为 SelfAttention。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "read(ModelReader)",
-       "signature": "SequenceNetwork read(ModelReader reader)",
-       "params": [
-        {
-         "type": "ModelReader",
-         "name": "reader"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "从模型流重建整网。",
-        "params": {
-         "reader": "源读取器，读取顺序须与 write 一致"
-        },
-        "returns": "重建后的网络，主体层按流中顺序恢复",
-        "throws": {
-         "ModelFormatException": "主体层数超出 0..1000、层类型未知，或池化、损失、优化器序号越界"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "端到端序列分类器：BSF → 若干序列层 → 池化 → Dense 头 → BC。",
-      "body": [
-       "前向按 add 顺序串联主体层，再经池化把时间轴压缩为一个向量，最后过 Dense 头得到 (batch, classes) 输出。训练时一次完整前向、计算损失梯度、逆序反传头部与各主体层，再做全局范数裁剪与逐参数更新。",
-       "fit 在批量轴上连续切片做小批量训练，时间轴与特征轴保持不动；每轮记录按样本数加权的平均损失。主体层只接受 Layer<BSF, BSF>，因此 Dense 不能放入主体，只能作为头部。"
-      ],
-      "notes": [
-       "head 必填；CATEGORICAL_CROSSENTROPY 要求 SOFTMAX 头且 units 不少于 2，BINARY_CROSSENTROPY 要求 SIGMOID 头。",
-       "默认配置为 LAST 池化、分类交叉熵、Adam（学习率 0.001）、梯度裁剪阈值 5.0。",
-       "update 返回裁剪前的全局梯度范数，可用于监控训练稳定性。",
-       "backward 只接受最近一次 evaluate 返回的同一个 LossEvaluation 实例，其余会抛出异常。",
-       "fit 不打乱样本顺序，批次按批量轴顺序连续切分。"
-      ],
-      "example": "SequenceNetwork network = SequenceNetwork.builder()\n        .add(LSTM.builder().hiddenSize(8).seed(1).build())\n        .add(SelfAttention.builder().dimension(8).causal(true).seed(2).build())\n        .pooling(SequencePool.Pooling.LAST)\n        .head(Dense.builder().units(2).activation(Activation.SOFTMAX).seed(3).build())\n        .loss(Loss.CATEGORICAL_CROSSENTROPY)\n        .optimizer(Optimizer.ADAM.withLearningRate(0.01))\n        .gradientClip(5.0)\n        .build();\nTensor<BSF> features = Tensor.zerosBSF(16, 10, 4);\nTensor<BC> scores = network.predict(features);",
-      "see": [
-       "basalt.nn.SequencePool",
-       "basalt.nn.LSTM",
-       "basalt.nn.Dense",
-       "basalt.nn.Loss"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.SequencePool",
-     "simple_qualified": "SequencePool",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "Layer<BSF, BC>"
-     ],
-     "file": "jsl/nn/SequencePool.java",
-     "line": 16,
-     "javadoc": "Collapses a sequence into one vector per batch element.\n\n<p>{@link Pooling#LAST} is the standard many-to-one head for classification;\n{@link Pooling#MEAN} averages over time and therefore touches every timestep. Backward mirrors\nthe operation exactly: LAST routes the gradient to the final timestep, MEAN divides it evenly.</p>",
-     "nested": [
-      "Pooling"
-     ],
-     "members": [
-      {
-       "kind": "method",
-       "key": "of(Pooling)",
-       "signature": "SequencePool of(Pooling pooling)",
-       "params": [
-        {
-         "type": "Pooling",
-         "name": "pooling"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按指定策略创建池化层。",
-        "params": {
-         "pooling": "时间轴归约策略，不能为 null"
-        },
-        "returns": "新的 SequencePool 实例",
-        "throws": {
-         "IllegalArgumentException": "pooling 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "forward(Tensor<BSF>)",
-       "signature": "Tensor<BC> forward(Tensor<BSF> input)",
-       "params": [
-        {
-         "type": "Tensor<BSF>",
-         "name": "input"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按策略把序列归约为单个向量。",
-        "params": {
-         "input": "形状 (batch, sequence, features) 的 BSF 张量，sequence 须至少为 1"
-        },
-        "returns": "形状 (batch, features) 的 BC 张量；LAST 取末步，MEAN 取时间均值",
-        "notes": [
-         "记录 batch、sequence、features 三个维度，供 backward 校验与还原。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "backward(Tensor<BC>)",
-       "signature": "Tensor<BSF> backward(Tensor<BC> gradient)",
-       "params": [
-        {
-         "type": "Tensor<BC>",
-         "name": "gradient"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把池化梯度还原到时间轴。",
-        "params": {
-         "gradient": "形状 (batch, features) 的上游梯度"
-        },
-        "returns": "形状 (batch, sequence, features) 的梯度，未参与归约的时间步为零",
-        "throws": {
-         "IllegalArgumentException": "gradient 形状与最近一次 forward 不匹配，包括尚未调用 forward 的情况"
-        },
-        "notes": [
-         "LAST 只写末步，MEAN 对每个时间步写入 gradient / sequence。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "pooling()",
-       "signature": "Pooling pooling()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回池化策略。",
-        "returns": "创建时指定的 Pooling 枚举值"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "沿时间轴把 BSF 序列压缩为每个样本一个 BC 向量。",
-      "body": [
-       "Pooling.LAST 取最后一个时间步，是分类任务常用的 many-to-one 头，代价是只使用末步信息；Pooling.MEAN 对全部时间步求平均，每个时间步都参与结果。",
-       "反向传播与正向严格对应：LAST 把梯度原样写回最后一个时间步，其余时间步为零；MEAN 把梯度除以序列长度后平均分配到每个时间步。"
-      ],
-      "notes": [
-       "只提供 LAST 与 MEAN 两种策略，没有 MAX 归约。",
-       "MEAN 对全部时间步取平均，不区分填充位置；变长序列需自行保证有效长度一致。",
-       "backward 依赖最近一次 forward 记录的形状，未前向即调用会因形状不匹配而失败。",
-       "本层无可训练参数，parameters 继承默认实现返回空列表。"
-      ],
-      "example": "SequencePool pool = SequencePool.of(SequencePool.Pooling.MEAN);\nTensor<BSF> sequence = Tensor.zerosBSF(4, 6, 3);\nTensor<BC> pooled = pool.forward(sequence);\nTensor<BSF> gradient = pool.backward(Tensor.zerosBC(4, 3));",
-      "see": [
-       "basalt.nn.SequenceNetwork",
-       "basalt.nn.LSTM"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.TrainingHistory",
-     "simple_qualified": "TrainingHistory",
-     "kind": "record",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/TrainingHistory.java",
-     "line": 4,
-     "javadoc": "Immutable snapshot of epoch-level training losses.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "losses()",
-       "signature": "double[] losses()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回逐轮损失的副本。",
-        "returns": "按轮次排列的损失副本，修改不影响记录本身"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "epochs()",
-       "signature": "int epochs()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回记录的轮数。",
-        "returns": "losses 数组长度"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "lastLoss()",
-       "signature": "double lastLoss()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回最后一轮的损失。",
-        "returns": "数组最后一个元素",
-        "throws": {
-         "IllegalStateException": "没有任何轮次记录"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "逐轮训练损失的不可变快照。",
-      "body": [
-       "记录组件是一个 double[]，紧凑构造器与访问器都做 clone，因此构造后外部持有的数组无法影响快照，取出后修改也不影响内部状态。epochs() 等于数组长度，lastLoss() 取最后一个元素。"
-      ],
-      "notes": [
-       "每次调用 losses() 都复制数组，循环中反复取值会产生额外分配",
-       "长度为 0 时 lastLoss 抛 IllegalStateException",
-       "由 CNN.fit 与 SequenceNetwork.fit 返回，长度分别等于 epochs 与轮数"
-      ],
-      "see": [
-       "basalt.nn.CNN"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.VanillaRNN",
-     "simple_qualified": "VanillaRNN",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "Layer<BSF, BSF>",
-      "Persistable"
-     ],
-     "file": "jsl/nn/VanillaRNN.java",
-     "line": 21,
-     "javadoc": "Elman RNN: {@code h_t = tanh(W x_t + U h_{t-1} + b)}.\n\n<p>This layer exists as the control group for the gradient-vanishing experiment. Its BPTT\nJacobian is a product of {@code U^T diag(1 - h^2)} factors, whose spectral norm is typically\nbelow one, so the gradient of an early timestep decays geometrically with sequence length.</p>",
-     "nested": [
-      "Builder"
-     ],
-     "members": [
-      {
-       "kind": "method",
-       "key": "builder()",
-       "signature": "Builder builder()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建构建器，hiddenSize 默认 16、seed 默认 42。",
-        "returns": "新的 Builder 实例"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "forward(Tensor<BSF>)",
-       "signature": "Tensor<BSF> forward(Tensor<BSF> input)",
-       "params": [
-        {
-         "type": "Tensor<BSF>",
-         "name": "input"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "沿时间轴前向传播，返回全序列隐藏状态。",
-        "params": {
-         "input": "形状 (batch, sequence, features) 的 BSF 张量；features 在首次调用时确定并据此分配参数"
-        },
-        "returns": "形状 (batch, sequence, hiddenSize) 的张量，每步为 tanh(W x_t + U h_{t-1} + b)",
-        "throws": {
-         "IllegalArgumentException": "features 与首次 forward 时确定的值不一致"
-        },
-        "notes": [
-         "隐藏缓冲每次前向先清零，t=0 不使用循环项。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "backward(Tensor<BSF>)",
-       "signature": "Tensor<BSF> backward(Tensor<BSF> gradient)",
-       "params": [
-        {
-         "type": "Tensor<BSF>",
-         "name": "gradient"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "沿时间轴反向传播，累积参数梯度并返回输入梯度。",
-        "params": {
-         "gradient": "上游梯度，形状必须为 (batch, sequence, hiddenSize)"
-        },
-        "returns": "对输入的梯度，形状 (batch, sequence, features)",
-        "throws": {
-         "IllegalStateException": "尚未调用 forward",
-         "IllegalArgumentException": "gradient 的形状与最近一次 forward 不匹配"
-        },
-        "notes": [
-         "每步梯度乘以 1 - h^2，长序列上乘积累积会使早期时间步的梯度迅速趋近零。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "update(OptimizerConfig)",
-       "signature": "void update(OptimizerConfig optimizer)",
-       "params": [
-        {
-         "type": "OptimizerConfig",
-         "name": "optimizer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "用累积梯度对三组参数执行一次优化器更新。",
-        "params": {
-         "optimizer": "优化器超参数，同时作用于输入权重、循环权重与偏置"
-        },
-        "throws": {
-         "IllegalStateException": "未完成 forward 与 backward，或梯度已被上一次 update 消费"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "parameters()",
-       "signature": "List<ParameterRef> parameters()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回三组参数的实时视图。",
-        "returns": "参数视图列表，名称依次为 rnn.inputWeights、rnn.recurrentWeights、rnn.bias；首次 forward 之前为空列表"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "kind()",
-       "signature": "ModelKind kind()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回模型族标识。",
-        "returns": "固定为 ModelKind.VANILLA_RNN"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "write(ModelWriter)",
-       "signature": "void write(ModelWriter writer)",
-       "params": [
-        {
-         "type": "ModelWriter",
-         "name": "writer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把配置与权重写入模型流。",
-        "params": {
-         "writer": "目标写入器；依次写入 hiddenSize、seed、inputFeatures，已初始化时再写三组权重"
-        },
-        "notes": [
-         "未初始化时 inputFeatures 写为 -1，且不写权重数组。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "read(ModelReader)",
-       "signature": "VanillaRNN read(ModelReader reader)",
-       "params": [
-        {
-         "type": "ModelReader",
-         "name": "reader"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "从模型流恢复 VanillaRNN 实例。",
-        "params": {
-         "reader": "源读取器，读取顺序须与 write 一致"
-        },
-        "returns": "恢复后的实例；若流中记录了特征数，则同时重建并覆盖权重",
-        "throws": {
-         "ModelFormatException": "hiddenSize 非正，或特征标记既非 -1 也非正数"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "最简 Elman 循环层：h_t = tanh(W x_t + U h_{t-1} + b)。",
-      "body": [
-       "只有一组输入权重、一组循环权重与一个偏置，没有门控。h_0 为零向量，forward 返回整段序列的全部隐藏状态，形状为 (batch, sequence, hiddenSize)。",
-       "该层保留作对照基线：BPTT 的雅可比是 U^T diag(1 - h^2) 的连乘，谱范数通常小于 1，早期时间步的梯度随序列长度按几何级数衰减。"
-      ],
-      "notes": [
-       "参数规模为 hiddenSize * (features + hiddenSize + 1)，约为同规模 LSTM 的四分之一。",
-       "bias 以全零初始化；输入权重与循环权重分别按 ±sqrt(6 / (features + hiddenSize)) 与 ±sqrt(6 / (2 * hiddenSize)) 的均匀分布采样。",
-       "不提供 hiddenSize() 访问器，隐藏单元数只在构建时可见。",
-       "必须按 forward → backward → update 的顺序调用。"
-      ],
-      "example": "VanillaRNN rnn = VanillaRNN.builder().hiddenSize(8).seed(42).build();\nTensor<BSF> input = Tensor.zerosBSF(2, 5, 3);\nTensor<BSF> output = rnn.forward(input);\nTensor<BSF> inputGradient = rnn.backward(Tensor.zerosBSF(2, 5, 8));\nrnn.update(Optimizer.SGD.withLearningRate(0.05));",
-      "see": [
-       "basalt.nn.LSTM",
-       "basalt.nn.GRU",
-       "basalt.nn.SequenceNetwork"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.nn.Conv2D.Builder",
-     "simple_qualified": "Conv2D.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/nn/Conv2D.java",
-     "line": 261,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "filters(int)",
-       "signature": "Builder filters(int filters)",
-       "params": [
-        {
-         "type": "int",
-         "name": "filters"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置输出通道数。",
-        "params": {
-         "filters": "卷积核数量，即输出通道数，须为正"
-        },
-        "returns": "当前构建器，便于链式调用",
-        "notes": [
-         "默认 1；同时决定偏置长度与 fanOut",
-         "取值在 build 时校验，setter 本身不做检查"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "kernelSize(int, int)",
-       "signature": "Builder kernelSize(int height, int width)",
-       "params": [
-        {
-         "type": "int",
-         "name": "height"
-        },
-        {
-         "type": "int",
-         "name": "width"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置卷积核的空间尺寸。",
-        "params": {
-         "height": "卷积核高度，须为正",
-         "width": "卷积核宽度，须为正"
-        },
-        "returns": "当前构建器，便于链式调用",
-        "notes": [
-         "默认 (3, 3)；非方形核会同时影响两个方向的输出尺寸与 fanIn、fanOut",
-         "取值在 build 时校验，setter 本身不做检查"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "strides(int, int)",
-       "signature": "Builder strides(int height, int width)",
-       "params": [
-        {
-         "type": "int",
-         "name": "height"
-        },
-        {
-         "type": "int",
-         "name": "width"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置两个方向的滑动步长。",
-        "params": {
-         "height": "垂直步长，须为正",
-         "width": "水平步长，须为正"
-        },
-        "returns": "当前构建器，便于链式调用",
-        "notes": [
-         "默认 (1, 1)；SAME 下输出尺寸为 ceil(in / stride)，与步长直接相关",
-         "取值在 build 时校验，setter 本身不做检查"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "padding(Padding)",
-       "signature": "Builder padding(Padding padding)",
-       "params": [
-        {
-         "type": "Padding",
-         "name": "padding"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置补零模式。",
-        "params": {
-         "padding": "Padding.VALID 或 Padding.SAME"
-        },
-        "returns": "当前构建器，便于链式调用",
-        "throws": {
-         "NullPointerException": "padding 为 null，由 Objects.requireNonNull 立即抛出"
-        },
-        "notes": [
-         "默认 VALID"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "activation(Activation)",
-       "signature": "Builder activation(Activation activation)",
-       "params": [
-        {
-         "type": "Activation",
-         "name": "activation"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置卷积后逐元素应用的激活函数。",
-        "params": {
-         "activation": "任意 Activation 常量，SOFTMAX 除外"
-        },
-        "returns": "当前构建器，便于链式调用",
-        "throws": {
-         "NullPointerException": "activation 为 null，立即抛出",
-         "IllegalArgumentException": "在 build 时为 SOFTMAX"
-        },
-        "notes": [
-         "默认 RELU；该选择同时影响权重初始化幅度"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置权重初始化的随机种子。",
-        "params": {
-         "seed": "传给 java.util.Random 的种子"
-        },
-        "returns": "当前构建器，便于链式调用",
-        "notes": [
-         "默认 42；相同种子与相同形状会得到相同初值"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "Conv2D build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验配置并创建 Conv2D。",
-        "returns": "新的 Conv2D 实例，参数尚未分配",
-        "throws": {
-         "IllegalArgumentException": "filters、卷积核或步长非正，或激活为 SOFTMAX"
-        },
-        "notes": [
-         "不校验输入通道数，通道数在首次 forward 时确定"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "Conv2D 的分阶段构建器，默认 1 个 3×3 卷积核。",
-      "body": [
-       "所有 setter 返回构建器自身，可链式调用；字段默认值为 filters = 1、kernelSize = (3, 3)、strides = (1, 1)、padding = VALID、activation = RELU、seed = 42。",
-       "build 时校验 filters、卷积核与步长均为正，并拒绝 SOFTMAX：卷积层按输出位置逐元素激活，无法对单点做整行归一化。"
-      ],
-      "notes": [
-       "输入通道数不在构建期指定，由首次 forward 从输入推断",
-       "每次 build 生成独立的 Conv2D 实例，参数在首次前向时才分配"
-      ],
-      "example": "Conv2D conv = Conv2D.builder()\n        .filters(16)\n        .kernelSize(5, 5)\n        .strides(2, 2)\n        .padding(Padding.SAME)\n        .activation(Activation.GELU)\n        .seed(2024L)\n        .build();",
-      "see": [
-       "basalt.nn.Conv2D",
-       "basalt.nn.Padding",
-       "basalt.nn.Activation"
-      ]
-     }
     }
-   ]
-  }
- ]
+  ]
 }

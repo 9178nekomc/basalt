@@ -12,8 +12,7 @@ import java.util.TreeMap;
 
 /**
  * Univariate imputer for completing missing values ({@link Double#NaN}) with {@code MEAN},
- * {@code MEDIAN}, {@code MOST_FREQUENT}, or {@code CONSTANT} strategies, matching
- * {@code sklearn.impute.SimpleImputer}.
+ * {@code MEDIAN}, {@code MOST_FREQUENT}, or {@code CONSTANT} strategies.
  */
 public final class SimpleImputer implements Transformer, Estimator {
     public enum Strategy {

@@ -100,7 +100,7 @@ BREADTH = [
 def read(name: str) -> dict[tuple[str, str], dict[str, str]]:
     path = DATA / name
     if not path.exists():
-        raise SystemExit(f"missing {path}; run compare_sklearn.py and SklearnComparison")
+        raise SystemExit(f"missing {path}; run compare_reference.py and ReferenceComparison")
     with path.open(newline="", encoding="utf-8") as handle:
         return {(row["task"], row["model"]): row for row in csv.DictReader(handle)}
 

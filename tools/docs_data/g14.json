@@ -1,384 +1,384 @@
 {
- "group": "g14",
- "title": "经典机器学习（9/9）",
- "modules": [
-  {
-   "name": "basalt.ml",
-   "types": [
+  "group": "g14",
+  "title": "经典机器学习（9/9）",
+  "modules": [
     {
-     "qualified": "basalt.ml.SelectKBest.ScoreFunc",
-     "simple_qualified": "SelectKBest.ScoreFunc",
-     "kind": "enum",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/SelectKBest.java",
-     "line": 19,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "enum_constant",
-       "key": "F_CLASSIF",
-       "signature": "F_CLASSIF",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "单因素方差分析 F 值，用于分类标签"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "F_REGRESSION",
-       "signature": "F_REGRESSION",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "回归 F 值（方差解释比），用于连续标签"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "CHI2",
-       "signature": "CHI2",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "卡方统计量，要求非负特征与分类标签"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "特征打分的统计检验：分类 F、回归 F、卡方",
-      "body": [
-       "F_CLASSIF 把 targets 的每个不同取值视为一个类别，用组间均方与组内均方之比作为分数，组内均方不足 1e-15 时记 0.0；F_REGRESSION 计算特征与连续目标的相关系数，再换算成 F 值；CHI2 按类别累加特征值，与按类别先验算出的期望值比较，得到卡方统计量。",
-       "三种分数都在 fit 阶段一次算出，SelectKBest 按分数降序排列后取前 k 个下标，再按下标升序保存。分数只用于排序，不做显著性判定，也不计算 p 值。"
-      ],
-      "notes": [
-       "CHI2 要求特征值非负，遇到负值在 fit 阶段抛 IllegalArgumentException。",
-       "F_CLASSIF 与 CHI2 把 targets 的每个不同取值当作类别标签；F_REGRESSION 假定 targets 为连续值。",
-       "常数特征的分数为 0.0，与目标无关的特征同样得 0.0，排序时按特征下标升序稳定排列。"
-      ],
-      "see": [
-       "basalt.ml.SelectKBest",
-       "basalt.ml.Estimator"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.ShapExplainer.Explanation",
-     "simple_qualified": "ShapExplainer.Explanation",
-     "kind": "record",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/ShapExplainer.java",
-     "line": 21,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "一次解释的结果：基准值、SHAP 矩阵、预测与平均绝对值",
-      "body": [
-       "baseValue 是背景数据集上模型输出的均值；shapValues 为 rows×cols 的矩阵，第 i 行各列之和加 baseValue 等于 predictions[i]，这是解释器在各条计算路径上都强制满足的局部有效性。predictions 保存模型在该批样本上的标量输出，分类模型取正类概率或原始得分。",
-       "meanAbsShap 是各特征跨样本的绝对 SHAP 均值，长度等于特征数，可直接用于特征重要性排序；它由 shapValues 现算，不含额外信息。"
-      ],
-      "notes": [
-       "shapValues 是 explain 中新分配的 Matrix，与输入实例不共享存储。",
-       "行和与 predictions 的一致性受浮点累加误差影响，比较时需留出容差。",
-       "record 不复制数组，构造后修改 predictions 或 meanAbsShap 会改变记录内容。"
-      ],
-      "see": [
-       "basalt.ml.ShapExplainer",
-       "basalt.core.Matrix"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.SimpleImputer.Builder",
-     "simple_qualified": "SimpleImputer.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/SimpleImputer.java",
-     "line": 181,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "strategy(Strategy)",
-       "signature": "Builder strategy(Strategy strategy)",
-       "params": [
+      "name": "basalt.ml",
+      "types": [
         {
-         "type": "Strategy",
-         "name": "strategy"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置填充策略，默认 MEAN",
-        "body": [
-         "策略只在 fit 阶段影响每列统计量的计算方式；transform 对所有策略一视同仁，把 NaN 位置替换成该列统计量。"
-        ],
-        "params": {
-         "strategy": "缺失值填充方式，取 MEAN、MEDIAN、MOST_FREQUENT 或 CONSTANT，不允许 null"
+          "qualified": "basalt.ml.SelectKBest.ScoreFunc",
+          "simple_qualified": "SelectKBest.ScoreFunc",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/SelectKBest.java",
+          "line": 19,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "enum_constant",
+              "key": "F_CLASSIF",
+              "signature": "F_CLASSIF",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "单因素方差分析 F 值，用于分类标签"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "F_REGRESSION",
+              "signature": "F_REGRESSION",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "回归 F 值（方差解释比），用于连续标签"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "CHI2",
+              "signature": "CHI2",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "卡方统计量，要求非负特征与分类标签"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "特征打分的统计检验：分类 F、回归 F、卡方",
+            "body": [
+              "F_CLASSIF 把 targets 的每个不同取值视为一个类别，用组间均方与组内均方之比作为分数，组内均方不足 1e-15 时记 0.0；F_REGRESSION 计算特征与连续目标的相关系数，再换算成 F 值；CHI2 按类别累加特征值，与按类别先验算出的期望值比较，得到卡方统计量。",
+              "三种分数都在 fit 阶段一次算出，SelectKBest 按分数降序排列后取前 k 个下标，再按下标升序保存。分数只用于排序，不做显著性判定，也不计算 p 值。"
+            ],
+            "notes": [
+              "CHI2 要求特征值非负，遇到负值在 fit 阶段抛 IllegalArgumentException。",
+              "F_CLASSIF 与 CHI2 把 targets 的每个不同取值当作类别标签；F_REGRESSION 假定 targets 为连续值。",
+              "常数特征的分数为 0.0，与目标无关的特征同样得 0.0，排序时按特征下标升序稳定排列。"
+            ],
+            "see": [
+              "basalt.ml.SelectKBest",
+              "basalt.ml.Estimator"
+            ]
+          }
         },
-        "returns": "this，便于链式配置",
-        "throws": {
-         "NullPointerException": "strategy 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fillValue(double)",
-       "signature": "Builder fillValue(double fillValue)",
-       "params": [
         {
-         "type": "double",
-         "name": "fillValue"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置 CONSTANT 策略使用的填充常数",
-        "body": [
-         "校验在设置时完成，非法值不会留到 fit。非 CONSTANT 策略下该值仍被保存并写入模型文件，但不参与统计量计算。"
-        ],
-        "params": {
-         "fillValue": "替换缺失值所用的常数，必须有限（不得为 NaN 或无穷）"
+          "qualified": "basalt.ml.ShapExplainer.Explanation",
+          "simple_qualified": "ShapExplainer.Explanation",
+          "kind": "record",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/ShapExplainer.java",
+          "line": 21,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "一次解释的结果：基准值、SHAP 矩阵、预测与平均绝对值",
+            "body": [
+              "baseValue 是背景数据集上模型输出的均值；shapValues 为 rows×cols 的矩阵，第 i 行各列之和加 baseValue 等于 predictions[i]，这是解释器在各条计算路径上都强制满足的局部有效性。predictions 保存模型在该批样本上的标量输出，分类模型取正类概率或原始得分。",
+              "meanAbsShap 是各特征跨样本的绝对 SHAP 均值，长度等于特征数，可直接用于特征重要性排序；它由 shapValues 现算，不含额外信息。"
+            ],
+            "notes": [
+              "shapValues 是 explain 中新分配的 Matrix，与输入实例不共享存储。",
+              "行和与 predictions 的一致性受浮点累加误差影响，比较时需留出容差。",
+              "record 不复制数组，构造后修改 predictions 或 meanAbsShap 会改变记录内容。"
+            ],
+            "see": [
+              "basalt.ml.ShapExplainer",
+              "basalt.core.Matrix"
+            ]
+          }
         },
-        "returns": "this，便于链式配置",
-        "throws": {
-         "IllegalArgumentException": "fillValue 为 NaN 或无穷"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "SimpleImputer build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建配置好的估计器实例",
-        "body": [
-         "构造器只拷贝策略与填充值，不分配统计数组；统计量在 fit 时按列生成。"
-        ],
-        "returns": "持有当前策略与填充值的 SimpleImputer，尚未拟合",
-        "notes": [
-         "未拟合的实例调用 transform 或 statistics 会抛 IllegalStateException。"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "构造 SimpleImputer，设置缺失值策略与常数填充值",
-      "body": [
-       "默认策略为 MEAN，fillValue 为 0.0；fillValue 只在 CONSTANT 策略下写入统计量，其他策略即使设置也不影响结果。builder() 每次返回新实例，可反复调用 build 得到互相独立的估计器。",
-       "策略与填充值都会被序列化：write 依次写策略序数、填充值、特征数与该列的统计量数组，read 按同样顺序还原，因此非法序数或非正特征数会在读取阶段抛 ModelFormatException。"
-      ],
-      "notes": [
-       "构造期不做任何数据检查，缺失值的判定与统计量计算都发生在 fit。",
-       "build 不复制 Builder 之外的输入，之后修改 Builder 不会影响已建实例。"
-      ],
-      "example": "SimpleImputer imputer = SimpleImputer.builder()\n        .strategy(SimpleImputer.Strategy.CONSTANT)\n        .fillValue(-1.0)\n        .build();\nimputer.fit(features);\nMatrix filled = imputer.transform(features);",
-      "see": [
-       "basalt.ml.SimpleImputer",
-       "basalt.ml.SimpleImputer.Strategy",
-       "basalt.ml.StandardScaler.Builder"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.SimpleImputer.Strategy",
-     "simple_qualified": "SimpleImputer.Strategy",
-     "kind": "enum",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/SimpleImputer.java",
-     "line": 19,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "enum_constant",
-       "key": "MEAN",
-       "signature": "MEAN",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "用该列非缺失值的均值填充"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "MEDIAN",
-       "signature": "MEDIAN",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "用该列非缺失值的中位数填充"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "MOST_FREQUENT",
-       "signature": "MOST_FREQUENT",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "用该列出现次数最多的值填充"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "CONSTANT",
-       "signature": "CONSTANT",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "用固定常量填充（缺失指示列另算）"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "缺失值填充策略：均值、中位数、众数、常数",
-      "body": [
-       "MEAN 用该列非缺失值的算术平均；MEDIAN 对非缺失值排序后取中位数，个数为偶数时取中间两个的均值；MOST_FREQUENT 取出现次数最多的值，并列时取数值较小者，因为频次统计基于 TreeMap 的有序遍历。CONSTANT 直接用 fillValue 填充，完全不读取数据。",
-       "每列的统计量在 fit 时一次算好并缓存，transform 阶段只做查表替换：NaN 位置写入统计量，有限值原样保留，遇到无穷值则报错。"
-      ],
-      "notes": [
-       "除 CONSTANT 外，某列全为 NaN 时 fit 抛 IllegalArgumentException，因为没有可用样本。",
-       "非缺失位置出现无穷值时 fit 与 transform 都抛 IllegalArgumentException。",
-       "策略随模型一起序列化，read 时按序数还原，序数越界由 ModelFormatException 拒绝。"
-      ],
-      "see": [
-       "basalt.ml.SimpleImputer",
-       "basalt.ml.SimpleImputer.Builder"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.StandardScaler.Builder",
-     "simple_qualified": "StandardScaler.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/StandardScaler.java",
-     "line": 184,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "withMean(boolean)",
-       "signature": "Builder withMean(boolean withMean)",
-       "params": [
         {
-         "type": "boolean",
-         "name": "withMean"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置是否减去列均值",
-        "body": [
-         "关闭后只做缩放，transform 输出 x / scale，inverseTransform 输出 x * scale。拟合阶段仍会计算均值并写进模型文件，只是变换时不再使用。"
-        ],
-        "params": {
-         "withMean": "true 时 transform 减去均值、inverseTransform 加回均值；默认 true"
+          "qualified": "basalt.ml.SimpleImputer.Builder",
+          "simple_qualified": "SimpleImputer.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/SimpleImputer.java",
+          "line": 181,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "strategy(Strategy)",
+              "signature": "Builder strategy(Strategy strategy)",
+              "params": [
+                {
+                  "type": "Strategy",
+                  "name": "strategy"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置填充策略，默认 MEAN",
+                "body": [
+                  "策略只在 fit 阶段影响每列统计量的计算方式；transform 对所有策略一视同仁，把 NaN 位置替换成该列统计量。"
+                ],
+                "params": {
+                  "strategy": "缺失值填充方式，取 MEAN、MEDIAN、MOST_FREQUENT 或 CONSTANT，不允许 null"
+                },
+                "returns": "this，便于链式配置",
+                "throws": {
+                  "NullPointerException": "strategy 为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fillValue(double)",
+              "signature": "Builder fillValue(double fillValue)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "fillValue"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置 CONSTANT 策略使用的填充常数",
+                "body": [
+                  "校验在设置时完成，非法值不会留到 fit。非 CONSTANT 策略下该值仍被保存并写入模型文件，但不参与统计量计算。"
+                ],
+                "params": {
+                  "fillValue": "替换缺失值所用的常数，必须有限（不得为 NaN 或无穷）"
+                },
+                "returns": "this，便于链式配置",
+                "throws": {
+                  "IllegalArgumentException": "fillValue 为 NaN 或无穷"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "SimpleImputer build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建配置好的估计器实例",
+                "body": [
+                  "构造器只拷贝策略与填充值，不分配统计数组；统计量在 fit 时按列生成。"
+                ],
+                "returns": "持有当前策略与填充值的 SimpleImputer，尚未拟合",
+                "notes": [
+                  "未拟合的实例调用 transform 或 statistics 会抛 IllegalStateException。"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "构造 SimpleImputer，设置缺失值策略与常数填充值",
+            "body": [
+              "默认策略为 MEAN，fillValue 为 0.0；fillValue 只在 CONSTANT 策略下写入统计量，其他策略即使设置也不影响结果。builder() 每次返回新实例，可反复调用 build 得到互相独立的估计器。",
+              "策略与填充值都会被序列化：write 依次写策略序数、填充值、特征数与该列的统计量数组，read 按同样顺序还原，因此非法序数或非正特征数会在读取阶段抛 ModelFormatException。"
+            ],
+            "notes": [
+              "构造期不做任何数据检查，缺失值的判定与统计量计算都发生在 fit。",
+              "build 不复制 Builder 之外的输入，之后修改 Builder 不会影响已建实例。"
+            ],
+            "example": "SimpleImputer imputer = SimpleImputer.builder() .strategy(SimpleImputer.Strategy.CONSTANT) .fillValue(-1.0) .build();\nimputer.fit(features);\nMatrix filled = imputer.transform(features);",
+            "see": [
+              "basalt.ml.SimpleImputer",
+              "basalt.ml.SimpleImputer.Strategy",
+              "basalt.ml.StandardScaler.Builder"
+            ]
+          }
         },
-        "returns": "this，便于链式配置"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "withStd(boolean)",
-       "signature": "Builder withStd(boolean withStd)",
-       "params": [
         {
-         "type": "boolean",
-         "name": "withStd"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置是否除以列标准差",
-        "body": [
-         "缩放因子是总体标准差（ddof=0）。某列标准差不超过 1e-12 时该列 scale 记为 1.0，避免除零，因此常数特征不会被放大。"
-        ],
-        "params": {
-         "withStd": "true 时按标准差缩放，默认 true；与 withMean 互相独立"
+          "qualified": "basalt.ml.SimpleImputer.Strategy",
+          "simple_qualified": "SimpleImputer.Strategy",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/SimpleImputer.java",
+          "line": 19,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "enum_constant",
+              "key": "MEAN",
+              "signature": "MEAN",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "用该列非缺失值的均值填充"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "MEDIAN",
+              "signature": "MEDIAN",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "用该列非缺失值的中位数填充"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "MOST_FREQUENT",
+              "signature": "MOST_FREQUENT",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "用该列出现次数最多的值填充"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "CONSTANT",
+              "signature": "CONSTANT",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "用固定常量填充（缺失指示列另算）"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "缺失值填充策略：均值、中位数、众数、常数",
+            "body": [
+              "MEAN 用该列非缺失值的算术平均；MEDIAN 对非缺失值排序后取中位数，个数为偶数时取中间两个的均值；MOST_FREQUENT 取出现次数最多的值，并列时取数值较小者，因为频次统计基于 TreeMap 的有序遍历。CONSTANT 直接用 fillValue 填充，完全不读取数据。",
+              "每列的统计量在 fit 时一次算好并缓存，transform 阶段只做查表替换：NaN 位置写入统计量，有限值原样保留，遇到无穷值则报错。"
+            ],
+            "notes": [
+              "除 CONSTANT 外，某列全为 NaN 时 fit 抛 IllegalArgumentException，因为没有可用样本。",
+              "非缺失位置出现无穷值时 fit 与 transform 都抛 IllegalArgumentException。",
+              "策略随模型一起序列化，read 时按序数还原，序数越界由 ModelFormatException 拒绝。"
+            ],
+            "see": [
+              "basalt.ml.SimpleImputer",
+              "basalt.ml.SimpleImputer.Builder"
+            ]
+          }
         },
-        "returns": "this，便于链式配置"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "StandardScaler build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建配置好的标准化器",
-        "body": [
-         "构造器只保存两个开关，不分配统计数组，也不校验开关组合。"
-        ],
-        "returns": "持有当前开关设置的 StandardScaler，尚未拟合",
-        "notes": [
-         "未拟合时调用 transform、inverseTransform 或 mean、scale、variance 会抛 IllegalStateException。"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "构造 StandardScaler，设置是否中心化与是否缩放",
-      "body": [
-       "withMean 与 withStd 默认都为 true，对应 z = (x - u) / s。两个开关只影响 transform 与 inverseTransform 的步骤，拟合阶段的均值、方差与 scale 始终计算，并被序列化。",
-       "两个开关可以任意组合：都关闭时 transform 直接返回输入的副本，只关闭 withStd 时输出为 x - u，只关闭 withMean 时输出为 x / s。"
-      ],
-      "notes": [
-       "拟合使用有偏方差（ddof=0），与 sklearn.preprocessing.StandardScaler 的默认行为一致。",
-       "开关值以单字节写入模型文件，read 时按字节非零判断，因此来回读写不会丢失配置。"
-      ],
-      "example": "StandardScaler scaler = StandardScaler.builder()\n        .withMean(true)\n        .withStd(true)\n        .build();\nscaler.fit(train);\nMatrix standardized = scaler.transform(test);\nMatrix restored = scaler.inverseTransform(standardized);",
-      "see": [
-       "basalt.ml.StandardScaler",
-       "basalt.ml.SimpleImputer.Builder"
+        {
+          "qualified": "basalt.ml.StandardScaler.Builder",
+          "simple_qualified": "StandardScaler.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/StandardScaler.java",
+          "line": 184,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "withMean(boolean)",
+              "signature": "Builder withMean(boolean withMean)",
+              "params": [
+                {
+                  "type": "boolean",
+                  "name": "withMean"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置是否减去列均值",
+                "body": [
+                  "关闭后只做缩放，transform 输出 x / scale，inverseTransform 输出 x * scale。拟合阶段仍会计算均值并写进模型文件，只是变换时不再使用。"
+                ],
+                "params": {
+                  "withMean": "true 时 transform 减去均值、inverseTransform 加回均值；默认 true"
+                },
+                "returns": "this，便于链式配置"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "withStd(boolean)",
+              "signature": "Builder withStd(boolean withStd)",
+              "params": [
+                {
+                  "type": "boolean",
+                  "name": "withStd"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置是否除以列标准差",
+                "body": [
+                  "缩放因子是总体标准差（ddof=0）。某列标准差不超过 1e-12 时该列 scale 记为 1.0，避免除零，因此常数特征不会被放大。"
+                ],
+                "params": {
+                  "withStd": "true 时按标准差缩放，默认 true；与 withMean 互相独立"
+                },
+                "returns": "this，便于链式配置"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "StandardScaler build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建配置好的标准化器",
+                "body": [
+                  "构造器只保存两个开关，不分配统计数组，也不校验开关组合。"
+                ],
+                "returns": "持有当前开关设置的 StandardScaler，尚未拟合",
+                "notes": [
+                  "未拟合时调用 transform、inverseTransform 或 mean、scale、variance 会抛 IllegalStateException。"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "构造 StandardScaler，设置是否中心化与是否缩放",
+            "body": [
+              "withMean 与 withStd 默认都为 true，对应 z = (x - u) / s。两个开关只影响 transform 与 inverseTransform 的步骤，拟合阶段的均值、方差与 scale 始终计算，并被序列化。",
+              "两个开关可以任意组合：都关闭时 transform 直接返回输入的副本，只关闭 withStd 时输出为 x - u，只关闭 withMean 时输出为 x / s。"
+            ],
+            "notes": [
+              "拟合使用有偏方差（ddof=0）。",
+              "开关值以单字节写入模型文件，read 时按字节非零判断，因此来回读写不会丢失配置。"
+            ],
+            "example": "StandardScaler scaler = StandardScaler.builder() .withMean(true) .withStd(true) .build();\nscaler.fit(train);\nMatrix standardized = scaler.transform(test);\nMatrix restored = scaler.inverseTransform(standardized);",
+            "see": [
+              "basalt.ml.StandardScaler",
+              "basalt.ml.SimpleImputer.Builder"
+            ]
+          }
+        }
       ]
-     }
     }
-   ]
-  }
- ]
+  ]
 }

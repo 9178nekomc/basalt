@@ -14,7 +14,7 @@ import java.util.TreeSet;
 
 /**
  * Encodes target labels (either {@code double[]} or {@code String[]}) with values between
- * {@code 0} and {@code n_classes - 1}, matching {@code sklearn.preprocessing.LabelEncoder}.
+ * {@code 0} and {@code n_classes - 1}.
  */
 public final class LabelEncoder implements Transformer {
     private double[] classes;

@@ -176,7 +176,7 @@
           "implements": [],
           "file": "jsl/ml/BinnedFeatures.java",
           "line": 16,
-          "javadoc": "Quantile binning shared by the histogram boosting core and the random-forest trees.\n\n<p>Each feature is discretized into at most {@code maxBins} buckets. A bucket boundary is stored\nas the midpoint of two adjacent order statistics and is interpreted as\n{@code value <= threshold -> left}. Midpoints are computed as {@code a/2 + b/2} so that two huge\nfinite values cannot overflow to infinity, and the fallback keeps the boundary strictly inside\n{@code [a, b)} even for adjacent IEEE-754 doubles.</p>",
+          "javadoc": "Quantile binning shared by the histogram boosting core and the random-forest trees. <p>Each feature is discretized into at most {@code maxBins} buckets. A bucket boundary is stored\nas the midpoint of two adjacent order statistics and is interpreted as\n{@code value <= threshold -> left}. Midpoints are computed as {@code a/2 + b/2} so that two huge\nfinite values cannot overflow to infinity, and the fallback keeps the boundary strictly inside\n{@code [a, b)} even for adjacent IEEE-754 doubles.</p>",
           "nested": [],
           "members": [],
           "doc": {
@@ -252,7 +252,7 @@
           "implements": [],
           "file": "jsl/ml/TreeModel.java",
           "line": 16,
-          "javadoc": "Flat, array-backed regression/classification tree used for inference.\n\n<p>Nodes live in parallel arrays; a leaf is marked by {@code feature == -1}. Prediction is an\niterative pointer walk over primitive arrays, which removes the virtual dispatch and pointer\nchasing of an object tree and keeps the hot path cache friendly. The same representation is\nused by random forests and gradient boosting, so both share one predictor.</p>",
+          "javadoc": "Flat, array-backed regression/classification tree used for inference. <p>Nodes live in parallel arrays; a leaf is marked by {@code feature == -1}. Prediction is an\niterative pointer walk over primitive arrays, which removes the virtual dispatch and pointer\nchasing of an object tree and keeps the hot path cache friendly. The same representation is\nused by random forests and gradient boosting, so both share one predictor.</p>",
           "nested": [],
           "members": [],
           "doc": {
@@ -517,7 +517,7 @@
           "implements": [],
           "file": "jsl/nativebridge/NativeBindings.java",
           "line": 13,
-          "javadoc": "Raw JNI surface. Package-private on purpose: callers must go through {@link NativeContext} and\n{@link NativeTensorHandle}, which enforce lifecycle, ownership and argument validation.\n\n<p>Every method that returns {@code int} returns {@code 0} on success. The Rust side throws\n{@link IllegalStateException} before returning a negative status, so a Java caller can never\nsilently continue after a rejected operation.</p>",
+          "javadoc": "Raw JNI surface. Package-private on purpose: callers must go through {@link NativeContext} and\n{@link NativeTensorHandle}, which enforce lifecycle, ownership and argument validation. <p>Every method that returns {@code int} returns {@code 0} on success. The Rust side throws\n{@link IllegalStateException} before returning a negative status, so a Java caller can never\nsilently continue after a rejected operation.</p>",
           "nested": [],
           "members": [],
           "doc": {

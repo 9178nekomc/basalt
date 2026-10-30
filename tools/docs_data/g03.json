@@ -1,1121 +1,1121 @@
 {
- "group": "g03",
- "title": "核心数据与模型 I/O（2/2）",
- "modules": [
-  {
-   "name": "basalt.core",
-   "types": [
+  "group": "g03",
+  "title": "核心数据与模型 I/O（2/2）",
+  "modules": [
     {
-     "qualified": "basalt.core.Persistable",
-     "simple_qualified": "Persistable",
-     "kind": "interface",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/core/Persistable.java",
-     "line": 4,
-     "javadoc": "A model that can serialize itself into the versioned .bsl binary container.",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "可写入 .bsl 容器的模型契约",
-      "body": [
-       "实现类声明自己的 ModelKind 并提供 write，把全部状态按固定顺序写进 ModelWriter。容器头部（魔数、版本、码值、长度、CRC32C）由 ModelCodec 负责，实现类只处理负载部分。",
-       "读取侧没有对称接口：解码由 ModelCodec.read 按码值分派到各模型族自己的静态 read(ModelReader) 方法。写入顺序必须与该方法逐字段对应，否则校验和仍然通过，但字段会整体错位。"
-      ],
-      "notes": [
-       "接口只有两个方法且不含版本号，负载格式的兼容性由容器版本字段整体控制。",
-       "write 不负责写长度前缀，数组长度需要实现类自己先写一个 int 再写元素。"
-      ],
-      "see": [
-       "basalt.core.ModelKind",
-       "basalt.core.ModelWriter",
-       "basalt.io.ModelCodec"
+      "name": "basalt.core",
+      "types": [
+        {
+          "qualified": "basalt.core.Persistable",
+          "simple_qualified": "Persistable",
+          "kind": "interface",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/core/Persistable.java",
+          "line": 4,
+          "javadoc": "A model that can serialize itself into the versioned .bsl binary container.",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "可写入 .bsl 容器的模型契约",
+            "body": [
+              "实现类声明自己的 ModelKind 并提供 write，把全部状态按固定顺序写进 ModelWriter。容器头部（魔数、版本、码值、长度、CRC32C）由 ModelCodec 负责，实现类只处理负载部分。",
+              "读取侧没有对称接口：解码由 ModelCodec.read 按码值分派到各模型族自己的静态 read(ModelReader) 方法。写入顺序必须与该方法逐字段对应，否则校验和仍然通过，但字段会整体错位。"
+            ],
+            "notes": [
+              "接口只有两个方法且不含版本号，负载格式的兼容性由容器版本字段整体控制。",
+              "write 不负责写长度前缀，数组长度需要实现类自己先写一个 int 再写元素。"
+            ],
+            "see": [
+              "basalt.core.ModelKind",
+              "basalt.core.ModelWriter",
+              "basalt.io.ModelCodec"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.core.Tensor",
+          "simple_qualified": "Tensor",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "<S extends Layout>",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/core/Tensor.java",
+          "line": 7,
+          "javadoc": "A mutable, contiguous tensor whose layout is checked by the Java type system.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "ofBCHW(int, int, int, int, double...)",
+              "signature": "Tensor<BCHW> ofBCHW(int batch, int channels, int height, int width, double... data)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "batch"
+                },
+                {
+                  "type": "int",
+                  "name": "channels"
+                },
+                {
+                  "type": "int",
+                  "name": "height"
+                },
+                {
+                  "type": "int",
+                  "name": "width"
+                },
+                {
+                  "type": "double...",
+                  "name": "data"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "构造 BCHW 四维张量并拷贝数据",
+                "params": {
+                  "batch": "批大小，必须为正",
+                  "channels": "通道数，必须为正",
+                  "height": "高度，必须为正",
+                  "width": "宽度，必须为正",
+                  "data": "行主序元素，个数必须等于四维乘积"
+                },
+                "returns": "携带 BCHW 标记的新张量",
+                "throws": {
+                  "IllegalArgumentException": "任一维非正、元素总数超过 Integer.MAX_VALUE，或 data 长度不符",
+                  "NullPointerException": "data 为 null"
+                },
+                "body": [
+                  "形状按 batch、channels、height、width 组装后交给统一的 create 校验，再以 copy 标志构造，因此变长参数数组被克隆。调用方后续修改原数组不影响张量内容。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "ofBHW(int, int, int, double...)",
+              "signature": "Tensor<BHW> ofBHW(int batch, int height, int width, double... data)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "batch"
+                },
+                {
+                  "type": "int",
+                  "name": "height"
+                },
+                {
+                  "type": "int",
+                  "name": "width"
+                },
+                {
+                  "type": "double...",
+                  "name": "data"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "构造 BHW 三维张量并拷贝数据",
+                "params": {
+                  "batch": "批大小，必须为正",
+                  "height": "高度，必须为正",
+                  "width": "宽度，必须为正",
+                  "data": "行主序元素，个数必须等于 batch * height * width"
+                },
+                "returns": "携带 BHW 标记的新张量",
+                "throws": {
+                  "IllegalArgumentException": "任一维非正、元素总数超过 Integer.MAX_VALUE，或 data 长度不符",
+                  "NullPointerException": "data 为 null"
+                },
+                "body": [
+                  "形状为 batch、height、width 三维。数据按行主序排列，同一批内相邻两行在存储中连续。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "ofBC(int, int, double...)",
+              "signature": "Tensor<BC> ofBC(int batch, int channels, double... data)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "batch"
+                },
+                {
+                  "type": "int",
+                  "name": "channels"
+                },
+                {
+                  "type": "double...",
+                  "name": "data"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "构造 BC 二维张量并拷贝数据",
+                "params": {
+                  "batch": "批大小，必须为正",
+                  "channels": "通道数，也可理解为特征数或类别数，必须为正",
+                  "data": "行主序元素，个数必须等于 batch * channels"
+                },
+                "returns": "携带 BC 标记的新张量",
+                "throws": {
+                  "IllegalArgumentException": "任一维非正、元素总数超过 Integer.MAX_VALUE，或 data 长度不符",
+                  "NullPointerException": "data 为 null"
+                },
+                "body": [
+                  "二维布局，第 0 轴为批、第 1 轴为通道。这是全连接层与分类头最常用的形状，也用于把标签写成 one-hot 形式。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "ofBSF(int, int, int, double...)",
+              "signature": "Tensor<BSF> ofBSF(int batch, int sequence, int features, double... data)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "batch"
+                },
+                {
+                  "type": "int",
+                  "name": "sequence"
+                },
+                {
+                  "type": "int",
+                  "name": "features"
+                },
+                {
+                  "type": "double...",
+                  "name": "data"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "构造 BSF 三维张量并拷贝数据",
+                "params": {
+                  "batch": "批大小，必须为正",
+                  "sequence": "序列长度（时间步数），必须为正",
+                  "features": "每个时间步的特征数，必须为正",
+                  "data": "行主序元素，个数必须等于三维乘积"
+                },
+                "returns": "携带 BSF 标记的新张量",
+                "throws": {
+                  "IllegalArgumentException": "任一维非正、元素总数超过 Integer.MAX_VALUE，或 data 长度不符",
+                  "NullPointerException": "data 为 null"
+                },
+                "body": [
+                  "同一时间步的特征向量在存储中连续，循环层按时间步推进时可整段读取。序列长度不允许为 0，空序列需由调用方自行约定。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "zerosBCHW(int, int, int, int)",
+              "signature": "Tensor<BCHW> zerosBCHW(int batch, int channels, int height, int width)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "batch"
+                },
+                {
+                  "type": "int",
+                  "name": "channels"
+                },
+                {
+                  "type": "int",
+                  "name": "height"
+                },
+                {
+                  "type": "int",
+                  "name": "width"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建 BCHW 全零张量",
+                "params": {
+                  "batch": "批大小，必须为正",
+                  "channels": "通道数，必须为正",
+                  "height": "高度，必须为正",
+                  "width": "宽度，必须为正"
+                },
+                "returns": "元素全为 0.0 的新张量",
+                "throws": {
+                  "IllegalArgumentException": "任一维非正，或元素总数超过 Integer.MAX_VALUE"
+                },
+                "body": [
+                  "按四维乘积分配新数组，初值 0.0 由 JVM 保证。卷积层的输出缓冲区即由此创建，随后由内核逐元素填充。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "zerosBC(int, int)",
+              "signature": "Tensor<BC> zerosBC(int batch, int channels)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "batch"
+                },
+                {
+                  "type": "int",
+                  "name": "channels"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建 BC 全零张量",
+                "params": {
+                  "batch": "批大小，必须为正",
+                  "channels": "通道数，必须为正"
+                },
+                "returns": "元素全为 0.0 的新张量",
+                "throws": {
+                  "IllegalArgumentException": "任一维非正，或元素总数超过 Integer.MAX_VALUE"
+                },
+                "body": [
+                  "按 batch * channels 分配新数组，不做逐元素填充。常用于累积梯度或存放待写入的标签。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "zerosBSF(int, int, int)",
+              "signature": "Tensor<BSF> zerosBSF(int batch, int sequence, int features)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "batch"
+                },
+                {
+                  "type": "int",
+                  "name": "sequence"
+                },
+                {
+                  "type": "int",
+                  "name": "features"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "创建 BSF 全零张量",
+                "params": {
+                  "batch": "批大小，必须为正",
+                  "sequence": "序列长度，必须为正",
+                  "features": "特征数，必须为正"
+                },
+                "returns": "元素全为 0.0 的新张量",
+                "throws": {
+                  "IllegalArgumentException": "任一维非正，或元素总数超过 Integer.MAX_VALUE"
+                },
+                "body": [
+                  "按三维乘积分配新数组。LSTM 与 GRU 的 backward 用它分配输入梯度，再逐时间步累加。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "rank()",
+              "signature": "int rank()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回张量维数",
+                "returns": "形状数组长度，BC 为 2，BHW 与 BSF 为 3，BCHW 为 4"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "dimension(int)",
+              "signature": "int dimension(int axis)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "axis"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回指定轴的长度",
+                "params": {
+                  "axis": "轴下标，从 0 起，源码未做范围校验"
+                },
+                "returns": "该轴的长度",
+                "throws": {
+                  "ArrayIndexOutOfBoundsException": "axis 超出 [0, rank())"
+                },
+                "body": [
+                  "直接返回 shape[axis]，不含任何检查。负下标与越界下标都由 JVM 的数组访问抛出异常，消息中不带轴名。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "shape()",
+              "signature": "int[] shape()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回形状副本",
+                "returns": "长度等于 rank() 的新数组",
+                "body": [
+                  "返回 clone 而非内部数组，修改返回值不会影响张量。需要频繁读取单轴长度时，用 dimension 可以避免这次分配。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "size()",
+              "signature": "int size()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回元素总数",
+                "returns": "底层数组长度，等于各轴长度之积"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "index(int...)",
+              "signature": "int index(int... coordinates)",
+              "params": [
+                {
+                  "type": "int...",
+                  "name": "coordinates"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "把多维坐标换算为线性下标",
+                "params": {
+                  "coordinates": "各轴坐标，个数必须等于 rank()，每个分量须落在对应轴范围内"
+                },
+                "returns": "行主序线性下标，范围 [0, size())",
+                "throws": {
+                  "IllegalArgumentException": "坐标个数与维数不符",
+                  "IndexOutOfBoundsException": "任一分量越界",
+                  "NullPointerException": "coordinates 为 null"
+                },
+                "body": [
+                  "先校验坐标个数，再从第 0 轴起累乘累加：index = index * shape[axis] + coordinate，因此最后一维变化最快。越界消息给出坐标值、轴号与该轴长度。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "get(int...)",
+              "signature": "double get(int... coordinates)",
+              "params": [
+                {
+                  "type": "int...",
+                  "name": "coordinates"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "读取指定坐标的元素",
+                "params": {
+                  "coordinates": "各轴坐标，个数与范围须与形状匹配"
+                },
+                "returns": "该位置的 double 值",
+                "throws": {
+                  "IllegalArgumentException": "坐标个数与维数不符",
+                  "IndexOutOfBoundsException": "任一分量越界"
+                },
+                "body": [
+                  "经 index 换算后访问内部数组，逐元素读取会有下标换算开销；批量访问应改用 data() 配合步长计算。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "set(double, int...)",
+              "signature": "void set(double value, int... coordinates)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "value"
+                },
+                {
+                  "type": "int...",
+                  "name": "coordinates"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "写入指定坐标的元素",
+                "params": {
+                  "value": "待写入的 double 值，不做取值范围限制",
+                  "coordinates": "各轴坐标，个数与范围须与形状匹配"
+                },
+                "throws": {
+                  "IllegalArgumentException": "坐标个数与维数不符",
+                  "IndexOutOfBoundsException": "任一分量越界"
+                },
+                "body": [
+                  "值参数位于坐标之前，这是本方法与 get 在签名顺序上的差异，调用时需注意。写入直接落到内部数组，不触发其他副作用。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "data()",
+              "signature": "double[] data()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回内部存储数组本身",
+                "returns": "与张量共享存储的数组，长度等于 size()",
+                "body": [
+                  "源码注释说明该方法面向内核，用一次引用传递换取免下标的连续访问。各层在 forward 与 backward 中通过它直接读写，因此返回值就是张量的真实状态。"
+                ],
+                "notes": [
+                  "写入返回值即修改张量，不存在写时复制。",
+                  "跨线程共享同一张量时需自行同步，张量不含同步措施。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "toArray()",
+              "signature": "double[] toArray()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回元素的独立副本",
+                "returns": "新分配的数组，长度等于 size()",
+                "body": [
+                  "通过 clone 生成快照，后续写入不会反映到返回值。需要在张量被继续更新时保留中间结果，应使用该方法。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "copy()",
+              "signature": "Tensor<S> copy()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回形状与内容相同的独立副本",
+                "returns": "持有克隆数组与克隆形状的新张量，布局参数 S 不变",
+                "body": [
+                  "形状与数据都被复制，返回对象与原张量完全独立。梯度检查与就地更新前的备份都依赖这一点。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "sliceBatch(int, int)",
+              "signature": "Tensor<S> sliceBatch(int fromBatch, int toBatch)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "fromBatch"
+                },
+                {
+                  "type": "int",
+                  "name": "toBatch"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "复制连续批区间为新张量",
+                "params": {
+                  "fromBatch": "起始批下标，包含",
+                  "toBatch": "结束批下标，不包含"
+                },
+                "returns": "批维为 toBatch - fromBatch 的新张量，其余轴不变",
+                "throws": {
+                  "IllegalArgumentException": "fromBatch 为负、toBatch 超出批数，或 fromBatch 不小于 toBatch"
+                },
+                "body": [
+                  "四种布局都把批轴放在最前，因此单批元素在存储中连续，整段区间可用一次 System.arraycopy 复制。结果是副本而非视图，修改切片不会影响源张量。"
+                ],
+                "notes": [
+                  "空区间（fromBatch 等于 toBatch）被视为非法，不接受零批张量。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "fill(double)",
+              "signature": "Tensor<S> fill(double value)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "value"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "把所有元素设为同一值",
+                "params": {
+                  "value": "填充值，可为 NaN 或无穷大"
+                },
+                "returns": "this，便于链式调用",
+                "body": [
+                  "通过 Arrays.fill 就地写入全部元素。结合 zeros 系列工厂可先分配形状、再统一初始化，避免构造变长参数数组。"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "布局由类型参数约束的可变连续张量",
+            "body": [
+              "元素存放在单个连续 double[] 中，按行主序线性化：index 从第 0 轴起依次执行 index = index * shape[axis] + coordinate，最后一维变化最快。形状以 int[] 保存并在构造时克隆，shape() 返回的同样是副本。",
+              "布局不是运行期字段，而是泛型参数 S。Tensor<BCHW> 与 Tensor<BSF> 是不同类型，卷积层与序列层因此在编译期就无法互相传参；轴数与各轴长度仍由 shape 数组在运行期保存，可经 rank 与 dimension 读取。",
+              "of 系列工厂克隆传入的变长参数数组，zeros 系列直接分配已清零的数组；data() 返回内部数组本体，toArray() 与 copy() 才产生副本。本类属于 basalt.core，是神经网络层与经典估计器共用的数值容器，不参与计算图。"
+            ],
+            "notes": [
+              "data() 暴露内部存储，写入等同修改张量；需要快照时使用 toArray()。",
+              "sliceBatch 复制数据而非创建视图，返回的张量与源张量不共享存储。",
+              "dimension(int) 不做轴范围校验，越界由数组访问抛出 ArrayIndexOutOfBoundsException。",
+              "与 basalt.torch.Tensor 无关：后者是持有原生句柄、参与计算图的类型。"
+            ],
+            "example": "Tensor<BC> logits = Tensor.ofBC(2, 3, 0.5, 0.25, 0.75, 0.1, 0.2, 0.3);\ndouble v = logits.get(1, 2);\nTensor<BC> head = logits.sliceBatch(0, 1);\nTensor<BCHW> blank = Tensor.zerosBCHW(1, 3, 32, 32);\nint rank = blank.rank();",
+            "see": [
+              "basalt.core.Layout",
+              "basalt.core.Matrix",
+              "basalt.torch.Tensor"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.core.VectorMath",
+          "simple_qualified": "VectorMath",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/core/VectorMath.java",
+          "line": 12,
+          "javadoc": "SIMD primitives shared by matrix multiplication, distance-based estimators, optimizers and\nnormalization. Every kernel is written as a vector main loop plus a scalar tail so arbitrary\nlengths and unaligned offsets are safe.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "speciesLength()",
+              "signature": "int speciesLength()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回首选向量物种的通道数",
+                "returns": "当前平台上 SPECIES_PREFERRED 的 lane 数",
+                "body": [
+                  "该值是主循环的步进单位。调用方可据此判断某段长度能否完整走完向量路径，或按通道数对齐缓冲区以获得稳定的向量化效果。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "dot(double[], int, double[], int, int)",
+              "signature": "double dot(double[] a, int aOffset, double[] b, int bOffset, int length)",
+              "params": [
+                {
+                  "type": "double[]",
+                  "name": "a"
+                },
+                {
+                  "type": "int",
+                  "name": "aOffset"
+                },
+                {
+                  "type": "double[]",
+                  "name": "b"
+                },
+                {
+                  "type": "int",
+                  "name": "bOffset"
+                },
+                {
+                  "type": "int",
+                  "name": "length"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "计算两个等长区间的点积",
+                "params": {
+                  "a": "左数组",
+                  "aOffset": "左数组起始下标，可为非对齐值",
+                  "b": "右数组",
+                  "bOffset": "右数组起始下标，可为非对齐值",
+                  "length": "参与计算的元素个数，0 表示空区间"
+                },
+                "returns": "点积结果，length 为 0 时返回 0.0",
+                "body": [
+                  "向量段用 fma 把乘积累加进零向量，再横向归约；尾段用 Math.fma 补齐。两个数组可以是同一个数组的不同区间，此时得到该区间的平方和。"
+                ],
+                "notes": [
+                  "不做边界检查，length 过大时会读取到数组之外并抛出数组越界异常。",
+                  "NaN 输入按 IEEE 754 传播，不会被跳过或替换。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "axpy(double, double[], double[])",
+              "signature": "void axpy(double alpha, double[] source, double[] target)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "alpha"
+                },
+                {
+                  "type": "double[]",
+                  "name": "source"
+                },
+                {
+                  "type": "double[]",
+                  "name": "target"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "就地执行 target += alpha * source",
+                "params": {
+                  "alpha": "乘数，可为负数或 0",
+                  "source": "被加数组",
+                  "target": "累加目标，长度须与 source 相同"
+                },
+                "throws": {
+                  "IllegalArgumentException": "两个数组长度不同"
+                },
+                "body": [
+                  "alpha 被广播成向量后与 source 相乘，再加到 target 上写回，全程不分配临时数组。源码注释强调这一免分配特性，优化器的参数更新正是依赖它。"
+                ],
+                "notes": [
+                  "source 与 target 可以是同一数组，此时等价于按 1 + alpha 缩放。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "addInto(double[], double[])",
+              "signature": "void addInto(double[] source, double[] target)",
+              "params": [
+                {
+                  "type": "double[]",
+                  "name": "source"
+                },
+                {
+                  "type": "double[]",
+                  "name": "target"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "就地执行 target += source",
+                "params": {
+                  "source": "被加数组",
+                  "target": "累加目标，长度须与 source 相同"
+                },
+                "throws": {
+                  "IllegalArgumentException": "两个数组长度不同"
+                },
+                "body": [
+                  "等价于 axpy(1.0, source, target)，长度校验与向量化路径都由 axpy 承担，本身只是一层转发。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "scaleInPlace(double[], double)",
+              "signature": "void scaleInPlace(double[] values, double factor)",
+              "params": [
+                {
+                  "type": "double[]",
+                  "name": "values"
+                },
+                {
+                  "type": "double",
+                  "name": "factor"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "就地按因子缩放数组",
+                "params": {
+                  "values": "待缩放的数组，原地修改",
+                  "factor": "乘数，可为负数、0 或 NaN"
+                },
+                "body": [
+                  "向量段把 factor 广播后相乘写回，尾段逐元素相乘。factor 为 0 时结果全为 0.0，为 NaN 时全部元素变为 NaN，本方法不做拦截。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "sum(double[])",
+              "signature": "double sum(double[] values)",
+              "params": [
+                {
+                  "type": "double[]",
+                  "name": "values"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "求数组元素之和",
+                "params": {
+                  "values": "待求和的数组"
+                },
+                "returns": "元素之和，空数组返回 0.0",
+                "body": [
+                  "向量段累加到零向量后横向归约，尾段逐元素相加。归约是树形的，求和顺序与朴素循环不同，浮点结果可能在末位上有差异。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "sumSquares(double[])",
+              "signature": "double sumSquares(double[] values)",
+              "params": [
+                {
+                  "type": "double[]",
+                  "name": "values"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "求数组元素的平方和",
+                "params": {
+                  "values": "待求平方和的数组"
+                },
+                "returns": "平方和，空数组返回 0.0",
+                "body": [
+                  "用 fma 把元素与自身相乘的结果累加，既用于 norm，也被梯度裁剪直接调用来估计参数范数。结果为非负值，但可能因溢出变为无穷大。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "norm(double[])",
+              "signature": "double norm(double[] values)",
+              "params": [
+                {
+                  "type": "double[]",
+                  "name": "values"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "求欧氏范数",
+                "params": {
+                  "values": "待求范数的数组"
+                },
+                "returns": "sumSquares 的平方根；零向量与空数组返回 0.0",
+                "body": [
+                  "实现只有一句 Math.sqrt(sumSquares(values))，未做缩放式的溢出与下溢保护。输入含 NaN 时结果为 NaN，零向量得到 0.0 而非异常。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "maxAbs(double[])",
+              "signature": "double maxAbs(double[] values)",
+              "params": [
+                {
+                  "type": "double[]",
+                  "name": "values"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "求绝对值最大的元素",
+                "params": {
+                  "values": "待扫描的数组"
+                },
+                "returns": "最大绝对值，空数组返回 0.0",
+                "body": [
+                  "累加器从 0.0 起，向量段对元素取绝对值后逐通道取最大，尾段用 Math.max 与 Math.abs 补齐。由于起点是 0，结果恒为非负。"
+                ],
+                "notes": [
+                  "空数组与全零数组都返回 0.0，无法据此区分两者。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "clipNorm(double[], double)",
+              "signature": "double clipNorm(double[] values, double limit)",
+              "params": [
+                {
+                  "type": "double[]",
+                  "name": "values"
+                },
+                {
+                  "type": "double",
+                  "name": "limit"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按上限等比缩小数组并返回原范数",
+                "params": {
+                  "values": "就地缩放的数组",
+                  "limit": "范数上限，源码不校验正负"
+                },
+                "returns": "缩放前的欧氏范数；空数组或零向量返回 0.0",
+                "body": [
+                  "仅当范数同时大于 limit 与 0.0 时，按 limit / norm 调用 scaleInPlace 缩小。因此零向量不会触发除零，也不会被改写，返回值就是缩放前的范数，可用于判断是否发生了裁剪。",
+                  "源码注释把返回值定义为裁剪前的范数，这与常见的「返回缩放因子」约定不同，调用方若要复现梯度裁剪需自行比较返回值与 limit。"
+                ],
+                "notes": [
+                  "limit 为负时条件仍然成立，缩放因子为负，数组会整体变号而非被清零。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "squaredEuclidean(double[], int, double[], int, int)",
+              "signature": "double squaredEuclidean(double[] a, int aOffset, double[] b, int bOffset, int length)",
+              "params": [
+                {
+                  "type": "double[]",
+                  "name": "a"
+                },
+                {
+                  "type": "int",
+                  "name": "aOffset"
+                },
+                {
+                  "type": "double[]",
+                  "name": "b"
+                },
+                {
+                  "type": "int",
+                  "name": "bOffset"
+                },
+                {
+                  "type": "int",
+                  "name": "length"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "计算两个区间的平方欧氏距离",
+                "params": {
+                  "a": "左数组",
+                  "aOffset": "左数组起始下标",
+                  "b": "右数组",
+                  "bOffset": "右数组起始下标",
+                  "length": "参与计算的元素个数，0 表示空区间"
+                },
+                "returns": "平方距离，length 为 0 时返回 0.0",
+                "body": [
+                  "对逐元素差值做 fma 自乘累加，跳过开方步骤，因此可以直接用于最近邻比较而不改变大小关系。KMeans 的内层循环即调用该函数。"
+                ],
+                "notes": [
+                  "不做边界检查，偏移与长度由调用方保证。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "manhattan(double[], int, double[], int, int)",
+              "signature": "double manhattan(double[] a, int aOffset, double[] b, int bOffset, int length)",
+              "params": [
+                {
+                  "type": "double[]",
+                  "name": "a"
+                },
+                {
+                  "type": "int",
+                  "name": "aOffset"
+                },
+                {
+                  "type": "double[]",
+                  "name": "b"
+                },
+                {
+                  "type": "int",
+                  "name": "bOffset"
+                },
+                {
+                  "type": "int",
+                  "name": "length"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "计算两个区间的曼哈顿距离",
+                "params": {
+                  "a": "左数组",
+                  "aOffset": "左数组起始下标",
+                  "b": "右数组",
+                  "bOffset": "右数组起始下标",
+                  "length": "参与计算的元素个数，0 表示空区间"
+                },
+                "returns": "绝对差之和，length 为 0 时返回 0.0",
+                "body": [
+                  "向量段对差值取绝对值后累加，尾段用 Math.abs 补齐，与 squaredEuclidean 共享同一套偏移与长度约定。DistanceMetric 的 MANHATTAN 分支调用该函数。"
+                ],
+                "notes": [
+                  "不做边界检查；与平方欧氏距离不同，结果与维度同阶增长。"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "被乘法、距离、优化器与归一化共用的 SIMD 原语",
+            "body": [
+              "每个核函数都写成向量主循环加标量尾段：主循环以 DoubleVector.SPECIES_PREFERRED 的通道数步进，剩余不足一个向量的部分用标量循环补齐。因此任意长度与非对齐偏移都是安全的，调用方不需要把数组补齐到通道数的整数倍。",
+              "累加普遍使用向量 fma 或 Math.fma，把乘加融合成一条指令并省去一次中间舍入。所有函数都是静态方法、无内部状态，也不分配数组；axpy 与 scaleInPlace 直接写回目标。多个线程可并发调用，前提是各线程操作不同的数组区间。",
+              "本类不做 NaN 与无穷大的特殊处理：输入含 NaN 时结果按 IEEE 754 传播；norm 由 sumSquares 开方得到，未做溢出保护。唯一的零值保护出现在 clipNorm，它在范数为 0 时跳过缩放以避免除零。"
+            ],
+            "notes": [
+              "带 offset 与 length 的函数不做边界检查，调用方须保证 offset + length 不越过数组末尾。",
+              "axpy 要求 source 与 target 等长，否则抛出 IllegalArgumentException。",
+              "类为 final 且构造器私有，只提供静态方法。"
+            ],
+            "example": "double[] a = {1.0, 2.0, 3.0};\ndouble[] b = {0.5, 0.5, 0.5};\ndouble numerator = VectorMath.dot(a, 0, b, 0, a.length);\nVectorMath.axpy(-1.0, b, a);\ndouble d2 = VectorMath.squaredEuclidean(a, 0, b, 0, a.length);\ndouble before = VectorMath.clipNorm(a, 1.0);",
+            "see": [
+              "basalt.core.MatMul",
+              "basalt.core.Matrix",
+              "basalt.ml.DistanceMetric"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.core.NativeKernels.HistogramSessionHandle",
+          "simple_qualified": "NativeKernels.HistogramSessionHandle",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [
+            "AutoCloseable"
+          ],
+          "file": "jsl/core/NativeKernels.java",
+          "line": 282,
+          "javadoc": "AutoCloseable + Cleaner-backed handle for a native histogram session, preventing native\nmemory leaks even if an exception aborts tree construction.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "constructor",
+              "key": "HistogramSessionHandle(long)",
+              "signature": "HistogramSessionHandle(long sessionPointer)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "sessionPointer"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "包装原生会话指针并注册清理动作",
+                "body": [
+                  "指针写入 AtomicLong 后立即向 Cleaner 注册回调，回调与 close() 执行的是同一段清理逻辑。构造本身不校验指针是否有效，也不与原生侧交互。"
+                ],
+                "params": {
+                  "sessionPointer": "histogramSessionCreate 返回的会话地址；0 表示创建失败，销毁时会被跳过"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "handle()",
+              "signature": "long handle()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "返回当前会话指针",
+                "body": [
+                  "每次调用都重新读取 AtomicLong，因此关闭后再取得到 0，可以据此判断句柄是否仍然有效。"
+                ],
+                "returns": "原生会话地址；未关闭时为构造时传入的值，关闭后为 0"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "close()",
+              "signature": "void close()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "销毁原生会话，可重复调用",
+                "body": [
+                  "触发构造时注册的清理动作：原子取出指针并置零，非零时调用 destroyHistogramSession。Cleaner 之后再执行同一动作时取到 0，不会重复释放。"
+                ],
+                "notes": [
+                  "关闭后句柄不再可用，再次调用 close() 无副作用。",
+                  "不显式关闭时会话由 Cleaner 在句柄不可达后销毁，时机由 GC 决定。"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "持有原生直方图会话指针的可关闭句柄",
+            "body": [
+              "实例把 histogramSessionCreate 返回的指针存进 AtomicLong，并通过 Cleaner 注册清理动作。清理时以 getAndSet(0) 取出指针，仅在非零时调用 destroyHistogramSession，因此销毁最多发生一次。",
+              "这样即使在建树过程中抛出异常、调用方忘记关闭，会话也会在句柄不可达后被回收；显式 close() 则把回收时机提前到确定的位置。句柄关闭后 handle() 返回 0，此时不能再把该值传给 updateHistogramSession 等会话方法。"
+            ],
+            "notes": [
+              "实现 AutoCloseable，配合 try-with-resources 使用可确定性地释放原生会话。",
+              "close() 幂等：清理动作已执行时再次调用取到的是 0，不会重复销毁。",
+              "构造不做非零校验，传入 0 会得到一个已失效的句柄，所有会话方法都会失败。",
+              "真实指针只保存在 AtomicLong 中，句柄对象本身不被原生侧引用。"
+            ],
+            "example": "long session = NativeKernels.createHistogramSession(bins, gradients, hessians, features, maxBins);\ntry (NativeKernels.HistogramSessionHandle handle = new NativeKernels.HistogramSessionHandle(session)) { NativeKernels.updateHistogramSession(handle.handle(), gradients, hessians);\n}",
+            "see": [
+              "basalt.core.NativeKernels",
+              "basalt.ml.HistogramGradientBoosting"
+            ]
+          }
+        }
       ]
-     }
-    },
-    {
-     "qualified": "basalt.core.Tensor",
-     "simple_qualified": "Tensor",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "<S extends Layout>",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/core/Tensor.java",
-     "line": 7,
-     "javadoc": "A mutable, contiguous tensor whose layout is checked by the Java type system.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "ofBCHW(int, int, int, int, double...)",
-       "signature": "Tensor<BCHW> ofBCHW(int batch, int channels, int height, int width, double... data)",
-       "params": [
-        {
-         "type": "int",
-         "name": "batch"
-        },
-        {
-         "type": "int",
-         "name": "channels"
-        },
-        {
-         "type": "int",
-         "name": "height"
-        },
-        {
-         "type": "int",
-         "name": "width"
-        },
-        {
-         "type": "double...",
-         "name": "data"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "构造 BCHW 四维张量并拷贝数据",
-        "params": {
-         "batch": "批大小，必须为正",
-         "channels": "通道数，必须为正",
-         "height": "高度，必须为正",
-         "width": "宽度，必须为正",
-         "data": "行主序元素，个数必须等于四维乘积"
-        },
-        "returns": "携带 BCHW 标记的新张量",
-        "throws": {
-         "IllegalArgumentException": "任一维非正、元素总数超过 Integer.MAX_VALUE，或 data 长度不符",
-         "NullPointerException": "data 为 null"
-        },
-        "body": [
-         "形状按 batch、channels、height、width 组装后交给统一的 create 校验，再以 copy 标志构造，因此变长参数数组被克隆。调用方后续修改原数组不影响张量内容。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "ofBHW(int, int, int, double...)",
-       "signature": "Tensor<BHW> ofBHW(int batch, int height, int width, double... data)",
-       "params": [
-        {
-         "type": "int",
-         "name": "batch"
-        },
-        {
-         "type": "int",
-         "name": "height"
-        },
-        {
-         "type": "int",
-         "name": "width"
-        },
-        {
-         "type": "double...",
-         "name": "data"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "构造 BHW 三维张量并拷贝数据",
-        "params": {
-         "batch": "批大小，必须为正",
-         "height": "高度，必须为正",
-         "width": "宽度，必须为正",
-         "data": "行主序元素，个数必须等于 batch * height * width"
-        },
-        "returns": "携带 BHW 标记的新张量",
-        "throws": {
-         "IllegalArgumentException": "任一维非正、元素总数超过 Integer.MAX_VALUE，或 data 长度不符",
-         "NullPointerException": "data 为 null"
-        },
-        "body": [
-         "形状为 batch、height、width 三维。数据按行主序排列，同一批内相邻两行在存储中连续。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "ofBC(int, int, double...)",
-       "signature": "Tensor<BC> ofBC(int batch, int channels, double... data)",
-       "params": [
-        {
-         "type": "int",
-         "name": "batch"
-        },
-        {
-         "type": "int",
-         "name": "channels"
-        },
-        {
-         "type": "double...",
-         "name": "data"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "构造 BC 二维张量并拷贝数据",
-        "params": {
-         "batch": "批大小，必须为正",
-         "channels": "通道数，也可理解为特征数或类别数，必须为正",
-         "data": "行主序元素，个数必须等于 batch * channels"
-        },
-        "returns": "携带 BC 标记的新张量",
-        "throws": {
-         "IllegalArgumentException": "任一维非正、元素总数超过 Integer.MAX_VALUE，或 data 长度不符",
-         "NullPointerException": "data 为 null"
-        },
-        "body": [
-         "二维布局，第 0 轴为批、第 1 轴为通道。这是全连接层与分类头最常用的形状，也用于把标签写成 one-hot 形式。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "ofBSF(int, int, int, double...)",
-       "signature": "Tensor<BSF> ofBSF(int batch, int sequence, int features, double... data)",
-       "params": [
-        {
-         "type": "int",
-         "name": "batch"
-        },
-        {
-         "type": "int",
-         "name": "sequence"
-        },
-        {
-         "type": "int",
-         "name": "features"
-        },
-        {
-         "type": "double...",
-         "name": "data"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "构造 BSF 三维张量并拷贝数据",
-        "params": {
-         "batch": "批大小，必须为正",
-         "sequence": "序列长度（时间步数），必须为正",
-         "features": "每个时间步的特征数，必须为正",
-         "data": "行主序元素，个数必须等于三维乘积"
-        },
-        "returns": "携带 BSF 标记的新张量",
-        "throws": {
-         "IllegalArgumentException": "任一维非正、元素总数超过 Integer.MAX_VALUE，或 data 长度不符",
-         "NullPointerException": "data 为 null"
-        },
-        "body": [
-         "同一时间步的特征向量在存储中连续，循环层按时间步推进时可整段读取。序列长度不允许为 0，空序列需由调用方自行约定。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "zerosBCHW(int, int, int, int)",
-       "signature": "Tensor<BCHW> zerosBCHW(int batch, int channels, int height, int width)",
-       "params": [
-        {
-         "type": "int",
-         "name": "batch"
-        },
-        {
-         "type": "int",
-         "name": "channels"
-        },
-        {
-         "type": "int",
-         "name": "height"
-        },
-        {
-         "type": "int",
-         "name": "width"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建 BCHW 全零张量",
-        "params": {
-         "batch": "批大小，必须为正",
-         "channels": "通道数，必须为正",
-         "height": "高度，必须为正",
-         "width": "宽度，必须为正"
-        },
-        "returns": "元素全为 0.0 的新张量",
-        "throws": {
-         "IllegalArgumentException": "任一维非正，或元素总数超过 Integer.MAX_VALUE"
-        },
-        "body": [
-         "按四维乘积分配新数组，初值 0.0 由 JVM 保证。卷积层的输出缓冲区即由此创建，随后由内核逐元素填充。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "zerosBC(int, int)",
-       "signature": "Tensor<BC> zerosBC(int batch, int channels)",
-       "params": [
-        {
-         "type": "int",
-         "name": "batch"
-        },
-        {
-         "type": "int",
-         "name": "channels"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建 BC 全零张量",
-        "params": {
-         "batch": "批大小，必须为正",
-         "channels": "通道数，必须为正"
-        },
-        "returns": "元素全为 0.0 的新张量",
-        "throws": {
-         "IllegalArgumentException": "任一维非正，或元素总数超过 Integer.MAX_VALUE"
-        },
-        "body": [
-         "按 batch * channels 分配新数组，不做逐元素填充。常用于累积梯度或存放待写入的标签。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "zerosBSF(int, int, int)",
-       "signature": "Tensor<BSF> zerosBSF(int batch, int sequence, int features)",
-       "params": [
-        {
-         "type": "int",
-         "name": "batch"
-        },
-        {
-         "type": "int",
-         "name": "sequence"
-        },
-        {
-         "type": "int",
-         "name": "features"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "创建 BSF 全零张量",
-        "params": {
-         "batch": "批大小，必须为正",
-         "sequence": "序列长度，必须为正",
-         "features": "特征数，必须为正"
-        },
-        "returns": "元素全为 0.0 的新张量",
-        "throws": {
-         "IllegalArgumentException": "任一维非正，或元素总数超过 Integer.MAX_VALUE"
-        },
-        "body": [
-         "按三维乘积分配新数组。LSTM 与 GRU 的 backward 用它分配输入梯度，再逐时间步累加。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "rank()",
-       "signature": "int rank()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回张量维数",
-        "returns": "形状数组长度，BC 为 2，BHW 与 BSF 为 3，BCHW 为 4"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "dimension(int)",
-       "signature": "int dimension(int axis)",
-       "params": [
-        {
-         "type": "int",
-         "name": "axis"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回指定轴的长度",
-        "params": {
-         "axis": "轴下标，从 0 起，源码未做范围校验"
-        },
-        "returns": "该轴的长度",
-        "throws": {
-         "ArrayIndexOutOfBoundsException": "axis 超出 [0, rank())"
-        },
-        "body": [
-         "直接返回 shape[axis]，不含任何检查。负下标与越界下标都由 JVM 的数组访问抛出异常，消息中不带轴名。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "shape()",
-       "signature": "int[] shape()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回形状副本",
-        "returns": "长度等于 rank() 的新数组",
-        "body": [
-         "返回 clone 而非内部数组，修改返回值不会影响张量。需要频繁读取单轴长度时，用 dimension 可以避免这次分配。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "size()",
-       "signature": "int size()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回元素总数",
-        "returns": "底层数组长度，等于各轴长度之积"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "index(int...)",
-       "signature": "int index(int... coordinates)",
-       "params": [
-        {
-         "type": "int...",
-         "name": "coordinates"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把多维坐标换算为线性下标",
-        "params": {
-         "coordinates": "各轴坐标，个数必须等于 rank()，每个分量须落在对应轴范围内"
-        },
-        "returns": "行主序线性下标，范围 [0, size())",
-        "throws": {
-         "IllegalArgumentException": "坐标个数与维数不符",
-         "IndexOutOfBoundsException": "任一分量越界",
-         "NullPointerException": "coordinates 为 null"
-        },
-        "body": [
-         "先校验坐标个数，再从第 0 轴起累乘累加：index = index * shape[axis] + coordinate，因此最后一维变化最快。越界消息给出坐标值、轴号与该轴长度。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "get(int...)",
-       "signature": "double get(int... coordinates)",
-       "params": [
-        {
-         "type": "int...",
-         "name": "coordinates"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "读取指定坐标的元素",
-        "params": {
-         "coordinates": "各轴坐标，个数与范围须与形状匹配"
-        },
-        "returns": "该位置的 double 值",
-        "throws": {
-         "IllegalArgumentException": "坐标个数与维数不符",
-         "IndexOutOfBoundsException": "任一分量越界"
-        },
-        "body": [
-         "经 index 换算后访问内部数组，逐元素读取会有下标换算开销；批量访问应改用 data() 配合步长计算。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "set(double, int...)",
-       "signature": "void set(double value, int... coordinates)",
-       "params": [
-        {
-         "type": "double",
-         "name": "value"
-        },
-        {
-         "type": "int...",
-         "name": "coordinates"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "写入指定坐标的元素",
-        "params": {
-         "value": "待写入的 double 值，不做取值范围限制",
-         "coordinates": "各轴坐标，个数与范围须与形状匹配"
-        },
-        "throws": {
-         "IllegalArgumentException": "坐标个数与维数不符",
-         "IndexOutOfBoundsException": "任一分量越界"
-        },
-        "body": [
-         "值参数位于坐标之前，这是本方法与 get 在签名顺序上的差异，调用时需注意。写入直接落到内部数组，不触发其他副作用。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "data()",
-       "signature": "double[] data()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回内部存储数组本身",
-        "returns": "与张量共享存储的数组，长度等于 size()",
-        "body": [
-         "源码注释说明该方法面向内核，用一次引用传递换取免下标的连续访问。各层在 forward 与 backward 中通过它直接读写，因此返回值就是张量的真实状态。"
-        ],
-        "notes": [
-         "写入返回值即修改张量，不存在写时复制。",
-         "跨线程共享同一张量时需自行同步，张量不含同步措施。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "toArray()",
-       "signature": "double[] toArray()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回元素的独立副本",
-        "returns": "新分配的数组，长度等于 size()",
-        "body": [
-         "通过 clone 生成快照，后续写入不会反映到返回值。需要在张量被继续更新时保留中间结果，应使用该方法。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "copy()",
-       "signature": "Tensor<S> copy()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回形状与内容相同的独立副本",
-        "returns": "持有克隆数组与克隆形状的新张量，布局参数 S 不变",
-        "body": [
-         "形状与数据都被复制，返回对象与原张量完全独立。梯度检查与就地更新前的备份都依赖这一点。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "sliceBatch(int, int)",
-       "signature": "Tensor<S> sliceBatch(int fromBatch, int toBatch)",
-       "params": [
-        {
-         "type": "int",
-         "name": "fromBatch"
-        },
-        {
-         "type": "int",
-         "name": "toBatch"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "复制连续批区间为新张量",
-        "params": {
-         "fromBatch": "起始批下标，包含",
-         "toBatch": "结束批下标，不包含"
-        },
-        "returns": "批维为 toBatch - fromBatch 的新张量，其余轴不变",
-        "throws": {
-         "IllegalArgumentException": "fromBatch 为负、toBatch 超出批数，或 fromBatch 不小于 toBatch"
-        },
-        "body": [
-         "四种布局都把批轴放在最前，因此单批元素在存储中连续，整段区间可用一次 System.arraycopy 复制。结果是副本而非视图，修改切片不会影响源张量。"
-        ],
-        "notes": [
-         "空区间（fromBatch 等于 toBatch）被视为非法，不接受零批张量。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "fill(double)",
-       "signature": "Tensor<S> fill(double value)",
-       "params": [
-        {
-         "type": "double",
-         "name": "value"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "把所有元素设为同一值",
-        "params": {
-         "value": "填充值，可为 NaN 或无穷大"
-        },
-        "returns": "this，便于链式调用",
-        "body": [
-         "通过 Arrays.fill 就地写入全部元素。结合 zeros 系列工厂可先分配形状、再统一初始化，避免构造变长参数数组。"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "布局由类型参数约束的可变连续张量",
-      "body": [
-       "元素存放在单个连续 double[] 中，按行主序线性化：index 从第 0 轴起依次执行 index = index * shape[axis] + coordinate，最后一维变化最快。形状以 int[] 保存并在构造时克隆，shape() 返回的同样是副本。",
-       "布局不是运行期字段，而是泛型参数 S。Tensor<BCHW> 与 Tensor<BSF> 是不同类型，卷积层与序列层因此在编译期就无法互相传参；轴数与各轴长度仍由 shape 数组在运行期保存，可经 rank 与 dimension 读取。",
-       "of 系列工厂克隆传入的变长参数数组，zeros 系列直接分配已清零的数组；data() 返回内部数组本体，toArray() 与 copy() 才产生副本。本类属于 basalt.core，是神经网络层与经典估计器共用的数值容器，不参与计算图。"
-      ],
-      "notes": [
-       "data() 暴露内部存储，写入等同修改张量；需要快照时使用 toArray()。",
-       "sliceBatch 复制数据而非创建视图，返回的张量与源张量不共享存储。",
-       "dimension(int) 不做轴范围校验，越界由数组访问抛出 ArrayIndexOutOfBoundsException。",
-       "与 basalt.torch.Tensor 无关：后者是持有原生句柄、参与计算图的类型。"
-      ],
-      "example": "Tensor<BC> logits = Tensor.ofBC(2, 3, 0.5, 0.25, 0.75, 0.1, 0.2, 0.3);\ndouble v = logits.get(1, 2);\nTensor<BC> head = logits.sliceBatch(0, 1);\nTensor<BCHW> blank = Tensor.zerosBCHW(1, 3, 32, 32);\nint rank = blank.rank();",
-      "see": [
-       "basalt.core.Layout",
-       "basalt.core.Matrix",
-       "basalt.torch.Tensor"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.core.VectorMath",
-     "simple_qualified": "VectorMath",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/core/VectorMath.java",
-     "line": 12,
-     "javadoc": "SIMD primitives shared by matrix multiplication, distance-based estimators, optimizers and\nnormalization. Every kernel is written as a vector main loop plus a scalar tail so arbitrary\nlengths and unaligned offsets are safe.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "speciesLength()",
-       "signature": "int speciesLength()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回首选向量物种的通道数",
-        "returns": "当前平台上 SPECIES_PREFERRED 的 lane 数",
-        "body": [
-         "该值是主循环的步进单位。调用方可据此判断某段长度能否完整走完向量路径，或按通道数对齐缓冲区以获得稳定的向量化效果。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "dot(double[], int, double[], int, int)",
-       "signature": "double dot(double[] a, int aOffset, double[] b, int bOffset, int length)",
-       "params": [
-        {
-         "type": "double[]",
-         "name": "a"
-        },
-        {
-         "type": "int",
-         "name": "aOffset"
-        },
-        {
-         "type": "double[]",
-         "name": "b"
-        },
-        {
-         "type": "int",
-         "name": "bOffset"
-        },
-        {
-         "type": "int",
-         "name": "length"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "计算两个等长区间的点积",
-        "params": {
-         "a": "左数组",
-         "aOffset": "左数组起始下标，可为非对齐值",
-         "b": "右数组",
-         "bOffset": "右数组起始下标，可为非对齐值",
-         "length": "参与计算的元素个数，0 表示空区间"
-        },
-        "returns": "点积结果，length 为 0 时返回 0.0",
-        "body": [
-         "向量段用 fma 把乘积累加进零向量，再横向归约；尾段用 Math.fma 补齐。两个数组可以是同一个数组的不同区间，此时得到该区间的平方和。"
-        ],
-        "notes": [
-         "不做边界检查，length 过大时会读取到数组之外并抛出数组越界异常。",
-         "NaN 输入按 IEEE 754 传播，不会被跳过或替换。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "axpy(double, double[], double[])",
-       "signature": "void axpy(double alpha, double[] source, double[] target)",
-       "params": [
-        {
-         "type": "double",
-         "name": "alpha"
-        },
-        {
-         "type": "double[]",
-         "name": "source"
-        },
-        {
-         "type": "double[]",
-         "name": "target"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "就地执行 target += alpha * source",
-        "params": {
-         "alpha": "乘数，可为负数或 0",
-         "source": "被加数组",
-         "target": "累加目标，长度须与 source 相同"
-        },
-        "throws": {
-         "IllegalArgumentException": "两个数组长度不同"
-        },
-        "body": [
-         "alpha 被广播成向量后与 source 相乘，再加到 target 上写回，全程不分配临时数组。源码注释强调这一免分配特性，优化器的参数更新正是依赖它。"
-        ],
-        "notes": [
-         "source 与 target 可以是同一数组，此时等价于按 1 + alpha 缩放。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "addInto(double[], double[])",
-       "signature": "void addInto(double[] source, double[] target)",
-       "params": [
-        {
-         "type": "double[]",
-         "name": "source"
-        },
-        {
-         "type": "double[]",
-         "name": "target"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "就地执行 target += source",
-        "params": {
-         "source": "被加数组",
-         "target": "累加目标，长度须与 source 相同"
-        },
-        "throws": {
-         "IllegalArgumentException": "两个数组长度不同"
-        },
-        "body": [
-         "等价于 axpy(1.0, source, target)，长度校验与向量化路径都由 axpy 承担，本身只是一层转发。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "scaleInPlace(double[], double)",
-       "signature": "void scaleInPlace(double[] values, double factor)",
-       "params": [
-        {
-         "type": "double[]",
-         "name": "values"
-        },
-        {
-         "type": "double",
-         "name": "factor"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "就地按因子缩放数组",
-        "params": {
-         "values": "待缩放的数组，原地修改",
-         "factor": "乘数，可为负数、0 或 NaN"
-        },
-        "body": [
-         "向量段把 factor 广播后相乘写回，尾段逐元素相乘。factor 为 0 时结果全为 0.0，为 NaN 时全部元素变为 NaN，本方法不做拦截。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "sum(double[])",
-       "signature": "double sum(double[] values)",
-       "params": [
-        {
-         "type": "double[]",
-         "name": "values"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "求数组元素之和",
-        "params": {
-         "values": "待求和的数组"
-        },
-        "returns": "元素之和，空数组返回 0.0",
-        "body": [
-         "向量段累加到零向量后横向归约，尾段逐元素相加。归约是树形的，求和顺序与朴素循环不同，浮点结果可能在末位上有差异。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "sumSquares(double[])",
-       "signature": "double sumSquares(double[] values)",
-       "params": [
-        {
-         "type": "double[]",
-         "name": "values"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "求数组元素的平方和",
-        "params": {
-         "values": "待求平方和的数组"
-        },
-        "returns": "平方和，空数组返回 0.0",
-        "body": [
-         "用 fma 把元素与自身相乘的结果累加，既用于 norm，也被梯度裁剪直接调用来估计参数范数。结果为非负值，但可能因溢出变为无穷大。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "norm(double[])",
-       "signature": "double norm(double[] values)",
-       "params": [
-        {
-         "type": "double[]",
-         "name": "values"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "求欧氏范数",
-        "params": {
-         "values": "待求范数的数组"
-        },
-        "returns": "sumSquares 的平方根；零向量与空数组返回 0.0",
-        "body": [
-         "实现只有一句 Math.sqrt(sumSquares(values))，未做缩放式的溢出与下溢保护。输入含 NaN 时结果为 NaN，零向量得到 0.0 而非异常。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "maxAbs(double[])",
-       "signature": "double maxAbs(double[] values)",
-       "params": [
-        {
-         "type": "double[]",
-         "name": "values"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "求绝对值最大的元素",
-        "params": {
-         "values": "待扫描的数组"
-        },
-        "returns": "最大绝对值，空数组返回 0.0",
-        "body": [
-         "累加器从 0.0 起，向量段对元素取绝对值后逐通道取最大，尾段用 Math.max 与 Math.abs 补齐。由于起点是 0，结果恒为非负。"
-        ],
-        "notes": [
-         "空数组与全零数组都返回 0.0，无法据此区分两者。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "clipNorm(double[], double)",
-       "signature": "double clipNorm(double[] values, double limit)",
-       "params": [
-        {
-         "type": "double[]",
-         "name": "values"
-        },
-        {
-         "type": "double",
-         "name": "limit"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按上限等比缩小数组并返回原范数",
-        "params": {
-         "values": "就地缩放的数组",
-         "limit": "范数上限，源码不校验正负"
-        },
-        "returns": "缩放前的欧氏范数；空数组或零向量返回 0.0",
-        "body": [
-         "仅当范数同时大于 limit 与 0.0 时，按 limit / norm 调用 scaleInPlace 缩小。因此零向量不会触发除零，也不会被改写，返回值就是缩放前的范数，可用于判断是否发生了裁剪。",
-         "源码注释把返回值定义为裁剪前的范数，这与常见的「返回缩放因子」约定不同，调用方若要复现梯度裁剪需自行比较返回值与 limit。"
-        ],
-        "notes": [
-         "limit 为负时条件仍然成立，缩放因子为负，数组会整体变号而非被清零。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "squaredEuclidean(double[], int, double[], int, int)",
-       "signature": "double squaredEuclidean(double[] a, int aOffset, double[] b, int bOffset, int length)",
-       "params": [
-        {
-         "type": "double[]",
-         "name": "a"
-        },
-        {
-         "type": "int",
-         "name": "aOffset"
-        },
-        {
-         "type": "double[]",
-         "name": "b"
-        },
-        {
-         "type": "int",
-         "name": "bOffset"
-        },
-        {
-         "type": "int",
-         "name": "length"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "计算两个区间的平方欧氏距离",
-        "params": {
-         "a": "左数组",
-         "aOffset": "左数组起始下标",
-         "b": "右数组",
-         "bOffset": "右数组起始下标",
-         "length": "参与计算的元素个数，0 表示空区间"
-        },
-        "returns": "平方距离，length 为 0 时返回 0.0",
-        "body": [
-         "对逐元素差值做 fma 自乘累加，跳过开方步骤，因此可以直接用于最近邻比较而不改变大小关系。KMeans 的内层循环即调用该函数。"
-        ],
-        "notes": [
-         "不做边界检查，偏移与长度由调用方保证。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "manhattan(double[], int, double[], int, int)",
-       "signature": "double manhattan(double[] a, int aOffset, double[] b, int bOffset, int length)",
-       "params": [
-        {
-         "type": "double[]",
-         "name": "a"
-        },
-        {
-         "type": "int",
-         "name": "aOffset"
-        },
-        {
-         "type": "double[]",
-         "name": "b"
-        },
-        {
-         "type": "int",
-         "name": "bOffset"
-        },
-        {
-         "type": "int",
-         "name": "length"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "计算两个区间的曼哈顿距离",
-        "params": {
-         "a": "左数组",
-         "aOffset": "左数组起始下标",
-         "b": "右数组",
-         "bOffset": "右数组起始下标",
-         "length": "参与计算的元素个数，0 表示空区间"
-        },
-        "returns": "绝对差之和，length 为 0 时返回 0.0",
-        "body": [
-         "向量段对差值取绝对值后累加，尾段用 Math.abs 补齐，与 squaredEuclidean 共享同一套偏移与长度约定。DistanceMetric 的 MANHATTAN 分支调用该函数。"
-        ],
-        "notes": [
-         "不做边界检查；与平方欧氏距离不同，结果与维度同阶增长。"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "被乘法、距离、优化器与归一化共用的 SIMD 原语",
-      "body": [
-       "每个核函数都写成向量主循环加标量尾段：主循环以 DoubleVector.SPECIES_PREFERRED 的通道数步进，剩余不足一个向量的部分用标量循环补齐。因此任意长度与非对齐偏移都是安全的，调用方不需要把数组补齐到通道数的整数倍。",
-       "累加普遍使用向量 fma 或 Math.fma，把乘加融合成一条指令并省去一次中间舍入。所有函数都是静态方法、无内部状态，也不分配数组；axpy 与 scaleInPlace 直接写回目标。多个线程可并发调用，前提是各线程操作不同的数组区间。",
-       "本类不做 NaN 与无穷大的特殊处理：输入含 NaN 时结果按 IEEE 754 传播；norm 由 sumSquares 开方得到，未做溢出保护。唯一的零值保护出现在 clipNorm，它在范数为 0 时跳过缩放以避免除零。"
-      ],
-      "notes": [
-       "带 offset 与 length 的函数不做边界检查，调用方须保证 offset + length 不越过数组末尾。",
-       "axpy 要求 source 与 target 等长，否则抛出 IllegalArgumentException。",
-       "类为 final 且构造器私有，只提供静态方法。"
-      ],
-      "example": "double[] a = {1.0, 2.0, 3.0};\ndouble[] b = {0.5, 0.5, 0.5};\ndouble numerator = VectorMath.dot(a, 0, b, 0, a.length);\nVectorMath.axpy(-1.0, b, a);\ndouble d2 = VectorMath.squaredEuclidean(a, 0, b, 0, a.length);\ndouble before = VectorMath.clipNorm(a, 1.0);",
-      "see": [
-       "basalt.core.MatMul",
-       "basalt.core.Matrix",
-       "basalt.ml.DistanceMetric"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.core.NativeKernels.HistogramSessionHandle",
-     "simple_qualified": "NativeKernels.HistogramSessionHandle",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [
-      "AutoCloseable"
-     ],
-     "file": "jsl/core/NativeKernels.java",
-     "line": 282,
-     "javadoc": "AutoCloseable + Cleaner-backed handle for a native histogram session, preventing native\nmemory leaks even if an exception aborts tree construction.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "constructor",
-       "key": "HistogramSessionHandle(long)",
-       "signature": "HistogramSessionHandle(long sessionPointer)",
-       "params": [
-        {
-         "type": "long",
-         "name": "sessionPointer"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "包装原生会话指针并注册清理动作",
-        "body": [
-         "指针写入 AtomicLong 后立即向 Cleaner 注册回调，回调与 close() 执行的是同一段清理逻辑。构造本身不校验指针是否有效，也不与原生侧交互。"
-        ],
-        "params": {
-         "sessionPointer": "histogramSessionCreate 返回的会话地址；0 表示创建失败，销毁时会被跳过"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "handle()",
-       "signature": "long handle()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "返回当前会话指针",
-        "body": [
-         "每次调用都重新读取 AtomicLong，因此关闭后再取得到 0，可以据此判断句柄是否仍然有效。"
-        ],
-        "returns": "原生会话地址；未关闭时为构造时传入的值，关闭后为 0"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "close()",
-       "signature": "void close()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "销毁原生会话，可重复调用",
-        "body": [
-         "触发构造时注册的清理动作：原子取出指针并置零，非零时调用 destroyHistogramSession。Cleaner 之后再执行同一动作时取到 0，不会重复释放。"
-        ],
-        "notes": [
-         "关闭后句柄不再可用，再次调用 close() 无副作用。",
-         "不显式关闭时会话由 Cleaner 在句柄不可达后销毁，时机由 GC 决定。"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "持有原生直方图会话指针的可关闭句柄",
-      "body": [
-       "实例把 histogramSessionCreate 返回的指针存进 AtomicLong，并通过 Cleaner 注册清理动作。清理时以 getAndSet(0) 取出指针，仅在非零时调用 destroyHistogramSession，因此销毁最多发生一次。",
-       "这样即使在建树过程中抛出异常、调用方忘记关闭，会话也会在句柄不可达后被回收；显式 close() 则把回收时机提前到确定的位置。句柄关闭后 handle() 返回 0，此时不能再把该值传给 updateHistogramSession 等会话方法。"
-      ],
-      "notes": [
-       "实现 AutoCloseable，配合 try-with-resources 使用可确定性地释放原生会话。",
-       "close() 幂等：清理动作已执行时再次调用取到的是 0，不会重复销毁。",
-       "构造不做非零校验，传入 0 会得到一个已失效的句柄，所有会话方法都会失败。",
-       "真实指针只保存在 AtomicLong 中，句柄对象本身不被原生侧引用。"
-      ],
-      "example": "long session = NativeKernels.createHistogramSession(bins, gradients, hessians, features, maxBins);\ntry (NativeKernels.HistogramSessionHandle handle =\n        new NativeKernels.HistogramSessionHandle(session)) {\n    NativeKernels.updateHistogramSession(handle.handle(), gradients, hessians);\n}",
-      "see": [
-       "basalt.core.NativeKernels",
-       "basalt.ml.HistogramGradientBoosting"
-      ]
-     }
     }
-   ]
-  }
- ]
+  ]
 }

@@ -9,7 +9,7 @@ import java.util.Arrays;
 
 /**
  * Transforms features by scaling each feature to a given range {@code [featureMin, featureMax]}
- * (default {@code [0, 1]}), matching {@code sklearn.preprocessing.MinMaxScaler}.
+ * (default {@code [0, 1]}).
  */
 public final class MinMaxScaler implements Transformer, Estimator {
     private final double featureMin;

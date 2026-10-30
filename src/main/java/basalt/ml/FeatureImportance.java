@@ -10,7 +10,7 @@ import java.util.Random;
  * <ul>
  *   <li>Direct impurity-based tree feature importances ({@link DecisionTree}, {@link RandomForest},
  *       {@link HistogramGradientBoosting}) and normalized linear weight magnitudes;</li>
- *   <li>Model-agnostic Permutation Feature Importance ({@code sklearn.inspection.permutation_importance})
+ *   <li>Model-agnostic Permutation Feature Importance (repeated column shuffles)
  *       applicable to any {@link Estimator} or {@link Pipeline}.</li>
  * </ul>
  */

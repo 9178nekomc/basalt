@@ -47,7 +47,7 @@ import java.util.concurrent.Future;
  *    multi-threaded queue thread-safety, standardized exception hierarchy).
  * 2. ML Infrastructure (StandardScaler, MinMaxScaler, OneHotEncoder, LabelEncoder, SimpleImputer,
  *    trainTestSplit, KFold, StratifiedKFold, GridSearchCV, RandomizedSearchCV, Pipeline + .bsl persistence).
- * 3. Numerical consistency against analytical / scikit-learn reference values & loop memory leak detection.
+ * 3. Numerical consistency against closed-form reference values & loop memory leak detection.
  */
 public final class Phase1TestSuite {
     private static int passed;
@@ -65,7 +65,7 @@ public final class Phase1TestSuite {
         run("trainTestSplit, KFold, and StratifiedKFold class-ratio preservation", Phase1TestSuite::testSplitsAndFolds);
         run("GridSearchCV and RandomizedSearchCV hyperparameter tuning", Phase1TestSuite::testHyperparameterSearch);
         run("Pipeline end-to-end modeling and atomic .bsl binary serialization", Phase1TestSuite::testPipeline);
-        run("scikit-learn numerical consistency verification", Phase1TestSuite::testSklearnNumericalConsistency);
+        run("closed-form numerical consistency verification", Phase1TestSuite::testSklearnNumericalConsistency);
         System.out.println("PASS: " + passed + " Phase 1 test groups");
     }
 
@@ -362,7 +362,7 @@ public final class Phase1TestSuite {
     }
 
     private static void testSklearnNumericalConsistency() {
-        // Analytical & scikit-learn exact reference comparison for Ridge, PCA, and StandardScaler
+        // Analytical & exact closed-form reference comparison for Ridge, PCA, and StandardScaler
         Matrix x = Matrix.fromRows(new double[][]{
                 {1.0, 2.0},
                 {2.0, 1.0},
@@ -371,14 +371,14 @@ public final class Phase1TestSuite {
         });
         double[] y = {5.0, 4.0, 11.0, 10.0}; // y = 1.0 + 1.0*x0 + 2.0*x1
         Ridge ridge = Ridge.builder().alpha(1e-8).build().fit(x, y);
-        assertClose(1.0, ridge.weights()[0], 1e-5, "sklearn Ridge coef[0]");
-        assertClose(2.0, ridge.weights()[1], 1e-5, "sklearn Ridge coef[1]");
-        assertClose(0.0, ridge.intercept(), 1e-5, "sklearn Ridge intercept");
+        assertClose(1.0, ridge.weights()[0], 1e-5, "Ridge coef[0]");
+        assertClose(2.0, ridge.weights()[1], 1e-5, "Ridge coef[1]");
+        assertClose(0.0, ridge.intercept(), 1e-5, "Ridge intercept");
 
         PCA pca = PCA.builder().components(2).build().fit(x);
         double[] evr = pca.explainedVarianceRatio();
-        assertClose(0.8, evr[0], 1e-6, "sklearn PCA explained_variance_ratio_[0]");
-        assertClose(0.2, evr[1], 1e-6, "sklearn PCA explained_variance_ratio_[1]");
+        assertClose(0.8, evr[0], 1e-6, "PCA explained_variance_ratio_[0]");
+        assertClose(0.2, evr[1], 1e-6, "PCA explained_variance_ratio_[1]");
     }
 
     private static double[] row(Matrix m, int r) {

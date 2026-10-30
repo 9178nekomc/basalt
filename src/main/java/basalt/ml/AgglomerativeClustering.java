@@ -9,7 +9,7 @@ import java.util.Objects;
 
 /**
  * Hierarchical Agglomerative Clustering supporting {@code WARD}, {@code COMPLETE}, {@code AVERAGE},
- * and {@code SINGLE} linkage criteria, matching {@code sklearn.cluster.AgglomerativeClustering}.
+ * and {@code SINGLE} linkage criteria.
  */
 public final class AgglomerativeClustering implements Estimator {
     public enum Linkage {

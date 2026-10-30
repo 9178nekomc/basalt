@@ -11,8 +11,7 @@ import java.util.Random;
 import java.util.function.Function;
 
 /**
- * Randomized search over hyperparameter distributions or discrete candidate lists, matching
- * {@code sklearn.model_selection.RandomizedSearchCV}.
+ * Randomized search over hyperparameter distributions or discrete candidate lists.
  */
 public final class RandomizedSearchCV implements Estimator {
     @FunctionalInterface

@@ -1,364 +1,364 @@
 {
- "group": "g22",
- "title": "eager 张量与模块（4/4）",
- "modules": [
-  {
-   "name": "basalt.torch",
-   "types": [
+  "group": "g22",
+  "title": "eager 张量与模块（4/4）",
+  "modules": [
     {
-     "qualified": "basalt.torch.ComputationGraph.Builder",
-     "simple_qualified": "ComputationGraph.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/torch/ComputationGraph.java",
-     "line": 194,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "addInputs(String...)",
-       "signature": "Builder addInputs(String... names)",
-       "params": [
+      "name": "basalt.torch",
+      "types": [
         {
-         "type": "String...",
-         "name": "names"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "声明图输入节点，按声明顺序确定位置参数",
-        "body": [
-         "逐个登记名字，并在写入前检查冲突，因此同一批参数内部的重复也会被发现。输入名同时决定 forwardMany 的位置顺序，也是 forward(Map) 的必需键。"
-        ],
-        "params": {
-         "names": "输入节点名，不得与已有输入或顶点重名"
+          "qualified": "basalt.torch.ComputationGraph.Builder",
+          "simple_qualified": "ComputationGraph.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/torch/ComputationGraph.java",
+          "line": 194,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "addInputs(String...)",
+              "signature": "Builder addInputs(String... names)",
+              "params": [
+                {
+                  "type": "String...",
+                  "name": "names"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "声明图输入节点，按声明顺序确定位置参数",
+                "body": [
+                  "逐个登记名字，并在写入前检查冲突，因此同一批参数内部的重复也会被发现。输入名同时决定 forwardMany 的位置顺序，也是 forward(Map) 的必需键。"
+                ],
+                "params": {
+                  "names": "输入节点名，不得与已有输入或顶点重名"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "某个名字已作为输入或顶点登记",
+                  "NullPointerException": "任一名字为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "addLayer(String, Module<?, ?>, String)",
+              "signature": "Builder addLayer(String name, Module<?, ?> module, String input)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                },
+                {
+                  "type": "Module<?, ?>",
+                  "name": "module"
+                },
+                {
+                  "type": "String",
+                  "name": "input"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "登记引用模块的单输入节点",
+                "body": [
+                  "算子固定为 MODULE，顶点只保存模块引用，不复制实例；前向时取唯一输入调用 module.forward。模块参数按执行顺序进入整图的 parameters()，命名参数以“节点名.参数名”为键。"
+                ],
+                "params": {
+                  "name": "节点名，须在输入与顶点中唯一",
+                  "module": "被引用的模块，负责该节点的前向计算与参数",
+                  "input": "上游节点或输入的名字，不要求已声明"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "name 与已有输入或顶点重名",
+                  "NullPointerException": "name、module 或 input 为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "addAddVertex(String, String...)",
+              "signature": "Builder addAddVertex(String name, String... inputs)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                },
+                {
+                  "type": "String...",
+                  "name": "inputs"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "登记逐元素相加节点，至少两个输入",
+                "body": [
+                  "算子为 ADD，不持有模块；前向时从第一个输入开始依次调用 add，因此参与相加的张量形状须能两两广播。残差连接就是把模块链的输入与输出同时登记为这里的两个输入。"
+                ],
+                "params": {
+                  "name": "节点名，须在输入与顶点中唯一",
+                  "inputs": "上游名字，至少两个，按传入顺序左结合相加"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "inputs 为 null 或少于两个，或 name 与已有输入、顶点重名",
+                  "NullPointerException": "inputs 中存在 null 元素"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "addSubVertex(String, String, String)",
+              "signature": "Builder addSubVertex(String name, String leftInput, String rightInput)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                },
+                {
+                  "type": "String",
+                  "name": "leftInput"
+                },
+                {
+                  "type": "String",
+                  "name": "rightInput"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "登记左减右的二元减法节点",
+                "body": [
+                  "算子为 SUB，前向时计算 leftInput - rightInput，两侧形状须可广播。签名已限定两个输入，因此不再做输入个数检查。"
+                ],
+                "params": {
+                  "name": "节点名，须在输入与顶点中唯一",
+                  "leftInput": "被减数的上游名字",
+                  "rightInput": "减数的上游名字"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "name 与已有输入或顶点重名",
+                  "NullPointerException": "leftInput 或 rightInput 为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "addMulVertex(String, String...)",
+              "signature": "Builder addMulVertex(String name, String... inputs)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                },
+                {
+                  "type": "String...",
+                  "name": "inputs"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "登记逐元素相乘节点，至少两个输入",
+                "body": [
+                  "算子为 MUL，前向时从第一个输入开始依次调用 mul。常见用法是门控：把同一个上游名字分别作为门控信号与被门控特征传入，得到逐元素乘积。"
+                ],
+                "params": {
+                  "name": "节点名，须在输入与顶点中唯一",
+                  "inputs": "上游名字，至少两个，按传入顺序左结合相乘"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "inputs 为 null 或少于两个，或 name 与已有输入、顶点重名",
+                  "NullPointerException": "inputs 中存在 null 元素"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "setOutputs(String...)",
+              "signature": "Builder setOutputs(String... names)",
+              "params": [
+                {
+                  "type": "String...",
+                  "name": "names"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "声明图输出节点，覆盖此前设置",
+                "body": [
+                  "先清空已有输出再逐个登记，重复调用以最后一次为准。输出名的存在性不在本方法校验，而是留到 build 时与输入名、顶点名一起比对。"
+                ],
+                "params": {
+                  "names": "输出名，须指向输入或已登记顶点"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "任一名字为 null"
+                },
+                "notes": [
+                  "同名重复声明不会被去重，取回结果时按名字查表，因此得到的是同一个张量。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "ComputationGraph build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验图定义并返回拓扑序固定的计算图",
+                "body": [
+                  "入度按每个顶点的输入个数初始化，再从输入节点出发逐个扣减消费方的入度，减到 0 即入队，出队顺序写入 executionOrder。校验与排序都只读构造器状态，因此构建成功后仍可继续登记节点，已建好的图不受影响。"
+                ],
+                "returns": "按拓扑序保存执行顺序的 ComputationGraph",
+                "throws": {
+                  "IllegalArgumentException": "没有输入或没有输出、输出名未知、顶点引用未知输入，或定义中存在环与不可达顶点"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "按名字登记节点、在 build 时排序并校验的计算图构造器",
+            "body": [
+              "所有登记方法都返回 this，因此可以链式声明整张图。输入名与顶点名共用同一张命名空间表：addInputs 检查名字是否已作为输入或顶点存在，checkUnique 检查顶点名是否与已有输入或顶点冲突。节点登记不校验输入引用是否已声明，引用可以指向稍后才登记的节点，甚至形成环，这些检查全部推迟到 build。",
+              "build 先确认至少有一个输入和一个输出，再要求每个输出名指向输入或已登记顶点；接着按顶点输入个数建立入度表，从输入节点出发做 Kahn 拓扑排序得到执行顺序。排序结束后仍有顶点未出队，说明定义含环或存在从输入不可达的节点，两者都抛 IllegalArgumentException。构造过程不分配张量，也不执行任何计算。"
+            ],
+            "notes": [
+              "模块按引用登记，图与调用方共享同一个模块实例；ComputationGraph.close() 会关闭这些模块。",
+              "顶点名与输入名不得重复，重复项在登记阶段即抛异常，不会留到 build。",
+              "ADD 与 MUL 至少两个输入，SUB 固定两个；单输入模块节点用 addLayer 登记。",
+              "同一个 Builder 可反复 build，每次得到独立实例，执行顺序在各自构建时确定。"
+            ],
+            "example": "ComputationGraph graph = ComputationGraph.builder() .addInputs(\"x\", \"skip\") .addAddVertex(\"res\", \"x\", \"skip\") .addSubVertex(\"diff\", \"x\", \"skip\") .setOutputs(\"res\", \"diff\") .build();",
+            "see": [
+              "basalt.torch.ComputationGraph",
+              "basalt.torch.ComputationGraph.Vertex",
+              "basalt.torch.Module"
+            ]
+          }
         },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "某个名字已作为输入或顶点登记",
-         "NullPointerException": "任一名字为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "addLayer(String, Module<?, ?>, String)",
-       "signature": "Builder addLayer(String name, Module<?, ?> module, String input)",
-       "params": [
         {
-         "type": "String",
-         "name": "name"
+          "qualified": "basalt.torch.ComputationGraph.Vertex",
+          "simple_qualified": "ComputationGraph.Vertex",
+          "kind": "record",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/torch/ComputationGraph.java",
+          "line": 34,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "计算图节点的不可变描述：名字、算子、模块与输入名",
+            "body": [
+              "四个分量在登记时确定：name 是节点标识，op 决定前向运算，module 只在 MODULE 节点上非 null，inputs 是上游名字的列表。op 为 MODULE 时 inputs 只有一个元素，ADD、SUB、MUL 节点的 module 为 null，只做张量运算。",
+              "inputs 由 List.of 生成，是不可变列表；record 的访问器直接返回该引用而不复制。节点按登记顺序存放在 Builder 的 LinkedHashMap 中，构图后经 vertices() 以只读映射暴露，遍历顺序与登记顺序一致，与 executionOrder() 的拓扑序不一定相同。"
+            ],
+            "notes": [
+              "record 只提供访问器，没有额外校验或归一化；取值前应先按 op 判断 module 是否可用。",
+              "参数集合不包含在此记录中，参数由 module.parameters() 提供。"
+            ],
+            "see": [
+              "basalt.torch.ComputationGraph",
+              "basalt.torch.ComputationGraph.VertexOp"
+            ]
+          }
         },
         {
-         "type": "Module<?, ?>",
-         "name": "module"
-        },
-        {
-         "type": "String",
-         "name": "input"
+          "qualified": "basalt.torch.ComputationGraph.VertexOp",
+          "simple_qualified": "ComputationGraph.VertexOp",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/torch/ComputationGraph.java",
+          "line": 27,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "enum_constant",
+              "key": "MODULE",
+              "signature": "MODULE",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "顶点执行一个 Module"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "ADD",
+              "signature": "ADD",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "两个输入逐元素相加（残差）"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "SUB",
+              "signature": "SUB",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "两个输入逐元素相减"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "MUL",
+              "signature": "MUL",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "两个输入逐元素相乘（门控）"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "节点算子类型：模块调用、相加、相减、相乘",
+            "body": [
+              "MODULE 表示节点引用一个模块并对唯一输入调用 forward；ADD 与 MUL 把多个输入逐个累加或累乘，SUB 只接受两个输入计算左减右。前向的 switch 覆盖全部四个常量，没有默认分支。",
+              "枚举值同时决定顶点是否携带模块：只有 MODULE 节点的 module 非 null，其余三种节点的运算完全由张量算子完成，因此不贡献参数，也不随 train()、eval() 改变状态。"
+            ],
+            "notes": [
+              "ADD 与 MUL 的输入个数由 Builder 保证至少两个，枚举本身不携带元数信息。",
+              "算子类型在登记后不可变，改变算子需要重新登记节点。"
+            ],
+            "see": [
+              "basalt.torch.ComputationGraph.Vertex",
+              "basalt.torch.ComputationGraph.Builder"
+            ]
+          }
         }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "登记引用模块的单输入节点",
-        "body": [
-         "算子固定为 MODULE，顶点只保存模块引用，不复制实例；前向时取唯一输入调用 module.forward。模块参数按执行顺序进入整图的 parameters()，命名参数以“节点名.参数名”为键。"
-        ],
-        "params": {
-         "name": "节点名，须在输入与顶点中唯一",
-         "module": "被引用的模块，负责该节点的前向计算与参数",
-         "input": "上游节点或输入的名字，不要求已声明"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "name 与已有输入或顶点重名",
-         "NullPointerException": "name、module 或 input 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "addAddVertex(String, String...)",
-       "signature": "Builder addAddVertex(String name, String... inputs)",
-       "params": [
-        {
-         "type": "String",
-         "name": "name"
-        },
-        {
-         "type": "String...",
-         "name": "inputs"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "登记逐元素相加节点，至少两个输入",
-        "body": [
-         "算子为 ADD，不持有模块；前向时从第一个输入开始依次调用 add，因此参与相加的张量形状须能两两广播。残差连接就是把模块链的输入与输出同时登记为这里的两个输入。"
-        ],
-        "params": {
-         "name": "节点名，须在输入与顶点中唯一",
-         "inputs": "上游名字，至少两个，按传入顺序左结合相加"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "inputs 为 null 或少于两个，或 name 与已有输入、顶点重名",
-         "NullPointerException": "inputs 中存在 null 元素"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "addSubVertex(String, String, String)",
-       "signature": "Builder addSubVertex(String name, String leftInput, String rightInput)",
-       "params": [
-        {
-         "type": "String",
-         "name": "name"
-        },
-        {
-         "type": "String",
-         "name": "leftInput"
-        },
-        {
-         "type": "String",
-         "name": "rightInput"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "登记左减右的二元减法节点",
-        "body": [
-         "算子为 SUB，前向时计算 leftInput - rightInput，两侧形状须可广播。签名已限定两个输入，因此不再做输入个数检查。"
-        ],
-        "params": {
-         "name": "节点名，须在输入与顶点中唯一",
-         "leftInput": "被减数的上游名字",
-         "rightInput": "减数的上游名字"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "name 与已有输入或顶点重名",
-         "NullPointerException": "leftInput 或 rightInput 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "addMulVertex(String, String...)",
-       "signature": "Builder addMulVertex(String name, String... inputs)",
-       "params": [
-        {
-         "type": "String",
-         "name": "name"
-        },
-        {
-         "type": "String...",
-         "name": "inputs"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "登记逐元素相乘节点，至少两个输入",
-        "body": [
-         "算子为 MUL，前向时从第一个输入开始依次调用 mul。常见用法是门控：把同一个上游名字分别作为门控信号与被门控特征传入，得到逐元素乘积。"
-        ],
-        "params": {
-         "name": "节点名，须在输入与顶点中唯一",
-         "inputs": "上游名字，至少两个，按传入顺序左结合相乘"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "inputs 为 null 或少于两个，或 name 与已有输入、顶点重名",
-         "NullPointerException": "inputs 中存在 null 元素"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "setOutputs(String...)",
-       "signature": "Builder setOutputs(String... names)",
-       "params": [
-        {
-         "type": "String...",
-         "name": "names"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "声明图输出节点，覆盖此前设置",
-        "body": [
-         "先清空已有输出再逐个登记，重复调用以最后一次为准。输出名的存在性不在本方法校验，而是留到 build 时与输入名、顶点名一起比对。"
-        ],
-        "params": {
-         "names": "输出名，须指向输入或已登记顶点"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "NullPointerException": "任一名字为 null"
-        },
-        "notes": [
-         "同名重复声明不会被去重，取回结果时按名字查表，因此得到的是同一个张量。"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "ComputationGraph build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验图定义并返回拓扑序固定的计算图",
-        "body": [
-         "入度按每个顶点的输入个数初始化，再从输入节点出发逐个扣减消费方的入度，减到 0 即入队，出队顺序写入 executionOrder。校验与排序都只读构造器状态，因此构建成功后仍可继续登记节点，已建好的图不受影响。"
-        ],
-        "returns": "按拓扑序保存执行顺序的 ComputationGraph",
-        "throws": {
-         "IllegalArgumentException": "没有输入或没有输出、输出名未知、顶点引用未知输入，或定义中存在环与不可达顶点"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "按名字登记节点、在 build 时排序并校验的计算图构造器",
-      "body": [
-       "所有登记方法都返回 this，因此可以链式声明整张图。输入名与顶点名共用同一张命名空间表：addInputs 检查名字是否已作为输入或顶点存在，checkUnique 检查顶点名是否与已有输入或顶点冲突。节点登记不校验输入引用是否已声明，引用可以指向稍后才登记的节点，甚至形成环，这些检查全部推迟到 build。",
-       "build 先确认至少有一个输入和一个输出，再要求每个输出名指向输入或已登记顶点；接着按顶点输入个数建立入度表，从输入节点出发做 Kahn 拓扑排序得到执行顺序。排序结束后仍有顶点未出队，说明定义含环或存在从输入不可达的节点，两者都抛 IllegalArgumentException。构造过程不分配张量，也不执行任何计算。"
-      ],
-      "notes": [
-       "模块按引用登记，图与调用方共享同一个模块实例；ComputationGraph.close() 会关闭这些模块。",
-       "顶点名与输入名不得重复，重复项在登记阶段即抛异常，不会留到 build。",
-       "ADD 与 MUL 至少两个输入，SUB 固定两个；单输入模块节点用 addLayer 登记。",
-       "同一个 Builder 可反复 build，每次得到独立实例，执行顺序在各自构建时确定。"
-      ],
-      "example": "ComputationGraph graph = ComputationGraph.builder()\n        .addInputs(\"x\", \"skip\")\n        .addAddVertex(\"res\", \"x\", \"skip\")\n        .addSubVertex(\"diff\", \"x\", \"skip\")\n        .setOutputs(\"res\", \"diff\")\n        .build();",
-      "see": [
-       "basalt.torch.ComputationGraph",
-       "basalt.torch.ComputationGraph.Vertex",
-       "basalt.torch.Module"
       ]
-     }
-    },
-    {
-     "qualified": "basalt.torch.ComputationGraph.Vertex",
-     "simple_qualified": "ComputationGraph.Vertex",
-     "kind": "record",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/torch/ComputationGraph.java",
-     "line": 34,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "计算图节点的不可变描述：名字、算子、模块与输入名",
-      "body": [
-       "四个分量在登记时确定：name 是节点标识，op 决定前向运算，module 只在 MODULE 节点上非 null，inputs 是上游名字的列表。op 为 MODULE 时 inputs 只有一个元素，ADD、SUB、MUL 节点的 module 为 null，只做张量运算。",
-       "inputs 由 List.of 生成，是不可变列表；record 的访问器直接返回该引用而不复制。节点按登记顺序存放在 Builder 的 LinkedHashMap 中，构图后经 vertices() 以只读映射暴露，遍历顺序与登记顺序一致，与 executionOrder() 的拓扑序不一定相同。"
-      ],
-      "notes": [
-       "record 只提供访问器，没有额外校验或归一化；取值前应先按 op 判断 module 是否可用。",
-       "参数集合不包含在此记录中，参数由 module.parameters() 提供。"
-      ],
-      "see": [
-       "basalt.torch.ComputationGraph",
-       "basalt.torch.ComputationGraph.VertexOp"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.torch.ComputationGraph.VertexOp",
-     "simple_qualified": "ComputationGraph.VertexOp",
-     "kind": "enum",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/torch/ComputationGraph.java",
-     "line": 27,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "enum_constant",
-       "key": "MODULE",
-       "signature": "MODULE",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "顶点执行一个 Module"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "ADD",
-       "signature": "ADD",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "两个输入逐元素相加（残差）"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "SUB",
-       "signature": "SUB",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "两个输入逐元素相减"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "MUL",
-       "signature": "MUL",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "两个输入逐元素相乘（门控）"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "节点算子类型：模块调用、相加、相减、相乘",
-      "body": [
-       "MODULE 表示节点引用一个模块并对唯一输入调用 forward；ADD 与 MUL 把多个输入逐个累加或累乘，SUB 只接受两个输入计算左减右。前向的 switch 覆盖全部四个常量，没有默认分支。",
-       "枚举值同时决定顶点是否携带模块：只有 MODULE 节点的 module 非 null，其余三种节点的运算完全由张量算子完成，因此不贡献参数，也不随 train()、eval() 改变状态。"
-      ],
-      "notes": [
-       "ADD 与 MUL 的输入个数由 Builder 保证至少两个，枚举本身不携带元数信息。",
-       "算子类型在登记后不可变，改变算子需要重新登记节点。"
-      ],
-      "see": [
-       "basalt.torch.ComputationGraph.Vertex",
-       "basalt.torch.ComputationGraph.Builder"
-      ]
-     }
     }
-   ]
-  }
- ]
+  ]
 }

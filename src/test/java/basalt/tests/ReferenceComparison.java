@@ -22,20 +22,20 @@ import java.util.Locale;
 import java.util.function.Supplier;
 
 /**
- * Runs the Basalt side of the scikit-learn comparison on the exact BasaltD files produced by
- * {@code report/compare_sklearn.py}. Results are written to {@code build/compare/basalt.csv}.
+ * Runs the Basalt side of the cross-implementation comparison on the exact BasaltD files
+ * {@code report/compare_reference.py}. Results are written to {@code build/compare/basalt.csv}.
  *
  * <p>Hyperparameters are aligned with the Python script: 100 trees / depth 8 / sqrt features for
  * the forests, 100 iterations / 31 leaves / depth 6 / 64 bins / L2=1 for boosting, 8 clusters with
  * 4 K-Means++ restarts, 8 PCA components. Every model is warmed up once before five timed fits;
  * the median is reported.</p>
  */
-public final class SklearnComparison {
+public final class ReferenceComparison {
     private static final int REPETITIONS = 5;
     private static final int THREADS = 8;
     private static volatile double sink;
 
-    private SklearnComparison() {
+    private ReferenceComparison() {
     }
 
     public static void main(String[] args) throws Exception {

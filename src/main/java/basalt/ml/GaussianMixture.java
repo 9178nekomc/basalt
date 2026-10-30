@@ -10,7 +10,7 @@ import java.util.Arrays;
 
 /**
  * Gaussian Mixture Model (GMM) estimated with the Expectation-Maximization (EM) algorithm,
- * seeded via K-Means++ initialization, matching {@code sklearn.mixture.GaussianMixture}.
+ * seeded via K-Means++ initialization.
  *
  * <p>Three covariance parametrisations are supported:
  * {@link CovarianceType#FULL} (one unconstrained p x p matrix per component),
@@ -19,7 +19,7 @@ import java.util.Arrays;
  */
 public final class GaussianMixture implements Estimator, Persistable {
 
-    /** Covariance parametrisation, mirroring {@code sklearn.mixture.GaussianMixture.covariance_type}. */
+    /** Covariance parametrisation: how much structure each component is allowed. */
     public enum CovarianceType {
         /** One unconstrained p x p covariance matrix per component. */
         FULL,

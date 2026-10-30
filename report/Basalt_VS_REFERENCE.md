@@ -1,4 +1,4 @@
-# Basalt vs scikit-learn：主观与客观对比报告（v5 PyTorch 级运行时）
+# Basalt vs scikit-learn：主观与客观对比报告
 
 > Basalt 2.4（Java 21 调度 + Rust 张量引擎/经典核 + `basalt.torch` + JFR） vs scikit-learn 1.9.0
 > （Python 3.11 + Cython/OpenMP/LAPACK）  
@@ -9,7 +9,7 @@
 ## 0. 摘要：v5 改变了什么
 
 v4 把 10 项对比全部拉到持平或反超，但"可扩展性"仍低于 sklearn。v5 不再围绕经典估计器打转，
-而是把底层升级成 **Java + Rust 的 PyTorch 级运行时**：
+而是把底层升级成 **Java + Rust 的原生运行时**：
 
 1. **21 个原生算子**：卷积、池化、BatchNorm、LayerNorm、Softmax、fused CrossEntropy、
    GELU/SiLU、Dropout、Embedding、BatchedMatMul、Permute/Reshape。
@@ -170,7 +170,7 @@ Java (basalt.core / basalt.ml / basalt.nativebridge)   ← 参数校验、图编
 Java 用 `ByteBuffer.allocateDirect` 打包，Rust 用 `read_unaligned` 逐条解析，
 在一次 JNI 调用内顺序执行并追加图节点。反向传播从 root 收集可达子图，
 用 Kahn 算法拓扑排序后逆序求导；支持 MatMul/Add/Sub/Mul/ReLU/Sigmoid/Tanh/MSE，
-以及 NumPy 风格尾部广播的反向求和。原地算子、重复生产、覆盖已消费张量都会在写入前被拒绝。
+以及尾部广播的反向求和。原地算子、重复生产、覆盖已消费张量都会在写入前被拒绝。
 
 ### 3.3 SIMD GEMM
 
@@ -201,7 +201,7 @@ Java 立即走纯 Java 路径。**没有原生库时，经典模型完整可用�
 
 ---
 
-### 3.5 PyTorch 级现代训练栈
+### 3.5 现代训练栈
 
 v5 的 `basalt.torch` 是 eager API，不是静态 DSL。每个 `Tensor` 操作立即执行并追加图节点，
 `backward()` 在 Rust 侧做 Kahn 拓扑排序和逆序求导。

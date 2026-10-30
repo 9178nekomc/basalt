@@ -10,8 +10,7 @@ import java.util.Objects;
 
 /**
  * Bins continuous data into intervals using {@code QUANTILE}, {@code UNIFORM}, or {@code KMEANS}
- * strategies and outputs {@code ORDINAL} or {@code ONEHOT_DENSE} encodings, matching
- * {@code sklearn.preprocessing.KBinsDiscretizer}.
+ * strategies and outputs {@code ORDINAL} or {@code ONEHOT_DENSE} encodings.
  */
 public final class KBinsDiscretizer implements Transformer, Estimator {
     public enum Strategy {

@@ -24,9 +24,9 @@ import java.util.Objects;
  * inference engine.
  *
  * <p>Implements a zero-dependency Protobuf wire-format decoder/encoder for the official
- * {@code onnx.proto3} schema (IR v8, Opset 17) so Python-trained ONNX models (from PyTorch,
- * scikit-learn {@code skl2onnx}, or ONNX Runtime) can be loaded and executed directly in the JVM,
- * and Basalt models can be exported to `.onnx` files consumable by Python `onnxruntime`.</p>
+ * {@code onnx.proto3} schema (IR v8, Opset 17) so ONNX models produced by any external
+ * framework or runtime can be loaded and executed directly in the JVM, and Basalt models
+ * can be exported to `.onnx` files consumable by any standard ONNX toolchain.</p>
  */
 public final class OnnxModel {
     public record TensorData(String name, int[] dims, float[] floatData) {

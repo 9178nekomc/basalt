@@ -11,7 +11,7 @@ import java.util.function.Function;
 
 /**
  * Exhaustive search over specified hyperparameter values for an estimator using K-Fold or
- * Stratified K-Fold cross-validation, matching {@code sklearn.model_selection.GridSearchCV}.
+ * Stratified K-Fold cross-validation.
  */
 public final class GridSearchCV implements Estimator {
     public record CandidateResult(Map<String, Object> params, double meanScore, double stdScore,

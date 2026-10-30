@@ -9,8 +9,7 @@ import java.util.function.Supplier;
 
 /**
  * Recursive Feature Elimination (RFE) that iteratively fits an importance-capable or linear
- * estimator and prunes the least important features until {@code nFeaturesToSelect} remain,
- * matching {@code sklearn.feature_selection.RFE}.
+ * estimator and prunes the least important features until {@code nFeaturesToSelect} remain.
  */
 public final class RFE implements Transformer, Estimator {
     private final Supplier<Estimator> estimatorSupplier;

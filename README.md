@@ -1,4 +1,4 @@
-# Basalt — Java + Rust PyTorch-Class Runtime
+# Basalt — Java + Rust Machine Learning Runtime
 
 > **Maven coordinates** — `io.github.9178nekomc:basalt:3.4.0`  
 > **Runtime** — Java 21 (`--add-modules jdk.incubator.vector`) + bundled Rust native library  
@@ -25,16 +25,16 @@ mvn clean install
 
 The shaded, self-contained artifact is `basalt-3.4.0-all.jar` (classifier `all`).
 It contains the Windows x86_64 native runtime; other platforms can add their own
-`native/<os>-<arch>/` library or point `-Djsl.native.path` at a locally built one.
+`native/<os>-<arch>/` library or point `-Dbasalt.native.path` at a locally built one.
 
 ### QuickStart — 10 lines, forward + backward
 
 ```java
-try (Basalt jsl = Basalt.create()) {
-    Tensor x = basalt.randn(32, 8);
-    Tensor y = basalt.randn(32, 1);
-    Linear hidden = basalt.linear(8, 16);
-    Linear output = basalt.linear(16, 1);
+try (Basalt engine = Basalt.create()) {
+    Tensor x = engine.randn(32, 8);
+    Tensor y = engine.randn(32, 1);
+    Linear hidden = engine.linear(8, 16);
+    Linear output = engine.linear(16, 1);
     Tensor loss = output.forward(hidden.forward(x).relu()).mse(y);
     loss.backward();
     System.out.println(loss.data()[0]);
@@ -65,23 +65,23 @@ double[] prediction = forest.predict(x);
 ### Hand-written CNN
 
 ```java
-try (Basalt jsl = Basalt.create()) {
-    Tensor images = basalt.tensor(pixels, 64, 1, 28, 28);
-    Tensor labels = basalt.tensor(targets, 64);
-    Sequential<BCHW, BC> cnn = basalt.<BCHW>sequential()
+try (Basalt engine = Basalt.create()) {
+    Tensor images = engine.tensor(pixels, 64, 1, 28, 28);
+    Tensor labels = engine.tensor(targets, 64);
+    Sequential<BCHW, BC> cnn = engine.<BCHW>sequential()
             .add(basalt.conv2d(1, 8, 3, 1, 1))
-            .add(basalt.activation(Activation.RELU))
+            .add(engine.activation(Activation.RELU))
             .add(new MaxPool2d(2))
             .add(new Flatten())
-            .add(basalt.linear(8 * 14 * 14, 10));
-    var lossFunction = basalt.crossEntropy();
-    var optimizer = basalt.adamw(cnn.parameters(), 1e-3f);
+            .add(engine.linear(8 * 14 * 14, 10));
+    var lossFunction = engine.crossEntropy();
+    var optimizer = engine.adamw(cnn.parameters(), 1e-3f);
     for (int step = 0; step < 100; step++) {
         Tensor loss = lossFunction.loss(cnn.forward(images), labels);
         loss.backward();
         optimizer.step();
         optimizer.zeroGrad();
-        basalt.clearGraph();
+        engine.clearGraph();
     }
 }
 ```
@@ -89,7 +89,7 @@ try (Basalt jsl = Basalt.create()) {
 ### Why Basalt
 
 - **Rust at the bottom**: AVX2/FMA GEMM, im2col convolution, rayon parallelism. No Python interpreter, no GIL, no per-op FFI marshalling.
-- **PyTorch-like API**: eager `Tensor`, `Module`, `Sequential`, `AdamW`, `CrossEntropyLoss`, `stateDict`, multi-head attention.
+- **Eager tensor API**: `Tensor`, `Module`, `Sequential`, `AdamW`, `CrossEntropyLoss`, `stateDict`, multi-head attention — every op runs immediately and records a graph node.
 - **Compile-time safety Python cannot match**: `Sequential<I,O>` closes the layout chain at `javac` time; `Conv2d → Linear` is a compile error, not a runtime shape exception.
 - **One dependency**: Java 21 + one Maven coordinate. The native library is extracted from the jar and loaded automatically.
 - **Observability**: `basalt.NativeQueue` JFR events record every command-queue execution with op count, bytes, duration and stack trace.
@@ -101,11 +101,13 @@ try (Basalt jsl = Basalt.create()) {
 
 ## 中文文档
 
-Basalt 是一个**Java 调度、Rust 托管底层**的 PyTorch 级运行时：eager 张量、动态计算图、
-反向传播、原生 CNN/Transformer 算子、AdamW、JFR 事件流，以及经典机器学习估计器。
+Basalt 是一个 **Java 调度、Rust 计算**的机器学习运行时：eager 张量、动态计算图、
+反向传播、原生 CNN/Transformer 算子、AdamW、JFR 事件流，以及经典统计学习估计器。
 Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、张量生命周期和反向传播由 Rust 持有。
-目标不是复刻 sklearn，而是把 Python/PyTorch 的动态易用性**抄过来**，再用 Java/Rust 独有的
-编译期布局管线、JFR、虚拟线程和零拷贝 JNI 建立信息差。
+
+设计取向是：**上手像写脚本，执行像编译产物**。动态形状与即时执行由 Java 泛型、
+`Sequential<I,O>` 布局链和编译期检查兜底；重计算全部下沉到 Rust，两层之间只留一层
+128 字节的零拷贝指令队列；观测交给 JVM 内置的 JFR，不需要额外插桩。
 
 - 语言/运行时：Java 21（`--release 21`，`jdk.incubator.vector`）+ **Rust 原生内核（JNI）**
 - 依赖：Java 侧 **0**；原生侧 `jni` + `rayon` + `slotmap` + `matrixmultiply`（`./native-build.sh`）
@@ -113,7 +115,7 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 - 验证：16 个 Rust 单元测试 + 66 组 legacy Java 套件 + 12 个 JUnit 5 SDK 测试
   + 6 个编译期拒绝用例 + `-Xlint:all`（除 JDK incubating 提示外零告警）
 - 文档：[《Basalt 终极架构与性能基准测试报告》](report/Basalt_ARCHITECTURE_AND_BENCHMARK.md)
-- API 参考：[docs/index.html](docs/index.html)（Sphinx 版式，离线可读）
+- API 参考：[docs/index.html](docs/index.html)（离线可读）
 
 ---
 
@@ -144,14 +146,14 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 |---|---|
 | `docs/index.html` | 首页：文档章节网格、安装、快速开始、三层 API 边界、模块索引 |
 | `docs/api/index.html` | 模块索引（9 个包，附阅读顺序建议） |
-| `docs/api/basalt.html` | `jsl` 门面与异常 |
-| `docs/api/jsl_core.html` | 布局标记、`Matrix`、`MatMul`、`VectorMath`、`NativeKernels`、模型容器原语 |
-| `docs/api/jsl_data.html` | `DataLoader`（BasaltD 流式 / 内存映射）、`Normalization` |
-| `docs/api/jsl_io.html` | `ModelCodec`（`.bsl` v2）、`OnnxModel` / `OnnxConverter` |
-| `docs/api/jsl_ml.html` | 经典估计器、树、梯度提升、聚类、降维、指标、切分 |
-| `docs/api/jsl_nn.html` | 手写层、LSTM/GRU/RNN、注意力、序列训练、序列化 |
+| `docs/api/basalt.html` | `basalt` 门面与异常 |
+| `docs/api/basalt_core.html` | 布局标记、`Matrix`、`MatMul`、`VectorMath`、`NativeKernels`、模型容器原语 |
+| `docs/api/basalt_data.html` | `DataLoader`（BasaltD 流式 / 内存映射）、`Normalization` |
+| `docs/api/basalt_io.html` | `ModelCodec`（`.bsl` v2）、`OnnxModel` / `OnnxConverter` |
+| `docs/api/basalt_ml.html` | 经典估计器、树、梯度提升、聚类、降维、指标、切分 |
+| `docs/api/basalt_nn.html` | 手写层、LSTM/GRU/RNN、注意力、序列训练、序列化 |
 | `docs/api/basalt_nativebridge.html` | `NativeContext`、`NativeTensorHandle`、`CommandQueueBuilder`、`NativeMLP` |
-| `docs/api/jsl_torch.html` | eager `Tensor`、`Module`/`Sequential`、CNN/Transformer 模块、优化器、损失 |
+| `docs/api/basalt_torch.html` | eager `Tensor`、`Module`/`Sequential`、CNN/Transformer 模块、优化器、损失 |
 | `docs/genindex.html` | 总索引（按首字母） |
 | `docs/readme.html` | 本 README 的 HTML 版（同一版式，静态托管下不会退化成纯文本） |
 
@@ -170,7 +172,7 @@ python tools/api_dump.py --src src/main/java --out build/api/api.json
 # 2. 按模块切出待填骨架（供撰写说明时对齐 key）
 python tools/make_briefs.py --api build/api/api.json --out build/api/briefs
 
-# 3. 合并骨架与说明，渲染 Sphinx 风格站点
+# 3. 合并骨架与说明，渲染文档站点
 python tools/build_api_docs.py --api build/api/api.json \
     --docs 'tools/docs_data/g*.json' --out docs
 
@@ -183,15 +185,15 @@ python tools/check_docs.py --root docs
 - `tools/docs_data/g*.json`：说明数据层，契约见 `tools/docs_data/SCHEMA.md`。
   渲染器按 `(qualified, key)` 匹配，**匹配不上的说明直接丢弃并报错**，
   所以文档不可能描述一个不存在的参数。
-- `tools/build_api_docs.py`：零外部依赖渲染器，输出 13 个 HTML 页（含 `readme.html`）。
-  **每页自包含**：CSS、主题/搜索脚本、932 条搜索索引全部内联，不引用任何外部
+- `tools/build_api_docs.py`：零外部依赖渲染器，输出 13 个 HTML 页，另加一份 `readme.html`。
+  **每页自包含**：CSS、主题/搜索脚本、1645 条搜索索引全部内联，不引用任何外部
   `_static/` 目录——静态托管（Jekyll、各类预览服务）会跳过下划线开头的目录，
   外部资源一旦 404，页面就会退化成无样式纯文本。
 - `tools/md_render.py`：README 的 Markdown 渲染器（标题、围栏代码、GFM 表格、
   嵌套列表、引用块、行内标记），CJK 换行不插空格，`java` 代码块复用同一套高亮。
 - `tools/check_docs.py`：退出码非 0 即视为文档损坏，可用于 CI 门禁。
 
-当前 `check_docs.py` 结果：13 页、249 个类型块、1211 个方法块、1237 组字段列表、
+当前 `check_docs.py` 结果：15 页、249 个类型块、1211 个方法块、1237 组字段列表、
 0 个占位符、0 个断链。
 
 ---
@@ -220,11 +222,11 @@ mvn clean install
 10 行完成一次前向 + 反向：
 
 ```java
-try (Basalt jsl = Basalt.create()) {
-    Tensor x = basalt.randn(32, 8);
-    Tensor y = basalt.randn(32, 1);
-    Linear hidden = basalt.linear(8, 16);
-    Linear output = basalt.linear(16, 1);
+try (Basalt engine = Basalt.create()) {
+    Tensor x = engine.randn(32, 8);
+    Tensor y = engine.randn(32, 1);
+    Linear hidden = engine.linear(8, 16);
+    Linear output = engine.linear(16, 1);
     Tensor loss = output.forward(hidden.forward(x).relu()).mse(y);
     loss.backward();
     System.out.println(loss.data()[0]);
@@ -256,14 +258,14 @@ try (Basalt jsl = Basalt.create()) {
 | 序列训练 | `SequenceNetwork` | 池化头 + Dense 头 + 损失 + 全局范数裁剪 + 小批量 |
 | 数据 | `DataLoader` | BasaltD 流式/内存映射、零拷贝批量、epoch 洗牌、标准化 |
 | 并发 | `InferenceEngine` | Java 21 虚拟线程 + 信号量限流的批量推理编排 |
-| 剖析 | JFR（JDK 内置） | 生产级常开剖析，零开销；对比见 `report/Basalt_VS_SKLEARN.md` 第 5 节 |
+| 剖析 | JFR（JDK 内置） | 生产级常开剖析，零开销；对比见 `report/Basalt_VS_REFERENCE.md` 第 5 节 |
 | 原生经典核 | `NativeKernels` (JNI → Rust) | AVX2/FMA f64 GEMM、KMeans 全流程、Ridge 正规方程、GNB 统计量、分箱、森林预测、直方图会话；失败自动回退 |
 | 原生张量 | `NativeContext` / `NativeTensorHandle` | `Arc<RwLock<NativeTensor>>` + slotmap、惰性梯度、幂等释放、`Cleaner` 兜底 |
 | 指令队列 | `CommandQueueBuilder` | 128 字节 `OpCommand`（5 输入 + 16 内联属性）、`ByteBuffer.allocateDirect` 零拷贝、单次 JNI 执行整批算子 |
 | 自动求导 | `nativeBackward` | 计算图 + Kahn 拓扑排序、21 个算子（GEMM/广播/卷积/池化/归一化/注意力/嵌入）、广播反向 |
 | 原生训练 | `NativeMLP` | 多层感知机、Adam、mini-batch、XOR/线性回归收敛测试 |
 | SDK 入口 | `basalt.Basalt` | `create/randn/tensor/linear/conv2d/activation/optimizer/graph`，`AutoCloseable` |
-| PyTorch API | `basalt.torch` | `Tensor` / `Module` / `Sequential` / `Loss` / `Optimizer`，eager 执行 + 自动求导 |
+| 张量 API | `basalt.torch` | `Tensor` / `Module` / `Sequential` / `Loss` / `Optimizer`，eager 执行 + 自动求导 |
 | 图引擎 | `basalt.torch.Graph` | `backward/clear/size/stats`，显式控制原生计算图 |
 | 原生 CNN | `Conv2d` / `MaxPool2d` / `BatchNorm2d` | im2col + GEMM、反向传播、训练/推理模式、running stats |
 | Transformer | `MultiheadAttention` / `LayerNorm` / `GELU` / `Embedding` | 多头、causal mask、残差、pre-norm block |
@@ -296,15 +298,15 @@ BASALT_SKIP_NATIVE=1 ./verify.sh
 
 - `report/Basalt_ARCHITECTURE_AND_BENCHMARK.md`
 - `report/Basalt_ARCHITECTURE_AND_BENCHMARK.html`（图片内嵌 base64，可离线打开）
-- `report/Basalt_VS_SKLEARN.md` / `.html`（与 scikit-learn 的主客观对比）
+- `report/Basalt_VS_REFERENCE.md` / `.html`（与参考实现的主客观对比）
 
-与 scikit-learn 的对比需要 Python + sklearn + matplotlib：
+运行对比脚本需要 Python + matplotlib，基线库见 `report/compare_reference.py` 顶部：
 
 ```bash
 ./compare.sh
 ```
 
-该脚本用同一份 BasaltD 数据分别驱动 Basalt 与 sklearn（10 个模型/任务）与并发基准
+该脚本用同一份 BasaltD 数据分别驱动 Basalt 与参考实现（10 个模型/任务）与并发基准
 （虚拟线程 vs Python 进程/线程），输出 `build/compare/*.csv`、
 `report/figures/fig_vs_*.png` 与 `report/vs_tables.md`。
 v4 结果（同一份 BasaltD，5 次中位数）：随机森林 **0.17×**、Ridge **0.45×**、Lasso **0.60×**、
@@ -485,7 +487,7 @@ try (NativeContext ctx = NativeContext.create(8)) {
 | 模块 | `RandomForest.builder()`、`HistogramGradientBoosting.builder()` | 老手：按模块调参、替换求解器、控制线程 |
 | 原子 | `NativeContext` + `CommandQueueBuilder` + `nativeBackward` | 大师：手写算子序列、自定义损失与优化器 |
 
-### 3.8 PyTorch 风格 eager API（`basalt.torch`）
+### 3.8 eager 执行 API（`basalt.torch`）
 
 ```java
 try (NativeContext ctx = NativeContext.create(8)) {
@@ -602,7 +604,7 @@ for i in 0..M          // 每次处理 6 行，6 行 C 常驻 L1
 - `nativeBackward(root)` 从 root 反向收集可达子图，用 **Kahn 算法**做拓扑排序；
   逆序遍历，按 `op_code` 调用对应导数，梯度累加到每个输入的 `grad`。
 - 支持 `MatMul`、`Add`、`Sub`、`Mul`、`ReLU`、`Sigmoid`、`Tanh`、`MSE`；
-  `Add/Sub/Mul` 支持 NumPy 风格的尾部广播，反向时对广播维求和。
+  `Add/Sub/Mul` 支持 尾部广播，反向时对广播维求和。
 - 图在写入前校验：禁止 `output == input`、禁止重复生产同一张量、禁止覆盖已被消费的张量。
   这三条把“原地算子”和“地址复用”这类静默错误变成带上下文的异常。
 - 一轮训练结束后 Java 调 `clearGraph()`；`NativeMLP` 在每个 mini-batch 后执行
@@ -635,7 +637,7 @@ for i in 0..M          // 每次处理 6 行，6 行 C 常驻 L1
 
 ---
 
-## 5. 现代训练栈：把 PyTorch 的优势抄过来
+## 5. 现代训练栈的完整度
 
 ### 5.1 原生算子矩阵（21 个）
 
@@ -667,11 +669,11 @@ for i in 0..M          // 每次处理 6 行，6 行 C 常驻 L1
 
 两者都只用 `basalt.torch` 的公开 API，没有任何测试专用捷径。
 
-### 5.3 信息差：Python 追不了的四件事
+### 5.3 JVM 侧的四个结构性优势
 
 1. **编译期布局管线**：`Sequential<I,O>` 用 Java 泛型把 `BCHW → BC → BC` 的链路钉死。
-   PyTorch 只能在运行时抛 shape mismatch；Basalt 在 `javac` 阶段就拒绝。
-   强制用例：`src/test/compile-fail/jsl/tests/InvalidTypedPipeline.java`。
+   动态语言只能在运行时抛 shape mismatch；Basalt 在 `javac` 阶段就拒绝。
+   强制用例：`src/test/compile-fail/basalt/tests/InvalidTypedPipeline.java`。
 2. **JFR 常开事件流**：`basalt.NativeQueue` 记录每次队列执行的 op 数、字节数、耗时和完整调用栈。
    JFR 是 JVM 内置的采样式剖析器，生产可热附加；Python 的 cProfile 是插桩式，吞吐减半。
 3. **零拷贝 + 无 GIL**：Java 只持 `long`，32/128 字节指令直接读 `ByteBuffer.allocateDirect`；
@@ -679,7 +681,7 @@ for i in 0..M          // 每次处理 6 行，6 行 C 常驻 L1
 4. **Rust 所有权 + Java 生命周期**：`Arc<RwLock<>>` + slotmap + `Cleaner` + 读写锁，
    双重释放/野指针/GC 漏释放都有测试。动态语言给不了这种内存安全保证。
 
-### 5.4 我们抄了 PyTorch 什么
+### 5.4 已实现的训练栈能力
 
 - eager execution：每个 `Tensor` 操作立即执行并记录图节点；
 - 动态计算图 + 反向传播：Kahn 拓扑排序、梯度累加、广播反向；
@@ -689,18 +691,18 @@ for i in 0..M          // 每次处理 6 行，6 行 C 常驻 L1
   全局 L2 梯度裁剪；
 - 损失：MSE、fused CrossEntropy；
 - `stateDict()` / `loadStateDict()` 权重往返；
-- 动态 shape、NumPy 风格广播、`reshape`/`permute`/`flatten`。
+- 动态 shape、广播、`reshape`/`permute`/`flatten`。
 
-### 5.5 还没抄的（诚实边界）
+### 5.5 尚未覆盖的（诚实边界）
 
 - **CPU only**：没有 CUDA/Metal/分布式；`rayon` 只吃本机核心。
 - **无稀疏/量化/AMP**：CSR、int8、f16/bf16 未实现；张量引擎统一 f32。
 - **Conv2d 简化**：groups=1、dilation=1；MaxPool2d 无 padding。
-- **无 `torch.compile` 级融合**：有指令批处理和图捕获，但没有算子融合编译器；
+- **无算子融合编译器**：有指令批处理和图捕获，但没有算子融合编译器；
   `Tensor` 每个 op 一次 JNI，专家可用 `CommandQueueBuilder` 手工批处理。
 - **单流图**：同一 context 的图由锁串行化；并发训练用独立 context。
 
-这些边界不影响“现代 PyTorch 级 API + 原生 autograd + CNN/Transformer”的定位，
+这些边界不影响“eager 张量 + 原生 autograd + CNN/Transformer”的定位，
 但决定了它现在不是 CUDA 训练框架的替代品。
 
 ---
@@ -743,7 +745,7 @@ for i in 0..M          // 每次处理 6 行，6 行 C 常驻 L1
 ## 8. 目录结构
 
 ```
-src/main/java/jsl/
+src/main/java/basalt/
   core/   Tensor, Matrix, MatMul, VectorMath, 模型 I/O 原语
   ml/     经典估计器、直方图树、提升、聚类、PCA、朴素贝叶斯
   nn/     Layer, Dense, Conv2D, LSTM, GRU, RNN, SelfAttention, SequenceNetwork
@@ -765,7 +767,7 @@ native/src/
   fastmath.rs  Ridge/GNB/KMeans/双中心距离
   histogram.rs 持久化直方图会话
   binning.rs   原生分位数分箱
-src/test/java/jsl/tests/
+src/test/java/basalt/tests/
   TestSuite            经典数值/收敛
   IndustrialTestSuite  树模型/聚类/降维/数据/持久化
   SequenceTestSuite    BPTT/注意力/序列训练/梯度消失
@@ -812,7 +814,7 @@ report/                 报告、图表生成脚本、figures/
 
 ---
 
-## 11. v3.4.0 三期演进全景（Tribuo / DL4J / scikit-learn 对标升级）
+## 11. v3.4.0 三期演进全景
 
 ### 第一阶段：夯实工程底座（Phase 1）
 1. **JNI / Rust 底层核心工程强化**
@@ -820,7 +822,7 @@ report/                 报告、图表生成脚本、figures/
    - **代数句柄校验（Generation-Tagged Handle）**：原生层句柄采用 `(generation << 32) | slot_index` 编码，释放后 slot 递增代数，彻底杜绝悬垂指针与 ABA 复用引发的 JVM 崩溃。
    - **跨平台预编译与 CI/CD**：`NativeKernels` 自动识别 `windows-x86_64`、`linux-x86_64`、`linux-aarch64`、`macos-x86_64`、`macos-aarch64` 并从 Classpath 提取原生库；配备 `.github/workflows/ci-release.yml` 多平台自动构建流水线。
    - **线程安全与异常体系**：`CommandQueueBuilder` 全方法同步化保护；JNI 边界捕获所有 panic 并映射为结构化异常体系（`BasaltExceptionCode`、`BasaltParameterException`、`BasaltShapeException`、`BasaltMemoryException`、`BasaltUnsupportedOperationException`）。
-2. **ML 基础设施工具（对标 `sklearn.preprocessing` / `model_selection` / `pipeline`）**
+2. **ML 基础设施工具（预处理、模型选择、管线）**
    - **数据预处理**：`Transformer` 接口、`StandardScaler`、`MinMaxScaler`、`OneHotEncoder`、`LabelEncoder`、`SimpleImputer`（支持 `MEAN` / `MEDIAN` / `MOST_FREQUENT` / `CONSTANT`），全部支持 `inverseTransform` 与 `.bsl` 序列化。
    - **模型选择与超参搜索**：`DataSplit`（`Basalt.trainTestSplit` 含分层抽样）、`KFold`、`StratifiedKFold`、`GridSearchCV`、`RandomizedSearchCV`。
    - **Pipeline 管线**：`basalt.ml.Pipeline` 支持任意 `Transformer` 序列串联终端 `Estimator`，一键完成训练、推理、评分及 `.bsl` 原子二进制持久化。

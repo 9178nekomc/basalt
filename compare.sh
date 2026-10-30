@@ -19,11 +19,11 @@ printf '==> verifying Basalt\n'
 "$ROOT/verify.sh"
 
 printf '\n==> generating shared data and running scikit-learn\n'
-"$PYTHON_BIN" "$ROOT/report/compare_sklearn.py"
+"$PYTHON_BIN" "$ROOT/report/compare_reference.py"
 
 printf '\n==> running Basalt on the same data\n'
 java --add-modules jdk.incubator.vector -Xmx3g \
-  -cp "$ROOT/build/classes:$ROOT/build/test-classes" basalt.tests.SklearnComparison
+  -cp "$ROOT/build/classes:$ROOT/build/test-classes" basalt.tests.ReferenceComparison
 
 printf '\n==> running concurrency benchmarks\n'
 java --add-modules jdk.incubator.vector -Xmx2g \
@@ -34,6 +34,6 @@ printf '\n==> rendering comparison figures and tables\n'
 "$PYTHON_BIN" "$ROOT/report/compare_plots.py"
 
 printf '\n==> rendering self-contained HTML\n'
-"$PYTHON_BIN" "$ROOT/report/make_report.py" "$ROOT/report/Basalt_VS_SKLEARN.md"
+"$PYTHON_BIN" "$ROOT/report/make_report.py" "$ROOT/report/Basalt_VS_REFERENCE.md"
 
-printf '\nComparison complete: report/Basalt_VS_SKLEARN.html\n'
+printf '\nComparison complete: report/Basalt_VS_REFERENCE.html\n'

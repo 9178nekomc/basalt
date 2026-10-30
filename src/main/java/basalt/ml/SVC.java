@@ -13,7 +13,7 @@ import java.util.TreeSet;
 /**
  * Non-linear Support Vector Classifier trained with Sequential Minimal Optimization (SMO),
  * supporting {@code LINEAR}, {@code RBF}, {@code POLY}, and {@code SIGMOID} kernels as well as
- * binary and multi-class (One-vs-Rest) classification, matching {@code sklearn.svm.SVC}.
+ * binary and multi-class (One-vs-Rest) classification.
  *
  * <p>With {@link Builder#probability(boolean)} enabled, decision values are calibrated into
  * probabilities with Platt scaling (the damped Newton method used by libsvm), one

@@ -13,8 +13,7 @@ import java.util.Random;
 
 /**
  * Unsupervised Isolation Forest anomaly detector based on random axis-aligned partitioning
- * trees and path-length normalization {@code s(x, n) = 2^(-E(h(x))/c(n))}, matching
- * {@code sklearn.ensemble.IsolationForest}.
+ * trees and path-length normalization {@code s(x, n) = 2^(-E(h(x))/c(n))}.
  *
  * <p>{@link #predict(Matrix)} returns {@code +1.0} for inliers and {@code -1.0} for outliers
  * according to the configured {@code contamination} quantile threshold.</p>

@@ -9,7 +9,7 @@ import java.util.Arrays;
 
 /**
  * Standardizes features by removing the mean and scaling to unit variance ({@code z = (x - u) / s}),
- * matching {@code sklearn.preprocessing.StandardScaler} (population variance ddof=0 by default).
+ * using population variance (ddof=0) by default.
  */
 public final class StandardScaler implements Transformer, Estimator {
     private final boolean withMean;

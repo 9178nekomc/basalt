@@ -20,7 +20,7 @@
           ],
           "file": "jsl/Basalt.java",
           "line": 30,
-          "javadoc": "Unified SDK entry point for Basalt (Java Scikit-Learn + PyTorch-style native runtime).",
+          "javadoc": "Unified SDK entry point for Basalt (eager tensor runtime over a Rust native core).",
           "nested": [],
           "members": [
             {
@@ -1028,14 +1028,14 @@
             "body": [
               "门面把「一个原生上下文 + 一套张量工厂」绑定为单一对象。所有由它创建的张量、模块与图句柄都归属同一个 NativeContext，因此反向传播、清空计算图与内存统计天然共享同一份状态，不存在跨上下文混用的问题。",
               "实例内部维护一个 AtomicLong 种子计数器，初值为黄金比例常数 0x9E3779B97F4A7C15。randn、linear、conv2d 每次都从计数器取一个新种子，因此同一实例内的随机初始化序列可复现，且不同层不会拿到相同权重。",
-              "经典估计器相关的 fit、predict、crossValidate 是静态方法，仅转发到 basalt.ml.Estimators，不读取实例上下文；同一套 API 因此同时覆盖 eager 张量编程与 sklearn 风格的估计器工作流。"
+              "经典估计器相关的 fit、predict、crossValidate 是静态方法，仅转发到 basalt.ml.Estimators，不读取实例上下文；同一套 API 因此同时覆盖 eager 张量编程与 经典统计学习的估计器工作流。"
             ],
             "notes": [
               "close() 会级联释放该上下文内的全部张量与图，关闭后任何张量操作都会快速失败而不是访问已释放内存。",
               "创建过程需要原生库可用；加载失败时构造函数路径抛出 BasaltRuntimeException，而非 UnsatisfiedLinkError。",
               "种子计数器为 AtomicLong，并发调用不会取到重复种子，但调用顺序决定种子分配顺序。"
             ],
-            "example": "try (Basalt jsl = Basalt.create(4)) {\n    Tensor x = basalt.randn(32, 8);\n    Tensor y = basalt.randn(32, 1);\n    Linear hidden = basalt.linear(8, 16);\n    Linear output = basalt.linear(16, 1);\n    AdamW optimizer = basalt.adamw(output.parameters(), 1e-3f);\n    Tensor loss = output.forward(hidden.forward(x).relu()).mse(y);\n    loss.backward();\n    optimizer.step();\n}",
+            "example": "try (Basalt jsl = Basalt.create(4)) { Tensor x = basalt.randn(32, 8); Tensor y = basalt.randn(32, 1); Linear hidden = basalt.linear(8, 16); Linear output = basalt.linear(16, 1); AdamW optimizer = basalt.adamw(output.parameters(), 1e-3f); Tensor loss = output.forward(hidden.forward(x).relu()).mse(y); loss.backward(); optimizer.step();\n}",
             "see": [
               "basalt.nativebridge.NativeContext",
               "basalt.torch.Tensor",
@@ -1062,7 +1062,7 @@
             {
               "kind": "enum_constant",
               "key": "OK",
-              "signature": "OK(0,                      )",
+              "signature": "OK(0, )",
               "params": [],
               "throws": [],
               "javadoc": "",
@@ -1076,7 +1076,7 @@
             {
               "kind": "enum_constant",
               "key": "INVALID_PARAMETER",
-              "signature": "INVALID_PARAMETER(-1,                                )",
+              "signature": "INVALID_PARAMETER(-1, )",
               "params": [],
               "throws": [],
               "javadoc": "",
@@ -1090,7 +1090,7 @@
             {
               "kind": "enum_constant",
               "key": "SHAPE_MISMATCH",
-              "signature": "SHAPE_MISMATCH(-2,                                  )",
+              "signature": "SHAPE_MISMATCH(-2, )",
               "params": [],
               "throws": [],
               "javadoc": "",
@@ -1104,7 +1104,7 @@
             {
               "kind": "enum_constant",
               "key": "UNKNOWN_HANDLE",
-              "signature": "UNKNOWN_HANDLE(-3,                                                    )",
+              "signature": "UNKNOWN_HANDLE(-3, )",
               "params": [],
               "throws": [],
               "javadoc": "",
@@ -1118,7 +1118,7 @@
             {
               "kind": "enum_constant",
               "key": "CONTEXT_CLOSED",
-              "signature": "CONTEXT_CLOSED(-4,                                           )",
+              "signature": "CONTEXT_CLOSED(-4, )",
               "params": [],
               "throws": [],
               "javadoc": "",
@@ -1132,7 +1132,7 @@
             {
               "kind": "enum_constant",
               "key": "GRAPH_ERROR",
-              "signature": "GRAPH_ERROR(-5,                                                   )",
+              "signature": "GRAPH_ERROR(-5, )",
               "params": [],
               "throws": [],
               "javadoc": "",
@@ -1146,7 +1146,7 @@
             {
               "kind": "enum_constant",
               "key": "NATIVE_PANIC",
-              "signature": "NATIVE_PANIC(-6,                                          )",
+              "signature": "NATIVE_PANIC(-6, )",
               "params": [],
               "throws": [],
               "javadoc": "",
@@ -1160,7 +1160,7 @@
             {
               "kind": "enum_constant",
               "key": "OUT_OF_MEMORY",
-              "signature": "OUT_OF_MEMORY(-7,                                                    )",
+              "signature": "OUT_OF_MEMORY(-7, )",
               "params": [],
               "throws": [],
               "javadoc": "",
@@ -1174,7 +1174,7 @@
             {
               "kind": "enum_constant",
               "key": "UNSUPPORTED_OPERATION",
-              "signature": "UNSUPPORTED_OPERATION(-8,                                        )",
+              "signature": "UNSUPPORTED_OPERATION(-8, )",
               "params": [],
               "throws": [],
               "javadoc": "",
@@ -1244,7 +1244,7 @@
               "fromCode 对未登记的码返回 INVALID_PARAMETER，未知负码与 -1 无法区分。",
               "常量顺序即 values() 的顺序，序列化请使用 code() 而不是 ordinal()。"
             ],
-            "example": "BasaltExceptionCode code = BasaltExceptionCode.fromCode(-2);\nif (code == BasaltExceptionCode.SHAPE_MISMATCH) {\n    System.err.println(code.code() + \": \" + code.description());\n}",
+            "example": "BasaltExceptionCode code = BasaltExceptionCode.fromCode(-2);\nif (code == BasaltExceptionCode.SHAPE_MISMATCH) { System.err.println(code.code() + \": \" + code.description());\n}",
             "see": [
               "basalt.BasaltRuntimeException",
               "basalt.BasaltShapeException",
@@ -1329,7 +1329,7 @@
               "SDK 不在此类型中做任何内存回收；捕获后应先释放占用的张量再重试。",
               "可寻址上限超限与真实分配失败使用同一错误码，消息是唯一的区分依据。"
             ],
-            "example": "try (Basalt jsl = Basalt.create(4)) {\n    basalt.zeros(4096, 4096);\n} catch (BasaltMemoryException failure) {\n    System.err.println(failure.statusCode() + \" \" + failure.getMessage());\n}",
+            "example": "try (Basalt jsl = Basalt.create(4)) { basalt.zeros(4096, 4096);\n} catch (BasaltMemoryException failure) { System.err.println(failure.statusCode() + \" \" + failure.getMessage());\n}",
             "see": [
               "basalt.BasaltRuntimeException",
               "basalt.BasaltExceptionCode"
@@ -1413,7 +1413,7 @@
               "部分参数校验仍以 IllegalArgumentException 直接抛出，两者可能出现在同一调用路径上。",
               "捕获该类型通常意味着调用方代码需要修正，而不是重试。"
             ],
-            "example": "try {\n    BasaltRuntimeException.requireNonNull(null, \"features\");\n} catch (BasaltParameterException failure) {\n    System.err.println(failure.getMessage());\n}",
+            "example": "try { BasaltRuntimeException.requireNonNull(null, \"features\");\n} catch (BasaltParameterException failure) { System.err.println(failure.getMessage());\n}",
             "see": [
               "basalt.BasaltRuntimeException",
               "basalt.BasaltShapeException"
@@ -1432,7 +1432,7 @@
           "implements": [],
           "file": "jsl/BasaltRuntimeException.java",
           "line": 12,
-          "javadoc": "Unified unchecked exception for the Basalt SDK.\n\n<p>Native Rust/C++ panics, JNI shape rejections, memory errors, and invalid arguments are\ntranslated into this hierarchy. It extends {@link IllegalStateException} so existing code that\ncatches the JDK exception keeps working, while SDK users can inspect {@link #errorCode()} or\ncatch specific subclasses ({@link BasaltParameterException}, {@link BasaltShapeException},\n{@link BasaltMemoryException}, {@link BasaltUnsupportedOperationException}).</p>",
+          "javadoc": "Unified unchecked exception for the Basalt SDK. <p>Native Rust/C++ panics, JNI shape rejections, memory errors, and invalid arguments are\ntranslated into this hierarchy. It extends {@link IllegalStateException} so existing code that\ncatches the JDK exception keeps working, while SDK users can inspect {@link #errorCode()} or\ncatch specific subclasses ({@link BasaltParameterException}, {@link BasaltShapeException},\n{@link BasaltMemoryException}, {@link BasaltUnsupportedOperationException}).</p>",
           "nested": [],
           "members": [
             {
@@ -1639,7 +1639,7 @@
               "构造器不校验 message 与 cause，允许两者为 null，与父类行为一致。",
               "形状不匹配等可编程错误仍由 IllegalArgumentException 表达，本类型不替代它。"
             ],
-            "example": "try (Basalt jsl = Basalt.create()) {\n    basalt.activation(basalt.nn.Activation.NONE);\n} catch (BasaltRuntimeException failure) {\n    System.err.println(failure.getMessage());\n}",
+            "example": "try (Basalt jsl = Basalt.create()) { basalt.activation(basalt.nn.Activation.NONE);\n} catch (BasaltRuntimeException failure) { System.err.println(failure.getMessage());\n}",
             "see": [
               "basalt.Basalt",
               "java.lang.IllegalStateException"
@@ -1723,7 +1723,7 @@
               "异常本身不携带期望形状与实际形状字段，具体维度信息只存在于消息文本中。",
               "需要兼容既有代码时，捕获父类 BasaltRuntimeException 或 IllegalStateException 同样有效。"
             ],
-            "example": "try {\n    basalt.tensor(new float[]{1f, 2f, 3f}, 2, 2);\n} catch (IllegalArgumentException | BasaltShapeException failure) {\n    System.err.println(failure.getMessage());\n}",
+            "example": "try { basalt.tensor(new float[]{1f, 2f, 3f}, 2, 2);\n} catch (IllegalArgumentException | BasaltShapeException failure) { System.err.println(failure.getMessage());\n}",
             "see": [
               "basalt.BasaltRuntimeException",
               "basalt.BasaltExceptionCode"
@@ -1807,7 +1807,7 @@
               "该类型不继承 java.lang.UnsupportedOperationException，唯一的共同祖先是 IllegalStateException。",
               "降级路径需要调用方自行选择，SDK 不会自动替换为等价算子。"
             ],
-            "example": "try (Basalt jsl = Basalt.create()) {\n    basalt.activation(basalt.nn.Activation.SOFTMAX);\n} catch (BasaltRuntimeException failure) {\n    System.err.println(failure.statusCode());\n}",
+            "example": "try (Basalt jsl = Basalt.create()) { basalt.activation(basalt.nn.Activation.SOFTMAX);\n} catch (BasaltRuntimeException failure) { System.err.println(failure.statusCode());\n}",
             "see": [
               "basalt.BasaltRuntimeException",
               "basalt.BasaltExceptionCode"
@@ -1827,7 +1827,7 @@
           "implements": [],
           "file": "jsl/BasaltMetrics.java",
           "line": 23,
-          "javadoc": "Standardized observability and metrics registry for Basalt (Phase 3.2).\n\n<p>Tracks operator execution counts, total/mean/p50/p95/p99 latency, throughput\n(elements/sec and ops/sec), and native/JVM memory footprint, while emitting\nJFR events ({@link OperatorExecutionEvent}, {@link NativeMemoryEvent}).",
+          "javadoc": "Standardized observability and metrics registry for Basalt (Phase 3.2). <p>Tracks operator execution counts, total/mean/p50/p95/p99 latency, throughput\n(elements/sec and ops/sec), and native/JVM memory footprint, while emitting\nJFR events ({@link OperatorExecutionEvent}, {@link NativeMemoryEvent}).",
           "nested": [
             "OperatorSummary",
             "MemorySnapshot",
@@ -2029,7 +2029,7 @@
               "启用 JFR 时每次记录提交 OperatorExecutionEvent，快照提交 NativeMemoryEvent；未启用时这两类事件被跳过，指标本身照常累计。",
               "所有方法都是静态方法，且构造器为私有，不能创建实例。"
             ],
-            "example": "try (Basalt jsl = Basalt.create(4)) {\n    Tensor y = BasaltMetrics.time(\"randn\", 16, 64, () -> basalt.randn(4, 4));\n    BasaltMetrics.MetricsSnapshot snapshot = basalt.metrics();\n    System.out.println(snapshot.toJson());\n    System.out.println(snapshot.toPrometheus());\n}",
+            "example": "try (Basalt jsl = Basalt.create(4)) { Tensor y = BasaltMetrics.time(\"randn\", 16, 64, () -> basalt.randn(4, 4)); BasaltMetrics.MetricsSnapshot snapshot = basalt.metrics(); System.out.println(snapshot.toJson()); System.out.println(snapshot.toPrometheus());\n}",
             "see": [
               "basalt.Basalt",
               "basalt.BasaltMetrics.MetricsSnapshot",
@@ -2198,7 +2198,7 @@
               "totalMillis 与微秒字段单位不同，混用时需要先换算。",
               "样本被环形缓冲覆盖后，分位统计只反映最近 256 次调用，而 calls 与均值仍是全量累计。"
             ],
-            "example": "BasaltMetrics.OperatorSummary summary = BasaltMetrics.snapshot(basalt.context()).operators().get(\"randn\");\nif (summary != null) {\n    System.out.println(summary.calls() + \" calls, p95 = \" + summary.p95Micros() + \" us\");\n}",
+            "example": "BasaltMetrics.OperatorSummary summary = BasaltMetrics.snapshot(basalt.context()).operators().get(\"randn\");\nif (summary != null) { System.out.println(summary.calls() + \" calls, p95 = \" + summary.p95Micros() + \" us\");\n}",
             "see": [
               "basalt.BasaltMetrics",
               "basalt.BasaltMetrics.MetricsSnapshot"

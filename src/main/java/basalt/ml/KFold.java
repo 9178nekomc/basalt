@@ -4,7 +4,7 @@ import basalt.core.Matrix;
 import java.util.List;
 
 /**
- * K-Fold cross-validator, matching {@code sklearn.model_selection.KFold}.
+ * K-Fold cross-validator.
  */
 public final class KFold {
     private final int folds;

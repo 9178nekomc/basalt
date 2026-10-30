@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate the shared BasaltD datasets and benchmark scikit-learn on them.
 
-The Java harness (basalt.tests.SklearnComparison) reads the exact same BasaltD files, so both
+The Java harness (basalt.tests.ReferenceComparison) reads the exact same BasaltD files, so both
 libraries see bit-identical features and labels. Results are written to build/compare/sklearn.csv.
 """
 

@@ -1,1173 +1,1173 @@
 {
- "group": "g10",
- "title": "经典机器学习（5/9）",
- "modules": [
-  {
-   "name": "basalt.ml",
-   "types": [
+  "group": "g10",
+  "title": "经典机器学习（5/9）",
+  "modules": [
     {
-     "qualified": "basalt.ml.Transformer",
-     "simple_qualified": "Transformer",
-     "kind": "interface",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "Persistable",
-     "implements": [],
-     "file": "jsl/ml/Transformer.java",
-     "line": 14,
-     "javadoc": "Common contract for stateful feature preprocessors and feature-engineering steps.\n\n<p>Every {@code Transformer} is {@link Persistable} so training-time statistics (means, scales,\ncategory vocabularies, imputation constants, bin edges, selected feature masks) can be serialized\ninto a {@code .bsl} container or inside a {@link Pipeline}, guaranteeing bit-identical behavior\nbetween training and production inference.</p>",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "有状态特征预处理与特征工程步骤的统一契约",
-      "body": [
-       "实现类在 fit 阶段从数据中学出统计量（均值、尺度、类别词表、缺失填充常数、分桶边界、被选中的特征掩码），在 transform 阶段用这些统计量改写特征矩阵。继承 Persistable 使统计量可以单独写入 .bsl 容器，也可以随 Pipeline 一起序列化，从而保证训练与线上推理的行为逐位一致。",
-       "fit(Matrix) 等价于 fit(features, null)；fitTransform 先把特征交给 fit，再对同一批数据执行 transform，省去一次显式调用。inverseTransform 的默认实现直接抛 BasaltUnsupportedOperationException，只有映射可逆的变换（MinMaxScaler、LabelEncoder、特征选择等）才覆盖它。"
-      ],
-      "notes": [
-       "fit 的实现必须返回自身或等价实例，默认的 fit(Matrix) 正是把返回值继续传给 fit(Matrix, double[])",
-       "transform 不修改入参，返回新的 Matrix；列数由 fit 阶段记录的特征决定",
-       "无监督变换忽略 targets，只有目标编码一类步骤会真正读取它"
-      ],
-      "example": "MinMaxScaler scaler = MinMaxScaler.builder()\n        .featureRange(0.0, 1.0)\n        .build();\n\nMatrix scaled = scaler.fitTransform(features);\nMatrix restored = scaler.inverseTransform(scaled);",
-      "see": [
-       "basalt.ml.Pipeline",
-       "basalt.core.Persistable",
-       "basalt.core.Matrix"
+      "name": "basalt.ml",
+      "types": [
+        {
+          "qualified": "basalt.ml.Transformer",
+          "simple_qualified": "Transformer",
+          "kind": "interface",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "Persistable",
+          "implements": [],
+          "file": "jsl/ml/Transformer.java",
+          "line": 14,
+          "javadoc": "Common contract for stateful feature preprocessors and feature-engineering steps. <p>Every {@code Transformer} is {@link Persistable} so training-time statistics (means, scales,\ncategory vocabularies, imputation constants, bin edges, selected feature masks) can be serialized\ninto a {@code .bsl} container or inside a {@link Pipeline}, guaranteeing bit-identical behavior\nbetween training and production inference.</p>",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "有状态特征预处理与特征工程步骤的统一契约",
+            "body": [
+              "实现类在 fit 阶段从数据中学出统计量（均值、尺度、类别词表、缺失填充常数、分桶边界、被选中的特征掩码），在 transform 阶段用这些统计量改写特征矩阵。继承 Persistable 使统计量可以单独写入 .bsl 容器，也可以随 Pipeline 一起序列化，从而保证训练与线上推理的行为逐位一致。",
+              "fit(Matrix) 等价于 fit(features, null)；fitTransform 先把特征交给 fit，再对同一批数据执行 transform，省去一次显式调用。inverseTransform 的默认实现直接抛 BasaltUnsupportedOperationException，只有映射可逆的变换（MinMaxScaler、LabelEncoder、特征选择等）才覆盖它。"
+            ],
+            "notes": [
+              "fit 的实现必须返回自身或等价实例，默认的 fit(Matrix) 正是把返回值继续传给 fit(Matrix, double[])",
+              "transform 不修改入参，返回新的 Matrix；列数由 fit 阶段记录的特征决定",
+              "无监督变换忽略 targets，只有目标编码一类步骤会真正读取它"
+            ],
+            "example": "MinMaxScaler scaler = MinMaxScaler.builder() .featureRange(0.0, 1.0) .build(); Matrix scaled = scaler.fitTransform(features);\nMatrix restored = scaler.inverseTransform(scaled);",
+            "see": [
+              "basalt.ml.Pipeline",
+              "basalt.core.Persistable",
+              "basalt.core.Matrix"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.TreeTask",
+          "simple_qualified": "TreeTask",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/TreeTask.java",
+          "line": 4,
+          "javadoc": "Supervised objective of a single decision tree.",
+          "nested": [],
+          "members": [
+            {
+              "kind": "enum_constant",
+              "key": "CLASSIFICATION",
+              "signature": "CLASSIFICATION",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "分类树，叶子输出类别或类分布"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "REGRESSION",
+              "signature": "REGRESSION",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "回归树，叶子输出均值"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "单棵决策树的监督目标：分类或回归",
+            "body": [
+              "CLASSIFICATION 用类别计数与 GINI 或 ENTROPY 评估分裂，叶值为多数类标签；REGRESSION 用和与平方和计算方差下降，叶值为均值。任务同时决定 fit 的编码方式、predict 的输出语义以及 Builder 对准则的校验。"
+            ],
+            "notes": [
+              "task 与 criterion 必须匹配，否则 DecisionTree.Builder.build() 抛 IllegalArgumentException",
+              "RandomForest 与 DecisionTree 都把任务作为构造期常量，拟合后不可更改"
+            ],
+            "example": "DecisionTree regressor = DecisionTree.builder() .task(TreeTask.REGRESSION) .maxDepth(6) .build(); TreeTask task = regressor.task();",
+            "see": [
+              "basalt.ml.DecisionTree",
+              "basalt.ml.ImpurityCriterion",
+              "basalt.ml.RandomForest"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.AgglomerativeClustering.Builder",
+          "simple_qualified": "AgglomerativeClustering.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/AgglomerativeClustering.java",
+          "line": 176,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "clusters(int)",
+              "signature": "Builder clusters(int clusters)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "clusters"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置目标簇数，默认 2。",
+                "params": {
+                  "clusters": "期望保留的簇数，须为正；默认 2"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "clusters 小于等于 0"
+                },
+                "notes": [
+                  "此处即完成校验，非法值不会传播到 build"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "linkage(Linkage)",
+              "signature": "Builder linkage(Linkage linkage)",
+              "params": [
+                {
+                  "type": "Linkage",
+                  "name": "linkage"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置簇间连接准则，默认 WARD。",
+                "params": {
+                  "linkage": "Linkage 常量之一：WARD、COMPLETE、AVERAGE 或 SINGLE，非 null"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "linkage 为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "AgglomerativeClustering build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "用当前配置创建未拟合的聚类器。",
+                "returns": "持有 clusters 与 linkage 的 AgglomerativeClustering 实例",
+                "notes": [
+                  "build 本身不校验，clusters 大于样本数的问题要等 fit 才抛出 IllegalArgumentException"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "AgglomerativeClustering 的构建器。",
+            "body": [
+              "只有两个参数：目标簇数 clusters 与连接准则 linkage，默认 2 与 WARD。clusters 在 setter 内立即校验为正，linkage 只做非空检查，build 直接返回未拟合实例，不再重复校验。",
+              "两个参数都可省略，AgglomerativeClustering.builder() 返回的构建器已带默认值，因此最简用法是 build 后直接 fit。"
+            ],
+            "notes": [
+              "必填项：无；clusters 与 linkage 都有默认值",
+              "fit 阶段会另外校验 clusters 不超过样本数，该约束不在 build 时检查",
+              "链接准则决定合并代价的计算方式，选择前建议先做特征标准化"
+            ],
+            "example": "AgglomerativeClustering model = AgglomerativeClustering.builder() .clusters(3) .linkage(AgglomerativeClustering.Linkage.AVERAGE) .build(); model.fit(features);\nint[] labels = model.labels();",
+            "see": [
+              "basalt.ml.AgglomerativeClustering",
+              "basalt.ml.AgglomerativeClustering.Linkage"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.AgglomerativeClustering.Linkage",
+          "simple_qualified": "AgglomerativeClustering.Linkage",
+          "kind": "enum",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/AgglomerativeClustering.java",
+          "line": 15,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "enum_constant",
+              "key": "WARD",
+              "signature": "WARD",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "最小化合并带来的簇内平方和增量"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "COMPLETE",
+              "signature": "COMPLETE",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "取两簇间最远点距离"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "AVERAGE",
+              "signature": "AVERAGE",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "取两簇间所有点对距离的均值"
+              }
+            },
+            {
+              "kind": "enum_constant",
+              "key": "SINGLE",
+              "signature": "SINGLE",
+              "params": [],
+              "throws": [],
+              "doc": {
+                "summary": "取两簇间最近点距离"
+              }
+            }
+          ],
+          "doc": {
+            "summary": "层次聚类的簇间连接准则",
+            "body": [
+              "WARD 以两组样本数加权后的均值平方距离 (ni*nj/(ni+nj))*||mi-mj||^2 作为合并代价，倾向得到大小均衡的球状簇；SINGLE、COMPLETE、AVERAGE 直接以样本间距为依据，合并后分别取两组距离的最小、最大与按样本数加权平均。",
+              "四种准则都走同一套自底向上的贪心流程：每轮选出代价最小的一对活跃簇合并，直到活跃簇数降到 clusters。簇编号按活跃簇的成员下标顺序从 0 递增，predict 对非训练样本按最近的簇均值分配。"
+            ],
+            "notes": [
+              "SINGLE 对噪声敏感，容易拉出长链状簇；WARD 与 AVERAGE 更稳健但要求特征量纲一致",
+              "距离固定为欧氏距离，没有可切换的度量参数",
+              "该常量决定构建器的默认值（WARD），拟合后不可更改"
+            ],
+            "example": "AgglomerativeClustering model = AgglomerativeClustering.builder() .clusters(4) .linkage(AgglomerativeClustering.Linkage.SINGLE) .build(); AgglomerativeClustering.Linkage used = model.linkage();",
+            "see": [
+              "basalt.ml.AgglomerativeClustering",
+              "basalt.ml.AgglomerativeClustering.Builder"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.DBSCAN.Builder",
+          "simple_qualified": "DBSCAN.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/DBSCAN.java",
+          "line": 145,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "eps(double)",
+              "signature": "Builder eps(double eps)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "eps"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置邻域半径 eps。",
+                "params": {
+                  "eps": "邻域半径，须为正且有限；默认 0.5"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "minPoints(int)",
+              "signature": "Builder minPoints(int minPoints)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "minPoints"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置核心点的最小邻域样本数。",
+                "params": {
+                  "minPoints": "阈值，须为正；默认 5，统计时包含点自身"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "metric(DistanceMetric)",
+              "signature": "Builder metric(DistanceMetric metric)",
+              "params": [
+                {
+                  "type": "DistanceMetric",
+                  "name": "metric"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置邻域查询与预测所用的距离度量。",
+                "params": {
+                  "metric": "距离函数，默认 DistanceMetric.EUCLIDEAN"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "metric 为 null"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "DBSCAN build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验参数并创建 DBSCAN 实例。",
+                "returns": "新的 DBSCAN 实例，尚未拟合",
+                "throws": {
+                  "IllegalArgumentException": "eps 非正或非有限，或 minPoints 非正"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "DBSCAN 的构建器，设置邻域半径、密度阈值与距离度量。",
+            "body": [
+              "未显式设置时使用 eps = 0.5、minPoints = 5、DistanceMetric.EUCLIDEAN。各 setter 只赋值，参数校验集中在 build 中完成。"
+            ],
+            "notes": [
+              "eps 的单位与特征单位相同，特征未标准化时不同量纲的列会主导邻域判定"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.DataSplit.Fold",
+          "simple_qualified": "DataSplit.Fold",
+          "kind": "record",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/DataSplit.java",
+          "line": 21,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "一折的训练与测试四元组。",
+            "body": [
+              "record 组件依次为 trainFeatures、trainTargets、testFeatures、testTargets，全部由 DataSplit.kFold 新建，与输入数据不共享存储。",
+              "测试块是洗牌顺序上的连续区间，训练块由其余区间按同一顺序拼接，因此训练集与测试集内部的行序都是洗牌后的顺序，而不是原始顺序。"
+            ],
+            "notes": [
+              "记录本身不可变，但持有的 Matrix 内容仍可被修改",
+              "各折测试块互不重叠，并集覆盖全部行"
+            ],
+            "see": [
+              "basalt.ml.DataSplit.kFold(Matrix, double[], int, long)"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.DataSplit.Holdout",
+          "simple_qualified": "DataSplit.Holdout",
+          "kind": "record",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/DataSplit.java",
+          "line": 17,
+          "javadoc": "",
+          "nested": [],
+          "members": [],
+          "doc": {
+            "summary": "一次 holdout 划分的四元组。",
+            "body": [
+              "record 组件依次为 trainFeatures、trainTargets、testFeatures、testTargets，由 DataSplit.holdout 生成，四个字段都是独立副本。",
+              "测试集行数被夹到 [1, rows-1]，两侧都保证非空，因此可以直接把四个组件交给 fit 与 predict，无需再判断边界。"
+            ],
+            "notes": [
+              "记录本身不可变，但持有的 Matrix 内容仍可被修改",
+              "划分结果只由 seed 与输入行数决定，与标签分布无关"
+            ],
+            "see": [
+              "basalt.ml.DataSplit.holdout(Matrix, double[], double, long)"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.DecisionTree.Builder",
+          "simple_qualified": "DecisionTree.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/DecisionTree.java",
+          "line": 506,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "maxDepth(int)",
+              "signature": "Builder maxDepth(int maxDepth)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "maxDepth"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置树的最大深度，默认 8",
+                "params": {
+                  "maxDepth": "最大深度，须不小于 0；0 表示根节点直接成为叶"
+                },
+                "returns": "this",
+                "notes": [
+                  "深度从 0 起计，节点深度达到该值即停止分裂"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "minSamplesSplit(int)",
+              "signature": "Builder minSamplesSplit(int minSamplesSplit)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "minSamplesSplit"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置允许分裂的最小节点样本数，默认 2",
+                "params": {
+                  "minSamplesSplit": "节点样本数低于该值即转为叶，须不小于 2"
+                },
+                "returns": "this"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "minSamplesLeaf(int)",
+              "signature": "Builder minSamplesLeaf(int minSamplesLeaf)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "minSamplesLeaf"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置每个子节点最少样本数，默认 1",
+                "params": {
+                  "minSamplesLeaf": "分裂后左右两侧各自的最小样本数，须不小于 1"
+                },
+                "returns": "this",
+                "notes": [
+                  "同时约束 fit 的入口：总样本数小于该值直接抛 IllegalArgumentException"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "criterion(ImpurityCriterion)",
+              "signature": "Builder criterion(ImpurityCriterion criterion)",
+              "params": [
+                {
+                  "type": "ImpurityCriterion",
+                  "name": "criterion"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置不纯度准则，默认 GINI",
+                "params": {
+                  "criterion": "准则常量，非 null；其 task() 必须与最终 task 一致"
+                },
+                "returns": "this",
+                "throws": {
+                  "NullPointerException": "criterion 为 null"
+                },
+                "notes": [
+                  "调用后标记为显式设置，后续 task() 不再覆盖该准则"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "task(TreeTask)",
+              "signature": "Builder task(TreeTask task)",
+              "params": [
+                {
+                  "type": "TreeTask",
+                  "name": "task"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置任务类型，默认 CLASSIFICATION",
+                "params": {
+                  "task": "CLASSIFICATION 或 REGRESSION，非 null"
+                },
+                "returns": "this",
+                "throws": {
+                  "NullPointerException": "task 为 null"
+                },
+                "notes": [
+                  "未显式设置 criterion 时，同步切换为 MSE 或 GINI"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "maxFeatures(int)",
+              "signature": "Builder maxFeatures(int maxFeatures)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "maxFeatures"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置每次分裂的候选特征数，默认 0",
+                "params": {
+                  "maxFeatures": "候选特征数；0 表示使用全部特征，大于特征数时按特征数截断"
+                },
+                "returns": "this",
+                "notes": [
+                  "小于特征数时，每个节点用部分洗牌抽取子集，随机源为 seed"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "bins(int)",
+              "signature": "Builder bins(int maxBins)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "maxBins"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置单特征最大桶数，默认 64",
+                "params": {
+                  "maxBins": "桶数上限，取值 [2, 255]"
+                },
+                "returns": "this"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "seed(long)",
+              "signature": "Builder seed(long seed)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置特征子采样的随机种子，默认 42",
+                "params": {
+                  "seed": "随机种子；仅影响 maxFeatures 的特征抽取"
+                },
+                "returns": "this",
+                "notes": [
+                  "行选择不受该种子影响，fit 固定使用全部行"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "DecisionTree build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验配置并创建估计器",
+                "returns": "配置好的 DecisionTree，尚未拟合",
+                "throws": {
+                  "IllegalArgumentException": "maxDepth 小于 0、minSamplesSplit 小于 2、minSamplesLeaf 小于 1、maxFeatures 小于 0、bins 越界，或准则与任务不匹配"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "DecisionTree 的流式构造器",
+            "body": [
+              "默认值为 maxDepth 8、minSamplesSplit 2、minSamplesLeaf 1、criterion GINI、task CLASSIFICATION、maxFeatures 0（全部特征）、bins 64、seed 42。所有 setter 返回 this，build() 统一校验并返回未拟合的估计器。",
+              "criterion 一旦被显式设置就锁定，之后调用 task() 不会改写它；未显式设置时，task(REGRESSION) 自动切到 MSE，task(CLASSIFICATION) 自动切到 GINI。"
+            ],
+            "notes": [
+              "maxDepth 为 0 表示根节点即叶，可用于得到常数模型",
+              "minSamplesSplit 的下限是 2，低于该值在 build() 时被拒绝"
+            ],
+            "example": "DecisionTree tree = DecisionTree.builder() .task(TreeTask.REGRESSION) .maxDepth(5) .minSamplesSplit(4) .minSamplesLeaf(2) .maxFeatures(2) .bins(32) .seed(11L) .build();",
+            "see": [
+              "basalt.ml.DecisionTree",
+              "basalt.ml.ImpurityCriterion",
+              "basalt.ml.TreeTask"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.FeatureImportance.PermutationResult",
+          "simple_qualified": "FeatureImportance.PermutationResult",
+          "kind": "record",
+          "modifiers": [
+            "public"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/FeatureImportance.java",
+          "line": 18,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "rankedFeaturesDescending()",
+              "signature": "int[] rankedFeaturesDescending()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "按平均重要性从大到小返回特征下标。",
+                "returns": "新的 int 数组，长度为特征数，元素为列下标，最靠前的最重要",
+                "notes": [
+                  "只比较 importancesMean，不改动记录内的原始数组",
+                  "平均重要性相同的特征保持列下标升序"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "置换重要性的计算结果，含逐次重复的原始分数。",
+            "body": [
+              "三个组件依次为 importancesMean、importancesStd 与 rawImportances：前者是每个特征在所有重复上的平均分数下降，第二个是同一组重复的标准差（按总体方差计算，除以重复次数），第三个是 [特征数][重复次数] 的原始下降量。",
+              "分数下降等于基线得分减去该列被打乱后的得分，因此越大表示该特征越重要。全部数值由 FeatureImportance.permutationImportance 计算并直接放入记录，没有再做归一化。"
+            ],
+            "notes": [
+              "下降为负说明打乱该列反而提升了指标，通常意味着该特征与目标无关或存在噪声",
+              "rawImportances 的行对应特征列，列对应重复序号，排序与打乱都只发生在行方向上",
+              "记录本身不可变，但持有的数组仍可被外部修改"
+            ],
+            "example": "FeatureImportance.PermutationResult result = FeatureImportance.permutationImportance( model, features, targets, Estimators.Metric.ACCURACY, 10, 42L); int[] order = result.rankedFeaturesDescending();\ndouble top = result.importancesMean()[order[0]];",
+            "see": [
+              "basalt.ml.FeatureImportance",
+              "basalt.ml.FeatureImportance.permutationImportance(Estimator, Matrix, double[], Estimators.Metric, int, long)"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.GaussianMixture.Builder",
+          "simple_qualified": "GaussianMixture.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/GaussianMixture.java",
+          "line": 318,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "components(int)",
+              "signature": "Builder components(int components)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "components"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置混合成分个数，默认 2。",
+                "params": {
+                  "components": "高斯成分个数，须为正；默认 2"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "components 小于等于 0"
+                },
+                "notes": [
+                  "fit 时还会校验 components 不超过样本数"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "covarianceType(CovarianceType)",
+              "signature": "Builder covarianceType(CovarianceType covarianceType)",
+              "params": [
+                {
+                  "type": "CovarianceType",
+                  "name": "covarianceType"
+                }
+              ],
+              "throws": [],
+              "doc": {
+                "summary": "指定协方差参数化，默认 FULL",
+                "params": {
+                  "covarianceType": "FULL、TIED 或 DIAG；影响存储、求值成本与 AIC 的参数计数"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "key": "maxIterations(int)",
+              "signature": "Builder maxIterations(int maxIterations)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "maxIterations"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置 EM 迭代上限，默认 100。",
+                "params": {
+                  "maxIterations": "最大 EM 轮数，须为正；默认 100"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "maxIterations 小于等于 0"
+                },
+                "notes": [
+                  "达到上限仍未满足 tolerance 时 converged() 返回 false，参数取最后一轮的结果"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "tolerance(double)",
+              "signature": "Builder tolerance(double tolerance)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "tolerance"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置收敛阈值，默认 1e-4。",
+                "params": {
+                  "tolerance": "相邻两轮每样本平均对数似然之差的上限，须为正且有限；默认 1e-4"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "tolerance 非正或非有限"
+                },
+                "notes": [
+                  "判据是 |lowerBound - 上一轮 lowerBound| <= tolerance，成立即停止并标记已收敛"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "regCovar(double)",
+              "signature": "Builder regCovar(double regCovar)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "regCovar"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置协方差正则项，默认 1e-6。",
+                "params": {
+                  "regCovar": "加到每个方差上的常数，须为正且有限；默认 1e-6"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "regCovar 非正或非有限"
+                },
+                "notes": [
+                  "初始化与每轮 M 步都会执行 variance = max(regCovar, variance + regCovar)，避免方差塌缩到 0",
+                  "取值过大会把各成分的对角协方差压平，退化为球形簇"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "seed(long)",
+              "signature": "Builder seed(long seed)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置初始化随机种子，默认 42。",
+                "params": {
+                  "seed": "随机种子，默认 42；不做取值范围校验"
+                },
+                "returns": "this，便于链式调用",
+                "notes": [
+                  "种子只传给内部的 K-Means++ 初始化，EM 本身是确定性的",
+                  "相同 seed 与数据重复 fit 得到相同参数"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "GaussianMixture build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "用当前配置创建未拟合的估计器。",
+                "returns": "持有全部超参数的 GaussianMixture 实例",
+                "notes": [
+                  "参数校验全部在各自的 setter 内完成，build 不再重复检查"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "GaussianMixture 的构建器。",
+            "body": [
+              "五个超参数各有默认值：components 2、maxIterations 100、tolerance 1e-4、regCovar 1e-6、seed 42L。除 seed 外每个 setter 都会立即做正数/有限性校验，build 直接返回未拟合实例，不追加检查。",
+              "fit 阶段先用 KMeans（固定 30 轮、同一 seed）做 K-Means++ 初始化，再由 E 步与 M 步交替推进；协方差固定为对角形式，regCovar 是唯一的数值稳定手段。"
+            ],
+            "notes": [
+              "必填项：无；五个参数都可省略",
+              "fit 时 components 不能超过样本数，否则抛 IllegalArgumentException",
+              "seed 只影响初始化，不改变 EM 的单调性，因此相同种子下结果可复现",
+              "协方差为对角矩阵，特征间相关性不会被建模"
+            ],
+            "example": "GaussianMixture gmm = GaussianMixture.builder() .components(3) .maxIterations(200) .tolerance(1e-5) .regCovar(1e-6) .seed(7L) .build(); gmm.fit(features);\ndouble[] labels = gmm.predict(features);",
+            "see": [
+              "basalt.ml.GaussianMixture",
+              "basalt.ml.KMeans"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.GaussianNaiveBayes.Builder",
+          "simple_qualified": "GaussianNaiveBayes.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/GaussianNaiveBayes.java",
+          "line": 246,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "varianceSmoothing(double)",
+              "signature": "Builder varianceSmoothing(double varianceSmoothing)",
+              "params": [
+                {
+                  "type": "double",
+                  "name": "varianceSmoothing"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置方差平滑系数。",
+                "body": [
+                  "拟合时先乘以全体方差最大值得到 epsilon，再加到每个方差上，因此该系数对特征缩放不敏感；全部方差为 0 时 epsilon 直接取该系数本身。"
+                ],
+                "params": {
+                  "varianceSmoothing": "平滑系数，须为正且有限；默认 1e-9"
+                },
+                "returns": "this，便于链式调用"
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "GaussianNaiveBayes build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验参数并创建估计器。",
+                "returns": "新的 GaussianNaiveBayes 实例，尚未拟合",
+                "throws": {
+                  "IllegalArgumentException": "varianceSmoothing 非正或非有限"
+                }
+              }
+            }
+          ],
+          "doc": {
+            "summary": "GaussianNaiveBayes 的构建器。",
+            "body": [
+              "唯一参数是方差平滑系数，默认 1e-9，与 参考实现 的 var_smoothing 同名同义。build 只校验该系数为正且有限，其余统计量在 fit 阶段产生。"
+            ]
+          }
+        },
+        {
+          "qualified": "basalt.ml.GridSearchCV.Builder",
+          "simple_qualified": "GridSearchCV.Builder",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "generic": "",
+          "extends": "",
+          "implements": [],
+          "file": "jsl/ml/GridSearchCV.java",
+          "line": 143,
+          "javadoc": "",
+          "nested": [],
+          "members": [
+            {
+              "kind": "method",
+              "key": "param(String, Object...)",
+              "signature": "Builder param(String name, Object... values)",
+              "params": [
+                {
+                  "type": "String",
+                  "name": "name"
+                },
+                {
+                  "type": "Object...",
+                  "name": "values"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "登记一个超参数的候选值列表。",
+                "params": {
+                  "name": "参数名，作为传给估计器工厂的 Map 键，非 null",
+                  "values": "候选值，可变参数，至少传入一个；非 null"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "name 或 values 为 null",
+                  "IllegalArgumentException": "values 为空数组"
+                },
+                "notes": [
+                  "同名参数再次登记会整表覆盖，而不是追加候选值",
+                  "多参数之间取笛卡尔积，候选总数等于各列表长度之积"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "scoring(Estimators.Metric)",
+              "signature": "Builder scoring(Estimators.Metric scoring)",
+              "params": [
+                {
+                  "type": "Estimators.Metric",
+                  "name": "scoring"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置交叉验证打分指标，默认 ACCURACY。",
+                "params": {
+                  "scoring": "Estimators.Metric 常量，可取 ACCURACY、MACRO_F1、R2 或 RMSE，非 null"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "NullPointerException": "scoring 为 null"
+                },
+                "notes": [
+                  "RMSE 在内部取负号，因此四种指标统一为越大越好，最优候选直接取均值最大者"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "cv(int)",
+              "signature": "Builder cv(int cvFolds)",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "cvFolds"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置交叉验证折数，默认 5。",
+                "params": {
+                  "cvFolds": "折数，须不小于 2；默认 5"
+                },
+                "returns": "this，便于链式调用",
+                "throws": {
+                  "IllegalArgumentException": "cvFolds 小于 2"
+                },
+                "notes": [
+                  "每个候选都要训练 cvFolds 次，总训练次数为候选数乘以折数"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "stratified(boolean)",
+              "signature": "Builder stratified(boolean stratified)",
+              "params": [
+                {
+                  "type": "boolean",
+                  "name": "stratified"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置是否按标签分层分折，默认 false。",
+                "params": {
+                  "stratified": "true 时走 DataSplit.stratifiedKFold，按类别比例分折；false 时走普通 K 折"
+                },
+                "returns": "this，便于链式调用",
+                "notes": [
+                  "两种划分都会先洗牌，随机源为 seed",
+                  "类别极不均衡时建议开启，否则某折可能缺少某个类别"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "seed(long)",
+              "signature": "Builder seed(long seed)",
+              "params": [
+                {
+                  "type": "long",
+                  "name": "seed"
+                }
+              ],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "设置分折的随机种子，默认 42。",
+                "params": {
+                  "seed": "随机种子，默认 42；不做取值范围校验"
+                },
+                "returns": "this，便于链式调用",
+                "notes": [
+                  "只影响折划分，估计器自身的随机性需由参数网格控制",
+                  "给定 seed 与数据后所有候选共享同一套折，比较是公平的"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "key": "build()",
+              "signature": "GridSearchCV build()",
+              "params": [],
+              "throws": [],
+              "javadoc": "",
+              "doc": {
+                "summary": "校验参数网格并创建搜索器。",
+                "returns": "新的 GridSearchCV 实例，尚未拟合",
+                "throws": {
+                  "IllegalArgumentException": "参数网格为空，即从未调用过 param"
+                },
+                "notes": [
+                  "构建时把参数网格复制为新的 LinkedHashMap，之后对构建器的修改不影响已创建的实例"
+                ]
+              }
+            }
+          ],
+          "doc": {
+            "summary": "GridSearchCV 的构建器，登记参数网格与交叉验证策略。",
+            "body": [
+              "构建器没有公开构造器，只能由 GridSearchCV.builder(estimatorFactory) 取得，估计器工厂在那一刻即为必填，空工厂直接抛 NullPointerException。参数网格用 param 逐项登记，fit 时按登记顺序做笛卡尔积。",
+              "其余四项都有默认值：scoring 为 Estimators.Metric.ACCURACY、cv 为 5、stratified 为 false、seed 为 42。build 只检查参数网格非空，配置错误主要靠各 setter 的即时校验拦下。"
+            ],
+            "notes": [
+              "必填项：至少一次 param 调用，否则 build 抛 IllegalArgumentException",
+              "estimatorFactory 已被固定，构建器无法更换工厂",
+              "工厂必须按参数 Map 返回未拟合的估计器，fit 会为每个候选、每一折各调用一次"
+            ],
+            "example": "GridSearchCV search = GridSearchCV.builder(params -> DecisionTree.builder() .maxDepth((Integer) params.get(\"maxDepth\")) .build()) .param(\"maxDepth\", 3, 5, 8) .scoring(Estimators.Metric.ACCURACY) .cv(5) .stratified(true) .seed(42L) .build(); search.fit(features, targets);",
+            "see": [
+              "basalt.ml.GridSearchCV",
+              "basalt.ml.DataSplit",
+              "basalt.ml.Estimators.Metric"
+            ]
+          }
+        }
       ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.TreeTask",
-     "simple_qualified": "TreeTask",
-     "kind": "enum",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/TreeTask.java",
-     "line": 4,
-     "javadoc": "Supervised objective of a single decision tree.",
-     "nested": [],
-     "members": [
-      {
-       "kind": "enum_constant",
-       "key": "CLASSIFICATION",
-       "signature": "CLASSIFICATION",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "分类树，叶子输出类别或类分布"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "REGRESSION",
-       "signature": "REGRESSION",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "回归树，叶子输出均值"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "单棵决策树的监督目标：分类或回归",
-      "body": [
-       "CLASSIFICATION 用类别计数与 GINI 或 ENTROPY 评估分裂，叶值为多数类标签；REGRESSION 用和与平方和计算方差下降，叶值为均值。任务同时决定 fit 的编码方式、predict 的输出语义以及 Builder 对准则的校验。"
-      ],
-      "notes": [
-       "task 与 criterion 必须匹配，否则 DecisionTree.Builder.build() 抛 IllegalArgumentException",
-       "RandomForest 与 DecisionTree 都把任务作为构造期常量，拟合后不可更改"
-      ],
-      "example": "DecisionTree regressor = DecisionTree.builder()\n        .task(TreeTask.REGRESSION)\n        .maxDepth(6)\n        .build();\n\nTreeTask task = regressor.task();",
-      "see": [
-       "basalt.ml.DecisionTree",
-       "basalt.ml.ImpurityCriterion",
-       "basalt.ml.RandomForest"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.AgglomerativeClustering.Builder",
-     "simple_qualified": "AgglomerativeClustering.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/AgglomerativeClustering.java",
-     "line": 176,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "clusters(int)",
-       "signature": "Builder clusters(int clusters)",
-       "params": [
-        {
-         "type": "int",
-         "name": "clusters"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置目标簇数，默认 2。",
-        "params": {
-         "clusters": "期望保留的簇数，须为正；默认 2"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "clusters 小于等于 0"
-        },
-        "notes": [
-         "此处即完成校验，非法值不会传播到 build"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "linkage(Linkage)",
-       "signature": "Builder linkage(Linkage linkage)",
-       "params": [
-        {
-         "type": "Linkage",
-         "name": "linkage"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置簇间连接准则，默认 WARD。",
-        "params": {
-         "linkage": "Linkage 常量之一：WARD、COMPLETE、AVERAGE 或 SINGLE，非 null"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "NullPointerException": "linkage 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "AgglomerativeClustering build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "用当前配置创建未拟合的聚类器。",
-        "returns": "持有 clusters 与 linkage 的 AgglomerativeClustering 实例",
-        "notes": [
-         "build 本身不校验，clusters 大于样本数的问题要等 fit 才抛出 IllegalArgumentException"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "AgglomerativeClustering 的构建器。",
-      "body": [
-       "只有两个参数：目标簇数 clusters 与连接准则 linkage，默认 2 与 WARD。clusters 在 setter 内立即校验为正，linkage 只做非空检查，build 直接返回未拟合实例，不再重复校验。",
-       "两个参数都可省略，AgglomerativeClustering.builder() 返回的构建器已带默认值，因此最简用法是 build 后直接 fit。"
-      ],
-      "notes": [
-       "必填项：无；clusters 与 linkage 都有默认值",
-       "fit 阶段会另外校验 clusters 不超过样本数，该约束不在 build 时检查",
-       "链接准则决定合并代价的计算方式，选择前建议先做特征标准化"
-      ],
-      "example": "AgglomerativeClustering model = AgglomerativeClustering.builder()\n        .clusters(3)\n        .linkage(AgglomerativeClustering.Linkage.AVERAGE)\n        .build();\n\nmodel.fit(features);\nint[] labels = model.labels();",
-      "see": [
-       "basalt.ml.AgglomerativeClustering",
-       "basalt.ml.AgglomerativeClustering.Linkage"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.AgglomerativeClustering.Linkage",
-     "simple_qualified": "AgglomerativeClustering.Linkage",
-     "kind": "enum",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/AgglomerativeClustering.java",
-     "line": 15,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "enum_constant",
-       "key": "WARD",
-       "signature": "WARD",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "最小化合并带来的簇内平方和增量"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "COMPLETE",
-       "signature": "COMPLETE",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "取两簇间最远点距离"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "AVERAGE",
-       "signature": "AVERAGE",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "取两簇间所有点对距离的均值"
-       }
-      },
-      {
-       "kind": "enum_constant",
-       "key": "SINGLE",
-       "signature": "SINGLE",
-       "params": [],
-       "throws": [],
-       "doc": {
-        "summary": "取两簇间最近点距离"
-       }
-      }
-     ],
-     "doc": {
-      "summary": "层次聚类的簇间连接准则",
-      "body": [
-       "WARD 以两组样本数加权后的均值平方距离 (ni*nj/(ni+nj))*||mi-mj||^2 作为合并代价，倾向得到大小均衡的球状簇；SINGLE、COMPLETE、AVERAGE 直接以样本间距为依据，合并后分别取两组距离的最小、最大与按样本数加权平均。",
-       "四种准则都走同一套自底向上的贪心流程：每轮选出代价最小的一对活跃簇合并，直到活跃簇数降到 clusters。簇编号按活跃簇的成员下标顺序从 0 递增，predict 对非训练样本按最近的簇均值分配。"
-      ],
-      "notes": [
-       "SINGLE 对噪声敏感，容易拉出长链状簇；WARD 与 AVERAGE 更稳健但要求特征量纲一致",
-       "距离固定为欧氏距离，没有可切换的度量参数",
-       "该常量决定构建器的默认值（WARD），拟合后不可更改"
-      ],
-      "example": "AgglomerativeClustering model = AgglomerativeClustering.builder()\n        .clusters(4)\n        .linkage(AgglomerativeClustering.Linkage.SINGLE)\n        .build();\n\nAgglomerativeClustering.Linkage used = model.linkage();",
-      "see": [
-       "basalt.ml.AgglomerativeClustering",
-       "basalt.ml.AgglomerativeClustering.Builder"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.DBSCAN.Builder",
-     "simple_qualified": "DBSCAN.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/DBSCAN.java",
-     "line": 145,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "eps(double)",
-       "signature": "Builder eps(double eps)",
-       "params": [
-        {
-         "type": "double",
-         "name": "eps"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置邻域半径 eps。",
-        "params": {
-         "eps": "邻域半径，须为正且有限；默认 0.5"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "minPoints(int)",
-       "signature": "Builder minPoints(int minPoints)",
-       "params": [
-        {
-         "type": "int",
-         "name": "minPoints"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置核心点的最小邻域样本数。",
-        "params": {
-         "minPoints": "阈值，须为正；默认 5，统计时包含点自身"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "metric(DistanceMetric)",
-       "signature": "Builder metric(DistanceMetric metric)",
-       "params": [
-        {
-         "type": "DistanceMetric",
-         "name": "metric"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置邻域查询与预测所用的距离度量。",
-        "params": {
-         "metric": "距离函数，默认 DistanceMetric.EUCLIDEAN"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "NullPointerException": "metric 为 null"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "DBSCAN build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验参数并创建 DBSCAN 实例。",
-        "returns": "新的 DBSCAN 实例，尚未拟合",
-        "throws": {
-         "IllegalArgumentException": "eps 非正或非有限，或 minPoints 非正"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "DBSCAN 的构建器，设置邻域半径、密度阈值与距离度量。",
-      "body": [
-       "未显式设置时使用 eps = 0.5、minPoints = 5、DistanceMetric.EUCLIDEAN。各 setter 只赋值，参数校验集中在 build 中完成。"
-      ],
-      "notes": [
-       "eps 的单位与特征单位相同，特征未标准化时不同量纲的列会主导邻域判定"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.DataSplit.Fold",
-     "simple_qualified": "DataSplit.Fold",
-     "kind": "record",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/DataSplit.java",
-     "line": 21,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "一折的训练与测试四元组。",
-      "body": [
-       "record 组件依次为 trainFeatures、trainTargets、testFeatures、testTargets，全部由 DataSplit.kFold 新建，与输入数据不共享存储。",
-       "测试块是洗牌顺序上的连续区间，训练块由其余区间按同一顺序拼接，因此训练集与测试集内部的行序都是洗牌后的顺序，而不是原始顺序。"
-      ],
-      "notes": [
-       "记录本身不可变，但持有的 Matrix 内容仍可被修改",
-       "各折测试块互不重叠，并集覆盖全部行"
-      ],
-      "see": [
-       "basalt.ml.DataSplit.kFold(Matrix, double[], int, long)"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.DataSplit.Holdout",
-     "simple_qualified": "DataSplit.Holdout",
-     "kind": "record",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/DataSplit.java",
-     "line": 17,
-     "javadoc": "",
-     "nested": [],
-     "members": [],
-     "doc": {
-      "summary": "一次 holdout 划分的四元组。",
-      "body": [
-       "record 组件依次为 trainFeatures、trainTargets、testFeatures、testTargets，由 DataSplit.holdout 生成，四个字段都是独立副本。",
-       "测试集行数被夹到 [1, rows-1]，两侧都保证非空，因此可以直接把四个组件交给 fit 与 predict，无需再判断边界。"
-      ],
-      "notes": [
-       "记录本身不可变，但持有的 Matrix 内容仍可被修改",
-       "划分结果只由 seed 与输入行数决定，与标签分布无关"
-      ],
-      "see": [
-       "basalt.ml.DataSplit.holdout(Matrix, double[], double, long)"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.DecisionTree.Builder",
-     "simple_qualified": "DecisionTree.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/DecisionTree.java",
-     "line": 506,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "maxDepth(int)",
-       "signature": "Builder maxDepth(int maxDepth)",
-       "params": [
-        {
-         "type": "int",
-         "name": "maxDepth"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置树的最大深度，默认 8",
-        "params": {
-         "maxDepth": "最大深度，须不小于 0；0 表示根节点直接成为叶"
-        },
-        "returns": "this",
-        "notes": [
-         "深度从 0 起计，节点深度达到该值即停止分裂"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "minSamplesSplit(int)",
-       "signature": "Builder minSamplesSplit(int minSamplesSplit)",
-       "params": [
-        {
-         "type": "int",
-         "name": "minSamplesSplit"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置允许分裂的最小节点样本数，默认 2",
-        "params": {
-         "minSamplesSplit": "节点样本数低于该值即转为叶，须不小于 2"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "minSamplesLeaf(int)",
-       "signature": "Builder minSamplesLeaf(int minSamplesLeaf)",
-       "params": [
-        {
-         "type": "int",
-         "name": "minSamplesLeaf"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置每个子节点最少样本数，默认 1",
-        "params": {
-         "minSamplesLeaf": "分裂后左右两侧各自的最小样本数，须不小于 1"
-        },
-        "returns": "this",
-        "notes": [
-         "同时约束 fit 的入口：总样本数小于该值直接抛 IllegalArgumentException"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "criterion(ImpurityCriterion)",
-       "signature": "Builder criterion(ImpurityCriterion criterion)",
-       "params": [
-        {
-         "type": "ImpurityCriterion",
-         "name": "criterion"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置不纯度准则，默认 GINI",
-        "params": {
-         "criterion": "准则常量，非 null；其 task() 必须与最终 task 一致"
-        },
-        "returns": "this",
-        "throws": {
-         "NullPointerException": "criterion 为 null"
-        },
-        "notes": [
-         "调用后标记为显式设置，后续 task() 不再覆盖该准则"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "task(TreeTask)",
-       "signature": "Builder task(TreeTask task)",
-       "params": [
-        {
-         "type": "TreeTask",
-         "name": "task"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置任务类型，默认 CLASSIFICATION",
-        "params": {
-         "task": "CLASSIFICATION 或 REGRESSION，非 null"
-        },
-        "returns": "this",
-        "throws": {
-         "NullPointerException": "task 为 null"
-        },
-        "notes": [
-         "未显式设置 criterion 时，同步切换为 MSE 或 GINI"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "maxFeatures(int)",
-       "signature": "Builder maxFeatures(int maxFeatures)",
-       "params": [
-        {
-         "type": "int",
-         "name": "maxFeatures"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置每次分裂的候选特征数，默认 0",
-        "params": {
-         "maxFeatures": "候选特征数；0 表示使用全部特征，大于特征数时按特征数截断"
-        },
-        "returns": "this",
-        "notes": [
-         "小于特征数时，每个节点用部分洗牌抽取子集，随机源为 seed"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "bins(int)",
-       "signature": "Builder bins(int maxBins)",
-       "params": [
-        {
-         "type": "int",
-         "name": "maxBins"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置单特征最大桶数，默认 64",
-        "params": {
-         "maxBins": "桶数上限，取值 [2, 255]"
-        },
-        "returns": "this"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置特征子采样的随机种子，默认 42",
-        "params": {
-         "seed": "随机种子；仅影响 maxFeatures 的特征抽取"
-        },
-        "returns": "this",
-        "notes": [
-         "行选择不受该种子影响，fit 固定使用全部行"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "DecisionTree build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验配置并创建估计器",
-        "returns": "配置好的 DecisionTree，尚未拟合",
-        "throws": {
-         "IllegalArgumentException": "maxDepth 小于 0、minSamplesSplit 小于 2、minSamplesLeaf 小于 1、maxFeatures 小于 0、bins 越界，或准则与任务不匹配"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "DecisionTree 的流式构造器",
-      "body": [
-       "默认值为 maxDepth 8、minSamplesSplit 2、minSamplesLeaf 1、criterion GINI、task CLASSIFICATION、maxFeatures 0（全部特征）、bins 64、seed 42。所有 setter 返回 this，build() 统一校验并返回未拟合的估计器。",
-       "criterion 一旦被显式设置就锁定，之后调用 task() 不会改写它；未显式设置时，task(REGRESSION) 自动切到 MSE，task(CLASSIFICATION) 自动切到 GINI。"
-      ],
-      "notes": [
-       "maxDepth 为 0 表示根节点即叶，可用于得到常数模型",
-       "minSamplesSplit 的下限是 2，低于该值在 build() 时被拒绝"
-      ],
-      "example": "DecisionTree tree = DecisionTree.builder()\n        .task(TreeTask.REGRESSION)\n        .maxDepth(5)\n        .minSamplesSplit(4)\n        .minSamplesLeaf(2)\n        .maxFeatures(2)\n        .bins(32)\n        .seed(11L)\n        .build();",
-      "see": [
-       "basalt.ml.DecisionTree",
-       "basalt.ml.ImpurityCriterion",
-       "basalt.ml.TreeTask"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.FeatureImportance.PermutationResult",
-     "simple_qualified": "FeatureImportance.PermutationResult",
-     "kind": "record",
-     "modifiers": [
-      "public"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/FeatureImportance.java",
-     "line": 18,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "rankedFeaturesDescending()",
-       "signature": "int[] rankedFeaturesDescending()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "按平均重要性从大到小返回特征下标。",
-        "returns": "新的 int 数组，长度为特征数，元素为列下标，最靠前的最重要",
-        "notes": [
-         "只比较 importancesMean，不改动记录内的原始数组",
-         "平均重要性相同的特征保持列下标升序"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "置换重要性的计算结果，含逐次重复的原始分数。",
-      "body": [
-       "三个组件依次为 importancesMean、importancesStd 与 rawImportances：前者是每个特征在所有重复上的平均分数下降，第二个是同一组重复的标准差（按总体方差计算，除以重复次数），第三个是 [特征数][重复次数] 的原始下降量。",
-       "分数下降等于基线得分减去该列被打乱后的得分，因此越大表示该特征越重要。全部数值由 FeatureImportance.permutationImportance 计算并直接放入记录，没有再做归一化。"
-      ],
-      "notes": [
-       "下降为负说明打乱该列反而提升了指标，通常意味着该特征与目标无关或存在噪声",
-       "rawImportances 的行对应特征列，列对应重复序号，排序与打乱都只发生在行方向上",
-       "记录本身不可变，但持有的数组仍可被外部修改"
-      ],
-      "example": "FeatureImportance.PermutationResult result = FeatureImportance.permutationImportance(\n        model, features, targets, Estimators.Metric.ACCURACY, 10, 42L);\n\nint[] order = result.rankedFeaturesDescending();\ndouble top = result.importancesMean()[order[0]];",
-      "see": [
-       "basalt.ml.FeatureImportance",
-       "basalt.ml.FeatureImportance.permutationImportance(Estimator, Matrix, double[], Estimators.Metric, int, long)"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.GaussianMixture.Builder",
-     "simple_qualified": "GaussianMixture.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/GaussianMixture.java",
-     "line": 318,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "components(int)",
-       "signature": "Builder components(int components)",
-       "params": [
-        {
-         "type": "int",
-         "name": "components"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置混合成分个数，默认 2。",
-        "params": {
-         "components": "高斯成分个数，须为正；默认 2"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "components 小于等于 0"
-        },
-        "notes": [
-         "fit 时还会校验 components 不超过样本数"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "covarianceType(CovarianceType)",
-       "signature": "Builder covarianceType(CovarianceType covarianceType)",
-       "params": [
-        {
-         "type": "CovarianceType",
-         "name": "covarianceType"
-        }
-       ],
-       "throws": [],
-       "doc": {
-        "summary": "指定协方差参数化，默认 FULL",
-        "params": {
-         "covarianceType": "FULL、TIED 或 DIAG；影响存储、求值成本与 AIC 的参数计数"
-        }
-       }
-      },
-      {
-       "kind": "method",
-       "key": "maxIterations(int)",
-       "signature": "Builder maxIterations(int maxIterations)",
-       "params": [
-        {
-         "type": "int",
-         "name": "maxIterations"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置 EM 迭代上限，默认 100。",
-        "params": {
-         "maxIterations": "最大 EM 轮数，须为正；默认 100"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "maxIterations 小于等于 0"
-        },
-        "notes": [
-         "达到上限仍未满足 tolerance 时 converged() 返回 false，参数取最后一轮的结果"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "tolerance(double)",
-       "signature": "Builder tolerance(double tolerance)",
-       "params": [
-        {
-         "type": "double",
-         "name": "tolerance"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置收敛阈值，默认 1e-4。",
-        "params": {
-         "tolerance": "相邻两轮每样本平均对数似然之差的上限，须为正且有限；默认 1e-4"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "tolerance 非正或非有限"
-        },
-        "notes": [
-         "判据是 |lowerBound - 上一轮 lowerBound| <= tolerance，成立即停止并标记已收敛"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "regCovar(double)",
-       "signature": "Builder regCovar(double regCovar)",
-       "params": [
-        {
-         "type": "double",
-         "name": "regCovar"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置协方差正则项，默认 1e-6。",
-        "params": {
-         "regCovar": "加到每个方差上的常数，须为正且有限；默认 1e-6"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "regCovar 非正或非有限"
-        },
-        "notes": [
-         "初始化与每轮 M 步都会执行 variance = max(regCovar, variance + regCovar)，避免方差塌缩到 0",
-         "取值过大会把各成分的对角协方差压平，退化为球形簇"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置初始化随机种子，默认 42。",
-        "params": {
-         "seed": "随机种子，默认 42；不做取值范围校验"
-        },
-        "returns": "this，便于链式调用",
-        "notes": [
-         "种子只传给内部的 K-Means++ 初始化，EM 本身是确定性的",
-         "相同 seed 与数据重复 fit 得到相同参数"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "GaussianMixture build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "用当前配置创建未拟合的估计器。",
-        "returns": "持有全部超参数的 GaussianMixture 实例",
-        "notes": [
-         "参数校验全部在各自的 setter 内完成，build 不再重复检查"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "GaussianMixture 的构建器。",
-      "body": [
-       "五个超参数各有默认值：components 2、maxIterations 100、tolerance 1e-4、regCovar 1e-6、seed 42L。除 seed 外每个 setter 都会立即做正数/有限性校验，build 直接返回未拟合实例，不追加检查。",
-       "fit 阶段先用 KMeans（固定 30 轮、同一 seed）做 K-Means++ 初始化，再由 E 步与 M 步交替推进；协方差固定为对角形式，regCovar 是唯一的数值稳定手段。"
-      ],
-      "notes": [
-       "必填项：无；五个参数都可省略",
-       "fit 时 components 不能超过样本数，否则抛 IllegalArgumentException",
-       "seed 只影响初始化，不改变 EM 的单调性，因此相同种子下结果可复现",
-       "协方差为对角矩阵，特征间相关性不会被建模"
-      ],
-      "example": "GaussianMixture gmm = GaussianMixture.builder()\n        .components(3)\n        .maxIterations(200)\n        .tolerance(1e-5)\n        .regCovar(1e-6)\n        .seed(7L)\n        .build();\n\ngmm.fit(features);\ndouble[] labels = gmm.predict(features);",
-      "see": [
-       "basalt.ml.GaussianMixture",
-       "basalt.ml.KMeans"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.GaussianNaiveBayes.Builder",
-     "simple_qualified": "GaussianNaiveBayes.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/GaussianNaiveBayes.java",
-     "line": 246,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "varianceSmoothing(double)",
-       "signature": "Builder varianceSmoothing(double varianceSmoothing)",
-       "params": [
-        {
-         "type": "double",
-         "name": "varianceSmoothing"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置方差平滑系数。",
-        "body": [
-         "拟合时先乘以全体方差最大值得到 epsilon，再加到每个方差上，因此该系数对特征缩放不敏感；全部方差为 0 时 epsilon 直接取该系数本身。"
-        ],
-        "params": {
-         "varianceSmoothing": "平滑系数，须为正且有限；默认 1e-9"
-        },
-        "returns": "this，便于链式调用"
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "GaussianNaiveBayes build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验参数并创建估计器。",
-        "returns": "新的 GaussianNaiveBayes 实例，尚未拟合",
-        "throws": {
-         "IllegalArgumentException": "varianceSmoothing 非正或非有限"
-        }
-       }
-      }
-     ],
-     "doc": {
-      "summary": "GaussianNaiveBayes 的构建器。",
-      "body": [
-       "唯一参数是方差平滑系数，默认 1e-9，与 scikit-learn 的 var_smoothing 同名同义。build 只校验该系数为正且有限，其余统计量在 fit 阶段产生。"
-      ]
-     }
-    },
-    {
-     "qualified": "basalt.ml.GridSearchCV.Builder",
-     "simple_qualified": "GridSearchCV.Builder",
-     "kind": "class",
-     "modifiers": [
-      "public",
-      "static",
-      "final"
-     ],
-     "generic": "",
-     "extends": "",
-     "implements": [],
-     "file": "jsl/ml/GridSearchCV.java",
-     "line": 143,
-     "javadoc": "",
-     "nested": [],
-     "members": [
-      {
-       "kind": "method",
-       "key": "param(String, Object...)",
-       "signature": "Builder param(String name, Object... values)",
-       "params": [
-        {
-         "type": "String",
-         "name": "name"
-        },
-        {
-         "type": "Object...",
-         "name": "values"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "登记一个超参数的候选值列表。",
-        "params": {
-         "name": "参数名，作为传给估计器工厂的 Map 键，非 null",
-         "values": "候选值，可变参数，至少传入一个；非 null"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "NullPointerException": "name 或 values 为 null",
-         "IllegalArgumentException": "values 为空数组"
-        },
-        "notes": [
-         "同名参数再次登记会整表覆盖，而不是追加候选值",
-         "多参数之间取笛卡尔积，候选总数等于各列表长度之积"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "scoring(Estimators.Metric)",
-       "signature": "Builder scoring(Estimators.Metric scoring)",
-       "params": [
-        {
-         "type": "Estimators.Metric",
-         "name": "scoring"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置交叉验证打分指标，默认 ACCURACY。",
-        "params": {
-         "scoring": "Estimators.Metric 常量，可取 ACCURACY、MACRO_F1、R2 或 RMSE，非 null"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "NullPointerException": "scoring 为 null"
-        },
-        "notes": [
-         "RMSE 在内部取负号，因此四种指标统一为越大越好，最优候选直接取均值最大者"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "cv(int)",
-       "signature": "Builder cv(int cvFolds)",
-       "params": [
-        {
-         "type": "int",
-         "name": "cvFolds"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置交叉验证折数，默认 5。",
-        "params": {
-         "cvFolds": "折数，须不小于 2；默认 5"
-        },
-        "returns": "this，便于链式调用",
-        "throws": {
-         "IllegalArgumentException": "cvFolds 小于 2"
-        },
-        "notes": [
-         "每个候选都要训练 cvFolds 次，总训练次数为候选数乘以折数"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "stratified(boolean)",
-       "signature": "Builder stratified(boolean stratified)",
-       "params": [
-        {
-         "type": "boolean",
-         "name": "stratified"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置是否按标签分层分折，默认 false。",
-        "params": {
-         "stratified": "true 时走 DataSplit.stratifiedKFold，按类别比例分折；false 时走普通 K 折"
-        },
-        "returns": "this，便于链式调用",
-        "notes": [
-         "两种划分都会先洗牌，随机源为 seed",
-         "类别极不均衡时建议开启，否则某折可能缺少某个类别"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "seed(long)",
-       "signature": "Builder seed(long seed)",
-       "params": [
-        {
-         "type": "long",
-         "name": "seed"
-        }
-       ],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "设置分折的随机种子，默认 42。",
-        "params": {
-         "seed": "随机种子，默认 42；不做取值范围校验"
-        },
-        "returns": "this，便于链式调用",
-        "notes": [
-         "只影响折划分，估计器自身的随机性需由参数网格控制",
-         "给定 seed 与数据后所有候选共享同一套折，比较是公平的"
-        ]
-       }
-      },
-      {
-       "kind": "method",
-       "key": "build()",
-       "signature": "GridSearchCV build()",
-       "params": [],
-       "throws": [],
-       "javadoc": "",
-       "doc": {
-        "summary": "校验参数网格并创建搜索器。",
-        "returns": "新的 GridSearchCV 实例，尚未拟合",
-        "throws": {
-         "IllegalArgumentException": "参数网格为空，即从未调用过 param"
-        },
-        "notes": [
-         "构建时把参数网格复制为新的 LinkedHashMap，之后对构建器的修改不影响已创建的实例"
-        ]
-       }
-      }
-     ],
-     "doc": {
-      "summary": "GridSearchCV 的构建器，登记参数网格与交叉验证策略。",
-      "body": [
-       "构建器没有公开构造器，只能由 GridSearchCV.builder(estimatorFactory) 取得，估计器工厂在那一刻即为必填，空工厂直接抛 NullPointerException。参数网格用 param 逐项登记，fit 时按登记顺序做笛卡尔积。",
-       "其余四项都有默认值：scoring 为 Estimators.Metric.ACCURACY、cv 为 5、stratified 为 false、seed 为 42。build 只检查参数网格非空，配置错误主要靠各 setter 的即时校验拦下。"
-      ],
-      "notes": [
-       "必填项：至少一次 param 调用，否则 build 抛 IllegalArgumentException",
-       "estimatorFactory 已被固定，构建器无法更换工厂",
-       "工厂必须按参数 Map 返回未拟合的估计器，fit 会为每个候选、每一折各调用一次"
-      ],
-      "example": "GridSearchCV search = GridSearchCV.builder(params -> DecisionTree.builder()\n                .maxDepth((Integer) params.get(\"maxDepth\"))\n                .build())\n        .param(\"maxDepth\", 3, 5, 8)\n        .scoring(Estimators.Metric.ACCURACY)\n        .cv(5)\n        .stratified(true)\n        .seed(42L)\n        .build();\n\nsearch.fit(features, targets);",
-      "see": [
-       "basalt.ml.GridSearchCV",
-       "basalt.ml.DataSplit",
-       "basalt.ml.Estimators.Metric"
-      ]
-     }
     }
-   ]
-  }
- ]
+  ]
 }

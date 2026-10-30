@@ -10,7 +10,7 @@
     <packaging>jar</packaging>
 
     <name>Basalt</name>
-    <description>JVM machine-learning runtime: eager tensors, autograd, native CNN/Transformer kernels and scikit-learn-class estimators. Java schedules, Rust computes.</description>
+    <description>JVM machine-learning runtime: eager tensors, autograd, native CNN/Transformer kernels and classical statistical estimators. Java schedules, Rust computes.</description>
     <url>https://9178nekomc.github.io/basalt/</url>
 
     <licenses>
