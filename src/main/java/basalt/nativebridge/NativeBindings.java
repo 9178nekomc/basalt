@@ -28,6 +28,15 @@ final class NativeBindings {
 
     static native int graphSize(long context);
 
+    /** 开启一个原生作用域，之后的张量分配都记在它名下。 */
+    static native int beginScope(long context);
+
+    /** 结束最近的作用域，释放帧内全部张量；返回释放个数。 */
+    static native int endScope(long context);
+
+    /** 当前作用域深度。 */
+    static native int scopeDepth(long context);
+
     static native long createTensor(long context, int[] shape, boolean requiresGrad);
 
     static native long createTensorFromData(long context, float[] data, int[] shape,

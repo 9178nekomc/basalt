@@ -175,6 +175,32 @@ public final class NativeContext implements AutoCloseable {
         }
     }
 
+    /**
+     * 开启一个原生作用域。
+     *
+     * <p>作用域内的所有张量由 Rust 记账，{@link #endScope()} 时整批释放，
+     * 不经过 Java 的 Cleaner，也不等 GC。参数、输入这类要长期存活的张量应当在作用域外创建。</p>
+     */
+    public void beginScope() {
+        try (Guard guard = guard()) {
+            NativeBindings.beginScope(guard.handle());
+        }
+    }
+
+    /** 结束最近的作用域并释放帧内张量，返回释放个数。 */
+    public int endScope() {
+        try (Guard guard = guard()) {
+            return NativeBindings.endScope(guard.handle());
+        }
+    }
+
+    /** 当前作用域深度，用于排查泄漏。 */
+    public int scopeDepth() {
+        try (Guard guard = guard()) {
+            return NativeBindings.scopeDepth(guard.handle());
+        }
+    }
+
     public int graphSize() {
         try (Guard guard = guard()) {
             return NativeBindings.graphSize(guard.handle());

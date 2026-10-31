@@ -22,6 +22,9 @@ pub struct Context {
     pub graph: Mutex<Graph>,
     pools: Mutex<HashMap<usize, Arc<ThreadPool>>>,
     optimizers: Mutex<HashMap<usize, AdamState>>,
+    /// 作用域帧栈。每帧记录「在这一帧里分配出来的张量地址」，
+    /// 出帧时批量释放，中间量不再依赖 Java 的 Cleaner / GC。
+    frames: Mutex<Vec<Vec<usize>>>,
 }
 
 impl Context {
@@ -31,15 +34,19 @@ impl Context {
             graph: Mutex::new(Graph::new()),
             pools: Mutex::new(HashMap::new()),
             optimizers: Mutex::new(HashMap::new()),
+            frames: Mutex::new(Vec::new()),
         }
     }
 
     pub fn create_tensor(&self, shape: Vec<usize>, requires_grad: bool) -> Result<usize> {
         let tensor = NativeTensor::new(shape, requires_grad)?;
-        self.tensors
+        let address = self
+            .tensors
             .write()
             .map_err(|_| NativeError::invalid("tensor store lock poisoned"))?
-            .insert(tensor)
+            .insert(tensor)?;
+        self.track(address);
+        Ok(address)
     }
 
     pub fn create_tensor_from_data(
@@ -49,10 +56,13 @@ impl Context {
         requires_grad: bool,
     ) -> Result<usize> {
         let tensor = NativeTensor::from_data(shape, data, requires_grad)?;
-        self.tensors
+        let address = self
+            .tensors
             .write()
             .map_err(|_| NativeError::invalid("tensor store lock poisoned"))?
-            .insert(tensor)
+            .insert(tensor)?;
+        self.track(address);
+        Ok(address)
     }
 
     pub fn tensor(&self, address: usize) -> Result<Arc<RwLock<NativeTensor>>> {
@@ -87,6 +97,52 @@ impl Context {
             }
         }
         Ok(removed)
+    }
+
+    /// 把刚分配的张量记到当前帧（没有帧时什么也不做）。
+    fn track(&self, address: usize) {
+        if let Ok(mut frames) = self.frames.lock() {
+            if let Some(top) = frames.last_mut() {
+                top.push(address);
+            }
+        }
+    }
+
+    /// 开启一个作用域；之后的分配都记在它名下。
+    pub fn begin_scope(&self) -> Result<()> {
+        self.frames
+            .lock()
+            .map_err(|_| NativeError::invalid("scope stack lock poisoned"))?
+            .push(Vec::new());
+        Ok(())
+    }
+
+    /// 结束最近的帧，释放帧内所有张量（参数等帧外分配的不受影响）。
+    ///
+    /// 返回真正释放的个数。释放时若某张量被计算图引用，图会被清空——
+    /// 这意味着 end_scope 必须在 backward 与 clear_graph 之后调用。
+    pub fn end_scope(&self) -> Result<usize> {
+        let frame = self
+            .frames
+            .lock()
+            .map_err(|_| NativeError::invalid("scope stack lock poisoned"))?
+            .pop()
+            .ok_or_else(|| NativeError::invalid("end_scope without begin_scope"))?;
+        let mut freed = 0usize;
+        for address in frame {
+            if self.release_tensor(address)? {
+                freed += 1;
+            }
+        }
+        Ok(freed)
+    }
+
+    pub fn scope_depth(&self) -> Result<usize> {
+        Ok(self
+            .frames
+            .lock()
+            .map_err(|_| NativeError::invalid("scope stack lock poisoned"))?
+            .len())
     }
 
     pub fn clear_graph(&self) -> Result<()> {

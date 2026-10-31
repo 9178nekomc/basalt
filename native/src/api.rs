@@ -206,6 +206,40 @@ pub extern "system" fn Java_basalt_nativebridge_NativeBindings_clearGraph(
 }
 
 #[no_mangle]
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_beginScope(
+    mut env: JNIEnv<'_>,
+    _class: JClass<'_>,
+    context: jlong,
+) -> jint {
+    run_jni(&mut env, STATUS_INVALID, |_env| {
+        context_from_ptr(context)?.begin_scope()?;
+        Ok(0)
+    })
+}
+
+#[no_mangle]
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_endScope(
+    mut env: JNIEnv<'_>,
+    _class: JClass<'_>,
+    context: jlong,
+) -> jint {
+    run_jni(&mut env, 0, |_env| {
+        Ok(context_from_ptr(context)?.end_scope()? as jint)
+    })
+}
+
+#[no_mangle]
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_scopeDepth(
+    mut env: JNIEnv<'_>,
+    _class: JClass<'_>,
+    context: jlong,
+) -> jint {
+    run_jni(&mut env, 0, |_env| {
+        Ok(context_from_ptr(context)?.scope_depth()? as jint)
+    })
+}
+
+#[no_mangle]
 pub extern "system" fn Java_basalt_nativebridge_NativeBindings_graphSize(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,

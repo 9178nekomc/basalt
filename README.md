@@ -1,6 +1,6 @@
 # Basalt — Java + Rust Machine Learning Runtime
 
-> **Maven coordinates** — `io.github.9178nekomc:basalt:3.8.0`  
+> **Maven coordinates** — `io.github.9178nekomc:basalt:3.9.0`  
 > **Runtime** — Java 21 (`--add-modules jdk.incubator.vector`) + bundled Rust native library  
 > **One dependency, no Python, no GIL, no manual native build on Windows x86_64.**  
 > **Docs** — <https://9178nekomc.github.io/basalt/>
@@ -13,7 +13,7 @@
 <dependency>
     <groupId>io.github.9178nekomc</groupId>
     <artifactId>basalt</artifactId>
-    <version>3.8.0</version>
+    <version>3.9.0</version>
 </dependency>
 ```
 
@@ -23,7 +23,7 @@ Build and install locally from source:
 mvn clean install
 ```
 
-The shaded, self-contained artifact is `basalt-3.8.0-all.jar` (classifier `all`).
+The shaded, self-contained artifact is `basalt-3.9.0-all.jar` (classifier `all`).
 It contains the Windows x86_64 native runtime; other platforms can add their own
 `native/<os>-<arch>/` library or point `-Dbasalt.native.path` at a locally built one.
 
@@ -120,17 +120,71 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 
 ---
 
+## 最新版特性（3.9.0）
+
+### 张量生命周期改由 Rust 持有
+
+3.9.0 之前，原生张量的回收挂在 Java 的 `Cleaner` 上：Java 堆里只有一个几十字节的句柄，
+GC 迟迟不来，原生堆却已经被批次、前向中间量和损失填满。实测 2000 窗口 × batch 32 × 2.68M
+参数的字符级训练，第 15 轮左右就会因为原生内存分配失败而 abort；把四个可见张量显式 `close()`
+再周期性 `System.gc()`，也只是把崩溃点推到第 30 轮。
+
+现在改成**作用域批量释放**：Rust 侧持有一个帧栈，分配即记账，出帧时一次性回收。
+
+```java
+context.beginScope();
+try {
+    Tensor logits = model.forward(inputs);   // 中间量全部记在当前帧
+    Tensor loss = engine.crossEntropy().loss(logits, labels);
+    loss.backward();
+    optimizer.step();
+} finally {
+    context.endScope();                      // Rust 一次回收整帧，不等 GC
+}
+```
+
+- `NativeContext.beginScope()` / `endScope()` / `scopeDepth()`
+- `Trainer` 已经默认对每个训练步使用作用域，手写循环也可以直接用
+- 长期存活的张量（参数、输入、优化器状态）留在作用域外创建，不受影响
+- 释放顺序有约束：`endScope()` 必须在 `backward` 与 `clearGraph()` 之后，否则计算图仍引用着已释放的张量
+
+同一套配置在改造后跑过 30 轮以上没有再出现分配失败，这是这次修复的直接判据。
+
+### 流式解码（3.8.0）
+
+`TextEngine` 增加了 `stream` 与 `streamSampled`：按 token 回调，逐字交付，
+解码规则与 `generate` / `sample` 完全一致——`stream` 与贪心逐位相同，
+`streamSampled` 与同种子采样逐位相同，测试里逐 token 断言过。
+
+### 统一模型层（3.6.0 / 3.7.0）
+
+`basalt.model` 把表格估计器、神经网络和序列模型放进同一张筛选表；`Auto.sequence` 一行完成
+任务判定、候选筛选与重训；`basalt.infer.TextEngine` 提供批量前向、贪心与采样解码、权重按名存取。
+
+---
+
+## 修复记录
+
+| 版本 | 问题 | 处理 |
+|---|---|---|
+| 3.9.0 | 长训练循环原生内存无界增长，第 15~30 轮 abort | 张量生命周期改为 Rust 作用域持有，`Trainer` 每步 `beginScope`/`endScope` |
+| 3.9.0 | 文档缺少原生作用域三个方法的说明 | 补入 `NativeContext` 章节，1568 个公开成员说明齐备 |
+| 3.8.0 | 生成只能等整段跑完，无法逐字显示 | `TextEngine.stream` / `streamSampled`，解码结果与批量接口逐位一致 |
+| 3.7.0 | 文档与基准报告 HTML 进版本库，单次推送 17.1 MiB | 生成物移出 git，由 CI 构建并发布到 `gh-pages`，推送降到 ~5.8 MiB |
+
+---
+
 ## 下载
 
-发布资产见 [Releases · v3.8.0](https://github.com/9178nekomc/basalt/releases/tag/v3.8.0)：
+发布资产见 [Releases · v3.9.0](https://github.com/9178nekomc/basalt/releases/tag/v3.9.0)：
 
 | 文件 | 说明 |
 |---|---|
-| `basalt-3.8.0-all.jar` | Fat Jar（classifier `all`），含 Windows x86_64 原生库，可直接 `java -cp` |
-| `basalt-3.8.0.jar` | 标准 jar，原生库在 `native/windows-x86_64/` 资源目录内 |
-| `basalt-3.8.0-sources.jar` | 源码包 |
+| `basalt-3.9.0-all.jar` | Fat Jar（classifier `all`），含 Windows x86_64 原生库，可直接 `java -cp` |
+| `basalt-3.9.0.jar` | 标准 jar，原生库在 `native/windows-x86_64/` 资源目录内 |
+| `basalt-3.9.0-sources.jar` | 源码包 |
 | `basalt_native.dll` | Windows x86_64 原生库，独立分发用 |
-| `basalt-docs-3.8.0.zip` | 离线文档站（15 页 HTML + 2 个基准报告），解压后双击 `index.html` |
+| `basalt-docs-3.9.0.zip` | 离线文档站（19 页 HTML + 2 个基准报告），解压后双击 `index.html` |
 
 ---
 
@@ -162,8 +216,8 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 | `docs/genindex.html` | 总索引（按首字母） |
 | `docs/readme.html` | 本 README 的 HTML 版（同一版式，静态托管下不会退化成纯文本） |
 
-覆盖范围：**243 个公开类型、1565 个公开成员**，其中 1565 个成员全部带逐参数说明
-（共 1542 条参数条目、1297 组 `参数/返回/抛出` 字段列表），另有 24 个包内可见类型
+覆盖范围：**243 个公开类型、1568 个公开成员**，其中 1568 个成员全部带逐参数说明
+（共 1542 条参数条目、1298 组 `参数/返回/抛出` 字段列表），另有 24 个包内可见类型
 单列在各模块页末尾，并明确标注为非稳定 API。
 
 ### 文档是怎么生成的
@@ -191,14 +245,14 @@ python tools/check_docs.py --root docs
   渲染器按 `(qualified, key)` 匹配，**匹配不上的说明直接丢弃并报错**，
   所以文档不可能描述一个不存在的参数。
 - `tools/build_api_docs.py`：零外部依赖渲染器，输出 13 个 HTML 页，另加一份 `readme.html`。
-  **每页自包含**：CSS、主题/搜索脚本、1764 条搜索索引全部内联，不引用任何外部
+  **每页自包含**：CSS、主题/搜索脚本、1767 条搜索索引全部内联，不引用任何外部
   `_static/` 目录——静态托管（Jekyll、各类预览服务）会跳过下划线开头的目录，
   外部资源一旦 404，页面就会退化成无样式纯文本。
 - `tools/md_render.py`：README 的 Markdown 渲染器（标题、围栏代码、GFM 表格、
   嵌套列表、引用块、行内标记），CJK 换行不插空格，`java` 代码块复用同一套高亮。
 - `tools/check_docs.py`：退出码非 0 即视为文档损坏，可用于 CI 门禁。
 
-当前 `check_docs.py` 结果：19 页、270 个类型块、1316 个方法块、1297 组字段列表、
+当前 `check_docs.py` 结果：19 页、270 个类型块、1319 个方法块、1298 组字段列表、
 0 个占位符、0 个断链。
 
 ---
@@ -209,7 +263,7 @@ python tools/check_docs.py --root docs
 <dependency>
     <groupId>io.github.9178nekomc</groupId>
     <artifactId>basalt</artifactId>
-    <version>3.8.0</version>
+    <version>3.9.0</version>
 </dependency>
 ```
 
@@ -220,9 +274,9 @@ mvn clean install
 ```
 
 产物：
-- `target/basalt-3.8.0.jar`：标准 jar（含 `native/windows-x86_64/basalt_native.dll` 资源）
-- `target/basalt-3.8.0-all.jar`：Fat Jar（classifier `all`，可直接 `java -cp`）
-- `target/basalt-3.8.0-sources.jar`：源码包
+- `target/basalt-3.9.0.jar`：标准 jar（含 `native/windows-x86_64/basalt_native.dll` 资源）
+- `target/basalt-3.9.0-all.jar`：Fat Jar（classifier `all`，可直接 `java -cp`）
+- `target/basalt-3.9.0-sources.jar`：源码包
 
 10 行完成一次前向 + 反向：
 
@@ -908,7 +962,7 @@ report/                 报告、图表生成脚本、figures/
 
 ---
 
-## 11. v3.8.0 三期演进全景
+## 11. v3.9.0 三期演进全景
 
 ### 第一阶段：夯实工程底座（Phase 1）
 1. **JNI / Rust 底层核心工程强化**

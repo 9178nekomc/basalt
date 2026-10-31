@@ -1,6 +1,6 @@
 # 发布到 Maven Central
 
-坐标：`io.github.9178nekomc:basalt:3.8.0`
+坐标：`io.github.9178nekomc:basalt:3.9.0`
 
 Central 的规则比私服严：**每个 artifact 必须带 sources jar、javadoc jar 和一份脱离的 GPG 签名**，
 POM 里必须有 license / developer / scm，命名空间必须验证归属。这些我已经在 `pom.xml` 里配好，
@@ -65,8 +65,8 @@ mvn -B -P release deploy
 
 会发生什么：
 
-1. `maven-source-plugin` 挂上 `basalt-3.8.0-sources.jar`
-2. `maven-javadoc-plugin` 生成 `basalt-3.8.0-javadoc.jar`
+1. `maven-source-plugin` 挂上 `basalt-3.9.0-sources.jar`
+2. `maven-javadoc-plugin` 生成 `basalt-3.9.0-javadoc.jar`
    （带 `--add-modules jdk.incubator.vector` 和 `-doclint none`，否则 Tensor 层会卡在缺 `@param`）
 3. `maven-gpg-plugin` 对每个 artifact 生成 `.asc`
 4. `central-publishing-maven-plugin` 把整包上传到 Central Portal，`autoPublish=true` 意味着
@@ -80,7 +80,7 @@ mvn -B -P release deploy
 <dependency>
   <groupId>io.github.9178nekomc</groupId>
   <artifactId>basalt</artifactId>
-  <version>3.8.0</version>
+  <version>3.9.0</version>
 </dependency>
 ```
 
@@ -100,6 +100,6 @@ mvn -B -P release deploy
 
 ## 版本号约定
 
-`3.8.0` 沿用 GitHub Release 的版本。因为这次同时改了 Java 包名（`jsl.*` → `basalt.*`）
-和持久化魔数（`JSLM` → `BSLT`），**3.8.0 与任何旧版本都不兼容**——不过旧坐标从未发布过，
-所以不构成真正的破坏性变更。下一次纯功能升级再从 `3.8.0` 走。
+`3.9.0` 沿用 GitHub Release 的版本。因为这次同时改了 Java 包名（`jsl.*` → `basalt.*`）
+和持久化魔数（`JSLM` → `BSLT`），**3.9.0 与任何旧版本都不兼容**——不过旧坐标从未发布过，
+所以不构成真正的破坏性变更。下一次纯功能升级再从 `3.9.0` 走。

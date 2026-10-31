@@ -170,20 +170,27 @@ public final class Trainer {
             for (int from = 0; from < rows; from += batchSize) {
                 int to = Math.min(from + batchSize, rows);
                 int count = to - from;
-                Tensor batchFeatures = Tensor.of(context,
-                        gather(featureData, order, from, count, featureWidth),
-                        prepend(count, features.shape()));
-                Tensor batchTargets = Tensor.of(context,
-                        gather(targetData, order, from, count, targetWidth),
-                        prepend(count, targets.shape()));
-                Tensor prediction = module.forward(batchFeatures);
-                Tensor value = loss.loss(prediction, batchTargets);
-                value.backward();
-                optimizer.step();
-                optimizer.zeroGrad();
-                context.clearGraph();
-                total += value.data()[0];
-                batches++;
+                // 每一步都在一个原生作用域里跑：本步分配的所有张量（批次、前向中间量、
+                // 损失）由 Rust 记账，endScope 一次释放完，不经 Cleaner、不等 GC。
+                context.beginScope();
+                try {
+                    Tensor batchFeatures = Tensor.of(context,
+                            gather(featureData, order, from, count, featureWidth),
+                            prepend(count, features.shape()));
+                    Tensor batchTargets = Tensor.of(context,
+                            gather(targetData, order, from, count, targetWidth),
+                            prepend(count, targets.shape()));
+                    Tensor prediction = module.forward(batchFeatures);
+                    Tensor value = loss.loss(prediction, batchTargets);
+                    value.backward();
+                    optimizer.step();
+                    optimizer.zeroGrad();
+                    context.clearGraph();
+                    total += value.data()[0];
+                    batches++;
+                } finally {
+                    context.endScope();
+                }
             }
             double mean = batches == 0 ? Double.NaN : total / batches;
             if (!Double.isFinite(mean)) {

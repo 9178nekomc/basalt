@@ -1735,6 +1735,80 @@
             },
             {
               "kind": "method",
+              "name": "beginScope",
+              "signature": "void beginScope()",
+              "key": "beginScope()",
+              "return_type": "void",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "开启一个原生作用域",
+                "body": [
+                  "作用域内分配的所有张量由 Rust 记账，endScope() 时整批释放，不经过 Java 的 Cleaner，也不等 GC。参数、输入这类要长期存活的张量应当在作用域外创建，否则会被一起回收。",
+                  "作用域可以嵌套：endScope() 只结束最近的一帧。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "endScope",
+              "signature": "int endScope()",
+              "key": "endScope()",
+              "return_type": "int",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "结束最近的作用域并释放帧内全部张量",
+                "body": [
+                  "返回真正释放的张量个数。若某张量仍被计算图引用，释放时会把图清空——这意味着它必须在 backward 与 clearGraph() 之后调用。",
+                  "没有对应的 beginScope() 时抛出异常，而不是静默成功。"
+                ],
+                "throws": {
+                  "IllegalStateException": "没有处于打开状态的作用域"
+                }
+              }
+            },
+            {
+              "kind": "method",
+              "name": "scopeDepth",
+              "signature": "int scopeDepth()",
+              "key": "scopeDepth()",
+              "return_type": "int",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "当前作用域深度",
+                "body": [
+                  "用于排查「忘了 endScope」这类泄漏：正常循环里它应当稳定不变。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
               "key": "graphSize()",
               "signature": "int graphSize()",
               "params": [],
