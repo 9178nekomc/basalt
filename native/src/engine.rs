@@ -312,7 +312,7 @@ fn execute_command(
                 op,
                 inputs,
                 output: command.output,
-                attrs: Attrs::Reduce { dim, keepdim },
+                attrs: Attrs::Reduce { dim },
             });
         }
         Op::Slice => {

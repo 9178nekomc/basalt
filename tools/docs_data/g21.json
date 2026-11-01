@@ -1503,6 +1503,90 @@
             },
             {
               "kind": "method",
+              "name": "wrap",
+              "signature": "Tensor wrap(basalt.nativebridge.NativeContext context, NativeTensorHandle handle)",
+              "key": "wrap(basalt.nativebridge.NativeContext, NativeTensorHandle)",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [
+                {
+                  "type": "basalt.nativebridge.NativeContext",
+                  "name": "context"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "handle"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "用已有句柄包装成张量",
+                "body": [
+                  "供设备迁移等内部路径使用。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "device",
+              "signature": "basalt.Device device()",
+              "key": "device()",
+              "return_type": "basalt.Device",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "张量当前所在的设备",
+                "body": [
+                  "查询的是原生侧的真实标签，不是 Java 侧缓存。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "to",
+              "signature": "Tensor to(basalt.Device target)",
+              "key": "to(basalt.Device)",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [
+                {
+                  "type": "basalt.Device",
+                  "name": "target"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "把张量复制到目标设备并返回新张量",
+                "body": [
+                  "原张量不受影响；同设备调用也会复制一份存储。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
               "key": "handle()",
               "signature": "NativeTensorHandle handle()",
               "params": [],

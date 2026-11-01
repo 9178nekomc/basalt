@@ -26,6 +26,8 @@ pub struct NativeTensor {
     pub grad: Vec<f32>,
     pub shape: Vec<usize>,
     pub requires_grad: bool,
+    /// 张量所在设备；跨设备运算会被拒绝。
+    pub device: crate::device::Device,
 }
 
 impl NativeTensor {
@@ -40,6 +42,7 @@ impl NativeTensor {
             grad: Vec::new(),
             shape,
             requires_grad,
+            device: crate::device::Device::Cpu,
         })
     }
 
@@ -63,6 +66,7 @@ impl NativeTensor {
             grad: Vec::new(),
             shape,
             requires_grad,
+            device: crate::device::Device::Cpu,
         })
     }
 

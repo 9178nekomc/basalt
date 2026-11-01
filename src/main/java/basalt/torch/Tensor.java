@@ -56,6 +56,25 @@ public final class Tensor implements AutoCloseable {
         return context;
     }
 
+    /** 用已有句柄包装成张量，供设备迁移等内部路径使用。 */
+    public static Tensor wrap(basalt.nativebridge.NativeContext context, NativeTensorHandle handle) {
+        return new Tensor(context, handle);
+    }
+
+    /** 张量当前所在的设备。 */
+    public basalt.Device device() {
+        return basalt.Device.fromTag(context.tensorDevice(handle));
+    }
+
+    /**
+     * 把张量复制到目标设备并返回新张量，原张量不受影响。
+     *
+     * <p>同设备调用也会复制一份存储：这条路径与 GPU 后端将来走的完全相同。</p>
+     */
+    public Tensor to(basalt.Device target) {
+        return target.move(this);
+    }
+
     public NativeTensorHandle handle() {
         return handle;
     }

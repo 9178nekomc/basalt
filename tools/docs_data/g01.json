@@ -2204,6 +2204,290 @@
               "basalt.BasaltMetrics.MetricsSnapshot"
             ]
           }
+        },
+        {
+          "qualified": "basalt.Device",
+          "kind": "class",
+          "signature": "public final class Device",
+          "doc": {
+            "summary": "张量存储所在的设备",
+            "body": [
+              "运行时要求参与同一运算的张量位于同一设备，跨设备会直接报错而不是隐式搬运。",
+              "目前只实现了 CPU；CUDA 设备可以被持有、比较、作为传输目标传入，但真正用它计算会失败，因为本机没有可验证的 GPU。这样设备校验与传输通道在接 GPU 之前就已经被测试覆盖。"
+            ]
+          },
+          "members": [
+            {
+              "kind": "method",
+              "name": "CPU",
+              "signature": "Device CPU()",
+              "key": "CPU()",
+              "return_type": "Device",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "主机内存，唯一的已实现后端",
+                "body": [
+                  "所有张量默认落在这里。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "cuda",
+              "signature": "Device cuda(int index)",
+              "key": "cuda(int)",
+              "return_type": "Device",
+              "type": "",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "index"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "请求一块 CUDA 设备",
+                "body": [
+                  "设备对象可以创建、比较、打印；把它当计算目标会抛 UnsupportedOperationException，因为本构建没有 GPU 后端。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "fromTag",
+              "signature": "Device fromTag(int tag)",
+              "key": "fromTag(int)",
+              "return_type": "Device",
+              "type": "",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "tag"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "从原生标签还原设备",
+                "body": [
+                  "标签与原生侧 Device::tag() 一一对应。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "tag",
+              "signature": "int tag()",
+              "key": "tag()",
+              "return_type": "int",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "原生侧使用的设备标签",
+                "body": [
+                  "CPU 为 0，CUDA 为 1000 + 序号。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "name",
+              "signature": "String name()",
+              "key": "name()",
+              "return_type": "String",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "设备名",
+                "body": [
+                  "用于错误信息，例如 cpu / cuda:0。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "implemented",
+              "signature": "boolean implemented()",
+              "key": "implemented()",
+              "return_type": "boolean",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "该设备是否已有可执行后端",
+                "body": [
+                  "本构建里只有 CPU 返回 true。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "isCpu",
+              "signature": "boolean isCpu()",
+              "key": "isCpu()",
+              "return_type": "boolean",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "是否为主机内存",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "name": "move",
+              "signature": "Tensor move(Tensor tensor)",
+              "key": "move(Tensor)",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "tensor"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "把张量复制到本设备",
+                "body": [
+                  "同设备传输同样复制一份新存储——这条路径与 GPU 后端将来走的完全相同，因此现在就被测试覆盖。目标设备未实现时抛 UnsupportedOperationException。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "toString",
+              "signature": "String toString()",
+              "key": "toString()",
+              "return_type": "String",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "设备名",
+                "body": [
+                  "与 name() 相同。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "equals",
+              "signature": "boolean equals(Object other)",
+              "key": "equals(Object)",
+              "return_type": "boolean",
+              "type": "",
+              "params": [
+                {
+                  "type": "Object",
+                  "name": "other"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "按标签比较设备",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "name": "hashCode",
+              "signature": "int hashCode()",
+              "key": "hashCode()",
+              "return_type": "int",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "与标签一致",
+                "body": []
+              }
+            }
+          ]
         }
       ]
     }

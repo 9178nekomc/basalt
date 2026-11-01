@@ -2518,6 +2518,64 @@
             },
             {
               "kind": "method",
+              "name": "transferTensor",
+              "signature": "NativeTensorHandle transferTensor(NativeTensorHandle tensor, int deviceTag)",
+              "key": "transferTensor(NativeTensorHandle, int)",
+              "return_type": "NativeTensorHandle",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "tensor"
+                },
+                {
+                  "type": "int",
+                  "name": "deviceTag"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "把张量复制到目标设备，返回新句柄",
+                "body": [
+                  "同设备也会复制；目标设备未实现时抛异常。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "tensorDevice",
+              "signature": "int tensorDevice(NativeTensorHandle tensor)",
+              "key": "tensorDevice(NativeTensorHandle)",
+              "return_type": "int",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "tensor"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "查询张量所在设备的标签",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
               "key": "random(int[], long, float, boolean)",
               "signature": "NativeTensorHandle random(int[] shape, long seed, float scale, boolean requiresGrad)",
               "params": [

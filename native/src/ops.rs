@@ -5,7 +5,6 @@ use crate::simd::{axpy, dot};
 use rayon::prelude::*;
 use rayon::ThreadPool;
 
-const GEMM_ROW_BLOCK: usize = 6;
 const PARALLEL_GEMM_WORK: u64 = 262_144;
 
 pub fn gemm_f32(
@@ -20,44 +19,7 @@ pub fn gemm_f32(
     debug_assert_eq!(a.len(), m * k);
     debug_assert_eq!(b.len(), k * n);
     debug_assert_eq!(c.len(), m * n);
-    c.fill(0.0);
-    let work = (m as u64) * (n as u64) * (k as u64);
-    match pool {
-        Some(pool) if m >= GEMM_ROW_BLOCK && work >= PARALLEL_GEMM_WORK => {
-            let chunk_rows = GEMM_ROW_BLOCK;
-            pool.install(|| {
-                c.par_chunks_mut(chunk_rows * n)
-                    .enumerate()
-                    .for_each(|(block, chunk)| {
-                        let start = block * chunk_rows;
-                        gemm_rows(a, b, chunk, start, chunk.len() / n, k, n);
-                    });
-            });
-        }
-        _ => gemm_rows(a, b, c, 0, m, k, n),
-    }
-}
-
-/// The required `i -> k -> j` loop, with `j` innermost and vectorised by `axpy`.
-fn gemm_rows(
-    a: &[f32],
-    b: &[f32],
-    c: &mut [f32],
-    row_start: usize,
-    rows: usize,
-    k: usize,
-    n: usize,
-) {
-    for local_row in 0..rows {
-        let a_row = &a[(row_start + local_row) * k..(row_start + local_row + 1) * k];
-        let c_row = &mut c[local_row * n..(local_row + 1) * n];
-        for inner in 0..k {
-            let alpha = a_row[inner];
-            if alpha != 0.0 {
-                axpy(c_row, &b[inner * n..(inner + 1) * n], alpha);
-            }
-        }
-    }
+    crate::gemm::matmul(a, b, c, m, k, n, crate::gemm::Layout::Nn, pool);
 }
 
 /// `c[m,n] = a[m,k] * b[n,k]^T` (forward, overwrites `c`). Used by convolution im2col GEMM.
@@ -73,29 +35,7 @@ pub fn gemm_forward_nt(
     debug_assert_eq!(a.len(), m * k);
     debug_assert_eq!(b.len(), n * k);
     debug_assert_eq!(c.len(), m * n);
-    c.fill(0.0);
-    let work = (m as u64) * (n as u64) * (k as u64);
-    if let Some(pool) = pool {
-        if work >= PARALLEL_GEMM_WORK && m >= 2 {
-            pool.install(|| {
-                c.par_chunks_mut(n)
-                    .enumerate()
-                    .for_each(|(row, output)| {
-                        let left = &a[row * k..(row + 1) * k];
-                        for column in 0..n {
-                            output[column] = dot(left, &b[column * k..(column + 1) * k]);
-                        }
-                    });
-            });
-            return;
-        }
-    }
-    for row in 0..m {
-        let left = &a[row * k..(row + 1) * k];
-        for column in 0..n {
-            c[row * n + column] = dot(left, &b[column * k..(column + 1) * k]);
-        }
-    }
+    crate::gemm::matmul(a, b, c, m, k, n, crate::gemm::Layout::Nt, pool);
 }
 
 /// `c[m,n] = a[m,k] * b[k,n]` (forward, overwrites `c`). Used by convolution backward-input.
@@ -111,29 +51,7 @@ pub fn gemm_forward_nn(
     debug_assert_eq!(a.len(), m * k);
     debug_assert_eq!(b.len(), k * n);
     debug_assert_eq!(c.len(), m * n);
-    c.fill(0.0);
-    let work = (m as u64) * (n as u64) * (k as u64);
-    let update = |row: usize, output: &mut [f32]| {
-        for inner in 0..k {
-            let alpha = a[row * k + inner];
-            if alpha != 0.0 {
-                axpy(output, &b[inner * n..(inner + 1) * n], alpha);
-            }
-        }
-    };
-    if let Some(pool) = pool {
-        if work >= PARALLEL_GEMM_WORK && m >= 2 {
-            pool.install(|| {
-                c.par_chunks_mut(n)
-                    .enumerate()
-                    .for_each(|(row, output)| update(row, output));
-            });
-            return;
-        }
-    }
-    for row in 0..m {
-        update(row, &mut c[row * n..(row + 1) * n]);
-    }
+    crate::gemm::matmul(a, b, c, m, k, n, crate::gemm::Layout::Nn, pool);
 }
 
 /// `grad_a[m,k] += grad_c[m,n] * b[k,n]^T`.

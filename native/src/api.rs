@@ -367,6 +367,38 @@ pub extern "system" fn Java_basalt_nativebridge_NativeBindings_tensorGrad(
 }
 
 #[no_mangle]
+#[no_mangle]
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_transferTensor(
+    mut env: JNIEnv<'_>,
+    _class: JClass<'_>,
+    context: jlong,
+    tensor: jlong,
+    device_tag: jint,
+) -> jlong {
+    run_jni(&mut env, 0, |_env| {
+        let context = context_from_ptr(context)?;
+        let target = crate::device::Device::from_tag(device_tag)?;
+        context.transfer(tensor as usize, target).map(|address| address as jlong)
+    })
+}
+
+#[no_mangle]
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_tensorDevice(
+    mut env: JNIEnv<'_>,
+    _class: JClass<'_>,
+    context: jlong,
+    tensor: jlong,
+) -> jint {
+    run_jni(&mut env, 0, |_env| {
+        let context = context_from_ptr(context)?;
+        let tensor = context.tensor(tensor as usize)?;
+        let guard = tensor
+            .read()
+            .map_err(|_| crate::error::NativeError::invalid("tensor lock poisoned"))?;
+        Ok(guard.device.tag())
+    })
+}
+
 pub extern "system" fn Java_basalt_nativebridge_NativeBindings_tensorShape(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,

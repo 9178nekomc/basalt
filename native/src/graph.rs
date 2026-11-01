@@ -181,10 +181,9 @@ impl Op {
 #[derive(Debug, Clone)]
 pub enum Attrs {
     None,
-    /// 按轴归约：沿 `dim` 压掉一维，`keepdim` 时保留成长度 1。
+    /// 按轴归约：沿 `dim` 压掉一维。反向只需要知道压的是哪一维。
     Reduce {
         dim: usize,
-        keepdim: bool,
     },
     /// 沿 `dim` 取 [start, end) 区间。
     Slice {

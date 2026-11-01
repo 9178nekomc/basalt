@@ -103,6 +103,31 @@ public final class NativeContext implements AutoCloseable {
         }
     }
 
+    /**
+     * 把张量复制到目标设备。
+     *
+     * <p>同设备传输也会复制——走的是 GPU 后端将来要用的同一条路径，
+     * 因此这条通道现在就被测试覆盖，而不是等到接 GPU 才第一次执行。</p>
+     */
+    public NativeTensorHandle transferTensor(NativeTensorHandle tensor, int deviceTag) {
+        BasaltRuntimeException.requireNonNull(tensor, "tensor");
+        try (Guard guard = guard()) {
+            long pointer = NativeBindings.transferTensor(guard.handle(), tensor.ptr(), deviceTag);
+            if (pointer == 0L) {
+                throw new IllegalStateException("native tensor transfer returned null");
+            }
+            return new NativeTensorHandle(this, pointer, tensor.shape(), tensor.requiresGrad());
+        }
+    }
+
+    /** 张量所在设备的标签。 */
+    public int tensorDevice(NativeTensorHandle tensor) {
+        BasaltRuntimeException.requireNonNull(tensor, "tensor");
+        try (Guard guard = guard()) {
+            return NativeBindings.tensorDevice(guard.handle(), tensor.ptr());
+        }
+    }
+
     public NativeTensorHandle random(int[] shape, long seed, float scale, boolean requiresGrad) {
         NativeTensorHandle tensor = create(shape, requiresGrad);
         try {

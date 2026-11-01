@@ -73,6 +73,34 @@ impl Context {
             .ok_or_else(|| NativeError::unknown_tensor(address))
     }
 
+    /// Copies a tensor onto `target`, returning a new handle.
+    ///
+    /// Same-device transfer still copies: it is the same code path a GPU backend will
+    /// use, so the seam is exercised by tests today instead of being dead code.
+    pub fn transfer(&self, address: usize, target: crate::device::Device) -> Result<usize> {
+        if !target.is_cpu() {
+            return Err(NativeError::unsupported(format!(
+                "device {} is not implemented; only cpu is available",
+                target.name()
+            )));
+        }
+        let source = self.tensor(address)?;
+        let guard = source
+            .read()
+            .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+        let mut copy = NativeTensor::from_data(
+            guard.shape.clone(),
+            guard.data.clone(),
+            guard.requires_grad,
+        )?;
+        copy.device = target;
+        drop(guard);
+        self.tensors
+            .write()
+            .map_err(|_| NativeError::invalid("tensor store lock poisoned"))?
+            .insert(copy)
+    }
+
     pub fn release_tensor(&self, address: usize) -> Result<bool> {
         // Lock order is graph -> tensor store, matching queue execution and backward. Releasing a
         // tensor that appears in the graph invalidates the whole graph; clearing it here keeps a

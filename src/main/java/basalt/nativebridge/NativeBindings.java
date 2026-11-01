@@ -14,6 +14,12 @@ final class NativeBindings {
     private NativeBindings() {
     }
 
+    /** 把张量复制到目标设备，返回新的张量句柄。 */
+    static native long transferTensor(long context, long tensor, int deviceTag);
+
+    /** 查询张量所在设备的标签。 */
+    static native int tensorDevice(long context, long tensor);
+
     static native int available();
 
     static native int version();
