@@ -1,6 +1,6 @@
 # Basalt — Java + Rust Machine Learning Runtime
 
-> **Maven coordinates** — `io.github.9178nekomc:basalt:3.11.0`  
+> **Maven coordinates** — `io.github.9178nekomc:basalt:3.12.0`  
 > **Runtime** — Java 21 (`--add-modules jdk.incubator.vector`) + bundled Rust native library  
 > **One dependency, no Python, no GIL, no manual native build on Windows x86_64.**  
 > **Docs** — <https://9178nekomc.github.io/basalt/>
@@ -13,7 +13,7 @@
 <dependency>
     <groupId>io.github.9178nekomc</groupId>
     <artifactId>basalt</artifactId>
-    <version>3.11.0</version>
+    <version>3.12.0</version>
 </dependency>
 ```
 
@@ -23,7 +23,7 @@ Build and install locally from source:
 mvn clean install
 ```
 
-The shaded, self-contained artifact is `basalt-3.11.0-all.jar` (classifier `all`).
+The shaded, self-contained artifact is `basalt-3.12.0-all.jar` (classifier `all`).
 It contains the Windows x86_64 native runtime; other platforms can add their own
 `native/<os>-<arch>/` library or point `-Dbasalt.native.path` at a locally built one.
 
@@ -120,11 +120,11 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 
 ---
 
-## 最新版特性（3.11.0）
+## 最新版特性（3.12.0）
 
 ### 张量生命周期改由 Rust 持有
 
-3.11.0 之前，原生张量的回收挂在 Java 的 `Cleaner` 上：Java 堆里只有一个几十字节的句柄，
+3.12.0 之前，原生张量的回收挂在 Java 的 `Cleaner` 上：Java 堆里只有一个几十字节的句柄，
 GC 迟迟不来，原生堆却已经被批次、前向中间量和损失填满。实测 2000 窗口 × batch 32 × 2.68M
 参数的字符级训练，第 15 轮左右就会因为原生内存分配失败而 abort；把四个可见张量显式 `close()`
 再周期性 `System.gc()`，也只是把崩溃点推到第 30 轮。
@@ -167,21 +167,46 @@ try {
 
 | 版本 | 问题 | 处理 |
 |---|---|---|
-| 3.11.0 | 长训练循环原生内存无界增长，第 15~30 轮 abort | 张量生命周期改为 Rust 作用域持有，`Trainer` 每步 `beginScope`/`endScope` |
-| 3.11.0 | 文档缺少原生作用域三个方法的说明 | 补入 `NativeContext` 章节，1568 个公开成员说明齐备 |
+| 3.12.0 | 长训练循环原生内存无界增长，第 15~30 轮 abort | 张量生命周期改为 Rust 作用域持有，`Trainer` 每步 `beginScope`/`endScope` |
+| 3.12.0 | 文档缺少原生作用域三个方法的说明 | 补入 `NativeContext` 章节，1568 个公开成员说明齐备 |
 | 3.8.0 | 生成只能等整段跑完，无法逐字显示 | `TextEngine.stream` / `streamSampled`，解码结果与批量接口逐位一致 |
 | 3.7.0 | 文档与基准报告 HTML 进版本库，单次推送 17.1 MiB | 生成物移出 git，由 CI 构建并发布到 `gh-pages`，推送降到 ~5.8 MiB |
 
 ---
 
-## 最新版特性（3.11.0）
+## 最新版特性（3.12.0）
+
+### 索引算子：形状拼图齐了
+
+多头注意力要干的事，本质是「把最后一维切成几段，各算各的，再拼回去」。
+3.11.0 之前这三个动作一个都没有——能算矩阵乘，但拼不出多头。
+
+3.12.0 补上：
+
+| 算子 | 反向 |
+|---|---|
+| `slice(dim, start, end)` | 梯度只写回原区间，其余位置为零 |
+| `cat(other, dim)` | 按拼接点把梯度切回两个输入 |
+| `indexSelect(dim, int[])` | 散射累加，重复索引会叠加 |
+
+原生算子 34 → 37。
+
+拆头再拼回去，现在是这样：
+
+```java
+Tensor headA = x.slice(2, 0, 2);     // [batch, seq, 2]
+Tensor headB = x.slice(2, 2, 4);
+Tensor merged = headA.cat(headB, 2); // 与原张量逐位相同
+```
+
+`attentionHeadSplitAndMergeRoundTrips` 这个测试就是跑这条路径，断言拼回来与原张量完全一致。
 
 ### 按轴归约：数值稳定的 softmax 可以写了
 
 3.10.0 补了全量归约，但按维归约还缺——这意味着一件事：**没法减最大值**，
 softmax 在输入偏大时会直接溢出成 `inf / inf = NaN`。
 
-3.11.0 补上：
+3.12.0 补上：
 
 | 算子 | 说明 |
 |---|---|
@@ -205,7 +230,7 @@ Tensor probs = numer.div(denom);
 模型层不可能覆盖所有算法。真正决定上限的是**底层有多少可组合的算子**——
 没有归约，连手写 softmax 的分母都写不出来。
 
-3.11.0 之前，`Tensor` 只有 23 个公开算子，缺数学函数、缺归约。补完之后：
+3.12.0 之前，`Tensor` 只有 23 个公开算子，缺数学函数、缺归约。补完之后：
 
 | 类别 | 新增 | 用途 |
 |---|---|---|
@@ -247,9 +272,9 @@ Tensor probs = numer.div(denom);          // 新增：逐元素除法
 
 诚实列出缺口，不假装完备：
 
-- **索引算子**：`gather` / `slice` / `cat`，手写 embedding 变体和自定义注意力头需要
 - **掩码**：`where` / `maskedFill`，变长序列与 causal mask 需要
 - **多轴归约**：一次压掉多个维度，现在只能一维一维来
+- **`cat` 的多输入版本**：现在只能两两拼，拼四段要调用三次
 - **自定义算子注册**：让用户用 Java 写前向与反向、不改 Rust 就能加算子——
   这是「创造新算法」的最后一块，需要先有延迟执行才能不亏性能
 
@@ -264,15 +289,15 @@ Tensor probs = numer.div(denom);          // 新增：逐元素除法
 
 ## 下载
 
-发布资产见 [Releases · v3.11.0](https://github.com/9178nekomc/basalt/releases/tag/v3.11.0)：
+发布资产见 [Releases · v3.12.0](https://github.com/9178nekomc/basalt/releases/tag/v3.12.0)：
 
 | 文件 | 说明 |
 |---|---|
-| `basalt-3.11.0-all.jar` | Fat Jar（classifier `all`），含 Windows x86_64 原生库，可直接 `java -cp` |
-| `basalt-3.11.0.jar` | 标准 jar，原生库在 `native/windows-x86_64/` 资源目录内 |
-| `basalt-3.11.0-sources.jar` | 源码包 |
+| `basalt-3.12.0-all.jar` | Fat Jar（classifier `all`），含 Windows x86_64 原生库，可直接 `java -cp` |
+| `basalt-3.12.0.jar` | 标准 jar，原生库在 `native/windows-x86_64/` 资源目录内 |
+| `basalt-3.12.0-sources.jar` | 源码包 |
 | `basalt_native.dll` | Windows x86_64 原生库，独立分发用 |
-| `basalt-docs-3.11.0.zip` | 离线文档站（19 页 HTML + 2 个基准报告），解压后双击 `index.html` |
+| `basalt-docs-3.12.0.zip` | 离线文档站（19 页 HTML + 2 个基准报告），解压后双击 `index.html` |
 
 ---
 
@@ -351,7 +376,7 @@ python tools/check_docs.py --root docs
 <dependency>
     <groupId>io.github.9178nekomc</groupId>
     <artifactId>basalt</artifactId>
-    <version>3.11.0</version>
+    <version>3.12.0</version>
 </dependency>
 ```
 
@@ -362,9 +387,9 @@ mvn clean install
 ```
 
 产物：
-- `target/basalt-3.11.0.jar`：标准 jar（含 `native/windows-x86_64/basalt_native.dll` 资源）
-- `target/basalt-3.11.0-all.jar`：Fat Jar（classifier `all`，可直接 `java -cp`）
-- `target/basalt-3.11.0-sources.jar`：源码包
+- `target/basalt-3.12.0.jar`：标准 jar（含 `native/windows-x86_64/basalt_native.dll` 资源）
+- `target/basalt-3.12.0-all.jar`：Fat Jar（classifier `all`，可直接 `java -cp`）
+- `target/basalt-3.12.0-sources.jar`：源码包
 
 10 行完成一次前向 + 反向：
 
@@ -1050,7 +1075,7 @@ report/                 报告、图表生成脚本、figures/
 
 ---
 
-## 11. v3.11.0 三期演进全景
+## 11. v3.12.0 三期演进全景
 
 ### 第一阶段：夯实工程底座（Phase 1）
 1. **JNI / Rust 底层核心工程强化**

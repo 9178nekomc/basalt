@@ -254,6 +254,95 @@ public final class Tensor implements AutoCloseable {
         return reduceDim(CommandQueueBuilder.OP_MAX_DIM, dimension, keepdim);
     }
 
+    /**
+     * 沿 `dimension` 取 [start, end) 区间。
+     *
+     * <p>用于切分 Q/K/V、拆分注意力头这类操作。反向只把梯度写回原区间，其余位置为零。</p>
+     */
+    public Tensor slice(int dimension, int start, int end) {
+        int[] input = shape();
+        if (dimension < 0 || dimension >= input.length) {
+            throw new IllegalArgumentException("dimension " + dimension
+                    + " out of range for rank " + input.length);
+        }
+        if (start < 0 || start > end || end > input[dimension]) {
+            throw new IllegalArgumentException("slice range [" + start + ", " + end
+                    + ") invalid for axis of length " + input[dimension]);
+        }
+        int[] outputShape = input.clone();
+        outputShape[dimension] = end - start;
+        Tensor output = zeros(context, outputShape);
+        CommandQueueBuilder queue = new CommandQueueBuilder(context);
+        queue.slice(handle, output.handle, dimension, start, end);
+        queue.executeAndClear();
+        return output;
+    }
+
+    /** 沿 `dimension` 与另一个张量拼接；其余维度必须一致。 */
+    public Tensor cat(Tensor other, int dimension) {
+        BasaltRuntimeException.requireNonNull(other, "other");
+        if (context != other.context) {
+            throw new IllegalArgumentException("operands must live in the same context");
+        }
+        int[] left = shape();
+        int[] right = other.shape();
+        if (left.length != right.length) {
+            throw new IllegalArgumentException("cat requires equal rank: "
+                    + Arrays.toString(left) + " vs " + Arrays.toString(right));
+        }
+        if (dimension < 0 || dimension >= left.length) {
+            throw new IllegalArgumentException("dimension " + dimension
+                    + " out of range for rank " + left.length);
+        }
+        // 非拼接维必须一致：在 Java 侧先查，错误信息比原生抛回来的更直接
+        for (int index = 0; index < left.length; index++) {
+            if (index != dimension && left[index] != right[index]) {
+                throw new IllegalArgumentException("cat requires equal sizes on axis " + index
+                        + ": " + Arrays.toString(left) + " vs " + Arrays.toString(right));
+            }
+        }
+        int[] outputShape = left.clone();
+        outputShape[dimension] = left[dimension] + right[dimension];
+        Tensor output = zeros(context, outputShape);
+        CommandQueueBuilder queue = new CommandQueueBuilder(context);
+        queue.cat2(handle, other.handle, output.handle, dimension);
+        queue.executeAndClear();
+        return output;
+    }
+
+    /**
+     * 沿 `dimension` 按索引取值：等价于 PyTorch 的 index_select。
+     *
+     * <p>索引必须落在 [0, shape[dimension]) 内；重复索引在反向时梯度会累加。</p>
+     */
+    public Tensor indexSelect(int dimension, int[] indices) {
+        BasaltRuntimeException.requireNonNull(indices, "indices");
+        int[] input = shape();
+        if (dimension < 0 || dimension >= input.length) {
+            throw new IllegalArgumentException("dimension " + dimension
+                    + " out of range for rank " + input.length);
+        }
+        if (indices.length == 0) {
+            throw new IllegalArgumentException("indices must not be empty");
+        }
+        float[] indexData = new float[indices.length];
+        for (int position = 0; position < indices.length; position++) {
+            if (indices[position] < 0 || indices[position] >= input[dimension]) {
+                throw new IllegalArgumentException("index " + indices[position]
+                        + " out of range for axis of length " + input[dimension]);
+            }
+            indexData[position] = indices[position];
+        }
+        Tensor index = Tensor.of(context, indexData, indices.length);
+        int[] outputShape = input.clone();
+        outputShape[dimension] = indices.length;
+        Tensor output = zeros(context, outputShape);
+        CommandQueueBuilder queue = new CommandQueueBuilder(context);
+        queue.gather(handle, index.handle, output.handle, dimension);
+        queue.executeAndClear();
+        return output;
+    }
+
     /** 按轴归约的统一入口：算输出形状、分配、入队、执行。 */
     private Tensor reduceDim(int op, int dimension, boolean keepdim) {
         int[] input = shape();

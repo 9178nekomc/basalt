@@ -64,6 +64,10 @@ public final class CommandQueueBuilder implements AutoCloseable {
     public static final int OP_MEAN_DIM = 33;
     public static final int OP_MAX_DIM = 34;
 
+    public static final int OP_SLICE = 35;
+    public static final int OP_CAT2 = 36;
+    public static final int OP_GATHER = 37;
+
     public static final int OP_GROUP_NORM = 22;
 
     public static final int COMMAND_BYTES = 128;
@@ -169,6 +173,40 @@ public final class CommandQueueBuilder implements AutoCloseable {
     public synchronized CommandQueueBuilder maxDim(NativeTensorHandle input, NativeTensorHandle output,
                                       int dimension, boolean keepdim) {
         return reduceDim(OP_MAX_DIM, input, output, dimension, keepdim);
+    }
+
+    public synchronized CommandQueueBuilder slice(NativeTensorHandle input, NativeTensorHandle output,
+                                     int dimension, int start, int end) {
+        BasaltRuntimeException.requireNonNull(input, "input");
+        BasaltRuntimeException.requireNonNull(output, "output");
+        requireSameContext(input, output);
+        begin(OP_SLICE, input.ptr(), 0, 0, 0, 0, output.ptr());
+        putInt(0, dimension);
+        putInt(1, start);
+        putInt(2, end);
+        return this;
+    }
+
+    public synchronized CommandQueueBuilder cat2(NativeTensorHandle left, NativeTensorHandle right,
+                                    NativeTensorHandle output, int dimension) {
+        BasaltRuntimeException.requireNonNull(left, "left");
+        BasaltRuntimeException.requireNonNull(right, "right");
+        BasaltRuntimeException.requireNonNull(output, "output");
+        requireSameContext(left, right, output);
+        begin(OP_CAT2, left.ptr(), right.ptr(), 0, 0, 0, output.ptr());
+        putInt(0, dimension);
+        return this;
+    }
+
+    public synchronized CommandQueueBuilder gather(NativeTensorHandle data, NativeTensorHandle indices,
+                                      NativeTensorHandle output, int dimension) {
+        BasaltRuntimeException.requireNonNull(data, "data");
+        BasaltRuntimeException.requireNonNull(indices, "indices");
+        BasaltRuntimeException.requireNonNull(output, "output");
+        requireSameContext(data, indices, output);
+        begin(OP_GATHER, data.ptr(), indices.ptr(), 0, 0, 0, output.ptr());
+        putInt(0, dimension);
+        return this;
     }
 
     private CommandQueueBuilder reduceDim(int op, NativeTensorHandle input, NativeTensorHandle output,

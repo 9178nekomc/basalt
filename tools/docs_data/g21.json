@@ -2285,6 +2285,106 @@
             },
             {
               "kind": "method",
+              "name": "slice",
+              "signature": "Tensor slice(int dimension, int start, int end)",
+              "key": "slice(int, int, int)",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "dimension"
+                },
+                {
+                  "type": "int",
+                  "name": "start"
+                },
+                {
+                  "type": "int",
+                  "name": "end"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "沿 `dimension` 取 [start, end) 区间",
+                "body": [
+                  "用于切分 Q/K/V、拆分注意力头。反向只把梯度写回原区间，其余位置为零。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "cat",
+              "signature": "Tensor cat(Tensor other, int dimension)",
+              "key": "cat(Tensor, int)",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "other"
+                },
+                {
+                  "type": "int",
+                  "name": "dimension"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "沿 `dimension` 与另一个张量拼接",
+                "body": [
+                  "其余维度必须一致，Java 侧先校验，错误信息比原生抛回来的更直接。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "indexSelect",
+              "signature": "Tensor indexSelect(int dimension, int[] indices)",
+              "key": "indexSelect(int, int[])",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "dimension"
+                },
+                {
+                  "type": "int[]",
+                  "name": "indices"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "沿 `dimension` 按索引取值，等价于 PyTorch 的 index_select",
+                "body": [
+                  "索引必须落在 [0, shape[dimension]) 内；重复索引在反向时梯度会累加。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
               "name": "meanAll",
               "signature": "Tensor meanAll()",
               "key": "meanAll()",

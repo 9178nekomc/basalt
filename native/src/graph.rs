@@ -43,6 +43,9 @@ pub enum Op {
     SumDim,
     MeanDim,
     MaxDim,
+    Slice,
+    Cat2,
+    Gather,
 }
 
 impl Op {
@@ -82,6 +85,9 @@ impl Op {
             32 => Ok(Self::SumDim),
             33 => Ok(Self::MeanDim),
             34 => Ok(Self::MaxDim),
+            35 => Ok(Self::Slice),
+            36 => Ok(Self::Cat2),
+            37 => Ok(Self::Gather),
             other => Err(NativeError::unsupported(format!(
                 "unknown op code {other}; expected 1..=29"
             ))),
@@ -124,6 +130,9 @@ impl Op {
             Self::SumDim => "SumDim",
             Self::MeanDim => "MeanDim",
             Self::MaxDim => "MaxDim",
+            Self::Slice => "Slice",
+            Self::Cat2 => "Cat2",
+            Self::Gather => "Gather",
         }
     }
 
@@ -148,7 +157,8 @@ impl Op {
             | Self::MeanAll
             | Self::SumDim
             | Self::MeanDim
-            | Self::MaxDim => 1,
+            | Self::MaxDim
+            | Self::Slice => 1,
             Self::MatMul
             | Self::Add
             | Self::Sub
@@ -159,7 +169,9 @@ impl Op {
             | Self::CrossEntropy
             | Self::Conv2d
             | Self::Embedding
-            | Self::BatchedMatMul => 2,
+            | Self::BatchedMatMul
+            | Self::Cat2
+            | Self::Gather => 2,
             Self::LayerNorm | Self::GroupNorm => 3,
             Self::BatchNorm2d => 5,
         }
@@ -173,6 +185,21 @@ pub enum Attrs {
     Reduce {
         dim: usize,
         keepdim: bool,
+    },
+    /// 沿 `dim` 取 [start, end) 区间。
+    Slice {
+        dim: usize,
+        start: usize,
+        end: usize,
+    },
+    /// 沿 `dim` 拼接两段。
+    Cat {
+        dim: usize,
+        split: usize,
+    },
+    /// 沿 `dim` 按索引取值。
+    Gather {
+        dim: usize,
     },
     MatMul {
         m: usize,

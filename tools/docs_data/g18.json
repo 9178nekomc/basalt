@@ -559,6 +559,75 @@
             },
             {
               "kind": "field",
+              "name": "OP_SLICE",
+              "signature": "int OP_SLICE = 35",
+              "key": "OP_SLICE",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "35",
+              "doc": {
+                "summary": "算子码 35：沿指定维取区间，对应 Tensor.slice(dim, start, end)。",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "OP_CAT2",
+              "signature": "int OP_CAT2 = 36",
+              "key": "OP_CAT2",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "36",
+              "doc": {
+                "summary": "算子码 36：沿指定维拼接两个张量，对应 Tensor.cat(other, dim)。",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "OP_GATHER",
+              "signature": "int OP_GATHER = 37",
+              "key": "OP_GATHER",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "37",
+              "doc": {
+                "summary": "算子码 37：沿指定维按索引取值，对应 Tensor.indexSelect(dim, indices)。",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
               "key": "OP_GROUP_NORM",
               "signature": "int OP_GROUP_NORM = 22",
               "params": [],
@@ -1294,6 +1363,133 @@
                 "summary": "沿维取最大值",
                 "body": [
                   "反向只把梯度给到该组第一个最大值的位置。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "slice",
+              "signature": "CommandQueueBuilder slice(NativeTensorHandle input, NativeTensorHandle output, int dimension, int start, int end)",
+              "key": "slice(NativeTensorHandle, NativeTensorHandle, int, int, int)",
+              "return_type": "CommandQueueBuilder",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                },
+                {
+                  "type": "int",
+                  "name": "dimension"
+                },
+                {
+                  "type": "int",
+                  "name": "start"
+                },
+                {
+                  "type": "int",
+                  "name": "end"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "synchronized"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "沿维取区间",
+                "body": [
+                  "attrs[0]=dim，attrs[1]=start，attrs[2]=end（右开）；输出形状由调用方算好。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "cat2",
+              "signature": "CommandQueueBuilder cat2(NativeTensorHandle left, NativeTensorHandle right, NativeTensorHandle output, int dimension)",
+              "key": "cat2(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, int)",
+              "return_type": "CommandQueueBuilder",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "left"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "right"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                },
+                {
+                  "type": "int",
+                  "name": "dimension"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "synchronized"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "沿维拼接",
+                "body": [
+                  "attrs[0]=dim；两个输入除该维外必须同形。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "gather",
+              "signature": "CommandQueueBuilder gather(NativeTensorHandle data, NativeTensorHandle indices, NativeTensorHandle output, int dimension)",
+              "key": "gather(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle, int)",
+              "return_type": "CommandQueueBuilder",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "data"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "indices"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                },
+                {
+                  "type": "int",
+                  "name": "dimension"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "synchronized"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "沿维按索引取值",
+                "body": [
+                  "第二个输入是索引张量（一维、值为整数），attrs[0]=dim。"
                 ]
               }
             },

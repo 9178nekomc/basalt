@@ -315,6 +315,137 @@ fn execute_command(
                 attrs: Attrs::Reduce { dim, keepdim },
             });
         }
+        Op::Slice => {
+            let input = context.tensor(command.input_a)?;
+            let input_shape = tensor_shape_of(&input)?;
+            let dim = command.attrs[0].max(0) as usize;
+            let start = command.attrs[1].max(0) as usize;
+            let end = command.attrs[2].max(0) as usize;
+            let mut expected = input_shape.clone();
+            if dim >= expected.len() {
+                return Err(NativeError::shape("slice dim out of range"));
+            }
+            if start > end || end > expected[dim] {
+                return Err(NativeError::shape(format!(
+                    "slice range [{start}, {end}) invalid for axis of length {}",
+                    expected[dim]
+                )));
+            }
+            expected[dim] = end - start;
+            if output_shape != expected || output_len != expected.iter().product::<usize>() {
+                return Err(NativeError::shape(format!(
+                    "Slice output shape must be {:?}, got {:?}",
+                    expected, output_shape
+                )));
+            }
+            let input_guard = input
+                .read()
+                .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+            let mut output_guard = output
+                .write()
+                .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+            ops::slice_forward(
+                &input_guard.data,
+                &input_shape,
+                dim,
+                start,
+                end,
+                &mut output_guard.data,
+            )?;
+            graph.push_unchecked(Node {
+                op,
+                inputs,
+                output: command.output,
+                attrs: Attrs::Slice { dim, start, end },
+            });
+        }
+        Op::Cat2 => {
+            let left = context.tensor(command.input_a)?;
+            let right = context.tensor(command.input_b)?;
+            let left_shape = tensor_shape_of(&left)?;
+            let right_shape = tensor_shape_of(&right)?;
+            let dim = command.attrs[0].max(0) as usize;
+            if dim >= left_shape.len() {
+                return Err(NativeError::shape("cat dim out of range"));
+            }
+            let mut expected = left_shape.clone();
+            expected[dim] = left_shape[dim] + right_shape[dim];
+            if output_shape != expected || output_len != expected.iter().product::<usize>() {
+                return Err(NativeError::shape(format!(
+                    "Cat2 output shape must be {:?}, got {:?}",
+                    expected, output_shape
+                )));
+            }
+            let left_guard = left
+                .read()
+                .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+            let right_guard = right
+                .read()
+                .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+            let mut output_guard = output
+                .write()
+                .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+            ops::cat_forward(
+                &left_guard.data,
+                &left_shape,
+                &right_guard.data,
+                &right_shape,
+                dim,
+                &mut output_guard.data,
+            )?;
+            graph.push_unchecked(Node {
+                op,
+                inputs,
+                output: command.output,
+                attrs: Attrs::Cat {
+                    dim,
+                    split: left_shape[dim],
+                },
+            });
+        }
+        Op::Gather => {
+            let data = context.tensor(command.input_a)?;
+            let indices = context.tensor(command.input_b)?;
+            let data_shape = tensor_shape_of(&data)?;
+            let index_shape = tensor_shape_of(&indices)?;
+            let dim = command.attrs[0].max(0) as usize;
+            if dim >= data_shape.len() {
+                return Err(NativeError::shape("gather dim out of range"));
+            }
+            if index_shape.len() != 1 {
+                return Err(NativeError::shape("gather indices must be one-dimensional"));
+            }
+            let mut expected = data_shape.clone();
+            expected[dim] = index_shape[0];
+            if output_shape != expected || output_len != expected.iter().product::<usize>() {
+                return Err(NativeError::shape(format!(
+                    "Gather output shape must be {:?}, got {:?}",
+                    expected, output_shape
+                )));
+            }
+            let data_guard = data
+                .read()
+                .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+            let index_guard = indices
+                .read()
+                .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+            let mut output_guard = output
+                .write()
+                .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+            ops::gather_forward(
+                &data_guard.data,
+                &data_shape,
+                dim,
+                &index_guard.data,
+                &mut output_guard.data,
+            )?;
+            graph.push_unchecked(Node {
+                op,
+                inputs,
+                output: command.output,
+                attrs: Attrs::Gather { dim },
+            });
+        }
         Op::Gelu | Op::Silu => {
             let input = context.tensor(command.input_a)?;
             let input_shape = tensor_shape_of(&input)?;
@@ -1091,6 +1222,69 @@ pub fn backward(context: &Context, root: jlong, threads: jint) -> Result<()> {
                 )?;
                 drop(input_guard);
                 accumulate(&mut gradients, node.inputs[0], grad_input);
+            }
+            Op::Slice => {
+                let (dim, start, end) = match &node.attrs {
+                    Attrs::Slice { dim, start, end } => (*dim, *start, *end),
+                    _ => return Err(NativeError::invalid("Slice backward needs attrs")),
+                };
+                let input = context.tensor(node.inputs[0])?;
+                let input_guard = input
+                    .read()
+                    .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+                let shape = tensor_shape_of(&input)?;
+                let mut grad_input = vec![0.0f32; input_guard.data.len()];
+                ops::slice_backward(&shape, dim, start, end, &grad_output, &mut grad_input)?;
+                drop(input_guard);
+                accumulate(&mut gradients, node.inputs[0], grad_input);
+            }
+            Op::Cat2 => {
+                let (dim, _split) = match &node.attrs {
+                    Attrs::Cat { dim, split } => (*dim, *split),
+                    _ => return Err(NativeError::invalid("Cat2 backward needs attrs")),
+                };
+                let left = context.tensor(node.inputs[0])?;
+                let right = context.tensor(node.inputs[1])?;
+                let left_shape = tensor_shape_of(&left)?;
+                let right_shape = tensor_shape_of(&right)?;
+                let mut grad_left = vec![0.0f32; left_shape.iter().product::<usize>()];
+                let mut grad_right = vec![0.0f32; right_shape.iter().product::<usize>()];
+                ops::cat_backward(
+                    &left_shape,
+                    &right_shape,
+                    dim,
+                    &grad_output,
+                    &mut grad_left,
+                    &mut grad_right,
+                )?;
+                accumulate(&mut gradients, node.inputs[0], grad_left);
+                accumulate(&mut gradients, node.inputs[1], grad_right);
+            }
+            Op::Gather => {
+                let dim = match &node.attrs {
+                    Attrs::Gather { dim } => *dim,
+                    _ => return Err(NativeError::invalid("Gather backward needs attrs")),
+                };
+                let data = context.tensor(node.inputs[0])?;
+                let indices = context.tensor(node.inputs[1])?;
+                let data_shape = tensor_shape_of(&data)?;
+                let data_guard = data
+                    .read()
+                    .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+                let index_guard = indices
+                    .read()
+                    .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+                let mut grad_data = vec![0.0f32; data_guard.data.len()];
+                ops::gather_backward(
+                    &data_shape,
+                    dim,
+                    &index_guard.data,
+                    &grad_output,
+                    &mut grad_data,
+                )?;
+                drop(data_guard);
+                drop(index_guard);
+                accumulate(&mut gradients, node.inputs[0], grad_data);
             }
             Op::Gelu | Op::Silu => {
                 let input = context.tensor(node.inputs[0])?;

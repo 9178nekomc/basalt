@@ -467,6 +467,219 @@ pub fn binary_backward(
     Ok(())
 }
 
+/// 沿 `dim` 取 [start, end)。布局按行主序 [outer, axis, inner]。
+pub fn slice_forward(
+    input: &[f32],
+    shape: &[usize],
+    dim: usize,
+    start: usize,
+    end: usize,
+    out: &mut [f32],
+) -> Result<()> {
+    if dim >= shape.len() {
+        return Err(NativeError::shape("slice dim out of range"));
+    }
+    let axis = shape[dim];
+    if start > end || end > axis {
+        return Err(NativeError::shape(format!(
+            "slice range [{start}, {end}) invalid for axis of length {axis}"
+        )));
+    }
+    let outer: usize = shape[..dim].iter().product();
+    let inner: usize = shape[dim + 1..].iter().product();
+    let take = end - start;
+    if input.len() != outer * axis * inner || out.len() != outer * take * inner {
+        return Err(NativeError::shape("slice length mismatch"));
+    }
+
+    for o in 0..outer {
+        for k in 0..take {
+            let src = (o * axis + start + k) * inner;
+            let dst = (o * take + k) * inner;
+            out[dst..dst + inner].copy_from_slice(&input[src..src + inner]);
+        }
+    }
+    Ok(())
+}
+
+/// Slice 的反向：把梯度写回原区间，其余位置保持为零。
+pub fn slice_backward(
+    shape: &[usize],
+    dim: usize,
+    start: usize,
+    end: usize,
+    grad_out: &[f32],
+    grad_in: &mut [f32],
+) -> Result<()> {
+    if dim >= shape.len() {
+        return Err(NativeError::shape("slice backward dim out of range"));
+    }
+    let axis = shape[dim];
+    let outer: usize = shape[..dim].iter().product();
+    let inner: usize = shape[dim + 1..].iter().product();
+    let take = end.saturating_sub(start);
+    if grad_in.len() != outer * axis * inner || grad_out.len() != outer * take * inner {
+        return Err(NativeError::shape("slice backward length mismatch"));
+    }
+
+    for o in 0..outer {
+        for k in 0..take {
+            let src = (o * take + k) * inner;
+            let dst = (o * axis + start + k) * inner;
+            for i in 0..inner {
+                grad_in[dst + i] += grad_out[src + i];
+            }
+        }
+    }
+    Ok(())
+}
+
+/// 沿 `dim` 拼接两个张量，其余维度必须一致。
+pub fn cat_forward(
+    a: &[f32],
+    a_shape: &[usize],
+    b: &[f32],
+    b_shape: &[usize],
+    dim: usize,
+    out: &mut [f32],
+) -> Result<()> {
+    if dim >= a_shape.len() || a_shape.len() != b_shape.len() {
+        return Err(NativeError::shape("cat rank mismatch"));
+    }
+    for index in 0..a_shape.len() {
+        if index != dim && a_shape[index] != b_shape[index] {
+            return Err(NativeError::shape(format!(
+                "cat requires equal sizes on axis {index}: {} vs {}",
+                a_shape[index], b_shape[index]
+            )));
+        }
+    }
+    let outer: usize = a_shape[..dim].iter().product();
+    let inner: usize = a_shape[dim + 1..].iter().product();
+    let a_axis = a_shape[dim];
+    let b_axis = b_shape[dim];
+    let total = a_axis + b_axis;
+    if out.len() != outer * total * inner {
+        return Err(NativeError::shape("cat output length mismatch"));
+    }
+
+    for o in 0..outer {
+        let dst_a = o * total * inner;
+        let src_a = o * a_axis * inner;
+        out[dst_a..dst_a + a_axis * inner]
+            .copy_from_slice(&a[src_a..src_a + a_axis * inner]);
+
+        let dst_b = dst_a + a_axis * inner;
+        let src_b = o * b_axis * inner;
+        out[dst_b..dst_b + b_axis * inner]
+            .copy_from_slice(&b[src_b..src_b + b_axis * inner]);
+    }
+    Ok(())
+}
+
+/// Cat 的反向：按拼接点把梯度切回去。
+pub fn cat_backward(
+    a_shape: &[usize],
+    b_shape: &[usize],
+    dim: usize,
+    grad_out: &[f32],
+    grad_a: &mut [f32],
+    grad_b: &mut [f32],
+) -> Result<()> {
+    if dim >= a_shape.len() {
+        return Err(NativeError::shape("cat backward dim out of range"));
+    }
+    let outer: usize = a_shape[..dim].iter().product();
+    let inner: usize = a_shape[dim + 1..].iter().product();
+    let a_axis = a_shape[dim];
+    let b_axis = b_shape[dim];
+    let total = a_axis + b_axis;
+
+    for o in 0..outer {
+        let src = o * total * inner;
+        let dst_a = o * a_axis * inner;
+        for i in 0..a_axis * inner {
+            grad_a[dst_a + i] += grad_out[src + i];
+        }
+        let dst_b = o * b_axis * inner;
+        for i in 0..b_axis * inner {
+            grad_b[dst_b + i] += grad_out[src + a_axis * inner + i];
+        }
+    }
+    Ok(())
+}
+
+/// 沿 `dim` 按 `indices` 取值：out[..., j, ...] = input[..., indices[j], ...]。
+///
+/// `indices` 是一维浮点张量，元素必须是 [0, axis) 内的整数——
+/// 张量只有 f32，这里显式校验，避免静默截断。
+pub fn gather_forward(
+    input: &[f32],
+    shape: &[usize],
+    dim: usize,
+    indices: &[f32],
+    out: &mut [f32],
+) -> Result<()> {
+    if dim >= shape.len() {
+        return Err(NativeError::shape("gather dim out of range"));
+    }
+    let axis = shape[dim];
+    let outer: usize = shape[..dim].iter().product();
+    let inner: usize = shape[dim + 1..].iter().product();
+    let take = indices.len();
+    if out.len() != outer * take * inner || input.len() != outer * axis * inner {
+        return Err(NativeError::shape("gather length mismatch"));
+    }
+
+    for j in 0..take {
+        let raw = indices[j];
+        if !raw.is_finite() || raw < 0.0 || raw >= axis as f32 || raw.fract() != 0.0 {
+            return Err(NativeError::shape(format!(
+                "gather index {raw} invalid for axis of length {axis}"
+            )));
+        }
+        let pick = raw as usize;
+        for o in 0..outer {
+            let src = (o * axis + pick) * inner;
+            let dst = (o * take + j) * inner;
+            out[dst..dst + inner].copy_from_slice(&input[src..src + inner]);
+        }
+    }
+    Ok(())
+}
+
+/// Gather 的反向：散射累加，重复索引会叠加。
+pub fn gather_backward(
+    shape: &[usize],
+    dim: usize,
+    indices: &[f32],
+    grad_out: &[f32],
+    grad_in: &mut [f32],
+) -> Result<()> {
+    if dim >= shape.len() {
+        return Err(NativeError::shape("gather backward dim out of range"));
+    }
+    let axis = shape[dim];
+    let outer: usize = shape[..dim].iter().product();
+    let inner: usize = shape[dim + 1..].iter().product();
+    let take = indices.len();
+
+    for j in 0..take {
+        let pick = indices[j] as usize;
+        if pick >= axis {
+            return Err(NativeError::shape("gather backward index out of range"));
+        }
+        for o in 0..outer {
+            let dst = (o * axis + pick) * inner;
+            let src = (o * take + j) * inner;
+            for i in 0..inner {
+                grad_in[dst + i] += grad_out[src + i];
+            }
+        }
+    }
+    Ok(())
+}
+
 /// 沿单一维度归约。输出长度是 outer * inner（keepdim 只改形状，不改元素数）。
 ///
 /// 布局按行主序：[outer, axis, inner]。每个 (outer, inner) 组合是一组要折叠的数据。
@@ -1119,5 +1332,64 @@ mod tests {
         // 输出长度不对
         let mut wrong = vec![0.0f32; 3];
         assert!(reduce_dim_forward(Op::SumDim, &input, &[2, 2], 1, &mut wrong).is_err());
+    }
+    #[test]
+    fn slice_takes_a_range_and_writes_back() {
+        // [[1,2,3],[4,5,6]] 取 dim=1 的 [0,2)
+        let input = [1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0];
+        let mut out = vec![0.0f32; 4];
+        slice_forward(&input, &[2, 3], 1, 0, 2, &mut out).expect("slice");
+        assert_eq!(out, vec![1.0, 2.0, 4.0, 5.0]);
+
+        let mut grad_in = vec![0.0f32; 6];
+        slice_backward(&[2, 3], 1, 0, 2, &[1.0, 2.0, 3.0, 4.0], &mut grad_in)
+            .expect("slice backward");
+        assert_eq!(grad_in, vec![1.0, 2.0, 0.0, 3.0, 4.0, 0.0]);
+    }
+
+    #[test]
+    fn cat_joins_and_splits_gradients() {
+        let a = [1.0f32, 2.0];
+        let b = [3.0f32, 4.0, 5.0];
+        let mut out = vec![0.0f32; 5];
+        cat_forward(&a, &[2], &b, &[3], 0, &mut out).expect("cat");
+        assert_eq!(out, vec![1.0, 2.0, 3.0, 4.0, 5.0]);
+
+        let mut grad_a = vec![0.0f32; 2];
+        let mut grad_b = vec![0.0f32; 3];
+        cat_backward(&[2], &[3], 0, &[1.0, 2.0, 3.0, 4.0, 5.0], &mut grad_a, &mut grad_b)
+            .expect("cat backward");
+        assert_eq!(grad_a, vec![1.0, 2.0]);
+        assert_eq!(grad_b, vec![3.0, 4.0, 5.0]);
+    }
+
+    #[test]
+    fn gather_selects_and_accumulates_repeats() {
+        // [[10,20,30],[40,50,60]] 沿 dim=1 取 [2,0]
+        let input = [10.0f32, 20.0, 30.0, 40.0, 50.0, 60.0];
+        let mut out = vec![0.0f32; 4];
+        gather_forward(&input, &[2, 3], 1, &[2.0, 0.0], &mut out).expect("gather");
+        assert_eq!(out, vec![30.0, 10.0, 60.0, 40.0]);
+
+        // 重复索引 1 两次，梯度要叠加
+        let mut grad_in = vec![0.0f32; 6];
+        gather_backward(&[2, 3], 1, &[1.0, 1.0], &[1.0, 2.0, 3.0, 4.0], &mut grad_in)
+            .expect("gather backward");
+        assert_eq!(grad_in, vec![0.0, 3.0, 0.0, 0.0, 7.0, 0.0]);
+    }
+
+    #[test]
+    fn index_ops_reject_bad_input() {
+        let mut out = vec![0.0f32; 4];
+        // 区间越界
+        assert!(slice_forward(&[1.0, 2.0, 3.0, 4.0], &[2, 2], 1, 1, 5, &mut out).is_err());
+        // 拼接时非拼接维不一致：[2,2] 与 [1,3] 沿 dim=0 拼，第二维 2 != 3
+        let mut cat_out = vec![0.0f32; 5];
+        assert!(cat_forward(&[1.0, 2.0, 3.0, 4.0], &[2, 2], &[5.0, 6.0, 7.0], &[1, 3], 0,
+                            &mut cat_out).is_err());
+        // 索引非整数
+        assert!(gather_forward(&[1.0, 2.0], &[2], 0, &[1.5], &mut [0.0f32; 1]).is_err());
+        // 索引越界
+        assert!(gather_forward(&[1.0, 2.0], &[2], 0, &[2.0], &mut [0.0f32; 1]).is_err());
     }
 }

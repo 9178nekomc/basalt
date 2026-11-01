@@ -218,6 +218,91 @@ class PrimitiveOpsTest {
     }
 
     @Test
+    void sliceTakesARangeAndOnlyThatRegionGetsGradient() {
+        try (Basalt engine = Basalt.create()) {
+            // [[1,2,3],[4,5,6]] 取 dim=1 的 [0,2)
+            Tensor x = engine.tensor(new float[]{1f, 2f, 3f, 4f, 5f, 6f}, 2, 3);
+            Tensor part = x.slice(1, 0, 2);
+            assertArrayEquals(new int[]{2, 2}, part.shape());
+            assertArrayEquals(new float[]{1f, 2f, 4f, 5f}, part.data(), 1e-6f);
+
+            Tensor full = engine.tensor(new float[]{1f, 2f, 3f, 4f, 5f, 6f}, 2, 3)
+                    .slice(1, 1, 3);
+            assertArrayEquals(new float[]{2f, 3f, 5f, 6f}, full.data(), 1e-6f);
+
+            checkGradient(engine, new double[]{1.0, 2.0, 3.0, 4.0, 5.0, 6.0},
+                    t -> t.reshape(2, 3).slice(1, 1, 3));
+        }
+    }
+
+    @Test
+    void catJoinsAlongADimensionAndSplitsGradients() {
+        try (Basalt engine = Basalt.create()) {
+            Tensor a = engine.tensor(new float[]{1f, 2f}, 1, 2);
+            Tensor b = engine.tensor(new float[]{3f, 4f, 5f, 6f}, 2, 2);
+            Tensor joined = a.cat(b, 0);
+            assertArrayEquals(new int[]{3, 2}, joined.shape());
+            assertArrayEquals(new float[]{1f, 2f, 3f, 4f, 5f, 6f}, joined.data(), 1e-6f);
+
+            // 沿最后一维拼接
+            Tensor left = engine.tensor(new float[]{1f, 2f, 3f, 4f}, 2, 2);
+            Tensor right = engine.tensor(new float[]{5f, 6f}, 2, 1);
+            Tensor wide = left.cat(right, 1);
+            assertArrayEquals(new int[]{2, 3}, wide.shape());
+            assertArrayEquals(new float[]{1f, 2f, 5f, 3f, 4f, 6f}, wide.data(), 1e-6f);
+
+            checkGradient(engine, new double[]{1.0, 2.0, 3.0, 4.0},
+                    t -> t.reshape(2, 2).cat(t.reshape(2, 2), 1));
+        }
+    }
+
+    @Test
+    void indexSelectPicksRowsAndAccumulatesDuplicates() {
+        try (Basalt engine = Basalt.create()) {
+            Tensor x = engine.tensor(new float[]{10f, 20f, 30f, 40f, 50f, 60f}, 2, 3);
+            Tensor picked = x.indexSelect(1, new int[]{2, 0});
+            assertArrayEquals(new int[]{2, 2}, picked.shape());
+            assertArrayEquals(new float[]{30f, 10f, 60f, 40f}, picked.data(), 1e-6f);
+
+            // 重复索引：梯度要叠加到同一行
+            checkGradient(engine, new double[]{1.0, 2.0, 3.0, 4.0, 5.0, 6.0},
+                    t -> t.reshape(2, 3).indexSelect(1, new int[]{1, 1}));
+        }
+    }
+
+    @Test
+    void indexingOpsRejectBadArguments() {
+        try (Basalt engine = Basalt.create()) {
+            Tensor x = engine.tensor(new float[]{1f, 2f, 3f, 4f}, 2, 2);
+            assertThrows(IllegalArgumentException.class, () -> x.slice(1, 1, 5));
+            assertThrows(IllegalArgumentException.class, () -> x.slice(1, 2, 1));
+            assertThrows(IllegalArgumentException.class, () -> x.indexSelect(1, new int[]{2}));
+            assertThrows(IllegalArgumentException.class, () -> x.indexSelect(1, new int[0]));
+            Tensor mismatched = engine.tensor(new float[]{1f, 2f, 3f}, 1, 3);
+            assertThrows(IllegalArgumentException.class, () -> x.cat(mismatched, 0));
+        }
+    }
+
+    @Test
+    void attentionHeadSplitAndMergeRoundTrips() {
+        try (Basalt engine = Basalt.create()) {
+            // [batch=1, seq=2, dim=4] 拆成两个头，再拼回去
+            Tensor x = engine.tensor(new float[]{
+                    1f, 2f, 3f, 4f,
+                    5f, 6f, 7f, 8f,
+            }, 1, 2, 4);
+
+            Tensor headA = x.slice(2, 0, 2);
+            Tensor headB = x.slice(2, 2, 4);
+            assertArrayEquals(new int[]{1, 2, 2}, headA.shape());
+
+            Tensor merged = headA.cat(headB, 2);
+            assertArrayEquals(x.shape(), merged.shape());
+            assertArrayEquals(x.data(), merged.data(), 1e-6f);
+        }
+    }
+
+    @Test
     void rejectsCrossContextOperands() {
         try (Basalt first = Basalt.create(); Basalt second = Basalt.create()) {
             Tensor left = first.tensor(new float[]{1f, 2f}, 2);
