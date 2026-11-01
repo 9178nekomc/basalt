@@ -367,7 +367,6 @@ pub extern "system" fn Java_basalt_nativebridge_NativeBindings_tensorGrad(
 }
 
 #[no_mangle]
-#[no_mangle]
 pub extern "system" fn Java_basalt_nativebridge_NativeBindings_transferTensor(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,
@@ -399,6 +398,7 @@ pub extern "system" fn Java_basalt_nativebridge_NativeBindings_tensorDevice(
     })
 }
 
+#[no_mangle]
 pub extern "system" fn Java_basalt_nativebridge_NativeBindings_tensorShape(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,

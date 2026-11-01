@@ -58,19 +58,22 @@ pub fn matmul(
         return;
     }
 
-    // 临时开关：用于定位崩溃是出在分块逻辑还是微内核
-    if std::env::var("BASALT_GEMM_SCALAR").is_ok() {
-        scalar(a, b, c, m, k, n, layout, pool);
-        return;
+    // 开关：用于在分块逻辑与微内核之间做二分定位，也可在没有 AVX2 的机器上强制标量
+    let force_scalar = std::env::var("BASALT_GEMM_SCALAR").is_ok();
+
+    #[cfg(target_arch = "x86_64")]
+    {
+        if !force_scalar && avx2_available() {
+            // SAFETY: guarded by the runtime feature check above.
+            unsafe { blocked(a, b, c, m, k, n, layout, pool) };
+            return;
+        }
     }
-    if cfg!(target_arch = "x86_64") && avx2_available() {
-        // SAFETY: guarded by the runtime feature check above.
-        unsafe { blocked(a, b, c, m, k, n, layout, pool) }
-    } else {
-        scalar(a, b, c, m, k, n, layout, pool);
-    }
+    let _ = force_scalar;
+    scalar(a, b, c, m, k, n, layout, pool);
 }
 
+#[cfg(target_arch = "x86_64")]
 fn avx2_available() -> bool {
     std::is_x86_feature_detected!("avx2") && std::is_x86_feature_detected!("fma")
 }
@@ -105,6 +108,7 @@ fn pack_b(b: &[f32], k: usize, n: usize, pc: usize, jc: usize, kc: usize, nc: us
 /// # Safety
 /// Caller must guarantee AVX2 + FMA, that `a` has `6 * lda` readable floats,
 /// `panel` has `k * nc` readable floats, and `c` has `6 * ldc` writable floats.
+#[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2,fma")]
 unsafe fn kernel_6x16(
     k: usize,
@@ -169,6 +173,7 @@ unsafe fn kernel_6x16(
 
 /// # Safety
 /// Caller must guarantee AVX2 + FMA and the same bounds as [`kernel_6x16`].
+#[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2,fma")]
 unsafe fn blocked(
     a: &[f32],
