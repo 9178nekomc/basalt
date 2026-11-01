@@ -2107,6 +2107,184 @@
             },
             {
               "kind": "method",
+              "name": "sum",
+              "signature": "Tensor sum(int dimension)",
+              "key": "sum(int)",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "dimension"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "沿 `dimension` 求和",
+                "body": [
+                  "rank-1 输入归约成形状 [1]，与 sumAll 一致。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "sum",
+              "signature": "Tensor sum(int dimension, boolean keepdim)",
+              "key": "sum(int, boolean)",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "dimension"
+                },
+                {
+                  "type": "boolean",
+                  "name": "keepdim"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "沿 `dimension` 求和，可保留维度",
+                "body": [
+                  "keepdim 为真时该维保留成长度 1，便于后续广播。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "mean",
+              "signature": "Tensor mean(int dimension)",
+              "key": "mean(int)",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "dimension"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "沿 `dimension` 求平均",
+                "body": [
+                  "反向把梯度按该维长度均分。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "mean",
+              "signature": "Tensor mean(int dimension, boolean keepdim)",
+              "key": "mean(int, boolean)",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "dimension"
+                },
+                {
+                  "type": "boolean",
+                  "name": "keepdim"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "沿 `dimension` 求平均，可保留维度",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "name": "max",
+              "signature": "Tensor max(int dimension)",
+              "key": "max(int)",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "dimension"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "沿 `dimension` 取最大值",
+                "body": [
+                  "反向只把梯度给到该组第一个最大值的位置；并列时取最先出现的。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "max",
+              "signature": "Tensor max(int dimension, boolean keepdim)",
+              "key": "max(int, boolean)",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [
+                {
+                  "type": "int",
+                  "name": "dimension"
+                },
+                {
+                  "type": "boolean",
+                  "name": "keepdim"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "沿 `dimension` 取最大值，可保留维度",
+                "body": [
+                  "配合 sub 使用即可写出数值稳定的 softmax。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
               "name": "meanAll",
               "signature": "Tensor meanAll()",
               "key": "meanAll()",

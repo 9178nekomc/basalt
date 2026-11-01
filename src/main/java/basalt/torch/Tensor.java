@@ -220,6 +220,74 @@ public final class Tensor implements AutoCloseable {
         return output;
     }
 
+    /** 沿 `dimension` 求和；rank-1 输入归约成 [1]。 */
+    public Tensor sum(int dimension) {
+        return reduceDim(CommandQueueBuilder.OP_SUM_DIM, dimension, false);
+    }
+
+    /** 沿 `dimension` 求和，`keepdim` 为真时该维保留成长度 1。 */
+    public Tensor sum(int dimension, boolean keepdim) {
+        return reduceDim(CommandQueueBuilder.OP_SUM_DIM, dimension, keepdim);
+    }
+
+    /** 沿 `dimension` 求平均。 */
+    public Tensor mean(int dimension) {
+        return reduceDim(CommandQueueBuilder.OP_MEAN_DIM, dimension, false);
+    }
+
+    /** 沿 `dimension` 求平均，`keepdim` 为真时该维保留成长度 1。 */
+    public Tensor mean(int dimension, boolean keepdim) {
+        return reduceDim(CommandQueueBuilder.OP_MEAN_DIM, dimension, keepdim);
+    }
+
+    /**
+     * 沿 `dimension` 取最大值。
+     *
+     * <p>反向只把梯度给到该组第一个最大值的位置，并列时取最先出现的那个。</p>
+     */
+    public Tensor max(int dimension) {
+        return reduceDim(CommandQueueBuilder.OP_MAX_DIM, dimension, false);
+    }
+
+    /** 沿 `dimension` 取最大值，`keepdim` 为真时该维保留成长度 1。 */
+    public Tensor max(int dimension, boolean keepdim) {
+        return reduceDim(CommandQueueBuilder.OP_MAX_DIM, dimension, keepdim);
+    }
+
+    /** 按轴归约的统一入口：算输出形状、分配、入队、执行。 */
+    private Tensor reduceDim(int op, int dimension, boolean keepdim) {
+        int[] input = shape();
+        if (dimension < 0 || dimension >= input.length) {
+            throw new IllegalArgumentException("dimension " + dimension
+                    + " out of range for rank " + input.length);
+        }
+        int[] outputShape;
+        if (keepdim) {
+            outputShape = input.clone();
+            outputShape[dimension] = 1;
+        } else {
+            outputShape = new int[input.length - 1];
+            for (int index = 0, target = 0; index < input.length; index++) {
+                if (index != dimension) {
+                    outputShape[target++] = input[index];
+                }
+            }
+            if (outputShape.length == 0) {
+                outputShape = new int[]{1};   // rank-1 归约退化成 [1]
+            }
+        }
+        Tensor output = zeros(context, outputShape);
+        CommandQueueBuilder queue = new CommandQueueBuilder(context);
+        switch (op) {
+            case CommandQueueBuilder.OP_SUM_DIM -> queue.sumDim(handle, output.handle, dimension, keepdim);
+            case CommandQueueBuilder.OP_MEAN_DIM -> queue.meanDim(handle, output.handle, dimension, keepdim);
+            case CommandQueueBuilder.OP_MAX_DIM -> queue.maxDim(handle, output.handle, dimension, keepdim);
+            default -> throw new IllegalArgumentException("unsupported reduce op code: " + op);
+        }
+        queue.executeAndClear();
+        return output;
+    }
+
     /** 全部元素求平均，输出形状 [1]。 */
     public Tensor meanAll() {
         Tensor output = zeros(context, 1);

@@ -60,6 +60,10 @@ public final class CommandQueueBuilder implements AutoCloseable {
     public static final int OP_SUM_ALL = 30;
     public static final int OP_MEAN_ALL = 31;
 
+    public static final int OP_SUM_DIM = 32;
+    public static final int OP_MEAN_DIM = 33;
+    public static final int OP_MAX_DIM = 34;
+
     public static final int OP_GROUP_NORM = 22;
 
     public static final int COMMAND_BYTES = 128;
@@ -150,6 +154,35 @@ public final class CommandQueueBuilder implements AutoCloseable {
 
     public synchronized CommandQueueBuilder meanAll(NativeTensorHandle input, NativeTensorHandle output) {
         return unary(OP_MEAN_ALL, input, output);
+    }
+
+    public synchronized CommandQueueBuilder sumDim(NativeTensorHandle input, NativeTensorHandle output,
+                                      int dimension, boolean keepdim) {
+        return reduceDim(OP_SUM_DIM, input, output, dimension, keepdim);
+    }
+
+    public synchronized CommandQueueBuilder meanDim(NativeTensorHandle input, NativeTensorHandle output,
+                                       int dimension, boolean keepdim) {
+        return reduceDim(OP_MEAN_DIM, input, output, dimension, keepdim);
+    }
+
+    public synchronized CommandQueueBuilder maxDim(NativeTensorHandle input, NativeTensorHandle output,
+                                      int dimension, boolean keepdim) {
+        return reduceDim(OP_MAX_DIM, input, output, dimension, keepdim);
+    }
+
+    private CommandQueueBuilder reduceDim(int op, NativeTensorHandle input, NativeTensorHandle output,
+                                          int dimension, boolean keepdim) {
+        BasaltRuntimeException.requireNonNull(input, "input");
+        BasaltRuntimeException.requireNonNull(output, "output");
+        requireSameContext(input, output);
+        if (dimension < 0) {
+            throw new IllegalArgumentException("dimension must be non-negative, got " + dimension);
+        }
+        begin(op, input.ptr(), 0, 0, 0, 0, output.ptr());
+        putInt(0, dimension);
+        putInt(1, keepdim ? 1 : 0);
+        return this;
     }
 
     public synchronized CommandQueueBuilder mse(NativeTensorHandle prediction, NativeTensorHandle target,

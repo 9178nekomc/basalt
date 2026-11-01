@@ -490,6 +490,75 @@
             },
             {
               "kind": "field",
+              "name": "OP_SUM_DIM",
+              "signature": "int OP_SUM_DIM = 32",
+              "key": "OP_SUM_DIM",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "32",
+              "doc": {
+                "summary": "算子码 32：沿指定维求和，对应 Tensor.sum(dim)。",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "OP_MEAN_DIM",
+              "signature": "int OP_MEAN_DIM = 33",
+              "key": "OP_MEAN_DIM",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "33",
+              "doc": {
+                "summary": "算子码 33：沿指定维求平均，对应 Tensor.mean(dim)。",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "OP_MAX_DIM",
+              "signature": "int OP_MAX_DIM = 34",
+              "key": "OP_MAX_DIM",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "34",
+              "doc": {
+                "summary": "算子码 34：沿指定维取最大值，对应 Tensor.max(dim)。",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
               "key": "OP_GROUP_NORM",
               "signature": "int OP_GROUP_NORM = 22",
               "params": [],
@@ -1102,6 +1171,129 @@
                 "summary": "全量求平均",
                 "body": [
                   "输出必须是单元素张量。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "sumDim",
+              "signature": "CommandQueueBuilder sumDim(NativeTensorHandle input, NativeTensorHandle output, int dimension, boolean keepdim)",
+              "key": "sumDim(NativeTensorHandle, NativeTensorHandle, int, boolean)",
+              "return_type": "CommandQueueBuilder",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                },
+                {
+                  "type": "int",
+                  "name": "dimension"
+                },
+                {
+                  "type": "boolean",
+                  "name": "keepdim"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "synchronized"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "沿维求和",
+                "body": [
+                  "dimension 写进 attrs[0]，keepdim 写进 attrs[1]；输出形状由调用方算好。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "meanDim",
+              "signature": "CommandQueueBuilder meanDim(NativeTensorHandle input, NativeTensorHandle output, int dimension, boolean keepdim)",
+              "key": "meanDim(NativeTensorHandle, NativeTensorHandle, int, boolean)",
+              "return_type": "CommandQueueBuilder",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                },
+                {
+                  "type": "int",
+                  "name": "dimension"
+                },
+                {
+                  "type": "boolean",
+                  "name": "keepdim"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "synchronized"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "沿维求平均",
+                "body": [
+                  "同上；反向时梯度按该维长度均分。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "maxDim",
+              "signature": "CommandQueueBuilder maxDim(NativeTensorHandle input, NativeTensorHandle output, int dimension, boolean keepdim)",
+              "key": "maxDim(NativeTensorHandle, NativeTensorHandle, int, boolean)",
+              "return_type": "CommandQueueBuilder",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                },
+                {
+                  "type": "int",
+                  "name": "dimension"
+                },
+                {
+                  "type": "boolean",
+                  "name": "keepdim"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "synchronized"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "沿维取最大值",
+                "body": [
+                  "反向只把梯度给到该组第一个最大值的位置。"
                 ]
               }
             },

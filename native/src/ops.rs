@@ -467,6 +467,123 @@ pub fn binary_backward(
     Ok(())
 }
 
+/// 沿单一维度归约。输出长度是 outer * inner（keepdim 只改形状，不改元素数）。
+///
+/// 布局按行主序：[outer, axis, inner]。每个 (outer, inner) 组合是一组要折叠的数据。
+pub fn reduce_dim_forward(
+    op: crate::graph::Op,
+    input: &[f32],
+    shape: &[usize],
+    dim: usize,
+    out: &mut [f32],
+) -> Result<()> {
+    use crate::graph::Op;
+    if dim >= shape.len() {
+        return Err(NativeError::shape(format!(
+            "reduction dim {dim} out of range for rank {}",
+            shape.len()
+        )));
+    }
+    let axis = shape[dim];
+    if axis == 0 {
+        return Err(NativeError::shape("cannot reduce an empty axis"));
+    }
+    let outer: usize = shape[..dim].iter().product();
+    let inner: usize = shape[dim + 1..].iter().product();
+    if input.len() != outer * axis * inner {
+        return Err(NativeError::shape("reduce input length mismatch"));
+    }
+    if out.len() != outer * inner {
+        return Err(NativeError::shape("reduce output length mismatch"));
+    }
+
+    for o in 0..outer {
+        for i in 0..inner {
+            let base = o * axis * inner + i;
+            let mut acc = if op == Op::MaxDim {
+                f32::NEG_INFINITY
+            } else {
+                0.0f32
+            };
+            for k in 0..axis {
+                let value = input[base + k * inner];
+                match op {
+                    Op::SumDim | Op::MeanDim => acc += value,
+                    Op::MaxDim => {
+                        if value > acc {
+                            acc = value;
+                        }
+                    }
+                    _ => return Err(NativeError::invalid("reduce_dim_forward: wrong op")),
+                }
+            }
+            out[o * inner + i] = if op == Op::MeanDim {
+                acc / axis as f32
+            } else {
+                acc
+            };
+        }
+    }
+    Ok(())
+}
+
+/// 按轴归约的反向。`grad_in` 已经清零，这里累加。
+///
+/// Max 的反向只把梯度给到该组第一个最大值的位置（并列时取最先出现的）。
+pub fn reduce_dim_backward(
+    op: crate::graph::Op,
+    input: &[f32],
+    shape: &[usize],
+    dim: usize,
+    grad_out: &[f32],
+    grad_in: &mut [f32],
+) -> Result<()> {
+    use crate::graph::Op;
+    if dim >= shape.len() {
+        return Err(NativeError::shape("reduce_dim_backward: dim out of range"));
+    }
+    let axis = shape[dim];
+    let outer: usize = shape[..dim].iter().product();
+    let inner: usize = shape[dim + 1..].iter().product();
+    if grad_out.len() != outer * inner || grad_in.len() != outer * axis * inner {
+        return Err(NativeError::shape("reduce_dim_backward length mismatch"));
+    }
+
+    for o in 0..outer {
+        for i in 0..inner {
+            let base = o * axis * inner + i;
+            let gradient = grad_out[o * inner + i];
+            match op {
+                Op::SumDim => {
+                    for k in 0..axis {
+                        grad_in[base + k * inner] += gradient;
+                    }
+                }
+                Op::MeanDim => {
+                    let share = gradient / axis as f32;
+                    for k in 0..axis {
+                        grad_in[base + k * inner] += share;
+                    }
+                }
+                Op::MaxDim => {
+                    let mut best = 0usize;
+                    let mut best_value = input[base];
+                    for k in 1..axis {
+                        let value = input[base + k * inner];
+                        if value > best_value {
+                            best_value = value;
+                            best = k;
+                        }
+                    }
+                    grad_in[base + best * inner] += gradient;
+                }
+                _ => return Err(NativeError::invalid("reduce_dim_backward: wrong op")),
+            }
+        }
+    }
+    Ok(())
+}
+
 /// 全量归约：把任意形状压成一个标量。
 ///
 /// 没有归约就没法手写 softmax 的分母、也没法把任意损失归一化——
@@ -947,5 +1064,60 @@ mod tests {
         use crate::graph::Op;
         let mut out = vec![0.0f32; 2];
         assert!(reduce_forward(Op::SumAll, &[1.0, 2.0], &mut out).is_err());
+    }
+    #[test]
+    fn reduce_dim_sum_mean_max_forward() {
+        use crate::graph::Op;
+        // [2,3] 按行主序：[[1,2,3],[4,5,6]]
+        let input = [1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0];
+        let mut out = vec![0.0f32; 2];
+
+        reduce_dim_forward(Op::SumDim, &input, &[2, 3], 1, &mut out).expect("sum dim1");
+        assert_eq!(out, vec![6.0, 15.0]);
+
+        reduce_dim_forward(Op::MeanDim, &input, &[2, 3], 1, &mut out).expect("mean dim1");
+        assert_eq!(out, vec![2.0, 5.0]);
+
+        reduce_dim_forward(Op::MaxDim, &input, &[2, 3], 1, &mut out).expect("max dim1");
+        assert_eq!(out, vec![3.0, 6.0]);
+
+        // 按列归约，输出长度是 inner = 3
+        let mut col = vec![0.0f32; 3];
+        reduce_dim_forward(Op::SumDim, &input, &[2, 3], 0, &mut col).expect("sum dim0");
+        assert_eq!(col, vec![5.0, 7.0, 9.0]);
+    }
+
+    #[test]
+    fn reduce_dim_backward_routes_gradients() {
+        use crate::graph::Op;
+        let input = [1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0];
+
+        let mut grad_in = vec![0.0f32; 6];
+        reduce_dim_backward(Op::SumDim, &input, &[2, 3], 1, &[10.0, 20.0], &mut grad_in)
+            .expect("sum backward");
+        assert_eq!(grad_in, vec![10.0, 10.0, 10.0, 20.0, 20.0, 20.0]);
+
+        let mut mean_grad = vec![0.0f32; 6];
+        reduce_dim_backward(Op::MeanDim, &input, &[2, 3], 1, &[3.0, 6.0], &mut mean_grad)
+            .expect("mean backward");
+        assert_eq!(mean_grad, vec![1.0, 1.0, 1.0, 2.0, 2.0, 2.0]);
+
+        // max 只给到该行最大值位置：第 0 行是下标 2，第 1 行是下标 2
+        let mut max_grad = vec![0.0f32; 6];
+        reduce_dim_backward(Op::MaxDim, &input, &[2, 3], 1, &[1.0, 1.0], &mut max_grad)
+            .expect("max backward");
+        assert_eq!(max_grad, vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0]);
+    }
+
+    #[test]
+    fn reduce_dim_rejects_bad_shapes() {
+        use crate::graph::Op;
+        let input = [1.0f32, 2.0, 3.0, 4.0];
+        let mut out = vec![0.0f32; 2];
+        // dim 越界
+        assert!(reduce_dim_forward(Op::SumDim, &input, &[2, 2], 5, &mut out).is_err());
+        // 输出长度不对
+        let mut wrong = vec![0.0f32; 3];
+        assert!(reduce_dim_forward(Op::SumDim, &input, &[2, 2], 1, &mut wrong).is_err());
     }
 }

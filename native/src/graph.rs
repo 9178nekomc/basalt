@@ -40,6 +40,9 @@ pub enum Op {
     Pow,
     SumAll,
     MeanAll,
+    SumDim,
+    MeanDim,
+    MaxDim,
 }
 
 impl Op {
@@ -76,6 +79,9 @@ impl Op {
             29 => Ok(Self::Pow),
             30 => Ok(Self::SumAll),
             31 => Ok(Self::MeanAll),
+            32 => Ok(Self::SumDim),
+            33 => Ok(Self::MeanDim),
+            34 => Ok(Self::MaxDim),
             other => Err(NativeError::unsupported(format!(
                 "unknown op code {other}; expected 1..=29"
             ))),
@@ -115,6 +121,9 @@ impl Op {
             Self::Pow => "Pow",
             Self::SumAll => "SumAll",
             Self::MeanAll => "MeanAll",
+            Self::SumDim => "SumDim",
+            Self::MeanDim => "MeanDim",
+            Self::MaxDim => "MaxDim",
         }
     }
 
@@ -136,7 +145,10 @@ impl Op {
             | Self::Permute
             | Self::Reshape
             | Self::SumAll
-            | Self::MeanAll => 1,
+            | Self::MeanAll
+            | Self::SumDim
+            | Self::MeanDim
+            | Self::MaxDim => 1,
             Self::MatMul
             | Self::Add
             | Self::Sub
@@ -157,6 +169,11 @@ impl Op {
 #[derive(Debug, Clone)]
 pub enum Attrs {
     None,
+    /// 按轴归约：沿 `dim` 压掉一维，`keepdim` 时保留成长度 1。
+    Reduce {
+        dim: usize,
+        keepdim: bool,
+    },
     MatMul {
         m: usize,
         k: usize,

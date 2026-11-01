@@ -61,6 +61,31 @@ fn input_addresses(command: &OpCommand, arity: usize) -> Result<Vec<usize>> {
     Ok(inputs)
 }
 
+/// 按轴归约后的形状：keepdim 时该维变 1，否则整维去掉。
+fn reduced_shape(shape: &[usize], dim: usize, keepdim: bool) -> Result<Vec<usize>> {
+    if dim >= shape.len() {
+        return Err(NativeError::shape(format!(
+            "reduction dim {dim} out of range for rank {}",
+            shape.len()
+        )));
+    }
+    let mut out = Vec::with_capacity(shape.len());
+    for (index, size) in shape.iter().enumerate() {
+        if index == dim {
+            if keepdim {
+                out.push(1);
+            }
+        } else {
+            out.push(*size);
+        }
+    }
+    // 库里没有 0 维张量：rank-1 归约后统一折成 [1]
+    if out.is_empty() {
+        out.push(1);
+    }
+    Ok(out)
+}
+
 fn tensor_shape_of(tensor: &Arc<RwLock<NativeTensor>>) -> Result<Vec<usize>> {
     Ok(tensor
         .read()
@@ -254,6 +279,40 @@ fn execute_command(
                 inputs,
                 output: command.output,
                 attrs: Attrs::None,
+            });
+        }
+        Op::SumDim | Op::MeanDim | Op::MaxDim => {
+            let input = context.tensor(command.input_a)?;
+            let input_shape = tensor_shape_of(&input)?;
+            let dim = command.attrs[0].max(0) as usize;
+            let keepdim = command.attrs[1] != 0;
+            let expected = reduced_shape(&input_shape, dim, keepdim)?;
+            if output_shape != expected || output_len != expected.iter().product::<usize>() {
+                return Err(NativeError::shape(format!(
+                    "{} output shape must be {:?}, got {:?}",
+                    op.name(),
+                    expected,
+                    output_shape
+                )));
+            }
+            let input_guard = input
+                .read()
+                .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+            let mut output_guard = output
+                .write()
+                .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+            ops::reduce_dim_forward(
+                op,
+                &input_guard.data,
+                &input_shape,
+                dim,
+                &mut output_guard.data,
+            )?;
+            graph.push_unchecked(Node {
+                op,
+                inputs,
+                output: command.output,
+                attrs: Attrs::Reduce { dim, keepdim },
             });
         }
         Op::Gelu | Op::Silu => {
@@ -1001,6 +1060,32 @@ pub fn backward(context: &Context, root: jlong, threads: jint) -> Result<()> {
                 ops::reduce_backward(
                     node.op,
                     input_guard.data.len(),
+                    &grad_output,
+                    &mut grad_input,
+                )?;
+                drop(input_guard);
+                accumulate(&mut gradients, node.inputs[0], grad_input);
+            }
+            Op::SumDim | Op::MeanDim | Op::MaxDim => {
+                let dim = match &node.attrs {
+                    Attrs::Reduce { dim, .. } => *dim,
+                    _ => {
+                        return Err(NativeError::invalid(
+                            "reduce backward requires Reduce attrs",
+                        ))
+                    }
+                };
+                let input = context.tensor(node.inputs[0])?;
+                let input_guard = input
+                    .read()
+                    .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+                let shape = tensor_shape_of(&input)?;
+                let mut grad_input = vec![0.0f32; input_guard.data.len()];
+                ops::reduce_dim_backward(
+                    node.op,
+                    &input_guard.data,
+                    &shape,
+                    dim,
                     &grad_output,
                     &mut grad_input,
                 )?;

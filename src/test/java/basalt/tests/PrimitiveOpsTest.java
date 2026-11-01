@@ -4,6 +4,7 @@ import basalt.Basalt;
 import basalt.torch.Tensor;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -142,6 +143,77 @@ class PrimitiveOpsTest {
             }
             assertEquals(1.0, total, 1e-5, "手写 softmax 的分布必须归一");
             assertTrue(out[2] > out[1] && out[1] > out[0], "大的输入要有大的概率");
+        }
+    }
+
+    @Test
+    void axisReductionsProduceTheRightValuesAndShapes() {
+        try (Basalt engine = Basalt.create()) {
+            // [[1,2,3],[4,5,6]]
+            Tensor x = engine.tensor(new float[]{1f, 2f, 3f, 4f, 5f, 6f}, 2, 3);
+
+            Tensor rowSum = x.sum(1);
+            assertArrayEquals(new int[]{2}, rowSum.shape());
+            assertArrayEquals(new float[]{6f, 15f}, rowSum.data(), 1e-6f);
+
+            Tensor rowSumKeep = x.sum(1, true);
+            assertArrayEquals(new int[]{2, 1}, rowSumKeep.shape());
+
+            Tensor colMean = x.mean(0);
+            assertArrayEquals(new int[]{3}, colMean.shape());
+            assertArrayEquals(new float[]{2.5f, 3.5f, 4.5f}, colMean.data(), 1e-6f);
+
+            Tensor rowMax = x.max(1);
+            assertArrayEquals(new float[]{3f, 6f}, rowMax.data(), 1e-6f);
+
+            // rank-1 归约退化成 [1]，与 sumAll 保持一致
+            Tensor flat = engine.tensor(new float[]{1f, 2f, 3f, 4f}, 4);
+            Tensor total = flat.sum(0);
+            assertArrayEquals(new int[]{1}, total.shape());
+            assertEquals(10.0, total.data()[0], 1e-6);
+        }
+    }
+
+    @Test
+    void reductionsRejectBadDimensions() {
+        try (Basalt engine = Basalt.create()) {
+            Tensor x = engine.tensor(new float[]{1f, 2f, 3f, 4f}, 2, 2);
+            assertThrows(IllegalArgumentException.class, () -> x.sum(5));
+            assertThrows(IllegalArgumentException.class, () -> x.mean(-1));
+        }
+    }
+
+    @Test
+    void numericallyStableSoftmaxFromPrimitives() {
+        try (Basalt engine = Basalt.create()) {
+            // 输入放大到 1000 量级：不先减最大值的话 exp 会溢出成 inf
+            Tensor x = engine.tensor(new float[]{1000f, 1001f, 1002f}, 1, 3);
+            Tensor shifted = x.sub(x.max(1, true));
+            Tensor numer = shifted.exp();
+            Tensor denom = numer.sum(1, true);
+            float[] probs = numer.div(denom).data();
+
+            double total = 0;
+            for (float value : probs) {
+                assertTrue(Float.isFinite(value), "概率不能是 inf/NaN");
+                total += value;
+            }
+            assertEquals(1.0, total, 1e-5);
+            assertTrue(probs[2] > probs[1] && probs[1] > probs[0]);
+        }
+    }
+
+    @Test
+    void gradientsFlowThroughAxisReductions() {
+        try (Basalt engine = Basalt.create()) {
+            // 通过 sum(1) 再求和，等价于对全部元素求和
+            checkGradient(engine, new double[]{0.5, 1.2, 2.5, -0.7},
+                    x -> x.reshape(2, 2).sum(1));
+            checkGradient(engine, new double[]{0.5, 1.2, 2.5, -0.7},
+                    x -> x.reshape(2, 2).mean(0));
+            // max 的梯度是分段常数：选互不相等的值，避免并列
+            checkGradient(engine, new double[]{0.5, 1.2, 2.5, -0.7},
+                    x -> x.reshape(2, 2).max(1));
         }
     }
 
