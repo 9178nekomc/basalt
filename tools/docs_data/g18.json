@@ -283,6 +283,213 @@
             },
             {
               "kind": "field",
+              "name": "OP_EXP",
+              "signature": "int OP_EXP = 23",
+              "key": "OP_EXP",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "23",
+              "doc": {
+                "summary": "算子码 23：逐元素指数，对应 Tensor.exp()。",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "OP_LOG",
+              "signature": "int OP_LOG = 24",
+              "key": "OP_LOG",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "24",
+              "doc": {
+                "summary": "算子码 24：逐元素自然对数，对应 Tensor.log()。",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "OP_SQRT",
+              "signature": "int OP_SQRT = 25",
+              "key": "OP_SQRT",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "25",
+              "doc": {
+                "summary": "算子码 25：逐元素平方根，对应 Tensor.sqrt()。",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "OP_ABS",
+              "signature": "int OP_ABS = 26",
+              "key": "OP_ABS",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "26",
+              "doc": {
+                "summary": "算子码 26：逐元素绝对值，对应 Tensor.abs()。",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "OP_NEG",
+              "signature": "int OP_NEG = 27",
+              "key": "OP_NEG",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "27",
+              "doc": {
+                "summary": "算子码 27：逐元素取负，对应 Tensor.neg()。",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "OP_DIV",
+              "signature": "int OP_DIV = 28",
+              "key": "OP_DIV",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "28",
+              "doc": {
+                "summary": "算子码 28：逐元素除法，对应 Tensor.div()。",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "OP_POW",
+              "signature": "int OP_POW = 29",
+              "key": "OP_POW",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "29",
+              "doc": {
+                "summary": "算子码 29：逐元素幂，对应 Tensor.pow()。",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "OP_SUM_ALL",
+              "signature": "int OP_SUM_ALL = 30",
+              "key": "OP_SUM_ALL",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "30",
+              "doc": {
+                "summary": "算子码 30：全量求和，对应 Tensor.sumAll()。",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
+              "name": "OP_MEAN_ALL",
+              "signature": "int OP_MEAN_ALL = 31",
+              "key": "OP_MEAN_ALL",
+              "return_type": "",
+              "type": "int",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "31",
+              "doc": {
+                "summary": "算子码 31：全量求平均，对应 Tensor.meanAll()。",
+                "body": []
+              }
+            },
+            {
+              "kind": "field",
               "key": "OP_GROUP_NORM",
               "signature": "int OP_GROUP_NORM = 22",
               "params": [],
@@ -464,6 +671,80 @@
             },
             {
               "kind": "method",
+              "name": "div",
+              "signature": "CommandQueueBuilder div(NativeTensorHandle left, NativeTensorHandle right, NativeTensorHandle output)",
+              "key": "div(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle)",
+              "return_type": "CommandQueueBuilder",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "left"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "right"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "synchronized"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "逐元素除法",
+                "body": [
+                  "入队 a / b，支持广播。除零得到 inf/NaN。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "pow",
+              "signature": "CommandQueueBuilder pow(NativeTensorHandle left, NativeTensorHandle right, NativeTensorHandle output)",
+              "key": "pow(NativeTensorHandle, NativeTensorHandle, NativeTensorHandle)",
+              "return_type": "CommandQueueBuilder",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "left"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "right"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "synchronized"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "逐元素幂",
+                "body": [
+                  "入队 a^b，支持广播。负底数配非整数指数得到 NaN。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
               "key": "relu(NativeTensorHandle, NativeTensorHandle)",
               "signature": "CommandQueueBuilder relu(NativeTensorHandle input, NativeTensorHandle output)",
               "params": [
@@ -591,6 +872,237 @@
                   "output": "形状须与 input 相同"
                 },
                 "returns": "this，便于链式追加"
+              }
+            },
+            {
+              "kind": "method",
+              "name": "exp",
+              "signature": "CommandQueueBuilder exp(NativeTensorHandle input, NativeTensorHandle output)",
+              "key": "exp(NativeTensorHandle, NativeTensorHandle)",
+              "return_type": "CommandQueueBuilder",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "synchronized"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "指数",
+                "body": [
+                  "入队 e^x。输入输出同形状。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "log",
+              "signature": "CommandQueueBuilder log(NativeTensorHandle input, NativeTensorHandle output)",
+              "key": "log(NativeTensorHandle, NativeTensorHandle)",
+              "return_type": "CommandQueueBuilder",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "synchronized"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "自然对数",
+                "body": [
+                  "入队 ln(x)。x <= 0 时结果为 -inf/NaN，不做保护。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "sqrt",
+              "signature": "CommandQueueBuilder sqrt(NativeTensorHandle input, NativeTensorHandle output)",
+              "key": "sqrt(NativeTensorHandle, NativeTensorHandle)",
+              "return_type": "CommandQueueBuilder",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "synchronized"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "平方根",
+                "body": [
+                  "入队 sqrt(x)。负数得到 NaN。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "abs",
+              "signature": "CommandQueueBuilder abs(NativeTensorHandle input, NativeTensorHandle output)",
+              "key": "abs(NativeTensorHandle, NativeTensorHandle)",
+              "return_type": "CommandQueueBuilder",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "synchronized"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "绝对值",
+                "body": [
+                  "入队 |x|，反向在 0 处取次梯度 0。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "neg",
+              "signature": "CommandQueueBuilder neg(NativeTensorHandle input, NativeTensorHandle output)",
+              "key": "neg(NativeTensorHandle, NativeTensorHandle)",
+              "return_type": "CommandQueueBuilder",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "synchronized"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "取负",
+                "body": [
+                  "入队 -x。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "sumAll",
+              "signature": "CommandQueueBuilder sumAll(NativeTensorHandle input, NativeTensorHandle output)",
+              "key": "sumAll(NativeTensorHandle, NativeTensorHandle)",
+              "return_type": "CommandQueueBuilder",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "synchronized"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "全量求和",
+                "body": [
+                  "输出必须是单元素张量。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "meanAll",
+              "signature": "CommandQueueBuilder meanAll(NativeTensorHandle input, NativeTensorHandle output)",
+              "key": "meanAll(NativeTensorHandle, NativeTensorHandle)",
+              "return_type": "CommandQueueBuilder",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "input"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "output"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "synchronized"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "全量求平均",
+                "body": [
+                  "输出必须是单元素张量。"
+                ]
               }
             },
             {

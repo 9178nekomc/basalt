@@ -49,6 +49,17 @@ public final class CommandQueueBuilder implements AutoCloseable {
     public static final int OP_BATCHED_MATMUL = 19;
     public static final int OP_PERMUTE = 20;
     public static final int OP_RESHAPE = 21;
+    public static final int OP_EXP = 23;
+    public static final int OP_LOG = 24;
+    public static final int OP_SQRT = 25;
+    public static final int OP_ABS = 26;
+    public static final int OP_NEG = 27;
+    public static final int OP_DIV = 28;
+    public static final int OP_POW = 29;
+
+    public static final int OP_SUM_ALL = 30;
+    public static final int OP_MEAN_ALL = 31;
+
     public static final int OP_GROUP_NORM = 22;
 
     public static final int COMMAND_BYTES = 128;
@@ -83,6 +94,16 @@ public final class CommandQueueBuilder implements AutoCloseable {
         return binary(OP_MUL, left, right, output);
     }
 
+    public synchronized CommandQueueBuilder div(NativeTensorHandle left, NativeTensorHandle right,
+                                   NativeTensorHandle output) {
+        return binary(OP_DIV, left, right, output);
+    }
+
+    public synchronized CommandQueueBuilder pow(NativeTensorHandle left, NativeTensorHandle right,
+                                   NativeTensorHandle output) {
+        return binary(OP_POW, left, right, output);
+    }
+
     public synchronized CommandQueueBuilder relu(NativeTensorHandle input, NativeTensorHandle output) {
         return unary(OP_RELU, input, output);
     }
@@ -101,6 +122,34 @@ public final class CommandQueueBuilder implements AutoCloseable {
 
     public synchronized CommandQueueBuilder silu(NativeTensorHandle input, NativeTensorHandle output) {
         return unary(OP_SILU, input, output);
+    }
+
+    public synchronized CommandQueueBuilder exp(NativeTensorHandle input, NativeTensorHandle output) {
+        return unary(OP_EXP, input, output);
+    }
+
+    public synchronized CommandQueueBuilder log(NativeTensorHandle input, NativeTensorHandle output) {
+        return unary(OP_LOG, input, output);
+    }
+
+    public synchronized CommandQueueBuilder sqrt(NativeTensorHandle input, NativeTensorHandle output) {
+        return unary(OP_SQRT, input, output);
+    }
+
+    public synchronized CommandQueueBuilder abs(NativeTensorHandle input, NativeTensorHandle output) {
+        return unary(OP_ABS, input, output);
+    }
+
+    public synchronized CommandQueueBuilder neg(NativeTensorHandle input, NativeTensorHandle output) {
+        return unary(OP_NEG, input, output);
+    }
+
+    public synchronized CommandQueueBuilder sumAll(NativeTensorHandle input, NativeTensorHandle output) {
+        return unary(OP_SUM_ALL, input, output);
+    }
+
+    public synchronized CommandQueueBuilder meanAll(NativeTensorHandle input, NativeTensorHandle output) {
+        return unary(OP_MEAN_ALL, input, output);
     }
 
     public synchronized CommandQueueBuilder mse(NativeTensorHandle prediction, NativeTensorHandle target,

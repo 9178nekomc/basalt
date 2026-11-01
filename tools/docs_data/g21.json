@@ -1971,6 +1971,221 @@
             },
             {
               "kind": "method",
+              "name": "exp",
+              "signature": "Tensor exp()",
+              "key": "exp()",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "逐元素指数 e^x",
+                "body": [
+                  "反向为 e^x，直接复用前向输出，不重算。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "log",
+              "signature": "Tensor log()",
+              "key": "log()",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "逐元素自然对数 ln(x)",
+                "body": [
+                  "x <= 0 时返回 -inf 或 NaN，库不做保护——需要 epsilon 请自己在调用前加。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "sqrt",
+              "signature": "Tensor sqrt()",
+              "key": "sqrt()",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "逐元素平方根",
+                "body": [
+                  "负数得到 NaN。反向为 1 / (2·sqrt(x))。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "abs",
+              "signature": "Tensor abs()",
+              "key": "abs()",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "逐元素绝对值",
+                "body": [
+                  "反向在 0 处取次梯度 0。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "neg",
+              "signature": "Tensor neg()",
+              "key": "neg()",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "逐元素取负",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "name": "sumAll",
+              "signature": "Tensor sumAll()",
+              "key": "sumAll()",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "全部元素求和，输出形状 [1]",
+                "body": [
+                  "手写 softmax 分母、把任意损失压成标量都靠它。反向把标量梯度摊回每个元素。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "meanAll",
+              "signature": "Tensor meanAll()",
+              "key": "meanAll()",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "全部元素求平均，输出形状 [1]",
+                "body": [
+                  "反向把标量梯度除以元素个数后摊回。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "div",
+              "signature": "Tensor div(Tensor other)",
+              "key": "div(Tensor)",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "other"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "逐元素除法，支持广播",
+                "body": [
+                  "除零得到 inf/NaN，不做保护。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "pow",
+              "signature": "Tensor pow(Tensor other)",
+              "key": "pow(Tensor)",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "other"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "逐元素幂 a^b，支持广播",
+                "body": [
+                  "负底数配非整数指数会得到 NaN。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
               "key": "sigmoid()",
               "signature": "Tensor sigmoid()",
               "params": [],

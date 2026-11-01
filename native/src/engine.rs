@@ -168,7 +168,7 @@ fn execute_command(
                 attrs: Attrs::MatMul { m, k, n },
             });
         }
-        Op::Add | Op::Sub | Op::Mul => {
+        Op::Add | Op::Sub | Op::Mul | Op::Div | Op::Pow => {
             let left = context.tensor(command.input_a)?;
             let right = context.tensor(command.input_b)?;
             let left_shape = tensor_shape_of(&left)?;
@@ -209,7 +209,8 @@ fn execute_command(
                 },
             });
         }
-        Op::ReLU | Op::Sigmoid | Op::Tanh => {
+        Op::ReLU | Op::Sigmoid | Op::Tanh | Op::Exp | Op::Log | Op::Sqrt | Op::Abs
+        | Op::Neg => {
             let input = context.tensor(command.input_a)?;
             let input_shape = tensor_shape_of(&input)?;
             if output_shape != input_shape || output_len != input_shape.iter().product::<usize>() {
@@ -226,6 +227,28 @@ fn execute_command(
                 .write()
                 .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
             ops::unary_forward(op, &input_guard.data, &mut output_guard.data)?;
+            graph.push_unchecked(Node {
+                op,
+                inputs,
+                output: command.output,
+                attrs: Attrs::None,
+            });
+        }
+        Op::SumAll | Op::MeanAll => {
+            let input = context.tensor(command.input_a)?;
+            if output_len != 1 {
+                return Err(NativeError::shape(format!(
+                    "{} output must be a single element, got {output_len}",
+                    op.name()
+                )));
+            }
+            let input_guard = input
+                .read()
+                .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+            let mut output_guard = output
+                .write()
+                .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+            ops::reduce_forward(op, &input_guard.data, &mut output_guard.data)?;
             graph.push_unchecked(Node {
                 op,
                 inputs,
@@ -916,7 +939,7 @@ pub fn backward(context: &Context, root: jlong, threads: jint) -> Result<()> {
                 accumulate(&mut gradients, node.inputs[0], grad_left);
                 accumulate(&mut gradients, node.inputs[1], grad_right);
             }
-            Op::Add | Op::Sub | Op::Mul => {
+            Op::Add | Op::Sub | Op::Mul | Op::Div | Op::Pow => {
                 let Attrs::Broadcast { a_shape, b_shape } = &node.attrs else {
                     return Err(NativeError::graph("binary node is missing metadata"));
                 };
@@ -947,7 +970,8 @@ pub fn backward(context: &Context, root: jlong, threads: jint) -> Result<()> {
                 accumulate(&mut gradients, node.inputs[0], grad_left);
                 accumulate(&mut gradients, node.inputs[1], grad_right);
             }
-            Op::ReLU | Op::Sigmoid | Op::Tanh => {
+            Op::ReLU | Op::Sigmoid | Op::Tanh | Op::Exp | Op::Log | Op::Sqrt | Op::Abs
+            | Op::Neg => {
                 let input = context.tensor(node.inputs[0])?;
                 let output = context.tensor(node.output)?;
                 let input_guard = input
@@ -966,6 +990,21 @@ pub fn backward(context: &Context, root: jlong, threads: jint) -> Result<()> {
                 )?;
                 drop(input_guard);
                 drop(output_guard);
+                accumulate(&mut gradients, node.inputs[0], grad_input);
+            }
+            Op::SumAll | Op::MeanAll => {
+                let input = context.tensor(node.inputs[0])?;
+                let input_guard = input
+                    .read()
+                    .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+                let mut grad_input = vec![0.0f32; input_guard.data.len()];
+                ops::reduce_backward(
+                    node.op,
+                    input_guard.data.len(),
+                    &grad_output,
+                    &mut grad_input,
+                )?;
+                drop(input_guard);
                 accumulate(&mut gradients, node.inputs[0], grad_input);
             }
             Op::Gelu | Op::Silu => {

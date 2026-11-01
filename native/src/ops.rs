@@ -296,6 +296,16 @@ pub fn binary_forward(
                     out[index] = a[index] * b[index];
                 }
             }
+            Op::Div => {
+                for index in 0..out.len() {
+                    out[index] = a[index] / b[index];
+                }
+            }
+            Op::Pow => {
+                for index in 0..out.len() {
+                    out[index] = a[index].powf(b[index]);
+                }
+            }
             _ => return Err(NativeError::invalid("binary_forward received a non-binary op")),
         }
         return Ok(());
@@ -306,6 +316,8 @@ pub fn binary_forward(
             Op::Add => out.iter_mut().zip(a).for_each(|(o, x)| *o = *x + scalar),
             Op::Sub => out.iter_mut().zip(a).for_each(|(o, x)| *o = *x - scalar),
             Op::Mul => out.iter_mut().zip(a).for_each(|(o, x)| *o = *x * scalar),
+            Op::Div => out.iter_mut().zip(a).for_each(|(o, x)| *o = *x / scalar),
+            Op::Pow => out.iter_mut().zip(a).for_each(|(o, x)| *o = x.powf(scalar)),
             _ => return Err(NativeError::invalid("binary_forward received a non-binary op")),
         }
         return Ok(());
@@ -316,6 +328,8 @@ pub fn binary_forward(
             Op::Add => out.iter_mut().zip(b).for_each(|(o, x)| *o = scalar + *x),
             Op::Sub => out.iter_mut().zip(b).for_each(|(o, x)| *o = scalar - *x),
             Op::Mul => out.iter_mut().zip(b).for_each(|(o, x)| *o = scalar * *x),
+            Op::Div => out.iter_mut().zip(b).for_each(|(o, x)| *o = scalar / *x),
+            Op::Pow => out.iter_mut().zip(b).for_each(|(o, x)| *o = scalar.powf(*x)),
             _ => return Err(NativeError::invalid("binary_forward received a non-binary op")),
         }
         return Ok(());
@@ -336,6 +350,8 @@ pub fn binary_forward(
             Op::Add => a[a_index] + b[b_index],
             Op::Sub => a[a_index] - b[b_index],
             Op::Mul => a[a_index] * b[b_index],
+            Op::Div => a[a_index] / b[b_index],
+            Op::Pow => a[a_index].powf(b[b_index]),
             _ => return Err(NativeError::invalid("binary_forward received a non-binary op")),
         };
         for dimension in (0..rank).rev() {
@@ -383,6 +399,21 @@ pub fn binary_backward(
                     grad_b[index] += grad_out[index] * a[index];
                 }
             }
+            Op::Div => {
+                for index in 0..grad_out.len() {
+                    let denominator = b[index];
+                    grad_a[index] += grad_out[index] / denominator;
+                    grad_b[index] -= grad_out[index] * a[index] / (denominator * denominator);
+                }
+            }
+            Op::Pow => {
+                for index in 0..grad_out.len() {
+                    let base = a[index];
+                    let exponent = b[index];
+                    grad_a[index] += grad_out[index] * exponent * base.powf(exponent - 1.0);
+                    grad_b[index] += grad_out[index] * base.powf(exponent) * base.ln();
+                }
+            }
             _ => return Err(NativeError::invalid("binary_backward received a non-binary op")),
         }
         return Ok(());
@@ -413,6 +444,16 @@ pub fn binary_backward(
                 grad_a[a_index] += gradient * b[b_index];
                 grad_b[b_index] += gradient * a[a_index];
             }
+            Op::Div => {
+                grad_a[a_index] += gradient / b[b_index];
+                grad_b[b_index] -= gradient * a[a_index] / (b[b_index] * b[b_index]);
+            }
+            Op::Pow => {
+                let base = a[a_index];
+                let exponent = b[b_index];
+                grad_a[a_index] += gradient * exponent * base.powf(exponent - 1.0);
+                grad_b[b_index] += gradient * base.powf(exponent) * base.ln();
+            }
             _ => return Err(NativeError::invalid("binary_backward received a non-binary op")),
         }
         for dimension in (0..rank).rev() {
@@ -422,6 +463,59 @@ pub fn binary_backward(
             }
             coordinates[dimension] = 0;
         }
+    }
+    Ok(())
+}
+
+/// 全量归约：把任意形状压成一个标量。
+///
+/// 没有归约就没法手写 softmax 的分母、也没法把任意损失归一化——
+/// 这是「自己写模型」最常缺的一块。
+pub fn reduce_forward(op: crate::graph::Op, input: &[f32], out: &mut [f32]) -> Result<()> {
+    use crate::graph::Op;
+    if out.len() != 1 {
+        return Err(NativeError::shape("reduce output must be a single element"));
+    }
+    let mut sum = 0.0f64;
+    for value in input {
+        sum += *value as f64;
+    }
+    out[0] = match op {
+        Op::SumAll => sum as f32,
+        Op::MeanAll => {
+            if input.is_empty() {
+                return Err(NativeError::shape("mean of an empty tensor"));
+            }
+            (sum / input.len() as f64) as f32
+        }
+        _ => return Err(NativeError::invalid("reduce_forward received a non-reduce op")),
+    };
+    Ok(())
+}
+
+/// 归约的反向：把标量梯度摊回输入形状。
+pub fn reduce_backward(
+    op: crate::graph::Op,
+    input_len: usize,
+    grad_out: &[f32],
+    grad_in: &mut [f32],
+) -> Result<()> {
+    use crate::graph::Op;
+    if grad_out.len() != 1 || grad_in.len() != input_len {
+        return Err(NativeError::shape("reduce backward length mismatch"));
+    }
+    let scale = match op {
+        Op::SumAll => grad_out[0],
+        Op::MeanAll => {
+            if input_len == 0 {
+                return Err(NativeError::shape("mean backward of an empty tensor"));
+            }
+            grad_out[0] / input_len as f32
+        }
+        _ => return Err(NativeError::invalid("reduce_backward received a non-reduce op")),
+    };
+    for slot in grad_in.iter_mut() {
+        *slot += scale;
     }
     Ok(())
 }
@@ -445,6 +539,31 @@ pub fn unary_forward(op: crate::graph::Op, input: &[f32], out: &mut [f32]) -> Re
         Op::Tanh => {
             for (output, value) in out.iter_mut().zip(input) {
                 *output = value.tanh();
+            }
+        }
+        Op::Exp => {
+            for (output, value) in out.iter_mut().zip(input) {
+                *output = value.exp();
+            }
+        }
+        Op::Log => {
+            for (output, value) in out.iter_mut().zip(input) {
+                *output = value.ln();
+            }
+        }
+        Op::Sqrt => {
+            for (output, value) in out.iter_mut().zip(input) {
+                *output = value.sqrt();
+            }
+        }
+        Op::Abs => {
+            for (output, value) in out.iter_mut().zip(input) {
+                *output = value.abs();
+            }
+        }
+        Op::Neg => {
+            for (output, value) in out.iter_mut().zip(input) {
+                *output = -value;
             }
         }
         _ => return Err(NativeError::invalid("unary_forward received a non-unary op")),
@@ -476,6 +595,42 @@ pub fn unary_backward(
             for index in 0..input.len() {
                 let value = output[index];
                 grad_in[index] += grad_out[index] * value * (1.0 - value);
+            }
+        }
+        Op::Exp => {
+            // d/dx e^x = e^x，直接用前向输出
+            for index in 0..input.len() {
+                grad_in[index] += grad_out[index] * output[index];
+            }
+        }
+        Op::Log => {
+            // d/dx ln(x) = 1/x；x <= 0 时结果为 inf/NaN，由调用方决定是否加 eps
+            for index in 0..input.len() {
+                grad_in[index] += grad_out[index] / input[index];
+            }
+        }
+        Op::Sqrt => {
+            // d/dx sqrt(x) = 1 / (2 sqrt(x))，用前向输出避免重算
+            for index in 0..input.len() {
+                grad_in[index] += grad_out[index] / (2.0 * output[index]);
+            }
+        }
+        Op::Abs => {
+            // 在 0 处取次梯度 0
+            for index in 0..input.len() {
+                let sign = if input[index] > 0.0 {
+                    1.0
+                } else if input[index] < 0.0 {
+                    -1.0
+                } else {
+                    0.0
+                };
+                grad_in[index] += grad_out[index] * sign;
+            }
+        }
+        Op::Neg => {
+            for index in 0..input.len() {
+                grad_in[index] -= grad_out[index];
             }
         }
         Op::Tanh => {
@@ -659,5 +814,138 @@ mod tests {
         assert!((grad_prediction[0] - 0.5).abs() < 1e-6);
         assert!((grad_prediction[3] - 2.0).abs() < 1e-6);
         assert!((grad_target[3] + 2.0).abs() < 1e-6);
+    }
+    fn unary_value(op: crate::graph::Op, input: &[f32]) -> Vec<f32> {
+        let mut out = vec![0.0f32; input.len()];
+        unary_forward(op, input, &mut out).expect("unary forward");
+        out
+    }
+
+    fn unary_grad(op: crate::graph::Op, input: &[f32]) -> Vec<f32> {
+        let out = unary_value(op, input);
+        let grad_out = vec![1.0f32; input.len()];
+        let mut grad_in = vec![0.0f32; input.len()];
+        unary_backward(op, input, &out, &grad_out, &mut grad_in).expect("unary backward");
+        grad_in
+    }
+
+    #[test]
+    fn exp_log_sqrt_roundtrip() {
+        use crate::graph::Op;
+        let input = [0.0f32, 1.0, 2.0, -1.0];
+        let exp = unary_value(Op::Exp, &input);
+        assert!((exp[1] - std::f32::consts::E).abs() < 1e-6);
+        assert!((exp[0] - 1.0).abs() < 1e-6);
+
+        let log = unary_value(Op::Log, &exp);
+        for index in 0..input.len() {
+            assert!((log[index] - input[index]).abs() < 1e-5, "exp/log roundtrip at {index}");
+        }
+
+        let sqrt = unary_value(Op::Sqrt, &[4.0, 9.0, 0.25]);
+        assert!((sqrt[0] - 2.0).abs() < 1e-6);
+        assert!((sqrt[1] - 3.0).abs() < 1e-6);
+        assert!((sqrt[2] - 0.5).abs() < 1e-6);
+    }
+
+    #[test]
+    fn abs_and_neg_backward() {
+        use crate::graph::Op;
+        let input = [-2.0f32, 0.0, 3.0];
+        assert_eq!(unary_value(Op::Abs, &input), vec![2.0, 0.0, 3.0]);
+        // 0 处取次梯度 0
+        assert_eq!(unary_grad(Op::Abs, &input), vec![-1.0, 0.0, 1.0]);
+        assert_eq!(unary_value(Op::Neg, &input), vec![2.0, 0.0, -3.0]);
+        assert_eq!(unary_grad(Op::Neg, &input), vec![-1.0, -1.0, -1.0]);
+    }
+
+    #[test]
+    fn exp_log_sqrt_gradients() {
+        use crate::graph::Op;
+        let input = [0.5f32, 1.5];
+        let exp_grad = unary_grad(Op::Exp, &input);
+        for index in 0..input.len() {
+            assert!((exp_grad[index] - input[index].exp()).abs() < 1e-5);
+        }
+        let log_grad = unary_grad(Op::Log, &input);
+        for index in 0..input.len() {
+            assert!((log_grad[index] - 1.0 / input[index]).abs() < 1e-5);
+        }
+        let sqrt_grad = unary_grad(Op::Sqrt, &input);
+        for index in 0..input.len() {
+            assert!((sqrt_grad[index] - 0.5 / input[index].sqrt()).abs() < 1e-5);
+        }
+    }
+
+    #[test]
+    fn div_and_pow_forward_backward() {
+        use crate::graph::Op;
+        let a = [4.0f32, 9.0];
+        let b = [2.0f32, 3.0];
+        let mut out = vec![0.0f32; 2];
+        binary_forward(Op::Div, &a, &[2], &b, &[2], &mut out, &[2]).expect("div forward");
+        assert_eq!(out, vec![2.0, 3.0]);
+
+        let mut grad_a = vec![0.0f32; 2];
+        let mut grad_b = vec![0.0f32; 2];
+        binary_backward(Op::Div, &[1.0, 1.0], &[2], &a, &[2], &b, &[2], &mut grad_a, &mut grad_b)
+            .expect("div backward");
+        assert!((grad_a[0] - 0.5).abs() < 1e-6);
+        assert!((grad_b[0] + 1.0).abs() < 1e-6); // -a/b^2 = -4/4 = -1
+
+        binary_forward(Op::Pow, &[2.0, 3.0], &[2], &[3.0, 2.0], &[2], &mut out, &[2])
+            .expect("pow forward");
+        assert_eq!(out, vec![8.0, 9.0]);
+
+        grad_a = vec![0.0f32; 2];
+        grad_b = vec![0.0f32; 2];
+        binary_backward(Op::Pow, &[1.0, 1.0], &[2], &[2.0, 3.0], &[2], &[3.0, 2.0], &[2],
+                        &mut grad_a, &mut grad_b).expect("pow backward");
+        // d/da a^b = b a^(b-1) -> 3*4=12, 2*3=6
+        assert!((grad_a[0] - 12.0).abs() < 1e-4);
+        assert!((grad_a[1] - 6.0).abs() < 1e-4);
+        // d/db a^b = a^b ln a
+        assert!((grad_b[0] - 8.0 * 2.0f32.ln()).abs() < 1e-4);
+        assert!((grad_b[1] - 9.0 * 3.0f32.ln()).abs() < 1e-4);
+    }
+
+    #[test]
+    fn div_broadcasts_like_add() {
+        use crate::graph::Op;
+        // [2,2] / [2] -> 每行除以同一向量
+        let a = [1.0f32, 2.0, 3.0, 4.0];
+        let b = [1.0f32, 2.0];
+        let mut out = vec![0.0f32; 4];
+        binary_forward(Op::Div, &a, &[2, 2], &b, &[2], &mut out, &[2, 2]).expect("broadcast div");
+        assert_eq!(out, vec![1.0, 1.0, 3.0, 2.0]);
+    }
+    #[test]
+    fn reduce_sum_and_mean() {
+        use crate::graph::Op;
+        let input = [1.0f32, 2.0, 3.0, 4.0];
+        let mut out = vec![0.0f32; 1];
+        reduce_forward(Op::SumAll, &input, &mut out).expect("sum");
+        assert!((out[0] - 10.0).abs() < 1e-6);
+        reduce_forward(Op::MeanAll, &input, &mut out).expect("mean");
+        assert!((out[0] - 2.5).abs() < 1e-6);
+    }
+
+    #[test]
+    fn reduce_backward_broadcasts_scalar() {
+        use crate::graph::Op;
+        let mut grad_in = vec![0.0f32; 4];
+        reduce_backward(Op::SumAll, 4, &[2.0], &mut grad_in).expect("sum backward");
+        assert_eq!(grad_in, vec![2.0, 2.0, 2.0, 2.0]);
+
+        let mut mean_grad = vec![0.0f32; 4];
+        reduce_backward(Op::MeanAll, 4, &[2.0], &mut mean_grad).expect("mean backward");
+        assert_eq!(mean_grad, vec![0.5, 0.5, 0.5, 0.5]);
+    }
+
+    #[test]
+    fn reduce_rejects_non_scalar_output() {
+        use crate::graph::Op;
+        let mut out = vec![0.0f32; 2];
+        assert!(reduce_forward(Op::SumAll, &[1.0, 2.0], &mut out).is_err());
     }
 }

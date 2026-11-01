@@ -186,6 +186,77 @@ public final class Tensor implements AutoCloseable {
         return unary(CommandQueueBuilder.OP_RELU);
     }
 
+    /** 自然指数 e^x。 */
+    public Tensor exp() {
+        return unary(CommandQueueBuilder.OP_EXP);
+    }
+
+    /** 自然对数 ln(x)。x <= 0 时返回 -inf/NaN，需要 epsilon 请自行加。 */
+    public Tensor log() {
+        return unary(CommandQueueBuilder.OP_LOG);
+    }
+
+    /** 平方根。负数返回 NaN。 */
+    public Tensor sqrt() {
+        return unary(CommandQueueBuilder.OP_SQRT);
+    }
+
+    /** 逐元素绝对值。 */
+    public Tensor abs() {
+        return unary(CommandQueueBuilder.OP_ABS);
+    }
+
+    /** 逐元素取负。 */
+    public Tensor neg() {
+        return unary(CommandQueueBuilder.OP_NEG);
+    }
+
+    /** 全部元素求和，输出形状 [1]。 */
+    public Tensor sumAll() {
+        Tensor output = zeros(context, 1);
+        CommandQueueBuilder queue = new CommandQueueBuilder(context);
+        queue.sumAll(handle, output.handle);
+        queue.executeAndClear();
+        return output;
+    }
+
+    /** 全部元素求平均，输出形状 [1]。 */
+    public Tensor meanAll() {
+        Tensor output = zeros(context, 1);
+        CommandQueueBuilder queue = new CommandQueueBuilder(context);
+        queue.meanAll(handle, output.handle);
+        queue.executeAndClear();
+        return output;
+    }
+
+    /** 逐元素除法，支持广播。除零得到 inf/NaN，不做保护。 */
+    public Tensor div(Tensor other) {
+        return binaryOp(CommandQueueBuilder.OP_DIV, other);
+    }
+
+    /** 逐元素幂 a^b，支持广播。负底数配非整数指数会得到 NaN。 */
+    public Tensor pow(Tensor other) {
+        return binaryOp(CommandQueueBuilder.OP_POW, other);
+    }
+
+    /** 二目算子的统一入口：广播 + 分配输出 + 入队执行。 */
+    private Tensor binaryOp(int op, Tensor other) {
+        BasaltRuntimeException.requireNonNull(other, "other");
+        if (context != other.context) {
+            throw new IllegalArgumentException("operands must live in the same context");
+        }
+        int[] outputShape = broadcastShape(shape(), other.shape());
+        Tensor output = zeros(context, outputShape);
+        CommandQueueBuilder queue = new CommandQueueBuilder(context);
+        switch (op) {
+            case CommandQueueBuilder.OP_DIV -> queue.div(handle, other.handle, output.handle);
+            case CommandQueueBuilder.OP_POW -> queue.pow(handle, other.handle, output.handle);
+            default -> throw new IllegalArgumentException("unsupported binary op code: " + op);
+        }
+        queue.executeAndClear();
+        return output;
+    }
+
     public Tensor sigmoid() {
         return unary(CommandQueueBuilder.OP_SIGMOID);
     }
@@ -209,6 +280,11 @@ public final class Tensor implements AutoCloseable {
             case CommandQueueBuilder.OP_RELU -> queue.relu(handle, output.handle);
             case CommandQueueBuilder.OP_SIGMOID -> queue.sigmoid(handle, output.handle);
             case CommandQueueBuilder.OP_TANH -> queue.tanh(handle, output.handle);
+            case CommandQueueBuilder.OP_EXP -> queue.exp(handle, output.handle);
+            case CommandQueueBuilder.OP_LOG -> queue.log(handle, output.handle);
+            case CommandQueueBuilder.OP_SQRT -> queue.sqrt(handle, output.handle);
+            case CommandQueueBuilder.OP_ABS -> queue.abs(handle, output.handle);
+            case CommandQueueBuilder.OP_NEG -> queue.neg(handle, output.handle);
             case CommandQueueBuilder.OP_GELU -> queue.gelu(handle, output.handle);
             case CommandQueueBuilder.OP_SILU -> queue.silu(handle, output.handle);
             default -> throw new IllegalStateException("unknown unary op " + op);

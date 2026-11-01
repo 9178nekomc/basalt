@@ -31,6 +31,15 @@ pub enum Op {
     Permute,
     Reshape,
     GroupNorm,
+    Exp,
+    Log,
+    Sqrt,
+    Abs,
+    Neg,
+    Div,
+    Pow,
+    SumAll,
+    MeanAll,
 }
 
 impl Op {
@@ -58,8 +67,17 @@ impl Op {
             20 => Ok(Self::Permute),
             21 => Ok(Self::Reshape),
             22 => Ok(Self::GroupNorm),
+            23 => Ok(Self::Exp),
+            24 => Ok(Self::Log),
+            25 => Ok(Self::Sqrt),
+            26 => Ok(Self::Abs),
+            27 => Ok(Self::Neg),
+            28 => Ok(Self::Div),
+            29 => Ok(Self::Pow),
+            30 => Ok(Self::SumAll),
+            31 => Ok(Self::MeanAll),
             other => Err(NativeError::unsupported(format!(
-                "unknown op code {other}; expected 1..=22"
+                "unknown op code {other}; expected 1..=29"
             ))),
         }
     }
@@ -88,6 +106,15 @@ impl Op {
             Self::Permute => "Permute",
             Self::Reshape => "Reshape",
             Self::GroupNorm => "GroupNorm",
+            Self::Exp => "Exp",
+            Self::Log => "Log",
+            Self::Sqrt => "Sqrt",
+            Self::Abs => "Abs",
+            Self::Neg => "Neg",
+            Self::Div => "Div",
+            Self::Pow => "Pow",
+            Self::SumAll => "SumAll",
+            Self::MeanAll => "MeanAll",
         }
     }
 
@@ -98,15 +125,24 @@ impl Op {
             | Self::Tanh
             | Self::Gelu
             | Self::Silu
+            | Self::Exp
+            | Self::Log
+            | Self::Sqrt
+            | Self::Abs
+            | Self::Neg
             | Self::Softmax
             | Self::MaxPool2d
             | Self::Dropout
             | Self::Permute
-            | Self::Reshape => 1,
+            | Self::Reshape
+            | Self::SumAll
+            | Self::MeanAll => 1,
             Self::MatMul
             | Self::Add
             | Self::Sub
             | Self::Mul
+            | Self::Div
+            | Self::Pow
             | Self::Mse
             | Self::CrossEntropy
             | Self::Conv2d
