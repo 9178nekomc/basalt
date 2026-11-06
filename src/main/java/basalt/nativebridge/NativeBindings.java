@@ -14,6 +14,12 @@ final class NativeBindings {
     private NativeBindings() {
     }
 
+    /** 该张量是否由当前计算图产生（叶子返回 false）。 */
+    static native boolean hasGraphNode(long context, long tensor);
+
+    /** 把梯度累加进目标张量的梯度缓冲区（手写反向的入口）。 */
+    static native int accumulateGrad(long context, long tensor, long gradient);
+
     /** 把张量复制到目标设备，返回新的张量句柄。 */
     static native long transferTensor(long context, long tensor, int deviceTag);
 

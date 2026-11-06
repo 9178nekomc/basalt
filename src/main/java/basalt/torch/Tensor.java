@@ -56,9 +56,49 @@ public final class Tensor implements AutoCloseable {
         return context;
     }
 
+    /**
+     * 本张量是否由当前计算图产生。
+     *
+     * <p>叶子张量（参数、手工创建的张量）返回 false，对它们调用 {@link #backward()}
+     * 会报「不在图中」。手写反向需要判断该不该继续往前传时用这个。</p>
+     */
+    public boolean hasGraphNode() {
+        return context.hasGraphNode(handle);
+    }
+
+    /**
+     * 切断计算图，返回一个同值的新叶子张量。
+     *
+     * <p>与 {@link #detachCopy()} 的区别：返回的张量 {@code requiresGrad} 为真，
+     * 因此引擎反向会停在它上面并把梯度累加进去——{@link Function} 正是靠这个
+     * 把控制权交回用户的自定义反向。</p>
+     */
+    public Tensor detach() {
+        return Tensor.of(context, data(), true, shape());
+    }
+
     /** 用已有句柄包装成张量，供设备迁移等内部路径使用。 */
     public static Tensor wrap(basalt.nativebridge.NativeContext context, NativeTensorHandle handle) {
         return new Tensor(context, handle);
+    }
+
+    /**
+     * 把一份梯度累加进本张量。
+     *
+     * <p>这是「手写反向」的入口：你自己算出解析梯度后用它塞回去，不必让引擎
+     * 从计算图推。自创算法里出现不可导算子（直通估计、量化、surrogate gradient）
+     * 时，只有这条路能走。重复调用会叠加，形状不一致会抛异常。</p>
+     */
+    public void accumulateGrad(Tensor gradient) {
+        BasaltRuntimeException.requireNonNull(gradient, "gradient");
+        if (context != gradient.context) {
+            throw new IllegalArgumentException("gradient must live in the same context");
+        }
+        if (!Arrays.equals(shape(), gradient.shape())) {
+            throw new IllegalArgumentException("gradient shape " + Arrays.toString(gradient.shape())
+                    + " does not match tensor shape " + Arrays.toString(shape()));
+        }
+        context.accumulateGrad(handle, gradient.handle);
     }
 
     /** 张量当前所在的设备。 */

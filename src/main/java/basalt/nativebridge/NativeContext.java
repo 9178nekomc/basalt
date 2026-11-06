@@ -103,6 +103,26 @@ public final class NativeContext implements AutoCloseable {
         }
     }
 
+    /** 该张量是否由当前计算图产生。 */
+    public boolean hasGraphNode(NativeTensorHandle tensor) {
+        BasaltRuntimeException.requireNonNull(tensor, "tensor");
+        try (Guard guard = guard()) {
+            return NativeBindings.hasGraphNode(guard.handle(), tensor.ptr());
+        }
+    }
+
+    /** 把梯度累加进目标张量。形状必须一致，重复调用会叠加。 */
+    public void accumulateGrad(NativeTensorHandle tensor, NativeTensorHandle gradient) {
+        BasaltRuntimeException.requireNonNull(tensor, "tensor");
+        BasaltRuntimeException.requireNonNull(gradient, "gradient");
+        try (Guard guard = guard()) {
+            int status = NativeBindings.accumulateGrad(guard.handle(), tensor.ptr(), gradient.ptr());
+            if (status != 0) {
+                throw new IllegalStateException("accumulateGrad failed with status " + status);
+            }
+        }
+    }
+
     /**
      * 把张量复制到目标设备。
      *

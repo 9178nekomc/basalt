@@ -367,6 +367,34 @@ pub extern "system" fn Java_basalt_nativebridge_NativeBindings_tensorGrad(
 }
 
 #[no_mangle]
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_hasGraphNode(
+    mut env: JNIEnv<'_>,
+    _class: JClass<'_>,
+    context: jlong,
+    tensor: jlong,
+) -> jboolean {
+    run_jni(&mut env, 0, |_env| {
+        let context = context_from_ptr(context)?;
+        Ok(u8::from(context.graph_contains(tensor as usize)?))
+    })
+}
+
+#[no_mangle]
+pub extern "system" fn Java_basalt_nativebridge_NativeBindings_accumulateGrad(
+    mut env: JNIEnv<'_>,
+    _class: JClass<'_>,
+    context: jlong,
+    tensor: jlong,
+    gradient: jlong,
+) -> jint {
+    run_jni(&mut env, STATUS_INVALID, |_env| {
+        let context = context_from_ptr(context)?;
+        context.accumulate_grad(tensor as usize, gradient as usize)?;
+        Ok(0)
+    })
+}
+
+#[no_mangle]
 pub extern "system" fn Java_basalt_nativebridge_NativeBindings_transferTensor(
     mut env: JNIEnv<'_>,
     _class: JClass<'_>,

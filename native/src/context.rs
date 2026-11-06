@@ -73,6 +73,53 @@ impl Context {
             .ok_or_else(|| NativeError::unknown_tensor(address))
     }
 
+    /// 张量是否由当前计算图产生。叶子（参数、手工创建的张量）返回 false。
+    pub fn graph_contains(&self, address: usize) -> Result<bool> {
+        // 先确认句柄有效，避免拿一个已释放的地址去查图
+        self.tensor(address)?;
+        Ok(self
+            .graph
+            .lock()
+            .map_err(|_| NativeError::invalid("graph lock poisoned"))?
+            .contains(address))
+    }
+
+    /// 把 `grad_address` 的数据累加进 `address` 的梯度缓冲区。
+    ///
+    /// 这是「手写反向」的唯一入口：用户自己算出解析梯度后，用这个接口塞回去，
+    /// 不必让引擎替他从计算图推。自创算法里出现非可导算子（直通估计、自定义量化、
+    /// 强化学习里的 surrogate gradient）时，只有这条路能走。
+    pub fn accumulate_grad(&self, address: usize, grad_address: usize) -> Result<()> {
+        if address == grad_address {
+            return Err(NativeError::invalid(
+                "cannot accumulate a tensor's gradient into itself",
+            ));
+        }
+        let target = self.tensor(address)?;
+        let source = self.tensor(grad_address)?;
+        let source_guard = source
+            .read()
+            .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+        let mut target_guard = target
+            .write()
+            .map_err(|_| NativeError::invalid("tensor lock poisoned"))?;
+        if source_guard.data.len() != target_guard.data.len() {
+            return Err(NativeError::shape(format!(
+                "gradient has {} elements, tensor has {}",
+                source_guard.data.len(),
+                target_guard.data.len()
+            )));
+        }
+        if target_guard.grad.is_empty() {
+            target_guard.grad = vec![0.0f32; target_guard.data.len()];
+        }
+        for (slot, delta) in target_guard.grad.iter_mut().zip(&source_guard.data) {
+            *slot += *delta;
+        }
+        target_guard.requires_grad = true;
+        Ok(())
+    }
+
     /// Copies a tensor onto `target`, returning a new handle.
     ///
     /// Same-device transfer still copies: it is the same code path a GPU backend will

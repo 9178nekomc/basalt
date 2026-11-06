@@ -1,6 +1,6 @@
 # Basalt — Java + Rust Machine Learning Runtime
 
-> **Maven coordinates** — `io.github.9178nekomc:basalt:3.13.0`  
+> **Maven coordinates** — `io.github.9178nekomc:basalt:3.14.0`  
 > **Runtime** — Java 21 (`--add-modules jdk.incubator.vector`) + bundled Rust native library  
 > **One dependency, no Python, no GIL, no manual native build on Windows x86_64.**  
 > **Docs** — <https://9178nekomc.github.io/basalt/>
@@ -13,7 +13,7 @@
 <dependency>
     <groupId>io.github.9178nekomc</groupId>
     <artifactId>basalt</artifactId>
-    <version>3.13.0</version>
+    <version>3.14.0</version>
 </dependency>
 ```
 
@@ -23,7 +23,7 @@ Build and install locally from source:
 mvn clean install
 ```
 
-The shaded, self-contained artifact is `basalt-3.13.0-all.jar` (classifier `all`).
+The shaded, self-contained artifact is `basalt-3.14.0-all.jar` (classifier `all`).
 It contains the Windows x86_64 native runtime; other platforms can add their own
 `native/<os>-<arch>/` library or point `-Dbasalt.native.path` at a locally built one.
 
@@ -120,11 +120,11 @@ Java 21 负责 API、校验、类型安全与编排；性能敏感的算子、�
 
 ---
 
-## 最新版特性（3.13.0）
+## 最新版特性（3.14.0）
 
 ### 张量生命周期改由 Rust 持有
 
-3.13.0 之前，原生张量的回收挂在 Java 的 `Cleaner` 上：Java 堆里只有一个几十字节的句柄，
+3.14.0 之前，原生张量的回收挂在 Java 的 `Cleaner` 上：Java 堆里只有一个几十字节的句柄，
 GC 迟迟不来，原生堆却已经被批次、前向中间量和损失填满。实测 2000 窗口 × batch 32 × 2.68M
 参数的字符级训练，第 15 轮左右就会因为原生内存分配失败而 abort；把四个可见张量显式 `close()`
 再周期性 `System.gc()`，也只是把崩溃点推到第 30 轮。
@@ -167,14 +167,60 @@ try {
 
 | 版本 | 问题 | 处理 |
 |---|---|---|
-| 3.13.0 | 长训练循环原生内存无界增长，第 15~30 轮 abort | 张量生命周期改为 Rust 作用域持有，`Trainer` 每步 `beginScope`/`endScope` |
-| 3.13.0 | 文档缺少原生作用域三个方法的说明 | 补入 `NativeContext` 章节，1568 个公开成员说明齐备 |
+| 3.14.0 | 长训练循环原生内存无界增长，第 15~30 轮 abort | 张量生命周期改为 Rust 作用域持有，`Trainer` 每步 `beginScope`/`endScope` |
+| 3.14.0 | 文档缺少原生作用域三个方法的说明 | 补入 `NativeContext` 章节，1568 个公开成员说明齐备 |
 | 3.8.0 | 生成只能等整段跑完，无法逐字显示 | `TextEngine.stream` / `streamSampled`，解码结果与批量接口逐位一致 |
 | 3.7.0 | 文档与基准报告 HTML 进版本库，单次推送 17.1 MiB | 生成物移出 git，由 CI 构建并发布到 `gh-pages`，推送降到 ~5.8 MiB |
 
 ---
 
-## 最新版特性（3.13.0）
+## 最新版特性（3.14.0）
+
+### 自创算法：反向也交给你
+
+「算子够不够多」不是关键。关键是**能不能写出库里没有的梯度规则**。
+在此之前做不到，不是因为缺算子，是因为三件事被藏起来了：
+
+| 之前 | 现在 |
+|---|---|
+| 梯度只能由引擎推，用户塞不进去 | `Tensor.accumulateGrad(Tensor)` 手写累加 |
+| `grad()` 只读，中间张量永远是 0 | `Tensor.hasGraphNode()` 判断该不该继续往前传 |
+| 反向全自动，无法插入自定义规则 | `Function` + `Backward.run` 接管任意一段反向 |
+
+一个完整例子——**前向恒等、反向把梯度裁到 [-1, 1]**（自动微分给不出的梯度）：
+
+```java
+final class ClippedGradient extends Function {
+    protected Tensor forward(Tensor... inputs) {
+        return inputs[0];                       // 前向不变
+    }
+    protected Tensor[] backward(Tensor[] gradOut, Tensor[] inputs, Tensor[] outputs) {
+        float[] raw = gradOut[0].data();        // 引擎送来的 dL/d输出
+        float[] clipped = new float[raw.length];
+        for (int i = 0; i < raw.length; i++) {
+            clipped[i] = Math.max(-1f, Math.min(1f, raw[i]));
+        }
+        return new Tensor[]{ Tensor.of(inputs[0].handle().context(), clipped, false,
+                                       inputs[0].shape()) };
+    }
+}
+
+Tensor out = new ClippedGradient().apply(x);
+Backward.run(out.mse(target));   // 代替 loss.backward()
+```
+
+### 语义边界，写清楚不藏
+
+- `Function.forward` 收到的输入是**分离后的叶子**，前向里用到的算子**不参与自动微分**——
+  梯度完全由 `backward` 决定。这是自定义算子的本意，不是缺陷。
+- 前向结果会被包成一个**新叶子**返回。原因是引擎只往叶子累加梯度，中间张量的 `grad()`
+  永远是空的——这一点在文档里写明了，免得有人以为能直接读中间张量的梯度。
+- 自定义反向由 **Java 侧驱动**，在引擎反向之后运行。多层叠加时 `Backward.run`
+  按登记顺序逐层推进，语义与 PyTorch 的 `autograd.Function` 一致，区别在于原生反向循环
+  不会回调 Java。
+
+三个用例证明了它真的成立：手写反向与自动微分结果逐位一致；裁剪梯度确实给出了不同的值；
+两层自定义算子叠加时 `d(sum(x⁴))/dx = 4x³` 正确传回。
 
 ### 矩阵乘重写：512³ 从 31.8 提到 52 GFLOPS
 
@@ -222,7 +268,7 @@ x.to(Device.cuda(0));    // UnsupportedOperationException: only cpu is available
 多头注意力要干的事，本质是「把最后一维切成几段，各算各的，再拼回去」。
 3.11.0 之前这三个动作一个都没有——能算矩阵乘，但拼不出多头。
 
-3.13.0 补上：
+3.14.0 补上：
 
 | 算子 | 反向 |
 |---|---|
@@ -247,7 +293,7 @@ Tensor merged = headA.cat(headB, 2); // 与原张量逐位相同
 3.10.0 补了全量归约，但按维归约还缺——这意味着一件事：**没法减最大值**，
 softmax 在输入偏大时会直接溢出成 `inf / inf = NaN`。
 
-3.13.0 补上：
+3.14.0 补上：
 
 | 算子 | 说明 |
 |---|---|
@@ -271,7 +317,7 @@ Tensor probs = numer.div(denom);
 模型层不可能覆盖所有算法。真正决定上限的是**底层有多少可组合的算子**——
 没有归约，连手写 softmax 的分母都写不出来。
 
-3.13.0 之前，`Tensor` 只有 23 个公开算子，缺数学函数、缺归约。补完之后：
+3.14.0 之前，`Tensor` 只有 23 个公开算子，缺数学函数、缺归约。补完之后：
 
 | 类别 | 新增 | 用途 |
 |---|---|---|
@@ -314,6 +360,7 @@ Tensor probs = numer.div(denom);          // 新增：逐元素除法
 诚实列出缺口，不假装完备：
 
 - **CUDA 后端**：需要一台有 N 卡的机器才能开发与验证；设备层已经就位
+- **自定义反向的原生回调**：现在是 Java 侧驱动，接进原生反向循环可以省掉逐层重入
 - **掩码**：`where` / `maskedFill`，变长序列与 causal mask 需要
 - **多轴归约**：一次压掉多个维度，现在只能一维一维来
 - **`cat` 的多输入版本**：现在只能两两拼，拼四段要调用三次
@@ -331,15 +378,15 @@ Tensor probs = numer.div(denom);          // 新增：逐元素除法
 
 ## 下载
 
-发布资产见 [Releases · v3.13.0](https://github.com/9178nekomc/basalt/releases/tag/v3.13.0)：
+发布资产见 [Releases · v3.14.0](https://github.com/9178nekomc/basalt/releases/tag/v3.14.0)：
 
 | 文件 | 说明 |
 |---|---|
-| `basalt-3.13.0-all.jar` | Fat Jar（classifier `all`），含 Windows x86_64 原生库，可直接 `java -cp` |
-| `basalt-3.13.0.jar` | 标准 jar，原生库在 `native/windows-x86_64/` 资源目录内 |
-| `basalt-3.13.0-sources.jar` | 源码包 |
+| `basalt-3.14.0-all.jar` | Fat Jar（classifier `all`），含 Windows x86_64 原生库，可直接 `java -cp` |
+| `basalt-3.14.0.jar` | 标准 jar，原生库在 `native/windows-x86_64/` 资源目录内 |
+| `basalt-3.14.0-sources.jar` | 源码包 |
 | `basalt_native.dll` | Windows x86_64 原生库，独立分发用 |
-| `basalt-docs-3.13.0.zip` | 离线文档站（19 页 HTML + 2 个基准报告），解压后双击 `index.html` |
+| `basalt-docs-3.14.0.zip` | 离线文档站（19 页 HTML + 2 个基准报告），解压后双击 `index.html` |
 
 ---
 
@@ -418,7 +465,7 @@ python tools/check_docs.py --root docs
 <dependency>
     <groupId>io.github.9178nekomc</groupId>
     <artifactId>basalt</artifactId>
-    <version>3.13.0</version>
+    <version>3.14.0</version>
 </dependency>
 ```
 
@@ -429,9 +476,9 @@ mvn clean install
 ```
 
 产物：
-- `target/basalt-3.13.0.jar`：标准 jar（含 `native/windows-x86_64/basalt_native.dll` 资源）
-- `target/basalt-3.13.0-all.jar`：Fat Jar（classifier `all`，可直接 `java -cp`）
-- `target/basalt-3.13.0-sources.jar`：源码包
+- `target/basalt-3.14.0.jar`：标准 jar（含 `native/windows-x86_64/basalt_native.dll` 资源）
+- `target/basalt-3.14.0-all.jar`：Fat Jar（classifier `all`，可直接 `java -cp`）
+- `target/basalt-3.14.0-sources.jar`：源码包
 
 10 行完成一次前向 + 反向：
 
@@ -1117,7 +1164,7 @@ report/                 报告、图表生成脚本、figures/
 
 ---
 
-## 11. v3.13.0 三期演进全景
+## 11. v3.14.0 三期演进全景
 
 ### 第一阶段：夯实工程底座（Phase 1）
 1. **JNI / Rust 底层核心工程强化**

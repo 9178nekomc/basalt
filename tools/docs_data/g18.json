@@ -2518,6 +2518,62 @@
             },
             {
               "kind": "method",
+              "name": "hasGraphNode",
+              "signature": "boolean hasGraphNode(NativeTensorHandle tensor)",
+              "key": "hasGraphNode(NativeTensorHandle)",
+              "return_type": "boolean",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "tensor"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "该张量是否由当前计算图产生",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
+              "name": "accumulateGrad",
+              "signature": "void accumulateGrad(NativeTensorHandle tensor, NativeTensorHandle gradient)",
+              "key": "accumulateGrad(NativeTensorHandle, NativeTensorHandle)",
+              "return_type": "void",
+              "type": "",
+              "params": [
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "tensor"
+                },
+                {
+                  "type": "NativeTensorHandle",
+                  "name": "gradient"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "把梯度累加进目标张量",
+                "body": []
+              }
+            },
+            {
+              "kind": "method",
               "name": "transferTensor",
               "signature": "NativeTensorHandle transferTensor(NativeTensorHandle tensor, int deviceTag)",
               "key": "transferTensor(NativeTensorHandle, int)",

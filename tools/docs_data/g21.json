@@ -1503,6 +1503,52 @@
             },
             {
               "kind": "method",
+              "name": "hasGraphNode",
+              "signature": "boolean hasGraphNode()",
+              "key": "hasGraphNode()",
+              "return_type": "boolean",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "本张量是否由当前计算图产生",
+                "body": [
+                  "叶子张量（参数、手工创建的张量）返回 false，对它们调用 backward 会报错。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "detach",
+              "signature": "Tensor detach()",
+              "key": "detach()",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "切断计算图，返回同值的新叶子张量",
+                "body": [
+                  "与 detachCopy 的区别：返回的张量 requiresGrad 为真，反向会停在它上面。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
               "name": "wrap",
               "signature": "Tensor wrap(basalt.nativebridge.NativeContext context, NativeTensorHandle handle)",
               "key": "wrap(basalt.nativebridge.NativeContext, NativeTensorHandle)",
@@ -1531,6 +1577,34 @@
                 "summary": "用已有句柄包装成张量",
                 "body": [
                   "供设备迁移等内部路径使用。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "accumulateGrad",
+              "signature": "void accumulateGrad(Tensor gradient)",
+              "key": "accumulateGrad(Tensor)",
+              "return_type": "void",
+              "type": "",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "gradient"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "把一份梯度累加进本张量",
+                "body": [
+                  "手写反向的入口；重复调用会叠加，形状不一致抛异常。"
                 ]
               }
             },
@@ -3680,6 +3754,194 @@
               "basalt.torch.Tensor#gelu()"
             ]
           }
+        },
+        {
+          "qualified": "basalt.torch.Function",
+          "kind": "class",
+          "signature": "",
+          "doc": {
+            "summary": "自定义算子：前向与反向都由你写",
+            "body": [
+              "库内置算子覆盖不到的地方——直通估计、量化、surrogate gradient、带裁剪的自定义梯度——用这个类表达，不需要改 Rust、不需要重编原生库。",
+              "apply 先把输入分离成叶子，再把前向结果包成新叶子返回；因此引擎反向只把损失梯度送到这个叶子，不会穿过本算子，整段反向由你的 backward 决定。"
+            ]
+          },
+          "members": [
+            {
+              "kind": "method",
+              "name": "forward",
+              "signature": "Tensor forward(Tensor... inputs)",
+              "key": "forward(Tensor...)",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [
+                {
+                  "type": "Tensor...",
+                  "name": "inputs"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "protected",
+                "abstract"
+              ],
+              "static": false,
+              "abstract": true,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "前向：输入是分离后的叶子张量，可用任何公开算子组合",
+                "body": [
+                  "这里用到的算子不参与自动微分。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "backward",
+              "signature": "Tensor[] backward(Tensor[] gradOutputs, Tensor[] inputs, Tensor[] outputs)",
+              "key": "backward(Tensor[], Tensor[], Tensor[])",
+              "return_type": "Tensor[]",
+              "type": "",
+              "params": [
+                {
+                  "type": "Tensor[]",
+                  "name": "gradOutputs"
+                },
+                {
+                  "type": "Tensor[]",
+                  "name": "inputs"
+                },
+                {
+                  "type": "Tensor[]",
+                  "name": "outputs"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "protected",
+                "abstract"
+              ],
+              "static": false,
+              "abstract": true,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "反向：给定输出梯度，返回每个输入的梯度",
+                "body": [
+                  "顺序与 forward 的输入一致；返回 null 表示该输入不需要梯度。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "apply",
+              "signature": "Tensor apply(Tensor... inputs)",
+              "key": "apply(Tensor...)",
+              "return_type": "Tensor",
+              "type": "",
+              "params": [
+                {
+                  "type": "Tensor...",
+                  "name": "inputs"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "final"
+              ],
+              "static": false,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "应用本算子：分离输入 → 跑前向 → 输出包成新叶子 → 登记待处理",
+                "body": [
+                  "返回的新叶子就是后续计算图里的张量。"
+                ]
+              }
+            },
+            {
+              "kind": "method",
+              "name": "requireSameShape",
+              "signature": "void requireSameShape(Tensor expected, Tensor actual, String what)",
+              "key": "requireSameShape(Tensor, Tensor, String)",
+              "return_type": "void",
+              "type": "",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "expected"
+                },
+                {
+                  "type": "Tensor",
+                  "name": "actual"
+                },
+                {
+                  "type": "String",
+                  "name": "what"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "protected",
+                "static"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "形状检查工具",
+                "body": [
+                  "把错误留在 Java 侧。"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "qualified": "basalt.torch.Backward",
+          "kind": "class",
+          "signature": "",
+          "doc": {
+            "summary": "串起引擎反向与自定义反向",
+            "body": [
+              "Function 的前向把输入分离成叶子，引擎反向停在那些叶子上；Backward.run 负责在之后调用每个自定义算子的 backward，把梯度累加回真实输入并继续往前传。"
+            ]
+          },
+          "members": [
+            {
+              "kind": "method",
+              "name": "run",
+              "signature": "void run(Tensor loss)",
+              "key": "run(Tensor)",
+              "return_type": "void",
+              "type": "",
+              "params": [
+                {
+                  "type": "Tensor",
+                  "name": "loss"
+                }
+              ],
+              "throws": [],
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "static": true,
+              "abstract": false,
+              "javadoc": null,
+              "value": "",
+              "doc": {
+                "summary": "从 loss 开始反向，直到所有自定义算子的梯度都算完",
+                "body": [
+                  "没有自定义算子时等价于直接调用 loss.backward()。"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

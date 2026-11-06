@@ -386,6 +386,11 @@ impl Graph {
         self.nodes.push(node);
     }
 
+    /// 该地址是否由当前计算图产生（叶子张量为 false）。
+    pub fn contains(&self, address: usize) -> bool {
+        self.produced.contains_key(&address)
+    }
+
     /// Kahn topological sort of the sub-graph that actually contributes to `root`.
     /// The returned order has producers before consumers.
     pub fn topological_order(&self, root: usize) -> Result<Vec<usize>> {
